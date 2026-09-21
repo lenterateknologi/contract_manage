@@ -31,6 +31,8 @@ export const contractApi = {
     get: (id: string): Promise<Contract> => unwrap(api.get(`/api/contracts/${id}`)),
     create: (data: FormData): Promise<Contract> => unwrap(api.post('/api/contracts', data)),
     update: (id: string, data: any): Promise<Contract> => unwrap(api.patch(`/api/contracts/${id}`, data)),
+    reviewDoc: (id: string, doc: 'f1' | 'f2' | 'agreement'): Promise<{ message: string; metadata: any; contract: Contract }> =>
+        unwrap(api.post(`/api/contracts/${id}/review-doc`, { doc })),
     delete: (id: string): Promise<any> => unwrap(api.delete(`/api/contracts/${id}`)),
     getTypes: (): Promise<any[]> => unwrap(api.get('/api/contracts/types')),
     getWorkflows: (contractType?: string, userId?: string): Promise<any[]> =>

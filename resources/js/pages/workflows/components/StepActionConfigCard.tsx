@@ -844,13 +844,13 @@ export function StepActionConfigCard({
 
                     <div className="sm:col-span-6 space-y-1">
                         <label className="text-[11px] font-semibold text-slate-700 dark:text-zinc-300 block">
-                            Kolom Isi / Hapus Otomatis (Autofill):
+                            Aksi & Pengisian Data Otomatis (Autofill / Reset):
                         </label>
                         <SearchableMultiSelectPortal
                             values={act.autofilled_fields || []}
                             onValuesChange={(vals: string[]) => updateAction(actIdx, { autofilled_fields: vals })}
                             options={AUTOFILLED_PARAMS}
-                            placeholder="Pilih Kolom Isi / Hapus..."
+                            placeholder="Pilih Aksi / Kolom Otomatis..."
                             triggerClassName="min-h-[34px] py-1 px-3 text-xs rounded-lg"
                         />
                     </div>
@@ -858,141 +858,145 @@ export function StepActionConfigCard({
             )}
 
             {/* Modal Dialog 1: Otoritas Tombol (Siapa yang bisa melihat / klik tombol) */}
-            <Dialog open={isButtonAuthorityModalOpen} onOpenChange={setIsButtonAuthorityModalOpen}>
-                <DialogContent className="sm:max-w-[96vw] w-[96vw] max-w-[96vw] h-[90vh] max-h-[90vh] border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 rounded-[12px] border p-0 shadow-2xl overflow-hidden flex flex-col">
-                    <div className="px-6 py-4 border-b border-slate-800 bg-slate-900 text-white flex items-center justify-between rounded-t-[12px] shrink-0">
-                        <div className="flex items-center gap-3">
-                            <div className="bg-white/20 text-white border border-white/20 flex h-9 w-9 items-center justify-center rounded-lg">
-                                <Key size={18} className="text-amber-400" />
-                            </div>
-                            <div>
-                                <DialogTitle className="text-sm font-bold tracking-tight text-white">
-                                    Otoritas Akses Tombol — Aksi #{actIdx + 1}: {act.alias || act.master_action?.name || 'Aksi'}
-                                </DialogTitle>
-                                <DialogDescription className="text-white/80 text-xs font-medium mt-0.5">
-                                    Tentukan siapa yang berhak melihat dan mengklik tombol aksi ini pada form persetujuan
-                                </DialogDescription>
+            {isButtonAuthorityModalOpen && (
+                <Dialog open={isButtonAuthorityModalOpen} onOpenChange={setIsButtonAuthorityModalOpen}>
+                    <DialogContent className="sm:max-w-[96vw] w-[96vw] max-w-[96vw] h-[90vh] max-h-[90vh] border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 rounded-[12px] border p-0 shadow-2xl overflow-hidden flex flex-col">
+                        <div className="px-6 py-4 border-b border-slate-800 bg-slate-900 text-white flex items-center justify-between rounded-t-[12px] shrink-0">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-white/20 text-white border border-white/20 flex h-9 w-9 items-center justify-center rounded-lg">
+                                    <Key size={18} className="text-amber-400" />
+                                </div>
+                                <div>
+                                    <DialogTitle className="text-sm font-bold tracking-tight text-white">
+                                        Otoritas Akses Tombol — Aksi #{actIdx + 1}: {act.alias || act.master_action?.name || 'Aksi'}
+                                    </DialogTitle>
+                                    <DialogDescription className="text-white/80 text-xs font-medium mt-0.5">
+                                        Tentukan siapa yang berhak melihat dan mengklik tombol aksi ini pada form persetujuan
+                                    </DialogDescription>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div className="p-6 bg-white dark:bg-zinc-900 flex-1 overflow-y-auto">
-                        <AuthorityTableManager
-                            title="Otoritas Akses Tombol"
-                            authorities={buttonAuthorities}
-                            onChange={(vals) => updateAction(actIdx, { authorities: vals, authority_config: mapAuthoritiesToConfig(vals) })}
-                            users={users}
-                            roles={roles}
-                            departments={departments}
-                            divisions={divisions}
-                            locations={locations}
-                            companyGroups={companyGroups}
-                            companies={companies}
-                            regions={regions}
-                            showCustom={true}
-                            showCombinations={true}
-                            simulationContext={simulationContext}
-                            onOpenSimulationModal={onOpenSimulationModal}
-                        />
-                    </div>
+                        <div className="p-6 bg-white dark:bg-zinc-900 flex-1 overflow-y-auto">
+                            <AuthorityTableManager
+                                title="Otoritas Akses Tombol"
+                                authorities={buttonAuthorities}
+                                onChange={(vals) => updateAction(actIdx, { authorities: vals, authority_config: mapAuthoritiesToConfig(vals) })}
+                                users={users}
+                                roles={roles}
+                                departments={departments}
+                                divisions={divisions}
+                                locations={locations}
+                                companyGroups={companyGroups}
+                                companies={companies}
+                                regions={regions}
+                                showCustom={true}
+                                showCombinations={true}
+                                simulationContext={simulationContext}
+                                onOpenSimulationModal={onOpenSimulationModal}
+                            />
+                        </div>
 
-                    <DialogFooter className="p-4 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-800/50 flex items-center justify-end">
-                        <Button
-                            type="button"
-                            onClick={() => setIsButtonAuthorityModalOpen(false)}
-                            className="cursor-pointer font-bold text-xs"
-                        >
-                            Selesai
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                        <DialogFooter className="p-4 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-800/50 flex items-center justify-end">
+                            <Button
+                                type="button"
+                                onClick={() => setIsButtonAuthorityModalOpen(false)}
+                                className="cursor-pointer font-bold text-xs"
+                            >
+                                Selesai
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+            )}
 
             {/* Modal Dialog 2: Tentukan Personil / Assignee / Reviewer Pool */}
-            <Dialog open={isAssigneeModalOpen} onOpenChange={setIsAssigneeModalOpen}>
-                <DialogContent className="sm:max-w-[96vw] w-[96vw] max-w-[96vw] h-[90vh] max-h-[90vh] border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 rounded-[12px] border p-0 shadow-2xl overflow-hidden flex flex-col">
-                    <div className="px-6 py-4 border-b border-primary/20 dark:border-zinc-700/80 bg-primary dark:bg-zinc-800/90 text-white dark:text-zinc-200 flex items-center justify-between rounded-t-[12px] shrink-0">
-                        <div className="flex items-center gap-3">
-                            <div className="bg-white/20 text-white border border-white/20 dark:bg-primary/20 dark:text-primary dark:border-primary/30 flex h-9 w-9 items-center justify-center rounded-lg">
-                                <UsersIcon size={18} />
-                            </div>
-                            <div>
-                                <DialogTitle className="text-sm font-bold tracking-tight text-white dark:text-zinc-100">
-                                    {isForwardAction ? 'Konfigurasi Reviewer Tambahan' : 'Konfigurasi Personil Penugasan (Assignee Pool)'} — Aksi #{actIdx + 1}: {act.alias || act.master_action?.name || 'Aksi'}
-                                </DialogTitle>
-                                <DialogDescription className="text-white/80 dark:text-zinc-400 text-xs font-medium mt-0.5">
-                                    {isForwardAction
-                                        ? 'Tentukan langkah target dan daftar reviewer yang berhak menerima pengajuan'
-                                        : 'Tentukan aktor/pengguna yang dapat dipilih dan ditugaskan sebagai PIC'}
-                                </DialogDescription>
+            {isAssigneeModalOpen && (
+                <Dialog open={isAssigneeModalOpen} onOpenChange={setIsAssigneeModalOpen}>
+                    <DialogContent className="sm:max-w-[96vw] w-[96vw] max-w-[96vw] h-[90vh] max-h-[90vh] border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 rounded-[12px] border p-0 shadow-2xl overflow-hidden flex flex-col">
+                        <div className="px-6 py-4 border-b border-primary/20 dark:border-zinc-700/80 bg-primary dark:bg-zinc-800/90 text-white dark:text-zinc-200 flex items-center justify-between rounded-t-[12px] shrink-0">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-white/20 text-white border border-white/20 dark:bg-primary/20 dark:text-primary dark:border-primary/30 flex h-9 w-9 items-center justify-center rounded-lg">
+                                    <UsersIcon size={18} />
+                                </div>
+                                <div>
+                                    <DialogTitle className="text-sm font-bold tracking-tight text-white dark:text-zinc-100">
+                                        {isForwardAction ? 'Konfigurasi Reviewer Tambahan' : 'Konfigurasi Personil Penugasan (Assignee Pool)'} — Aksi #{actIdx + 1}: {act.alias || act.master_action?.name || 'Aksi'}
+                                    </DialogTitle>
+                                    <DialogDescription className="text-white/80 dark:text-zinc-400 text-xs font-medium mt-0.5">
+                                        {isForwardAction
+                                            ? 'Tentukan langkah target dan daftar reviewer yang berhak menerima pengajuan'
+                                            : 'Tentukan aktor/pengguna yang dapat dipilih dan ditugaskan sebagai PIC'}
+                                    </DialogDescription>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div className="p-6 bg-white dark:bg-zinc-900 flex-1 overflow-y-auto space-y-4">
-                        {isForwardAction && (
-                            <div className="space-y-1 max-w-sm">
-                                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                                    Target Langkah (Insert To)
-                                </label>
-                                <Select
-                                    value={act.next_step_id || 'current'}
-                                    onValueChange={(val) => {
-                                        updateAction(actIdx, {
-                                            next_step_id: val === 'current' ? null : val,
-                                        });
-                                    }}
-                                >
-                                    <SelectTrigger className="h-9 py-2 px-3 rounded-lg border-slate-200 bg-white text-xs font-medium focus:border-slate-900 dark:border-slate-800 dark:bg-slate-950">
-                                        <SelectValue placeholder="Pilih Tahap Target" />
-                                    </SelectTrigger>
-                                    <SelectContent className="rounded-lg bg-white dark:bg-slate-950">
-                                        <SelectItem value="current" className="text-xs font-medium">
-                                            Langkah Saat Ini (Default)
-                                        </SelectItem>
-                                        {allWorkflowSteps.map((s: any, sIdx: number) => (
-                                            <SelectItem key={s.id} value={String(s.id)} className="text-xs font-medium">
-                                                Tahap {sIdx + 1}: {s.label || `Langkah ${sIdx + 1}`}
+                        <div className="p-6 bg-white dark:bg-zinc-900 flex-1 overflow-y-auto space-y-4">
+                            {isForwardAction && (
+                                <div className="space-y-1 max-w-sm">
+                                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                                        Target Langkah (Insert To)
+                                    </label>
+                                    <Select
+                                        value={act.next_step_id || 'current'}
+                                        onValueChange={(val) => {
+                                            updateAction(actIdx, {
+                                                next_step_id: val === 'current' ? null : val,
+                                            });
+                                        }}
+                                    >
+                                        <SelectTrigger className="h-9 py-2 px-3 rounded-lg border-slate-200 bg-white text-xs font-medium focus:border-slate-900 dark:border-slate-800 dark:bg-slate-950">
+                                            <SelectValue placeholder="Pilih Tahap Target" />
+                                        </SelectTrigger>
+                                        <SelectContent className="rounded-lg bg-white dark:bg-slate-950">
+                                            <SelectItem value="current" className="text-xs font-medium">
+                                                Langkah Saat Ini (Default)
                                             </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        )}
+                                            {allWorkflowSteps.map((s: any, sIdx: number) => (
+                                                <SelectItem key={s.id} value={String(s.id)} className="text-xs font-medium">
+                                                    Tahap {sIdx + 1}: {s.label || `Langkah ${sIdx + 1}`}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            )}
 
-                        {/* Authority Table Manager for Assignee */}
-                        <AuthorityTableManager
-                            title={isForwardAction ? 'Lingkup Reviewer Tambahan' : 'Aktor Penugasan (Assignee Pool)'}
-                            authorities={personnelAuthorities}
-                            onChange={(vals) => {
-                                updateAction(actIdx, { assignee_config: mapAuthoritiesToConfig(vals) });
-                            }}
-                            users={users}
-                            roles={roles}
-                            departments={departments}
-                            divisions={divisions}
-                            locations={locations}
-                            companyGroups={companyGroups}
-                            companies={companies}
-                            regions={regions}
-                            showCustom={true}
-                            showCombinations={true}
-                            simulationContext={simulationContext}
-                            onOpenSimulationModal={onOpenSimulationModal}
-                        />
-                    </div>
+                            {/* Authority Table Manager for Assignee */}
+                            <AuthorityTableManager
+                                title={isForwardAction ? 'Lingkup Reviewer Tambahan' : 'Aktor Penugasan (Assignee Pool)'}
+                                authorities={personnelAuthorities}
+                                onChange={(vals) => {
+                                    updateAction(actIdx, { assignee_config: mapAuthoritiesToConfig(vals) });
+                                }}
+                                users={users}
+                                roles={roles}
+                                departments={departments}
+                                divisions={divisions}
+                                locations={locations}
+                                companyGroups={companyGroups}
+                                companies={companies}
+                                regions={regions}
+                                showCustom={true}
+                                showCombinations={true}
+                                simulationContext={simulationContext}
+                                onOpenSimulationModal={onOpenSimulationModal}
+                            />
+                        </div>
 
-                    <DialogFooter className="p-4 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-800/50 flex items-center justify-end">
-                        <Button
-                            type="button"
-                            onClick={() => setIsAssigneeModalOpen(false)}
-                            className="cursor-pointer font-bold text-xs"
-                        >
-                            Selesai
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                        <DialogFooter className="p-4 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-800/50 flex items-center justify-end">
+                            <Button
+                                type="button"
+                                onClick={() => setIsAssigneeModalOpen(false)}
+                                className="cursor-pointer font-bold text-xs"
+                            >
+                                Selesai
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+            )}
         </div>
     );
 }

@@ -73,6 +73,7 @@ export default function WorkflowEditor({
     users,
     contractStatuses,
     companyGroups = [],
+    organizationGroups = [],
     regions = [],
     companies = [],
     locations = [],
@@ -920,6 +921,7 @@ export default function WorkflowEditor({
                                         divisions={divisions}
                                         locations={locations}
                                         companyGroups={companyGroups}
+                                        organizationGroups={organizationGroups}
                                         companies={companies}
                                         regions={regions}
                                         showInitiatorOption={false}
@@ -1309,6 +1311,7 @@ export default function WorkflowEditor({
                                                             locations={locations}
                                                             users={users}
                                                             companyGroups={companyGroups}
+                                                            organizationGroups={organizationGroups}
                                                             companies={companies}
                                                             regions={regions}
                                                             step={step}
@@ -1482,6 +1485,7 @@ export default function WorkflowEditor({
                                     divisions={divisions}
                                     locations={locations}
                                     companyGroups={companyGroups}
+                                    organizationGroups={organizationGroups}
                                     companies={companies}
                                     regions={regions}
                                     simulationContext={simulationContext}

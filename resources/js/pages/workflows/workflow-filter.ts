@@ -63,6 +63,7 @@ export function matchUserAgainstWorkflowPool(user: any, config: any, contract: a
             let matchesDiv = true;
             let matchesGroup = true;
             let matchesRegion = true;
+            let matchesOrgGroup = true;
             let matchesLocation = true;
             let hasFilters = false;
 
@@ -73,6 +74,7 @@ export function matchUserAgainstWorkflowPool(user: any, config: any, contract: a
             let userCompId = String(user.company_id || user.company?.id || '');
             let userCgId = String(user.company_group_id || user.company?.company_group_id || '');
             let userRegionId = String(user.region_id || user.company?.region_id || '');
+            let userOrgGroupId = String(user.department?.organization_group_id || user.department?.idorg_group || user.organization_group_id || '');
 
             if (auth.role_id) {
                 const targetRoleStr = String(auth.role_id);
@@ -148,8 +150,45 @@ export function matchUserAgainstWorkflowPool(user: any, config: any, contract: a
                 hasFilters = true;
             }
 
+            if (auth.organization_group_id) {
+                const targetOgId = String(auth.organization_group_id);
+                const targetOgName = (auth.organizationGroup?.name || auth.organization_group?.name || '').toLowerCase().trim();
+                const targetIdOrgGroup = auth.organizationGroup?.idorg_group !== undefined && auth.organizationGroup?.idorg_group !== null
+                    ? String(auth.organizationGroup.idorg_group)
+                    : (auth.organization_group?.idorg_group !== undefined && auth.organization_group?.idorg_group !== null ? String(auth.organization_group.idorg_group) : null);
+
+                const userIdOrgGroup = user.department?.idorg_group !== undefined && user.department?.idorg_group !== null
+                    ? String(user.department.idorg_group)
+                    : (user.idorg_group !== undefined && user.idorg_group !== null ? String(user.idorg_group) : '');
+                const userOrgGroupName = (user.org_group_name || user.department?.org_group_name || '').toLowerCase().trim();
+
+                matchesOrgGroup = (targetOgId === userOrgGroupId) ||
+                                  (targetIdOrgGroup !== null && targetIdOrgGroup === userIdOrgGroup) ||
+                                  (targetOgName && targetOgName === userOrgGroupName) ||
+                                  (targetOgId === userIdOrgGroup);
+                hasFilters = true;
+            } else if (auth.organization_group_use_initiator) {
+                const initOrgGroupId = String(contract?.initiator?.department?.organization_group_id || contract?.initiator?.organization_group_id || '');
+                const initIdOrgGroup = contract?.initiator?.department?.idorg_group !== undefined && contract?.initiator?.department?.idorg_group !== null
+                    ? String(contract?.initiator?.department.idorg_group)
+                    : (contract?.initiator?.idorg_group !== undefined && contract?.initiator?.idorg_group !== null ? String(contract?.initiator?.idorg_group) : '');
+                const initOrgGroupName = (contract?.initiator?.org_group_name || contract?.initiator?.department?.org_group_name || '').toLowerCase().trim();
+
+                const userIdOrgGroup = user.department?.idorg_group !== undefined && user.department?.idorg_group !== null
+                    ? String(user.department.idorg_group)
+                    : (user.idorg_group !== undefined && user.idorg_group !== null ? String(user.idorg_group) : '');
+                const userOrgGroupName = (user.org_group_name || user.department?.org_group_name || '').toLowerCase().trim();
+
+                matchesOrgGroup = Boolean(
+                    (initOrgGroupId && userOrgGroupId && initOrgGroupId === userOrgGroupId) ||
+                    (initIdOrgGroup && userIdOrgGroup && initIdOrgGroup === userIdOrgGroup) ||
+                    (initOrgGroupName && userOrgGroupName && initOrgGroupName === userOrgGroupName)
+                );
+                hasFilters = true;
+            }
+
             if (hasFilters) {
-                return matchesRole && matchesDept && matchesDiv && matchesLocation && matchesGroup && matchesRegion;
+                return matchesRole && matchesDept && matchesDiv && matchesLocation && matchesGroup && matchesRegion && matchesOrgGroup;
             }
 
             return false;

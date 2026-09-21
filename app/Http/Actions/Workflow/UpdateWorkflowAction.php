@@ -50,6 +50,7 @@ class UpdateWorkflowAction
                         'role_id' => ! empty($auth['role_id']) ? $this->resolveRoleId($auth['role_id']) : null,
                         'department_id' => ! empty($auth['department_id']) ? $this->resolveDepartmentId($auth['department_id']) : null,
                         'division_id' => $auth['division_id'] ?? null,
+                        'organization_group_id' => $auth['organization_group_id'] ?? null,
                         'location_id' => $auth['location_id'] ?? null,
                         'user_id' => ! empty($auth['user_id']) ? $this->resolveUserId($auth['user_id']) : null,
                         'company_group_id' => $auth['company_group_id'] ?? null,
@@ -58,6 +59,7 @@ class UpdateWorkflowAction
                         'role_use_initiator' => (bool) ($auth['role_use_initiator'] ?? false),
                         'department_use_initiator' => (bool) ($auth['department_use_initiator'] ?? false),
                         'division_use_initiator' => (bool) ($auth['division_use_initiator'] ?? false),
+                        'organization_group_use_initiator' => (bool) ($auth['organization_group_use_initiator'] ?? false),
                         'location_use_initiator' => (bool) ($auth['location_use_initiator'] ?? false),
                         'company_group_use_initiator' => (bool) ($auth['company_group_use_initiator'] ?? false),
                         'company_use_initiator' => (bool) ($auth['company_use_initiator'] ?? false),
@@ -278,12 +280,14 @@ class UpdateWorkflowAction
                                 'company_group_id' => $auth['company_group_id'] ?? null,
                                 'company_id' => $auth['company_id'] ?? null,
                                 'region_id' => $auth['region_id'] ?? null,
+                                'organization_group_id' => ! empty($auth['organization_group_id']) ? $this->resolveOrganizationGroupId($auth['organization_group_id']) : null,
                                 'role_use_initiator' => (bool) ($auth['role_use_initiator'] ?? false),
                                 'department_use_initiator' => (bool) ($auth['department_use_initiator'] ?? false),
                                 'division_use_initiator' => (bool) ($auth['division_use_initiator'] ?? false),
                                 'company_group_use_initiator' => (bool) ($auth['company_group_use_initiator'] ?? false),
                                 'company_use_initiator' => (bool) ($auth['company_use_initiator'] ?? false),
                                 'region_use_initiator' => (bool) ($auth['region_use_initiator'] ?? false),
+                                'organization_group_use_initiator' => (bool) ($auth['organization_group_use_initiator'] ?? false),
                             ]);
                         }
                     } else {

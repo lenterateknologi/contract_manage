@@ -430,6 +430,27 @@ const DetailNavTreeItem = memo(function DetailNavTreeItem({
                                 >
                                     {ChildIcon && <ChildIcon className="size-3.5 shrink-0" />}
                                     <span className="truncate">{child.label}</span>
+                                    {child.badge && (
+                                        <span
+                                            className={cn(
+                                                'ml-auto text-[9.5px] font-semibold px-1.5 py-0.2 rounded-md tabular-nums shrink-0 transition-colors',
+                                                child.badgeVariant === 'success' || child.isReviewed
+                                                    ? isThisChildActive
+                                                        ? 'bg-emerald-500 text-white font-bold'
+                                                        : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold'
+                                                    : child.badgeVariant === 'warning'
+                                                      ? isThisChildActive
+                                                          ? 'bg-amber-400 text-amber-950 font-bold'
+                                                          : 'bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold'
+                                                      : isThisChildActive
+                                                        ? 'bg-primary-foreground/20 text-primary-foreground'
+                                                        : 'bg-sidebar-accent/80 text-sidebar-foreground/70'
+                                            )}
+                                            title={child.isReviewed ? 'Sudah direview' : 'Perlu direview'}
+                                        >
+                                            {child.badge}
+                                        </span>
+                                    )}
                                 </button>
 
                                 <a

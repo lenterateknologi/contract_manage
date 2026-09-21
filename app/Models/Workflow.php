@@ -125,6 +125,9 @@ class Workflow extends Model
             if ($auth->relationLoaded('region') && $auth->region) {
                 $parts[] = "Wilayah: {$auth->region->name}";
             }
+            if ($auth->relationLoaded('organizationGroup') && $auth->organizationGroup) {
+                $parts[] = "Org Group: {$auth->organizationGroup->name}";
+            }
             if (empty($parts) && $auth->authority_type) {
                 $parts[] = Str::headline($auth->authority_type);
             }
@@ -149,7 +152,8 @@ class Workflow extends Model
 
     public function initiatorAuthorities(): HasMany
     {
-        return $this->hasMany(WorkflowInitiatorAuthority::class, 'workflow_id');
+        return $this->hasMany(Authority::class, 'context_id')
+            ->where('context_type', Authority::CONTEXT_WORKFLOW_INITIATOR);
     }
 
     public function getInitiatorRolesAttribute()
@@ -224,6 +228,32 @@ class Workflow extends Model
                 }
                 if ($auth->region_id) {
                     $query->where('region_id', $auth->region_id);
+                }
+                if ($auth->organization_group_id) {
+                    $orgGroupId = $auth->organization_group_id;
+                    $isUuid = is_string($orgGroupId) && preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', (string) $orgGroupId);
+                    $isNumeric = is_numeric($orgGroupId);
+
+                    $query->whereHas('department', function ($dq) use ($orgGroupId, $isUuid, $isNumeric) {
+                        $dq->where(function ($subDq) use ($orgGroupId, $isUuid, $isNumeric) {
+                            if ($isNumeric) {
+                                $subDq->where('idorg_group', $orgGroupId);
+                            }
+                            if (! $isUuid) {
+                                $subDq->orWhere('org_group_name', $orgGroupId);
+                            }
+                            $subDq->orWhereHas('organizationGroup', function ($ogq) use ($orgGroupId, $isUuid, $isNumeric) {
+                                if ($isUuid) {
+                                    $ogq->where('id', $orgGroupId);
+                                } elseif ($isNumeric) {
+                                    $ogq->where('idorg_group', $orgGroupId);
+                                } else {
+                                    $ogq->where('code', $orgGroupId)
+                                        ->orWhere('name', $orgGroupId);
+                                }
+                            });
+                        });
+                    });
                 }
             }
 

@@ -26,7 +26,10 @@ use App\Core\Crud\Resources\UserResource;
 use App\Core\Crud\Resources\VendorResource;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Common\ImportFileRequest;
+use App\Models\Authority;
 use App\Models\CompanyGroup;
+use App\Services\Crud\ResourceQueryBuilderService;
+use App\Services\MasterData\MasterAuthoritySyncService;
 use App\Services\PortalSyncService;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Http\Request;
@@ -42,6 +45,8 @@ class ResourceController extends Controller
 {
     public function __construct(
         protected PortalSyncService $portalSyncService,
+        protected ResourceQueryBuilderService $queryBuilderService,
+        protected MasterAuthoritySyncService $authoritySyncService,
     ) {}
 
     /**
@@ -110,339 +115,17 @@ class ResourceController extends Controller
             }]);
         }
 
-        // Implement search with support for multiple comma-separated values (e.g. "1990020003,1990020004,1990020005")
-        if ($request->has('search') && trim((string) $request->input('search')) !== '') {
-            $search = $request->input('search');
-            $searchTerms = array_values(array_filter(array_map('trim', explode(',', $search)), fn ($t) => $t !== ''));
+        // Apply search, filters, and sorting via ResourceQueryBuilderService
+        $query = $this->queryBuilderService->applySearch($query, $request, $resourceClass, $resourceSlug);
+        $query = $this->queryBuilderService->applyFilters($query, $request, $resourceClass, $resourceSlug);
+        $query = $this->queryBuilderService->applySorting($query, $request, $resourceClass);
 
-            $searchableColumns = collect($resourceClass::table())
-                ->filter(fn ($column) => $column->isSearchable())
-                ->map(fn ($column) => $column->getName());
-
-            if ($searchableColumns->isNotEmpty() && ! empty($searchTerms)) {
-                if ($resourceSlug === 'contract-types') {
-                    // Tree-aware search: find matching IDs then expand to include ancestors + descendants
-                    $matchingIds = $modelClass::where(function ($q) use ($searchableColumns, $searchTerms) {
-                        foreach ($searchTerms as $term) {
-                            $lowerTerm = strtolower($term);
-                            $q->orWhere(function ($subQ) use ($searchableColumns, $lowerTerm) {
-                                foreach ($searchableColumns as $column) {
-                                    $subQ->orWhere(DB::raw("LOWER(COALESCE(CAST({$column} AS text), ''))"), 'like', "%{$lowerTerm}%");
-                                }
-                            });
-                        }
-                    })->pluck('id')->toArray();
-
-                    if (! empty($matchingIds)) {
-                        // Collect all ancestor IDs (walk up parent_id chain)
-                        $ancestorIds = [];
-                        $toCheck = $matchingIds;
-                        while (! empty($toCheck)) {
-                            $parents = $modelClass::whereIn('id', $toCheck)->whereNotNull('parent_id')->pluck('parent_id')->toArray();
-                            $newParents = array_diff($parents, $ancestorIds, $matchingIds);
-                            $ancestorIds = array_merge($ancestorIds, $newParents);
-                            $toCheck = $newParents;
-                        }
-
-                        // Collect all descendant IDs (walk down children)
-                        $descendantIds = [];
-                        $toCheck = $matchingIds;
-                        while (! empty($toCheck)) {
-                            $children = $modelClass::whereIn('parent_id', $toCheck)->pluck('id')->toArray();
-                            $newChildren = array_diff($children, $descendantIds, $matchingIds);
-                            $descendantIds = array_merge($descendantIds, $newChildren);
-                            $toCheck = $newChildren;
-                        }
-
-                        $allIds = array_unique(array_merge($matchingIds, $ancestorIds, $descendantIds));
-                        $query->whereIn('id', $allIds);
-                    } else {
-                        $query->whereRaw('1 = 0'); // no results
-                    }
-                } else {
-                    $searchColumns = $searchableColumns;
-                    if ($resourceSlug === 'users') {
-                        $searchColumns = collect(['nik', 'name', 'email', 'username', 'jobtitle_name', 'joblevel_name', 'company_name', 'location_name', 'org_name', 'reporting_to']);
-                        $query->where(function ($q) use ($searchColumns, $searchTerms) {
-                            foreach ($searchTerms as $term) {
-                                $lowerTerm = strtolower($term);
-                                $q->orWhere(function ($subQ) use ($searchColumns, $lowerTerm) {
-                                    foreach ($searchColumns as $column) {
-                                        $subQ->orWhere(DB::raw("LOWER(COALESCE(CAST({$column} AS text), ''))"), 'like', "%{$lowerTerm}%");
-                                    }
-                                    $subQ->orWhereHas('department', function ($deptQ) use ($lowerTerm) {
-                                        $deptQ->where(DB::raw("LOWER(COALESCE(CAST(org_group_name AS text), ''))"), 'like', "%{$lowerTerm}%");
-                                    });
-                                });
-                            }
-                        });
-                    } else {
-                        if ($resourceSlug === 'companies') {
-                            $searchColumns = collect(['code', 'name', 'alias', 'npwp', 'company_group_name', 'region_name', 'city_name', 'oracle_code']);
-                        } elseif ($resourceSlug === 'locations') {
-                            $searchColumns = collect(['code', 'name', 'location_group_name', 'city_name', 'province_name', 'oracle_code']);
-                        } elseif ($resourceSlug === 'business-units') {
-                            $searchColumns = collect(['code', 'name', 'company_name', 'location_name', 'company_group_name', 'region_name', 'komoditi_name', 'kebun']);
-                        } else {
-                            $searchColumns = $searchableColumns;
-                        }
-                        $query->where(function ($q) use ($searchColumns, $searchTerms) {
-                            foreach ($searchTerms as $term) {
-                                $lowerTerm = strtolower($term);
-                                $q->orWhere(function ($subQ) use ($searchColumns, $lowerTerm) {
-                                    foreach ($searchColumns as $column) {
-                                        $subQ->orWhere(DB::raw("LOWER(COALESCE(CAST({$column} AS text), ''))"), 'like', "%{$lowerTerm}%");
-                                    }
-                                });
-                            }
-                        });
-                    }
-                }
-            }
-        }
-
-        // Filter config
         $filterConfig = collect($resourceClass::filters())->map(fn ($f) => $f->toArray())->toArray();
         $tableColumns = Schema::getColumnListing((new $modelClass)->getTable());
         $hasIsUsedColumn = in_array('is_used', $tableColumns);
         $hasIsActiveColumn = in_array('is_active', $tableColumns);
-
-        // Check if is_used or is_active filter was explicitly requested in URL query
         $isUsedRequested = $request->has('is_used');
         $isActiveRequested = $request->has('is_active');
-
-        // Implement filtration
-        foreach ($resourceClass::filters() as $filter) {
-            $key = $filter->getName();
-            $fromKey = "{$key}_from";
-            $toKey = "{$key}_to";
-
-            if ($request->filled($fromKey) || $request->filled($toKey)) {
-                $from = $request->input($fromKey);
-                $to = $request->input($toKey);
-                if ($from && $to) {
-                    $query->whereBetween(DB::raw("DATE({$key})"), [$from, $to]);
-                } elseif ($from) {
-                    $query->whereDate($key, '>=', $from);
-                } elseif ($to) {
-                    $query->whereDate($key, '<=', $to);
-                }
-            } elseif ($request->has($key) && $request->input($key) !== '' && $request->input($key) !== null) {
-                $val = $request->input($key);
-                if (is_array($val)) {
-                    $vals = array_values(array_filter($val, fn ($v) => $v !== '' && $v !== null));
-                    if (! empty($vals)) {
-                        if ($key === 'is_used' || $key === 'is_active') {
-                            $boolVals = array_map(function ($v) {
-                                return $v === '1' || $v === 1 || $v === true || $v === 'true';
-                            }, $vals);
-                            $query->whereIn($key, $boolVals);
-                        } elseif ($key === 'company_group_id' && in_array($resourceSlug, ['companies', 'business-units', 'locations'])) {
-                            $hasEmpty = in_array('__empty__', $vals, true) || in_array('empty', $vals, true) || in_array('-', $vals, true);
-                            $concreteVals = array_values(array_filter($vals, fn ($v) => ! in_array($v, ['__empty__', 'empty', 'null', '-'], true)));
-                            $groupNames = ! empty($concreteVals) ? CompanyGroup::whereIn('id', $concreteVals)->pluck('name')->toArray() : [];
-                            $query->where(function ($q) use ($concreteVals, $groupNames, $hasEmpty) {
-                                if (! empty($concreteVals)) {
-                                    $q->whereIn('company_group_id', $concreteVals);
-                                    if (! empty($groupNames)) {
-                                        $q->orWhereIn('company_group_name', $groupNames);
-                                    }
-                                }
-                                if ($hasEmpty) {
-                                    $q->orWhereNull('company_group_id')
-                                        ->orWhere(DB::raw('CAST(company_group_id AS text)'), '')
-                                        ->orWhereNull('company_group_name')
-                                        ->orWhere(DB::raw('CAST(company_group_name AS text)'), '');
-                                }
-                            });
-                        } elseif ($key === 'organization_group_id' && $resourceSlug === 'users') {
-                            $hasEmpty = in_array('__empty__', $vals, true) || in_array('empty', $vals, true) || in_array('-', $vals, true);
-                            $concreteVals = array_values(array_filter($vals, fn ($v) => ! in_array($v, ['__empty__', 'empty', 'null', '-'], true)));
-                            $orgGroupNames = ! empty($concreteVals) ? \App\Models\OrganizationGroup::whereIn('id', $concreteVals)->pluck('name')->toArray() : [];
-                            $orgGroupIds = ! empty($concreteVals) ? \App\Models\OrganizationGroup::whereIn('id', $concreteVals)->pluck('idorg_group')->filter()->toArray() : [];
-
-                            $query->where(function ($q) use ($concreteVals, $orgGroupNames, $orgGroupIds, $hasEmpty) {
-                                if (! empty($concreteVals)) {
-                                    $q->whereHas('department', function ($deptQ) use ($orgGroupNames, $orgGroupIds) {
-                                        $deptQ->where(function ($subQ) use ($orgGroupNames, $orgGroupIds) {
-                                            if (! empty($orgGroupNames)) {
-                                                $subQ->whereIn('org_group_name', $orgGroupNames);
-                                            }
-                                            if (! empty($orgGroupIds)) {
-                                                $subQ->orWhereIn('idorg_group', $orgGroupIds);
-                                            }
-                                        });
-                                    });
-                                }
-                                if ($hasEmpty) {
-                                    $q->orWhereNull('department_id')
-                                        ->orWhereDoesntHave('department')
-                                        ->orWhereHas('department', function ($deptQ) {
-                                            $deptQ->whereNull('org_group_name')
-                                                ->orWhere('org_group_name', '');
-                                        });
-                                }
-                            });
-                        } else {
-                            $hasEmpty = in_array('__empty__', $vals, true) || in_array('empty', $vals, true) || in_array('null', $vals, true) || in_array('-', $vals, true);
-                            $concreteVals = array_values(array_filter($vals, fn ($v) => ! in_array($v, ['__empty__', 'empty', 'null', '-'], true)));
-
-                            if ($hasEmpty && ! empty($concreteVals)) {
-                                $query->where(function ($q) use ($key, $concreteVals) {
-                                    $q->whereIn($key, $concreteVals)
-                                        ->orWhereNull($key)
-                                        ->orWhere(DB::raw("CAST({$key} AS text)"), '');
-                                });
-                            } elseif ($hasEmpty) {
-                                $query->where(function ($q) use ($key) {
-                                    $q->whereNull($key)
-                                        ->orWhere(DB::raw("CAST({$key} AS text)"), '');
-                                });
-                            } else {
-                                $query->whereIn($key, $concreteVals);
-                            }
-                        }
-                    }
-                } else {
-                    if ($key === 'is_used' || $key === 'is_active') {
-                        $boolVal = ($val === '1' || $val === 1 || $val === true || $val === 'true');
-                        $query->where($key, $boolVal);
-                    } elseif ($key === 'company_group_id' && in_array($resourceSlug, ['companies', 'business-units', 'locations'])) {
-                        if (in_array($val, ['__empty__', 'empty', 'null', '-'], true)) {
-                            $query->where(function ($q) {
-                                $q->whereNull('company_group_id')
-                                    ->orWhere(DB::raw('CAST(company_group_id AS text)'), '')
-                                    ->orWhereNull('company_group_name')
-                                    ->orWhere(DB::raw('CAST(company_group_name AS text)'), '');
-                            });
-                        } else {
-                            $groupName = CompanyGroup::find($val)?->name;
-                            $query->where(function ($q) use ($val, $groupName) {
-                                $q->where('company_group_id', $val);
-                                if ($groupName) {
-                                    $q->orWhere('company_group_name', $groupName);
-                                }
-                            });
-                        }
-                    } elseif ($key === 'organization_group_id' && $resourceSlug === 'users') {
-                        if (in_array($val, ['__empty__', 'empty', 'null', '-'], true)) {
-                            $query->where(function ($q) {
-                                $q->whereNull('department_id')
-                                    ->orWhereDoesntHave('department')
-                                    ->orWhereHas('department', function ($deptQ) {
-                                        $deptQ->whereNull('org_group_name')
-                                            ->orWhere('org_group_name', '');
-                                    });
-                            });
-                        } else {
-                            $orgGroup = \App\Models\OrganizationGroup::find($val);
-                            $orgGroupName = $orgGroup?->name;
-                            $idOrgGroup = $orgGroup?->idorg_group;
-
-                            $query->whereHas('department', function ($deptQ) use ($orgGroupName, $idOrgGroup) {
-                                $deptQ->where(function ($subQ) use ($orgGroupName, $idOrgGroup) {
-                                    if ($orgGroupName) {
-                                        $subQ->where('org_group_name', $orgGroupName);
-                                    }
-                                    if ($idOrgGroup) {
-                                        $subQ->orWhere('idorg_group', $idOrgGroup);
-                                    }
-                                });
-                            });
-                        }
-                    } else {
-                        if (in_array($val, ['__empty__', 'empty', 'null', '-'], true)) {
-                            $query->where(function ($q) use ($key) {
-                                $q->whereNull($key)
-                                    ->orWhere(DB::raw("CAST({$key} AS text)"), '');
-                            });
-                        } else {
-                            $query->where($key, $val);
-                        }
-                    }
-                }
-            }
-        }
-
-        // Apply default is_used = true and is_active = true if not explicitly provided and column exists on table
-        if (! $isUsedRequested && $hasIsUsedColumn) {
-            $query->where('is_used', true);
-        }
-        if (! $isActiveRequested && $hasIsActiveColumn) {
-            $query->where('is_active', true);
-        }
-
-        // Implement sorting
-        $sortBy = $request->input('sort_by');
-        $sortDir = strtolower($request->input('sort_dir', 'asc')) === 'desc' ? 'desc' : 'asc';
-        $modelInstance = new $modelClass;
-        $tableName = $modelInstance->getTable();
-
-        if ($sortBy) {
-            $sortColumnMap = [
-                'user_identity' => 'name',
-                'position_access' => 'jobtitle_name',
-                'placement_org' => 'company_name',
-                'company_identity' => 'name',
-                'org_structure' => 'company_group_name',
-                'legal_integration' => 'npwp',
-                'location_identity' => 'name',
-                'location_group' => 'location_group_name',
-                'region_group' => 'location_group_name',
-                'bu_identity' => 'name',
-                'company_placement' => 'company_name',
-                'role_name' => 'roleRelation.name',
-                'role' => 'roleRelation.name',
-                'division_name' => 'division.name',
-                'department_name' => 'department.name',
-                'org_group_name' => 'department.org_group_name',
-                'company_group_name' => 'companyGroup.name',
-                'company_group_code' => 'companyGroup.code',
-                'region_name' => 'region.name',
-            ];
-            $actualSortBy = $sortColumnMap[$sortBy] ?? $sortBy;
-
-            if (str_contains($actualSortBy, '.')) {
-                [$relation, $relColumn] = explode('.', $actualSortBy, 2);
-                $method = method_exists($modelInstance, $relation) ? $relation : Str::camel($relation);
-                if (method_exists($modelInstance, $method)) {
-                    $relationInstance = $modelInstance->{$method}();
-                    if ($relationInstance instanceof BelongsTo) {
-                        $relatedModel = $relationInstance->getRelated();
-                        $relatedTable = $relatedModel->getTable();
-                        $foreignKey = $relationInstance->getForeignKeyName();
-                        $ownerKey = $relationInstance->getOwnerKeyName();
-
-                        $query->orderBy(
-                            $relatedModel->newQuery()
-                                ->select($relColumn)
-                                ->whereColumn("{$relatedTable}.{$ownerKey}", "{$tableName}.{$foreignKey}")
-                                ->limit(1),
-                            $sortDir
-                        );
-                    } else {
-                        $query->orderBy("{$tableName}.id", $sortDir);
-                    }
-                } else {
-                    $query->orderBy("{$tableName}.id", $sortDir);
-                }
-            } else {
-                if (Schema::hasColumn($tableName, $actualSortBy)) {
-                    $query->orderBy("{$tableName}.{$actualSortBy}", $sortDir);
-                } else {
-                    $query->orderBy("{$tableName}.id", $sortDir);
-                }
-            }
-        } elseif (! empty($resourceClass::$defaultSortBy)) {
-            $defaultCol = $resourceClass::$defaultSortBy;
-            if (Schema::hasColumn($tableName, $defaultCol)) {
-                $query->orderBy("{$tableName}.{$defaultCol}", $resourceClass::$defaultSortDir ?? 'asc');
-            } else {
-                $query->latest("{$tableName}.id");
-            }
-        } else {
-            $query->latest("{$tableName}.id");
-        }
 
         // Execute pagination
         $perPage = $request->input('per_page', 15);
@@ -476,14 +159,33 @@ class ResourceController extends Controller
         $resourceClass = $this->getResourceClass($resourceSlug);
         $returnUrl = $request->query('return_url');
 
-        return Inertia::render('Core/ResourceForm', [
+        $extraProps = [];
+        if ($resourceSlug === 'dashboard-types') {
+            $extraProps = [
+                'roles' => \App\Models\Role::select('id', 'name')->orderBy('name')->get(),
+                'departments' => \App\Models\Department::select('id', 'name', 'code', 'idorg_group', 'org_group_name')->where('is_used', true)->orderBy('name')->get(),
+                'divisions' => \App\Models\Division::select('id', 'name', 'code', 'department_id')->orderBy('name')->get(),
+                'locations' => \App\Models\Location::select('id', 'name', 'code')->where('is_used', true)->orderBy('name')->get(),
+                'users' => \App\Models\User::select('id', 'name', 'email', 'nik', 'username', 'role_id', 'department_id', 'division_id', 'company_id', 'company_name', 'org_name', 'location_id', 'idlocation', 'location_name', 'company_group_id', 'region_id', 'is_used')
+                    ->with(['department:id,name,idorg_group,org_group_name', 'company:id,name,company_group_name,region_name', 'location:id,name,code'])
+                    ->where('is_used', true)
+                    ->orderBy('name')
+                    ->get(),
+                'companyGroups' => \App\Models\CompanyGroup::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
+                'organizationGroups' => \App\Models\OrganizationGroup::select('id', 'name', 'code', 'idorg_group')->where('is_used', true)->orderBy('name')->get(),
+                'regions' => \App\Models\Region::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
+                'companies' => \App\Models\Company::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
+            ];
+        }
+
+        return Inertia::render('Core/ResourceForm', array_merge([
             'resourceSlug' => $resourceSlug,
             'title' => $resourceClass::getTitle(),
             'formSchema' => $resourceClass::form(),
             'formColumns' => $resourceClass::$formColumns ?? 1,
             'record' => null,
             'returnUrl' => $returnUrl,
-        ]);
+        ], $extraProps));
     }
 
     public function store(Request $request, string $resourceSlug)
@@ -506,7 +208,15 @@ class ResourceController extends Controller
         $columns = Schema::getColumnListing((new $modelClass)->getTable());
         $saveData = array_intersect_key($validated, array_flip($columns));
 
-        $modelClass::create($saveData);
+        $created = $modelClass::create($saveData);
+
+        if ($resourceSlug === 'dashboard-types' && $request->has('authorities')) {
+            $this->authoritySyncService->sync(
+                Authority::CONTEXT_DASHBOARD_TYPE,
+                $created->id,
+                (array) $request->input('authorities', [])
+            );
+        }
 
         $returnUrl = $request->input('return_url') ?: $request->query('return_url');
         if ($returnUrl && (str_starts_with($returnUrl, '/admin/core/') || str_starts_with($returnUrl, url('/admin/core/')))) {
@@ -523,6 +233,29 @@ class ResourceController extends Controller
         $withRelations = $resourceClass::$with ?? [];
         $record = ! empty($withRelations) ? $modelClass::with($withRelations)->findOrFail($id) : $modelClass::findOrFail($id);
         $returnUrl = $request->query('return_url');
+
+        $extraProps = [];
+
+        if ($resourceSlug === 'dashboard-types' && $record instanceof \App\Models\DashboardType) {
+            $authorities = $this->authoritySyncService->getForContext(Authority::CONTEXT_DASHBOARD_TYPE, $record->id);
+            $record->setAttribute('authorities', $authorities);
+
+            $extraProps = [
+                'roles' => \App\Models\Role::select('id', 'name')->orderBy('name')->get(),
+                'departments' => \App\Models\Department::select('id', 'name', 'code', 'idorg_group', 'org_group_name')->where('is_used', true)->orderBy('name')->get(),
+                'divisions' => \App\Models\Division::select('id', 'name', 'code', 'department_id')->orderBy('name')->get(),
+                'locations' => \App\Models\Location::select('id', 'name', 'code')->where('is_used', true)->orderBy('name')->get(),
+                'users' => \App\Models\User::select('id', 'name', 'email', 'nik', 'username', 'role_id', 'department_id', 'division_id', 'company_id', 'company_name', 'org_name', 'location_id', 'idlocation', 'location_name', 'company_group_id', 'region_id', 'is_used')
+                    ->with(['department:id,name,idorg_group,org_group_name', 'company:id,name,company_group_name,region_name', 'location:id,name,code'])
+                    ->where('is_used', true)
+                    ->orderBy('name')
+                    ->get(),
+                'companyGroups' => \App\Models\CompanyGroup::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
+                'organizationGroups' => \App\Models\OrganizationGroup::select('id', 'name', 'code', 'idorg_group')->where('is_used', true)->orderBy('name')->get(),
+                'regions' => \App\Models\Region::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
+                'companies' => \App\Models\Company::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
+            ];
+        }
 
         if ($resourceSlug === 'users' && $record instanceof \App\Models\User) {
             $resolvedType = \App\Models\DashboardType::resolveForUser($record);
@@ -547,14 +280,14 @@ class ResourceController extends Controller
             ]);
         }
 
-        return Inertia::render('Core/ResourceForm', [
+        return Inertia::render('Core/ResourceForm', array_merge([
             'resourceSlug' => $resourceSlug,
             'title' => $resourceClass::getTitle(),
             'formSchema' => $resourceClass::form(),
             'formColumns' => $resourceClass::$formColumns ?? 1,
             'record' => $record,
             'returnUrl' => $returnUrl,
-        ]);
+        ], $extraProps));
     }
 
     public function vendorDocument(Request $request, $id)
@@ -649,10 +382,18 @@ class ResourceController extends Controller
             unset($validated['password']);
         }
 
-        $columns = Schema::getColumnListing($record->getTable());
+        $columns = Schema::getColumnListing((new $modelClass)->getTable());
         $saveData = array_intersect_key($validated, array_flip($columns));
 
         $record->update($saveData);
+
+        if ($resourceSlug === 'dashboard-types' && $request->has('authorities')) {
+            $this->authoritySyncService->sync(
+                Authority::CONTEXT_DASHBOARD_TYPE,
+                $record->id,
+                (array) $request->input('authorities', [])
+            );
+        }
 
         $returnUrl = $request->input('return_url') ?: $request->query('return_url');
         if ($returnUrl && (str_starts_with($returnUrl, '/admin/core/') || str_starts_with($returnUrl, url('/admin/core/')))) {

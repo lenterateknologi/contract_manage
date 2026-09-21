@@ -9,6 +9,7 @@ use App\Core\Crud\Fields\SelectInput;
 use App\Core\Crud\Fields\TextareaInput;
 use App\Core\Crud\Fields\TextInput;
 use App\Core\Crud\Fields\ToggleInput;
+use App\Core\Crud\Fields\TreeSelectInput;
 use App\Core\Crud\Filters\Filter;
 use App\Core\Crud\Resource;
 use App\Models\BusinessUnit;
@@ -20,8 +21,11 @@ use App\Models\Department;
 use App\Models\Division;
 use App\Models\JobLevel;
 use App\Models\JobTitle;
+use App\Models\Location;
+use App\Models\OrganizationGroup;
 use App\Models\Region;
 use App\Models\Role;
+use App\Models\User;
 
 class DashboardTypeResource extends Resource
 {
@@ -29,7 +33,7 @@ class DashboardTypeResource extends Resource
 
     public static array $with = ['role', 'division', 'department'];
 
-    public static ?string $title = 'Tipe Dashboard';
+    public static ?string $title = 'Profil Otoritas & Hak Akses';
 
     public static int $formColumns = 3;
 
@@ -38,11 +42,14 @@ class DashboardTypeResource extends Resource
     public static function table(): array
     {
         return [
-            TextColumn::make('name', 'Nama Tipe')->sortable()->searchable(),
+            TextColumn::make('name', 'Nama Profil')->sortable()->searchable(),
+            TextColumn::make('priority', 'Tingkat Prioritas (Level)')->sortable()->alignCenter(),
             TextColumn::make('contract_type_names', 'Tipe Kontrak')->sortable(),
             TextColumn::make('role_names', 'Role Akses')->sortable(),
+            TextColumn::make('org_group_names', 'Grup Organisasi')->sortable(),
             TextColumn::make('division_names', 'Divisi')->sortable(),
             TextColumn::make('department_names', 'Departemen')->sortable(),
+            TextColumn::make('location_names', 'Lokasi')->sortable(),
             TextColumn::make('users_count', 'Total User')->alignRight(),
             BooleanColumn::make('show_overview', 'Ringkasan (Semua)'),
             BooleanColumn::make('show_overview_contract', 'Ringkasan Kontrak'),
@@ -56,18 +63,29 @@ class DashboardTypeResource extends Resource
     public static function form(): array
     {
         return [
-            Section::make('Informasi & Identitas Konfigurasi', [
-                TextInput::make('name', 'Nama Tipe Dashboard')
+            Section::make('Informasi & Identitas Profil Otoritas', [
+                TextInput::make('name', 'Nama Profil Otoritas')
                     ->required()
                     ->rules(['string', 'max:255'])
-                    ->helperText('Contoh: Dashboard Manager Vendor, Dashboard Procurement, dll.'),
+                    ->helperText('Contoh: Otoritas Manager Legal (Khusus Kontrak), Otoritas Procurement, dll.'),
+                TextInput::make('priority', 'Leveling / Prioritas Evaluasi (1 = Prioritas Tertinggi / Khusus)')
+                    ->required()
+                    ->default(10)
+                    ->rules(['required', 'integer', 'min:1'])
+                    ->helperText('Angka lebih kecil = diprioritaskan lebih dulu. Misal Level 1 untuk Profil Khusus Manager, Level 2 untuk Profil General.'),
                 TextareaInput::make('description', 'Deskripsi')
                     ->rules(['nullable', 'string'])
-                    ->helperText('Penjelasan peruntukan tipe dashboard ini.')
+                    ->helperText('Penjelasan batasan akses, kuncian tipe pengajuan, dan visibilitas profil ini.')
                     ->columnSpan(2),
-            ])->icon('LayoutDashboard'),
+            ])->icon('ShieldCheck'),
 
             Section::make('Target Pengguna (User Matrix)', [
+                SelectInput::make('user_ids', 'Pengguna Spesifik (Akun User Tertentu)')
+                    ->multiple(true)
+                    ->options(fn () => User::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray())
+                    ->placeholder('Pilih satu atau lebih Akun Pengguna...')
+                    ->searchable()
+                    ->helperText('Jika diisi, profil otoritas ini menjadi prioritas utama bagi akun pengguna terpilih.'),
                 SelectInput::make('role_ids', 'Role Akses')
                     ->multiple(true)
                     ->options(fn () => Role::orderBy('name')->pluck('name', 'id')->toArray())
@@ -88,64 +106,70 @@ class DashboardTypeResource extends Resource
                     ->helperText('Kosongkan jika berlaku untuk semua jabatan.'),
             ])->icon('Users'),
 
-            Section::make('Cakupan Dokumen & Pengajuan (Document Scoping)', [
-                SelectInput::make('contract_type_ids', 'Tipe Kontrak')
+            Section::make('Kuncian Tipe Pengajuan (Document Scoping)', [
+                TreeSelectInput::make('contract_type_ids', 'Tipe Kontrak (Hierarki Tree)')
                     ->multiple(true)
-                    ->options(fn () => ContractType::orderBy('name')->pluck('name', 'id')->toArray())
-                    ->placeholder('Pilih satu atau lebih Tipe Kontrak...')
-                    ->searchable()
-                    ->helperText('Hanya pengajuan dengan tipe kontrak yang dipilih yang akan dihitung & ditampilkan pada dashboard user. Kosongkan untuk semua tipe.'),
-                SelectInput::make('categories', 'Kategori Pengajuan')
-                    ->multiple(true)
-                    ->options([
-                        'contract' => 'Kontrak',
-                        'non-contract' => 'Non Kontrak',
-                        'nda' => 'NDA',
-                    ])
-                    ->placeholder('Pilih Kategori...')
-                    ->helperText('Kosongkan jika mencakup semua kategori.'),
+                    ->options(fn () => ContractType::orderBy('name')->get()->map(fn ($t) => [
+                        'id' => $t->id,
+                        'name' => $t->name,
+                        'parent_id' => $t->parent_id,
+                    ])->toArray())
+                    ->placeholder('Pilih satu atau lebih Tipe Kontrak (Hierarki)...')
+                    ->helperText('Hanya pengajuan dengan tipe kontrak yang dipilih yang dapat dilihat dan diakses oleh user. Kosongkan untuk semua tipe.'),
             ])->icon('FileText'),
 
-            Section::make('Cakupan Organisasi & Dynamic Scoping', [
+            Section::make('Cakupan Organisasi & Pembatasan Antar Departemen', [
+                SelectInput::make('org_group_ids', 'Grup Organisasi (Organization Group)')
+                    ->multiple(true)
+                    ->options(fn () => OrganizationGroup::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray())
+                    ->placeholder('Pilih satu atau lebih Grup Organisasi...')
+                    ->searchable()
+                    ->helperText('Kosongkan untuk mengunci hanya ke grup organisasi user sendiri, atau pilih grup organisasi spesifik.'),
                 SelectInput::make('division_ids', 'Divisi')
                     ->multiple(true)
                     ->options(fn () => Division::orderBy('name')->pluck('name', 'id')->toArray())
                     ->placeholder('Pilih satu atau lebih Divisi...')
                     ->searchable()
-                    ->helperText('Pilih divisi spesifik atau aktifkan switch "Sesuai Profil User" di kanan atas.'),
+                    ->helperText('Kosongkan untuk mengunci hanya ke divisi user sendiri, atau pilih divisi spesifik yang diizinkan.'),
                 SelectInput::make('department_ids', 'Departemen')
                     ->multiple(true)
                     ->options(fn () => Department::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray())
                     ->placeholder('Pilih satu atau lebih Departemen...')
                     ->searchable()
-                    ->helperText('Pilih departemen spesifik atau aktifkan switch "Sesuai Profil User" di kanan atas.'),
+                    ->helperText('Kosongkan untuk mengunci hanya ke departemen user sendiri, atau pilih departemen spesifik yang diizinkan.'),
                 SelectInput::make('company_ids', 'Perusahaan (Company)')
                     ->multiple(true)
                     ->options(fn () => Company::orderBy('name')->pluck('name', 'id')->toArray())
                     ->placeholder('Pilih Perusahaan...')
                     ->searchable()
-                    ->helperText('Pilih perusahaan spesifik atau aktifkan switch "Sesuai Profil User" di kanan atas.'),
+                    ->helperText('Kosongkan untuk mengunci hanya ke perusahaan user sendiri, atau pilih perusahaan spesifik yang diizinkan.'),
                 SelectInput::make('company_group_ids', 'Grup Perusahaan')
                     ->multiple(true)
                     ->options(fn () => CompanyGroup::orderBy('name')->pluck('name', 'id')->toArray())
                     ->placeholder('Pilih Grup Perusahaan...')
                     ->searchable()
-                    ->helperText('Pilih grup perusahaan spesifik atau aktifkan switch "Sesuai Profil User" di kanan atas.'),
+                    ->helperText('Kosongkan untuk mengunci hanya ke grup perusahaan user sendiri, atau pilih grup spesifik yang diizinkan.'),
                 SelectInput::make('region_ids', 'Region / Wilayah')
                     ->multiple(true)
                     ->options(fn () => Region::orderBy('name')->pluck('name', 'id')->toArray())
                     ->placeholder('Pilih Wilayah (Region)...')
                     ->searchable()
-                    ->helperText('Pilih region spesifik atau aktifkan switch "Sesuai Profil User" di kanan atas.'),
+                    ->helperText('Kosongkan untuk mengunci hanya ke wilayah user sendiri, atau pilih wilayah spesifik yang diizinkan.'),
+                SelectInput::make('location_ids', 'Lokasi (Location)')
+                    ->multiple(true)
+                    ->options(fn () => Location::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray())
+                    ->placeholder('Pilih satu atau lebih Lokasi...')
+                    ->searchable()
+                    ->helperText('Kosongkan untuk mengunci hanya ke lokasi user sendiri, atau pilih lokasi spesifik yang diizinkan.'),
                 SelectInput::make('business_unit_ids', 'Unit Bisnis (Business Unit)')
                     ->multiple(true)
                     ->options(fn () => BusinessUnit::orderBy('name')->pluck('name', 'id')->toArray())
                     ->placeholder('Pilih Unit Bisnis...')
                     ->searchable()
-                    ->helperText('Kosongkan untuk mencakup semua unit bisnis.'),
+                    ->helperText('Kosongkan untuk mengunci ke unit bisnis user sendiri, atau pilih unit bisnis spesifik.'),
             ])->icon('Building2'),
 
-            Section::make('Konfigurasi Visibility Tab Dashboard', [
+            Section::make('Visibilitas Tab Ringkasan & Dashboard', [
                 ToggleInput::make('show_overview', 'Ringkasan Semua (Gabungan)')
                     ->default(false)
                     ->icon('LayoutGrid')

@@ -3,11 +3,12 @@
 namespace Database\Seeders\Business;
 
 use App\Enums\WorkflowAction;
+use App\Models\Authority;
+use App\Models\ContractType;
 use App\Models\Role;
 use App\Models\Workflow;
 use App\Models\WorkflowStep;
 use App\Models\WorkflowStepAction;
-use App\Models\WorkflowStepAuthority;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -18,8 +19,9 @@ class ModularNonContractWorkflowSeeder extends Seeder
         $roleMap = Role::pluck('id', 'name')->toArray();
         $staffRoleId = $roleMap['Staff'] ?? null;
         $managerRoleId = $roleMap['Manager'] ?? null;
-        $astManagerLegalRoleId = $roleMap['Ast Manager Legal'] ?? ($roleMap['Ast Manager'] ?? null);
-        $managerLegalRoleId = $roleMap['Manager Legal'] ?? ($roleMap['Manager'] ?? null);
+        $vpRoleId = $roleMap['VP'] ?? ($roleMap['Director'] ?? null);
+        $astManagerLegalRoleId = $roleMap['Ast Manager Legal'] ?? null;
+        $managerLegalRoleId = $roleMap['Manager Legal'] ?? null;
         $staffLegalRoleId = $roleMap['Staff Legal'] ?? ($roleMap['Staff'] ?? null);
 
         // Cleanup existing modular workflows if previously created
@@ -31,9 +33,10 @@ class ModularNonContractWorkflowSeeder extends Seeder
         ])->pluck('id')->toArray();
 
         if (!empty($existingWfIds)) {
-            WorkflowStepAuthority::whereIn('workflow_step_id', function ($q) use ($existingWfIds) {
-                $q->select('id')->from('m_workflow_steps')->whereIn('workflow_id', $existingWfIds);
-            })->delete();
+            Authority::where('context_type', Authority::CONTEXT_WORKFLOW_STEP)
+                ->whereIn('context_id', function ($q) use ($existingWfIds) {
+                    $q->select('id')->from('m_workflow_steps')->whereIn('workflow_id', $existingWfIds);
+                })->delete();
 
             WorkflowStepAction::whereIn('workflow_step_id', function ($q) use ($existingWfIds) {
                 $q->select('id')->from('m_workflow_steps')->whereIn('workflow_id', $existingWfIds);

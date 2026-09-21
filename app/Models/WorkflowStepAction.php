@@ -71,6 +71,6 @@ class WorkflowStepAction extends Model
 
     public function additionalAuthorities(): HasMany
     {
-        return $this->hasMany(WorkflowStepAuthority::class, 'workflow_step_action_id');
+        return $this->hasMany(Authority::class, 'workflow_step_action_id');
     }
 }

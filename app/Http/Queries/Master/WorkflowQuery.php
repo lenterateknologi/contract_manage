@@ -105,6 +105,7 @@ class WorkflowQuery
             'steps.approverAuthorities.companyGroup',
             'steps.approverAuthorities.company',
             'steps.approverAuthorities.region',
+            'steps.approverAuthorities.organizationGroup',
             'steps.actions.additionalAuthorities',
             'initiatorAuthorities.role',
             'initiatorAuthorities.department',
@@ -113,6 +114,7 @@ class WorkflowQuery
             'initiatorAuthorities.companyGroup',
             'initiatorAuthorities.company',
             'initiatorAuthorities.region',
+            'initiatorAuthorities.organizationGroup',
         ])->findOrFail($id);
     }
 

@@ -19,11 +19,10 @@ use App\Models\Region;
 use App\Models\Role;
 use App\Models\RoleModuleGroup;
 use App\Models\User;
+use App\Models\Authority;
 use App\Models\Workflow;
-use App\Models\WorkflowInitiatorAuthority;
 use App\Models\WorkflowStep;
 use App\Models\WorkflowStepAction;
-use App\Models\WorkflowStepAuthority;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -565,14 +564,15 @@ class MasterDataImportService
                 $cgId = ! empty($auth['company_group_id']) ? ($this->companyGroupIdMap[$auth['company_group_id']] ?? $auth['company_group_id']) : null;
                 $rgId = ! empty($auth['region_id']) ? ($this->regionIdMap[$auth['region_id']] ?? $auth['region_id']) : null;
 
-                $model = WorkflowInitiatorAuthority::firstOrNew(['id' => $auth['id']]);
+                $model = Authority::firstOrNew(['id' => $auth['id']]);
                 $model->forceFill([
-                    'workflow_id' => $wfId,
+                    'context_type' => Authority::CONTEXT_WORKFLOW_INITIATOR,
+                    'context_id' => $wfId,
                     'role_id' => $auth['role_id'] ?? null,
                     'department_id' => $deptId,
                     'division_id' => $auth['division_id'] ?? null,
                     'user_id' => $newUserId,
-                    'authority_type' => $auth['authority_type'] ?? null,
+                    'authority_type' => $auth['authority_type'] ?? 'group',
                     'company_group_id' => $cgId,
                     'region_id' => $rgId,
                     'role_use_initiator' => $auth['role_use_initiator'] ?? false,
@@ -580,10 +580,11 @@ class MasterDataImportService
                     'division_use_initiator' => $auth['division_use_initiator'] ?? false,
                     'company_group_use_initiator' => $auth['company_group_use_initiator'] ?? false,
                     'region_use_initiator' => $auth['region_use_initiator'] ?? false,
+                    'is_active' => true,
                 ])->save();
                 $this->counts['workflow_initiator_authorities']++;
             } catch (\Exception $e) {
-                Log::warning('Gagal mengimpor WorkflowInitiatorAuthority ID '.($auth['id'] ?? '').': '.$e->getMessage());
+                Log::warning('Gagal mengimpor Authority (workflow_initiator) ID '.($auth['id'] ?? '').': '.$e->getMessage());
             }
         }
     }
@@ -688,14 +689,15 @@ class MasterDataImportService
                 $wsActionId = ! empty($auth['workflow_step_action_id']) ? ($this->workflowStepIdMap[$auth['workflow_step_action_id']] ?? $auth['workflow_step_action_id']) : null;
                 $wsTargetId = ! empty($auth['target_step_id']) ? ($this->workflowStepIdMap[$auth['target_step_id']] ?? $auth['target_step_id']) : null;
 
-                $model = WorkflowStepAuthority::firstOrNew(['id' => $auth['id']]);
+                $model = Authority::firstOrNew(['id' => $auth['id']]);
                 $model->forceFill([
-                    'workflow_step_id' => $stepId,
+                    'context_type' => Authority::CONTEXT_WORKFLOW_STEP,
+                    'context_id' => $stepId,
                     'role_id' => $auth['role_id'] ?? null,
                     'department_id' => $deptId,
                     'division_id' => $divId,
                     'user_id' => $newUserId,
-                    'authority_type' => $auth['authority_type'] ?? null,
+                    'authority_type' => $auth['authority_type'] ?? 'group',
                     'is_additional' => $auth['is_additional'] ?? false,
                     'additional_type' => $auth['additional_type'] ?? null,
                     'workflow_step_action_id' => $wsActionId,
@@ -707,10 +709,11 @@ class MasterDataImportService
                     'division_use_initiator' => $auth['division_use_initiator'] ?? false,
                     'company_group_use_initiator' => $auth['company_group_use_initiator'] ?? false,
                     'region_use_initiator' => $auth['region_use_initiator'] ?? false,
+                    'is_active' => true,
                 ])->save();
                 $this->counts['workflow_step_authorities']++;
             } catch (\Exception $e) {
-                Log::warning('Gagal mengimpor WorkflowStepAuthority ID '.($auth['id'] ?? '').': '.$e->getMessage());
+                Log::warning('Gagal mengimpor Authority (workflow_step) ID '.($auth['id'] ?? '').': '.$e->getMessage());
             }
         }
     }

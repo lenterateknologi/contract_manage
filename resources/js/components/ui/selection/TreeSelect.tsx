@@ -42,6 +42,7 @@ export function TreeSelect({
 }: TreeSelectProps) {
     const [open, setOpen] = React.useState(inline);
     const [search, setSearch] = React.useState('');
+    const [filterTab, setFilterTab] = React.useState<'all' | 'selected'>('all');
     const [expandedParents, setExpandedParents] = React.useState<Record<string, boolean>>({});
     const [isMounted, setIsMounted] = React.useState(false);
     const isSmall = size === 'sm';
@@ -205,24 +206,37 @@ export function TreeSelect({
         }
     }, [selectedIds, multiple, items]);
 
-    // Filtering logic (Preserve full parent-to-child hierarchy on search)
+    // Filtering logic (Preserve full parent-to-child hierarchy on search and selected tab)
     const filteredTree = React.useMemo(() => {
-        if (!search.trim()) return treeData;
-
         const searchLower = search.toLowerCase().trim();
 
         const filterSubtree = (node: any): any | null => {
-            const selfMatches = node.name?.toLowerCase().includes(searchLower);
+            const nId = String(node.id);
+            const matchesSearch = !searchLower || node.name?.toLowerCase().includes(searchLower);
 
-            // If node itself matches the search, return full node with ALL its children intact
-            if (selfMatches) {
-                return node;
-            }
+            // If selected only mode is on, check if self or any descendant is selected
+            const isNodeSelected = selectedIds.includes(nId);
 
-            // Otherwise, check if any of its children match
             const filteredChildren = (node.children || [])
                 .map(filterSubtree)
                 .filter(Boolean);
+
+            if (filterTab === 'selected') {
+                if (isNodeSelected || filteredChildren.length > 0) {
+                    if (matchesSearch || filteredChildren.length > 0) {
+                        return {
+                            ...node,
+                            children: filteredChildren,
+                        };
+                    }
+                }
+                return null;
+            }
+
+            // Normal search mode
+            if (matchesSearch) {
+                return node;
+            }
 
             if (filteredChildren.length > 0) {
                 return {
@@ -235,11 +249,11 @@ export function TreeSelect({
         };
 
         return treeData.map(filterSubtree).filter(Boolean);
-    }, [treeData, search]);
+    }, [treeData, search, filterTab, selectedIds]);
 
-    // Auto expand parents if searching or if defaultExpandAll is true
+    // Auto expand parents if searching or if filterTab is selected or defaultExpandAll
     React.useEffect(() => {
-        if (search.trim() || defaultExpandAll) {
+        if (search.trim() || filterTab === 'selected' || defaultExpandAll) {
             const newExpanded: Record<string, boolean> = {};
             const expandAll = (nodes: any[]) => {
                 nodes.forEach(n => {
@@ -248,15 +262,9 @@ export function TreeSelect({
                 });
             };
             expandAll(filteredTree);
-            
-            if (defaultExpandAll && !search.trim()) {
-                // If just defaulting, we might want to merge or just set
-                setExpandedParents(prev => ({...prev, ...newExpanded}));
-            } else {
-                setExpandedParents(newExpanded);
-            }
+            setExpandedParents(prev => ({...prev, ...newExpanded}));
         }
-    }, [search, filteredTree, defaultExpandAll]);
+    }, [search, filteredTree, filterTab, defaultExpandAll]);
 
     const toggleParentExpansion = (pId: string, e: React.MouseEvent) => {
         e.stopPropagation();
@@ -317,29 +325,29 @@ export function TreeSelect({
                                 }
                             }}
                             className={cn(
-                                "flex flex-1 items-center gap-2 py-1.5 text-left text-sm transition-colors rounded-sm",
+                                "flex flex-1 items-center gap-2 py-1.5 text-left text-sm transition-colors rounded-sm cursor-pointer",
                                 depth === 0 ? "font-semibold px-3" : "font-medium px-2",
-                                fullySelected ? "text-accent-foreground" : "text-popover-foreground/80"
+                                fullySelected ? "text-primary font-medium" : "text-popover-foreground/80"
                             )}
                         >
                             {(!disableParentSelection || !hasChildren) && (
                                 multiple ? (
                                     <div className={cn(
-                                        "flex h-3.5 w-3.5 items-center justify-center rounded border transition-all",
+                                        "flex h-3.5 w-3.5 items-center justify-center rounded border transition-all shrink-0",
                                         fullySelected 
-                                            ? "border-sidebar-primary bg-sidebar-primary text-sidebar-primary-foreground" 
+                                            ? "border-primary bg-primary text-primary-foreground" 
                                             : partiallySelected 
-                                                ? "border-sidebar-primary bg-sidebar-primary/20 text-sidebar-primary"
-                                                : "border-sidebar-border bg-transparent group-hover:border-sidebar-foreground/30"
+                                                ? "border-primary bg-primary/20 text-primary"
+                                                : "border-border bg-transparent group-hover:border-foreground/30"
                                     )}>
                                         {fullySelected ? <Check size={10} /> : partiallySelected ? <div className="h-1 w-1.5 rounded-sm bg-current" /> : null}
                                     </div>
                                 ) : (
                                     <div className={cn(
-                                        "flex h-3.5 w-3.5 items-center justify-center rounded-full border transition-all",
+                                        "flex h-3.5 w-3.5 items-center justify-center rounded-full border transition-all shrink-0",
                                         fullySelected 
-                                            ? "border-sidebar-primary bg-sidebar-primary text-sidebar-primary-foreground" 
-                                            : "border-sidebar-border bg-transparent group-hover:border-sidebar-foreground/30"
+                                            ? "border-primary bg-primary text-primary-foreground" 
+                                            : "border-border bg-transparent group-hover:border-foreground/30"
                                     )}>
                                         {fullySelected && <div className="h-1.5 w-1.5 rounded-full bg-current" />}
                                     </div>
@@ -352,7 +360,7 @@ export function TreeSelect({
                             <button
                                 type="button"
                                 onClick={(e) => toggleParentExpansion(nId, e)}
-                                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-sidebar-foreground/40 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+                                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors cursor-pointer"
                             >
                                 <ChevronDown 
                                     size={14} 
@@ -377,27 +385,88 @@ export function TreeSelect({
             id="tree-select-dropdown"
             className={cn(
                 "flex flex-col text-popover-foreground",
-                inline ? "w-full space-y-3" : "absolute left-0 right-0 top-full z-50 mt-1 max-h-[350px] overflow-hidden rounded-xl border border-border bg-popover shadow-md animate-in fade-in-0 zoom-in-95"
+                inline ? "w-full space-y-2" : "absolute left-0 right-0 top-full z-50 mt-1 max-h-[380px] overflow-hidden rounded-xl border border-border bg-popover shadow-lg animate-in fade-in-0 zoom-in-95 p-2"
             )}
         >
-            {/* Shadcn cmdk-style search (Pinned sticky header) */}
-            <div className={cn(
-                "flex items-center px-3 shrink-0 bg-white dark:bg-zinc-900 z-10",
-                inline ? "sticky top-0 rounded-xl border border-slate-200/80 dark:border-zinc-700/80 shadow-xs" : "border-b border-border"
-            )}>
-                <Search size={14} className="mr-2 shrink-0 text-muted-foreground" />
-                <input
-                    autoFocus={!inline}
-                    value={search}
-                    onChange={e => setSearch(e.target.value)}
-                    placeholder={searchPlaceholder}
-                    className="flex h-10 w-full bg-transparent py-2 text-sm outline-none placeholder:text-muted-foreground"
-                />
+            {/* Search & Filter Header */}
+            <div className="flex flex-col gap-1.5 pb-1">
+                <div className={cn(
+                    "flex items-center px-3 shrink-0 bg-background rounded-md border border-border",
+                    inline && "sticky top-0 z-10"
+                )}>
+                    <Search size={14} className="mr-2 shrink-0 text-muted-foreground" />
+                    <input
+                        autoFocus={!inline}
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                        placeholder={searchPlaceholder}
+                        className="flex h-9 w-full bg-transparent py-1.5 text-sm outline-none placeholder:text-muted-foreground"
+                    />
+                </div>
+
+                {/* Filter Tabs (when multiple is enabled) */}
+                {multiple && (
+                    <div className="flex items-center justify-between bg-muted/50 p-1 rounded-md border border-border/50 text-xs">
+                        <div className="flex items-center gap-1">
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setFilterTab('all');
+                                }}
+                                className={cn(
+                                    "px-2.5 py-1 rounded text-xs font-medium transition-all cursor-pointer",
+                                    filterTab === 'all'
+                                        ? "bg-background text-foreground shadow-xs"
+                                        : "text-muted-foreground hover:text-foreground"
+                                )}
+                            >
+                                Semua
+                            </button>
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setFilterTab('selected');
+                                }}
+                                className={cn(
+                                    "px-2.5 py-1 rounded text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5",
+                                    filterTab === 'selected'
+                                        ? "bg-primary text-primary-foreground shadow-xs font-semibold"
+                                        : "text-muted-foreground hover:text-foreground"
+                                )}
+                            >
+                                <span>Hanya Terpilih</span>
+                                <span className={cn(
+                                    "px-1.5 py-0.2 rounded-full text-[10px]",
+                                    filterTab === 'selected' ? "bg-white/20 text-white" : "bg-primary/10 text-primary"
+                                )}>
+                                    {selectedIds.length}
+                                </span>
+                            </button>
+                        </div>
+
+                        {selectedIds.length > 0 && (
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onValueChange([]);
+                                }}
+                                className="text-[11px] text-rose-500 hover:text-rose-600 hover:underline px-1.5 cursor-pointer"
+                            >
+                                Reset
+                            </button>
+                        )}
+                    </div>
+                )}
             </div>
 
-            <div className={cn("p-0.5", inline ? "w-full" : "flex-1 overflow-y-auto max-h-[320px] [scrollbar-width:thin]")}>
+            <div className={cn("p-0.5", inline ? "w-full" : "flex-1 overflow-y-auto max-h-[280px] [scrollbar-width:thin] custom-scrollbar")}>
                 {filteredTree.length === 0 ? (
-                    <div className="py-6 text-center text-sm text-muted-foreground italic">{emptyText}</div>
+                    <div className="py-6 text-center text-sm text-muted-foreground italic">
+                        {filterTab === 'selected' ? 'Belum ada tipe yang dipilih' : emptyText}
+                    </div>
                 ) : (
                     renderTreeNodes(filteredTree)
                 )}
@@ -406,7 +475,7 @@ export function TreeSelect({
     );
 
     return (
-        <div ref={containerRef} className="relative w-full">
+        <div ref={containerRef} className="relative w-full space-y-1">
             {!inline && (
                 <button
                     ref={buttonRef}
@@ -432,6 +501,51 @@ export function TreeSelect({
                     </span>
                     <ChevronDown size={15} className={cn('text-muted-foreground shrink-0 ml-2 transition-transform duration-200', open && 'rotate-180')} />
                 </button>
+            )}
+
+            {/* Selected badges for multi-selection in TreeSelect */}
+            {multiple && !inline && selectedIds.length > 0 && !disabled && (
+                <div className="flex flex-wrap gap-1.5 pt-0.5">
+                    {selectedIds.map(id => {
+                        const item = items.find(i => String(i.id) === id);
+                        const label = item ? item.name : id;
+                        return (
+                            <span
+                                key={id}
+                                className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-medium bg-primary/10 text-primary border border-primary/20 max-w-full"
+                            >
+                                <span className="truncate max-w-[220px]">{label}</span>
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        const newSelected = selectedIds.filter(sid => sid !== id);
+                                        onValueChange(newSelected);
+                                    }}
+                                    className="hover:bg-primary/20 rounded-full p-0.5 cursor-pointer text-primary transition-colors shrink-0"
+                                    title="Hapus tipe ini"
+                                >
+                                    <Check size={10} className="hidden" />
+                                    <span className="font-bold text-xs leading-none">×</span>
+                                </button>
+                            </span>
+                        );
+                    })}
+                    {selectedIds.length > 1 && (
+                        <button
+                            type="button"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                onValueChange([]);
+                            }}
+                            className="text-[10.5px] font-medium text-rose-500 hover:text-rose-600 hover:underline px-1.5 py-0.5 cursor-pointer"
+                        >
+                            Hapus Semua ({selectedIds.length})
+                        </button>
+                    )}
+                </div>
             )}
 
             {dropdownContent}

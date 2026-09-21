@@ -262,6 +262,7 @@ function ContractPage({
     parentCategoryCounts,
     pendingCounts,
     expiryCategoryCounts,
+    userFilterSettings = {},
 }: Readonly<{
     contracts: PaginatedData<Contract>;
     meId: string;
@@ -271,6 +272,7 @@ function ContractPage({
     submissionTypes: any[];
     currentView: View;
     metrics: any;
+    userFilterSettings?: any;
     mineCounts?: {
         all: number;
         kontrak: number;
@@ -1046,36 +1048,92 @@ function ContractPage({
         let tabs: { key: string; label: string; count: number; icon?: any; isActive: boolean }[] = [];
         const activeView = (currentView || view) as string;
 
+        // Ambil filter types dan categories dari user setting (dashboard profile)
+        const allowedTypeIds: string[] = (userFilterSettings?.contract_type_ids || []).map(String);
+        const allowedCategories: string[] = (userFilterSettings?.categories || []).map((c: string) => c.toLowerCase().replace('-', '_'));
+
+        // Cek apakah tipe yang dipilih mengarah ke kategori tertentu jika contract_type_ids ditentukan
+        const resolveAllowedCategoriesFromTypes = (): string[] => {
+            if (allowedCategories.length > 0) return allowedCategories;
+            if (allowedTypeIds.length === 0 || !types || types.length === 0) return [];
+
+            const matchedCats = new Set<string>();
+            const findRootCode = (typeId: string): string | null => {
+                let current = types.find((t: any) => String(t.id) === String(typeId));
+                while (current && current.parent_id) {
+                    const parent = types.find((t: any) => String(t.id) === String(current.parent_id));
+                    if (!parent) break;
+                    current = parent;
+                }
+                return current ? String(current.code || current.name).toUpperCase() : null;
+            };
+
+            for (const typeId of allowedTypeIds) {
+                const root = findRootCode(typeId);
+                if (root) {
+                    if (root.includes('A-1') || (root.includes('KONTRAK') && !root.includes('NON'))) {
+                        matchedCats.add('contract');
+                        matchedCats.add('kontrak');
+                    } else if (root.includes('A-2') || root.includes('NON')) {
+                        matchedCats.add('non_contract');
+                        matchedCats.add('non_kontrak');
+                    } else if (root.includes('NDA') || root.includes('KERAHASIAAN')) {
+                        matchedCats.add('nda');
+                    }
+                }
+            }
+
+            return Array.from(matchedCats);
+        };
+
+        const effectiveAllowedCategories = resolveAllowedCategoriesFromTypes();
+
+        const buildFilteredTabs = (
+            counts: { all?: number; kontrak?: number; non_kontrak?: number; nda?: number } | undefined,
+            activeKey: string,
+            isHistoryPending: boolean = false
+        ) => {
+            if (isHistoryPending) {
+                return [
+                    { key: 'pending', label: 'Perlu Persetujuan', count: pendingCounts?.pending ?? 0, icon: Clock, isActive: activeKey === 'pending' },
+                    { key: 'history', label: 'Riwayat Persetujuan', count: pendingCounts?.history ?? 0, icon: History, isActive: activeKey === 'history' },
+                ];
+            }
+
+            const candidateTabs = [
+                { key: 'kontrak', categoryKey: 'contract', label: 'Kontrak', count: counts?.kontrak ?? 0, icon: FileText, isActive: activeKey === 'kontrak' },
+                { key: 'non_kontrak', categoryKey: 'non_contract', label: 'Non Kontrak', count: counts?.non_kontrak ?? 0, icon: FileCheck, isActive: activeKey === 'non_kontrak' },
+                { key: 'nda', categoryKey: 'nda', label: 'NDA', count: counts?.nda ?? 0, icon: Zap, isActive: activeKey === 'nda' },
+            ];
+
+            const filteredCandidates = effectiveAllowedCategories.length > 0
+                ? candidateTabs.filter((t) => effectiveAllowedCategories.includes(t.categoryKey) || effectiveAllowedCategories.includes(t.key))
+                : candidateTabs;
+
+            // Jika hanya 1 kategori yang diizinkan, langsung tampilkan tab kategori tersebut saja
+            if (filteredCandidates.length === 1) {
+                return filteredCandidates.map((t) => ({ ...t, isActive: true }));
+            }
+
+            // Jika ada lebih dari 1 kategori atau tanpa pembatasan, sertakan tab 'Semua'
+            return [
+                { key: '', label: 'Semua', count: counts?.all ?? 0, icon: LayoutGrid, isActive: !activeKey },
+                ...filteredCandidates,
+            ];
+        };
+
         if (activeView === 'contracts' || activeView === 'admin.contracts' || activeView === 'admin/contracts') {
             const activeKey = filters?.parent_tab || '';
-            tabs = [
-                { key: '', label: 'Semua', count: parentCategoryCounts?.all ?? 0, icon: LayoutGrid, isActive: !activeKey },
-                { key: 'kontrak', label: 'Kontrak', count: parentCategoryCounts?.kontrak ?? 0, icon: FileText, isActive: activeKey === 'kontrak' },
-                { key: 'non_kontrak', label: 'Non Kontrak', count: parentCategoryCounts?.non_kontrak ?? 0, icon: FileCheck, isActive: activeKey === 'non_kontrak' },
-                { key: 'nda', label: 'NDA', count: parentCategoryCounts?.nda ?? 0, icon: Zap, isActive: activeKey === 'nda' },
-            ];
+            tabs = buildFilteredTabs(parentCategoryCounts, activeKey);
         } else if (activeView === 'mine') {
             const activeKey = filters?.mine_tab || '';
-            tabs = [
-                { key: '', label: 'Semua', count: mineCounts?.all ?? 0, icon: LayoutGrid, isActive: !activeKey },
-                { key: 'kontrak', label: 'Kontrak', count: mineCounts?.kontrak ?? 0, icon: FileText, isActive: activeKey === 'kontrak' },
-                { key: 'non_kontrak', label: 'Non Kontrak', count: mineCounts?.non_kontrak ?? 0, icon: FileCheck, isActive: activeKey === 'non_kontrak' },
-                { key: 'nda', label: 'NDA', count: mineCounts?.nda ?? 0, icon: Zap, isActive: activeKey === 'nda' },
-            ];
+            tabs = buildFilteredTabs(mineCounts, activeKey);
         } else if (activeView === 'pending') {
             const activeKey = filters?.pending_tab === 'history' ? 'history' : 'pending';
-            tabs = [
-                { key: 'pending', label: 'Perlu Persetujuan', count: pendingCounts?.pending ?? 0, icon: Clock, isActive: activeKey === 'pending' },
-                { key: 'history', label: 'Riwayat Persetujuan', count: pendingCounts?.history ?? 0, icon: History, isActive: activeKey === 'history' },
-            ];
+            tabs = buildFilteredTabs(undefined, activeKey, true);
         } else if (activeView === 'expiry') {
             const activeKey = filters?.expiry_tab || '';
-            tabs = [
-                { key: '', label: 'Semua', count: expiryCategoryCounts?.all ?? 0, icon: LayoutGrid, isActive: !activeKey },
-                { key: 'kontrak', label: 'Kontrak', count: expiryCategoryCounts?.kontrak ?? 0, icon: FileText, isActive: activeKey === 'kontrak' },
-                { key: 'non_kontrak', label: 'Non Kontrak', count: expiryCategoryCounts?.non_kontrak ?? 0, icon: FileCheck, isActive: activeKey === 'non_kontrak' },
-                { key: 'nda', label: 'NDA', count: expiryCategoryCounts?.nda ?? 0, icon: Zap, isActive: activeKey === 'nda' },
-            ];
+            tabs = buildFilteredTabs(expiryCategoryCounts, activeKey);
         }
 
         if (tabs.length === 0) return null;

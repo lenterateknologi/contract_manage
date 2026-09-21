@@ -22,6 +22,8 @@ class JobLevel extends Model
         'id_job_level_group',
         'job_level_group_id',
         'group_name',
+        'hierarchy_tier',
+        'tier_name',
         'created_by_name',
         'modified_by_name',
         'portal_created_date',
@@ -33,11 +35,31 @@ class JobLevel extends Model
     ];
 
     protected $casts = [
+        'hierarchy_tier' => 'integer',
         'is_active' => 'boolean',
         'is_used' => 'boolean',
         'portal_created_date' => 'datetime',
         'portal_modified_date' => 'datetime',
     ];
+
+    public static array $tierLabels = [
+        1 => 'Level 1 · Direksi & Executive (VP / Head / Director)',
+        2 => 'Level 2 · Senior Management (GM & Senior Manager)',
+        3 => 'Level 3 · Management (Manager)',
+        4 => 'Level 4 · Middle Management (Assistant Manager & Askep)',
+        5 => 'Level 5 · Supervisor & Senior Officer',
+        6 => 'Level 6 · Staff & Officer',
+        7 => 'Level 7 · Pelaksana & Non-Staff',
+    ];
+
+    protected static function booted(): void
+    {
+        static::saving(function (JobLevel $level) {
+            if ($level->hierarchy_tier && isset(self::$tierLabels[$level->hierarchy_tier])) {
+                $level->tier_name = self::$tierLabels[$level->hierarchy_tier];
+            }
+        });
+    }
 
     /**
      * @return BelongsTo<JobLevelGroup, JobLevel>

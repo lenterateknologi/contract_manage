@@ -112,7 +112,13 @@ export interface HierarchyUser {
     job_title_name: string;
     job_level_id?: string;
     job_level_name?: string;
+    job_level_code?: string;
+    job_level_rank?: number;
+    job_level_group_id?: string;
+    job_level_group_name?: string;
     role_name?: string;
+    reporting_to?: string;
+    idreporting_to?: string | number;
 }
 
 export type HierarchyLevelKey = 'group' | 'org_group' | 'region' | 'location' | 'company' | 'division' | 'department' | 'subdepartment' | 'section' | 'job_level' | 'job_title' | 'role' | 'employee';
@@ -321,7 +327,7 @@ const nodeTypes = {
 };
 
 // Reusable Multi-Select Dropdown Component
-interface MultiSelectDropdownProps {
+export interface MultiSelectDropdownProps {
     title: string;
     options: { id: string; name: string; is_used?: boolean }[];
     selectedValues: string[];
@@ -329,7 +335,7 @@ interface MultiSelectDropdownProps {
     icon: React.ElementType;
 }
 
-function MultiSelectDropdown({
+export function MultiSelectDropdown({
     title,
     options,
     selectedValues,
@@ -529,7 +535,7 @@ export function OrgHierarchyFlow({
         setIsSyncing(true);
         router.get(
             '/admin/members',
-            { refresh: 1 },
+            { refresh: 1, tab: 'org' },
             {
                 preserveState: false,
                 preserveScroll: true,
@@ -1724,6 +1730,12 @@ export function OrgHierarchyFlow({
                                             </div>
 
                                             <div className="mt-1 space-y-0.5 text-[10px] text-slate-500 dark:text-slate-400 font-mono">
+                                                {u.reporting_to && (
+                                                    <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-sans font-semibold">
+                                                        <UserCheck size={11} className="shrink-0" />
+                                                        <span className="truncate">Atasan: {u.reporting_to}</span>
+                                                    </div>
+                                                )}
                                                 <div className="flex items-center gap-1.5">
                                                     <IdCard size={11} className="text-slate-400 shrink-0" />
                                                     <span>NIK: {u.nik}</span>

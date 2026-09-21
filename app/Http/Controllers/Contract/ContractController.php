@@ -127,6 +127,7 @@ class ContractController extends Controller
                 $loaders['companies']()
             ),
             'contractStatuses' => $loaders['contractStatuses'](),
+            'userFilterSettings' => Auth::user()?->getContractFilterSettings() ?? [],
             'filters' => array_merge($request->only([
                 'search', 'status', 'contract_type_id', 'role_id', 'department_id',
                 'created_from', 'created_to', 'region_ids', 'vendor_ids', 'statuses',
@@ -431,6 +432,75 @@ class ContractController extends Controller
         $contract = $this->updateAction->execute($contract, $validated);
 
         return response()->json(ContractFormatter::formatContract($contract->fresh()));
+    }
+
+    public function reviewDoc(Request $request, string $id): JsonResponse
+    {
+        $contract = $this->contractDetailQuery->find($id);
+        Gate::authorize('view', $contract);
+
+        $doc = $request->input('doc'); // 'f1' | 'f2' | 'agreement'
+        if (! in_array($doc, ['f1', 'f2', 'agreement'])) {
+            return response()->json(['message' => 'Invalid document type'], 422);
+        }
+
+        $user = $request->user();
+        $now = now()->toIso8601String();
+        $stepKey = $contract->workflow_step_id ? 'step_'.$contract->workflow_step_id : 'general';
+
+        // 1. Save to relational table t_submission_reviews
+        \App\Models\SubmissionReview::updateOrCreate(
+            [
+                'submission_id' => $contract->id,
+                'submission_type' => \App\Models\SubmissionReview::TYPE_CONTRACT,
+                'workflow_step_id' => $contract->workflow_step_id,
+                'step_number' => $contract->workflow_step?->step ?? $contract->current_step_number,
+                'workflow_iteration' => $contract->workflow_iteration ?? 1,
+                'context_type' => \App\Models\SubmissionReview::CONTEXT_DOCUMENT_REVIEW,
+                'item_key' => $doc,
+                'document_type' => $doc,
+                'user_id' => $user?->id,
+            ],
+            [
+                'contract_id' => $contract->id,
+                'status' => \App\Models\SubmissionReview::STATUS_REVIEWED,
+                'user_name' => $user?->name,
+                'user_role' => $user?->role ?? $user?->role_name,
+                'reviewed_at' => now(),
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'metadata' => [
+                    'device' => $request->header('Sec-Ch-Ua-Platform') ?? 'Web',
+                ],
+            ]
+        );
+
+        // 2. Keep JSON metadata synchronized for backward compatibility
+        $metadata = $contract->metadata ?? [];
+        $docReviews = $metadata['doc_reviews'] ?? [];
+
+        $reviewInfo = [
+            'reviewed' => true,
+            'reviewed_at' => $now,
+            'user_id' => $user?->id,
+            'user_name' => $user?->name,
+            'user_role' => $user?->role ?? $user?->role_name,
+        ];
+
+        if (! isset($docReviews[$stepKey])) {
+            $docReviews[$stepKey] = [];
+        }
+        $docReviews[$stepKey][$doc] = $reviewInfo;
+        $metadata['doc_reviews'] = $docReviews;
+        $metadata["doc_reviews_{$stepKey}"] = $docReviews[$stepKey];
+
+        $contract->update(['metadata' => $metadata]);
+
+        return response()->json([
+            'message' => 'Dokumen berhasil ditandai telah direview di database',
+            'metadata' => $metadata,
+            'contract' => ContractFormatter::formatContract($contract->fresh()),
+        ]);
     }
 
     public function destroy(string $id): JsonResponse

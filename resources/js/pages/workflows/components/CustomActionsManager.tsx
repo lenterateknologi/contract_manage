@@ -1079,110 +1079,114 @@ export function CustomActionsManager({
             </Dialog>
 
             {/* Modal 1: Otoritas Akses Tombol */}
-            <Dialog open={!!editingAuthorityActionId} onOpenChange={(open) => { if (!open) setEditingAuthorityActionId(null); }}>
-                <DialogContent className="sm:max-w-[96vw] w-[96vw] max-w-[96vw] h-[90vh] max-h-[90vh] border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 rounded-[12px] border p-0 shadow-2xl overflow-hidden flex flex-col">
-                    <div className="px-6 py-4 border-b border-slate-700 bg-slate-800 text-white flex items-center justify-between rounded-t-[12px] shrink-0">
-                        <div className="flex items-center gap-3">
-                            <div className="bg-white/20 text-white border border-white/20 flex h-9 w-9 items-center justify-center rounded-lg">
-                                <Key size={18} className="text-amber-400" />
-                            </div>
-                            <div>
-                                <DialogTitle className="text-sm font-bold tracking-tight text-white">
-                                    Otoritas Akses Tombol — {currentEditingAuthorityAction?.alias || currentEditingAuthorityAction?.name || 'Aksi Kustom'}
-                                </DialogTitle>
-                                <DialogDescription className="text-white/80 text-xs font-medium mt-0.5">
-                                    Tentukan pengguna/role/departemen yang berhak <strong>melihat dan mengklik tombol</strong> ini di detail kontrak.
-                                </DialogDescription>
+            {!!editingAuthorityActionId && (
+                <Dialog open={!!editingAuthorityActionId} onOpenChange={(open) => { if (!open) setEditingAuthorityActionId(null); }}>
+                    <DialogContent className="sm:max-w-[96vw] w-[96vw] max-w-[96vw] h-[90vh] max-h-[90vh] border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 rounded-[12px] border p-0 shadow-2xl overflow-hidden flex flex-col">
+                        <div className="px-6 py-4 border-b border-slate-700 bg-slate-800 text-white flex items-center justify-between rounded-t-[12px] shrink-0">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-white/20 text-white border border-white/20 flex h-9 w-9 items-center justify-center rounded-lg">
+                                    <Key size={18} className="text-amber-400" />
+                                </div>
+                                <div>
+                                    <DialogTitle className="text-sm font-bold tracking-tight text-white">
+                                        Otoritas Akses Tombol — {currentEditingAuthorityAction?.alias || currentEditingAuthorityAction?.name || 'Aksi Kustom'}
+                                    </DialogTitle>
+                                    <DialogDescription className="text-white/80 text-xs font-medium mt-0.5">
+                                        Tentukan pengguna/role/departemen yang berhak <strong>melihat dan mengklik tombol</strong> ini di detail kontrak.
+                                    </DialogDescription>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div className="p-6 bg-white dark:bg-zinc-900 flex-1 overflow-y-auto space-y-4">
-                        {currentEditingAuthorityAction && currentEditingAuthorityIndex >= 0 && (
-                            <AuthorityTableManager
-                                title={`Otoritas Akses Tombol: ${currentEditingAuthorityAction.alias || currentEditingAuthorityAction.name}`}
-                                authorities={currentEditingAuthorityAction.authorities || []}
-                                onChange={(vals) => updateAction(currentEditingAuthorityIndex, { authorities: vals })}
-                                users={users}
-                                roles={roles}
-                                departments={departments}
-                                divisions={divisions}
-                                locations={locations}
-                                companyGroups={companyGroups}
-                                companies={companies}
-                                regions={regions}
-                                showCustom={true}
-                                showCombinations={true}
-                                simulationContext={simulationContext}
-                                onOpenSimulationModal={onOpenSimulationModal}
-                            />
-                        )}
-                    </div>
+                        <div className="p-6 bg-white dark:bg-zinc-900 flex-1 overflow-y-auto space-y-4">
+                            {currentEditingAuthorityAction && currentEditingAuthorityIndex >= 0 && (
+                                <AuthorityTableManager
+                                    title={`Otoritas Akses Tombol: ${currentEditingAuthorityAction.alias || currentEditingAuthorityAction.name}`}
+                                    authorities={currentEditingAuthorityAction.authorities || []}
+                                    onChange={(vals) => updateAction(currentEditingAuthorityIndex, { authorities: vals })}
+                                    users={users}
+                                    roles={roles}
+                                    departments={departments}
+                                    divisions={divisions}
+                                    locations={locations}
+                                    companyGroups={companyGroups}
+                                    companies={companies}
+                                    regions={regions}
+                                    showCustom={true}
+                                    showCombinations={true}
+                                    simulationContext={simulationContext}
+                                    onOpenSimulationModal={onOpenSimulationModal}
+                                />
+                            )}
+                        </div>
 
-                    <DialogFooter className="p-4 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-800/50 flex items-center justify-end">
-                        <Button
-                            type="button"
-                            onClick={() => setEditingAuthorityActionId(null)}
-                            className="cursor-pointer h-8.5 px-4 text-xs font-bold"
-                        >
-                            Selesai
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                        <DialogFooter className="p-4 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-800/50 flex items-center justify-end">
+                            <Button
+                                type="button"
+                                onClick={() => setEditingAuthorityActionId(null)}
+                                className="cursor-pointer h-8.5 px-4 text-xs font-bold"
+                            >
+                                Selesai
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+            )}
 
             {/* Modal 2: Tentukan Personil / Pool Reviewer */}
-            <Dialog open={!!editingPersonnelActionId} onOpenChange={(open) => { if (!open) setEditingPersonnelActionId(null); }}>
-                <DialogContent className="sm:max-w-[96vw] w-[96vw] max-w-[96vw] h-[90vh] max-h-[90vh] border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 rounded-[12px] border p-0 shadow-2xl overflow-hidden flex flex-col">
-                    <div className="px-6 py-4 border-b border-primary/20 bg-primary text-white flex items-center justify-between rounded-t-[12px] shrink-0">
-                        <div className="flex items-center gap-3">
-                            <div className="bg-white/20 text-white border border-white/20 flex h-9 w-9 items-center justify-center rounded-lg">
-                                <UsersIcon size={18} />
-                            </div>
-                            <div>
-                                <DialogTitle className="text-sm font-bold tracking-tight text-white">
-                                    Daftar Personil Yang Dapat Dipilih — {currentEditingPersonnelAction?.alias || currentEditingPersonnelAction?.name || 'Aksi Kustom'}
-                                </DialogTitle>
-                                <DialogDescription className="text-white/80 text-xs font-medium mt-0.5">
-                                    Tentukan daftar pengguna/role/departemen yang <strong>bisa dipilih</strong> di dalam modal (misal: calon PIC, Reviewer, atau Penandatangan).
-                                </DialogDescription>
+            {!!editingPersonnelActionId && (
+                <Dialog open={!!editingPersonnelActionId} onOpenChange={(open) => { if (!open) setEditingPersonnelActionId(null); }}>
+                    <DialogContent className="sm:max-w-[96vw] w-[96vw] max-w-[96vw] h-[90vh] max-h-[90vh] border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 rounded-[12px] border p-0 shadow-2xl overflow-hidden flex flex-col">
+                        <div className="px-6 py-4 border-b border-primary/20 bg-primary text-white flex items-center justify-between rounded-t-[12px] shrink-0">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-white/20 text-white border border-white/20 flex h-9 w-9 items-center justify-center rounded-lg">
+                                    <UsersIcon size={18} />
+                                </div>
+                                <div>
+                                    <DialogTitle className="text-sm font-bold tracking-tight text-white">
+                                        Daftar Personil Yang Dapat Dipilih — {currentEditingPersonnelAction?.alias || currentEditingPersonnelAction?.name || 'Aksi Kustom'}
+                                    </DialogTitle>
+                                    <DialogDescription className="text-white/80 text-xs font-medium mt-0.5">
+                                        Tentukan daftar pengguna/role/departemen yang <strong>bisa dipilih</strong> di dalam modal (misal: calon PIC, Reviewer, atau Penandatangan).
+                                    </DialogDescription>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div className="p-6 bg-white dark:bg-zinc-900 flex-1 overflow-y-auto space-y-4">
-                        {currentEditingPersonnelAction && currentEditingPersonnelIndex >= 0 && (
-                            <AuthorityTableManager
-                                title={`Daftar Personil Yang Dapat Dipilih: ${currentEditingPersonnelAction.alias || currentEditingPersonnelAction.name}`}
-                                authorities={currentEditingPersonnelAction.eligible_personnel || []}
-                                onChange={(vals) => updateAction(currentEditingPersonnelIndex, { eligible_personnel: vals })}
-                                users={users}
-                                roles={roles}
-                                departments={departments}
-                                divisions={divisions}
-                                locations={locations}
-                                companyGroups={companyGroups}
-                                companies={companies}
-                                regions={regions}
-                                showCustom={true}
-                                showCombinations={true}
-                                simulationContext={simulationContext}
-                                onOpenSimulationModal={onOpenSimulationModal}
-                            />
-                        )}
-                    </div>
+                        <div className="p-6 bg-white dark:bg-zinc-900 flex-1 overflow-y-auto space-y-4">
+                            {currentEditingPersonnelAction && currentEditingPersonnelIndex >= 0 && (
+                                <AuthorityTableManager
+                                    title={`Daftar Personil Yang Dapat Dipilih: ${currentEditingPersonnelAction.alias || currentEditingPersonnelAction.name}`}
+                                    authorities={currentEditingPersonnelAction.eligible_personnel || []}
+                                    onChange={(vals) => updateAction(currentEditingPersonnelIndex, { eligible_personnel: vals })}
+                                    users={users}
+                                    roles={roles}
+                                    departments={departments}
+                                    divisions={divisions}
+                                    locations={locations}
+                                    companyGroups={companyGroups}
+                                    companies={companies}
+                                    regions={regions}
+                                    showCustom={true}
+                                    showCombinations={true}
+                                    simulationContext={simulationContext}
+                                    onOpenSimulationModal={onOpenSimulationModal}
+                                />
+                            )}
+                        </div>
 
-                    <DialogFooter className="p-4 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-800/50 flex items-center justify-end">
-                        <Button
-                            type="button"
-                            onClick={() => setEditingPersonnelActionId(null)}
-                            className="cursor-pointer h-8.5 px-4 text-xs font-bold"
-                        >
-                            Selesai
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                        <DialogFooter className="p-4 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-800/50 flex items-center justify-end">
+                            <Button
+                                type="button"
+                                onClick={() => setEditingPersonnelActionId(null)}
+                                className="cursor-pointer h-8.5 px-4 text-xs font-bold"
+                            >
+                                Selesai
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+            )}
         </div>
     );
 }

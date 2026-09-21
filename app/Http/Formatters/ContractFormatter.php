@@ -31,7 +31,7 @@ class ContractFormatter
                 'contractType', 'submissionType', 'vendor', 'parent', 'workflow.steps', 'workflow.contractType',
                 'versions.uploader', 'messages.user', 'attachments.uploader', 'formSubmissions.submittedBy',
                 'assignedPic.department', 'assignedPic.company', 'assignedPic.division', 'assignedPic.location', 'assignedPic.supervisor.department', 'assignedPic.reportingTo.department',
-                'assignedBy.department', 'assignedBy.company', 'assignedBy.location', 'statusDetail', 'purchaseOrders.creator',
+                'assignedBy.department', 'assignedBy.company', 'assignedBy.location', 'statusDetail', 'purchaseOrders.creator', 'docReviews.user',
             ]);
         }
         $nextStep = $isDetail ? self::getNextStep($c) : null;
@@ -366,6 +366,45 @@ class ContractFormatter
                 return ! $hasUnapprovedSubSteps;
             })->first()?->id,
             'unread_count' => (int) ($c->unread_count ?? 0),
+            'doc_reviews' => $isDetail ? (function () use ($c) {
+                $reviewsMap = [];
+                // 1. From relational database table t_contract_doc_reviews
+                if ($c->relationLoaded('docReviews') && $c->docReviews) {
+                    foreach ($c->docReviews as $review) {
+                        $sKey = $review->workflow_step_id ? 'step_'.$review->workflow_step_id : 'general';
+                        if (! isset($reviewsMap[$sKey])) {
+                            $reviewsMap[$sKey] = [];
+                        }
+                        $reviewsMap[$sKey][$review->document_type] = [
+                            'reviewed' => true,
+                            'reviewed_at' => $review->reviewed_at?->toIso8601String(),
+                            'user_id' => $review->user_id,
+                            'user_name' => $review->user_name ?? $review->user?->name,
+                            'user_role' => $review->user_role ?? $review->user?->role,
+                            'ip_address' => $review->ip_address,
+                            'user_agent' => $review->user_agent,
+                            'device' => data_get($review->metadata, 'device', 'Web'),
+                        ];
+                    }
+                }
+                // 2. Merge with metadata if not already present
+                $metaReviews = data_get($c->metadata, 'doc_reviews', []);
+                if (is_array($metaReviews)) {
+                    foreach ($metaReviews as $sKey => $docs) {
+                        if (! isset($reviewsMap[$sKey])) {
+                            $reviewsMap[$sKey] = [];
+                        }
+                        if (is_array($docs)) {
+                            foreach ($docs as $docType => $val) {
+                                if (! isset($reviewsMap[$sKey][$docType])) {
+                                    $reviewsMap[$sKey][$docType] = $val;
+                                }
+                            }
+                        }
+                    }
+                }
+                return $reviewsMap;
+            })() : [],
         ];
     }
 

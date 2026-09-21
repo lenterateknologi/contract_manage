@@ -6,6 +6,7 @@ import { Checkbox } from '@/components/ui/selection/Checkbox';
 import { TreeSelect } from '@/components/ui/selection/TreeSelect';
 import LucideIcons from '@/lib/lucide-dynamic';
 import { cn } from '@/lib/utils';
+import AuthorityTableManager from '@/pages/workflows/components/AuthorityTableManager';
 import { SlaSimulationModal } from '@/pages/contracts/components/parts/SlaSimulationModal';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { ArrowLeft, Calculator, ExternalLink, Plus, Trash2 } from 'lucide-react';
@@ -145,15 +146,16 @@ function MultiSelectField({
 }) {
     const [isOpen, setIsOpen] = useState(false);
     const [search, setSearch] = useState('');
-    const [pageSize, setPageSize] = useState(10);
+    const [pageSize, setPageSize] = useState(15);
+    const [filterTab, setFilterTab] = useState<'all' | 'selected'>('all');
     const [dropdownDirection, setDropdownDirection] = useState<'down' | 'up'>('down');
     const containerRef = React.useRef<HTMLDivElement>(null);
     const buttonRef = React.useRef<HTMLButtonElement>(null);
 
-    // Reset page size when search query changes
+    // Reset page size when search query or tab changes
     useEffect(() => {
-        setPageSize(10);
-    }, [search]);
+        setPageSize(15);
+    }, [search, filterTab]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -169,7 +171,7 @@ function MultiSelectField({
         if (isOpen && buttonRef.current) {
             const rect = buttonRef.current.getBoundingClientRect();
             const spaceBelow = window.innerHeight - rect.bottom;
-            if (spaceBelow < 280) {
+            if (spaceBelow < 300) {
                 setDropdownDirection('up');
             } else {
                 setDropdownDirection('down');
@@ -184,10 +186,19 @@ function MultiSelectField({
         return list;
     }, [field.options, field.name]);
 
-    const filteredOptions = optionsList.filter((option: any) => {
-        const label = Array.isArray(optionsList[0]) ? option[1] : option;
-        return String(label).toLowerCase().includes(search.toLowerCase());
-    });
+    const filteredOptions = React.useMemo(() => {
+        return optionsList.filter((option: any) => {
+            const val = Array.isArray(option) ? option[0] : option;
+            const label = Array.isArray(option) ? option[1] : option;
+            const matchesSearch = String(label).toLowerCase().includes(search.toLowerCase());
+            if (!matchesSearch) return false;
+
+            if (filterTab === 'selected') {
+                return value.includes(String(val));
+            }
+            return true;
+        });
+    }, [optionsList, search, filterTab, value]);
 
     const paginatedOptions = filteredOptions.slice(0, pageSize);
 
@@ -279,20 +290,128 @@ function MultiSelectField({
                 <LucideIcons.ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
             </button>
 
+            {/* Selected Chips / Badges preview */}
+            {value.length > 0 && !isButtonDisabled && (
+                <div className="flex flex-wrap gap-1.5 pt-0.5">
+                    {value.map((val: any) => {
+                        const found = optionsList.find((option: any) => {
+                            const optVal = Array.isArray(option) ? option[0] : option;
+                            return String(optVal) === String(val);
+                        });
+                        const label = found ? (Array.isArray(found) ? found[1] : found) : val;
+                        return (
+                            <span
+                                key={val}
+                                className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-medium bg-primary/10 text-primary border border-primary/20 max-w-full"
+                            >
+                                <span className="truncate max-w-[220px]">{label}</span>
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        onChange(value.filter((v: any) => String(v) !== String(val)));
+                                    }}
+                                    className="hover:bg-primary/20 rounded-full p-0.5 cursor-pointer text-primary transition-colors shrink-0"
+                                    title="Hapus pilihan ini"
+                                >
+                                    <LucideIcons.X className="h-3 w-3" />
+                                </button>
+                            </span>
+                        );
+                    })}
+                    {value.length > 1 && (
+                        <button
+                            type="button"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                onChange([]);
+                            }}
+                            className="text-[10.5px] font-medium text-rose-500 hover:text-rose-600 hover:underline px-1.5 py-0.5 cursor-pointer"
+                        >
+                            Hapus Semua ({value.length})
+                        </button>
+                    )}
+                </div>
+            )}
+
             {isOpen && (
                 <div className={cn(
-                    "absolute left-0 z-50 w-full rounded-lg border border-border bg-popover text-popover-foreground shadow-lg p-2 flex flex-col gap-2 max-h-64 animate-in fade-in-0 zoom-in-95",
+                    "absolute left-0 z-50 w-full rounded-lg border border-border bg-popover text-popover-foreground shadow-lg p-2.5 flex flex-col gap-2 max-h-80 animate-in fade-in-0 zoom-in-95",
                     dropdownDirection === 'down' ? 'top-full mt-1' : 'bottom-full mb-1'
                 )}>
-                    <input
-                        type="text"
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        placeholder={`Cari ${field.label}...`}
-                        className="flex h-9 w-full rounded-md border border-border bg-background px-3 py-1 text-sm outline-hidden focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary placeholder:text-muted-foreground text-foreground"
-                        onClick={(e) => e.stopPropagation()}
-                    />
-                    <div className="flex flex-col gap-0.5 overflow-y-auto pr-1 custom-scrollbar">
+                    {/* Search & Tabs Header */}
+                    <div className="flex flex-col gap-1.5">
+                        <div className="relative">
+                            <LucideIcons.Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <input
+                                type="text"
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                placeholder={`Cari ${field.label}...`}
+                                className="flex h-9 w-full rounded-md border border-border bg-background pl-8.5 pr-3 py-1 text-sm outline-hidden focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary placeholder:text-muted-foreground text-foreground"
+                                onClick={(e) => e.stopPropagation()}
+                            />
+                        </div>
+
+                        {/* Filter Tabs: Semua vs Terpilih */}
+                        <div className="flex items-center justify-between bg-muted/50 p-1 rounded-md border border-border/50 text-xs">
+                            <div className="flex items-center gap-1">
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setFilterTab('all');
+                                    }}
+                                    className={cn(
+                                        "px-2.5 py-1 rounded text-xs font-medium transition-all cursor-pointer",
+                                        filterTab === 'all'
+                                            ? "bg-background text-foreground shadow-xs"
+                                            : "text-muted-foreground hover:text-foreground"
+                                    )}
+                                >
+                                    Semua
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setFilterTab('selected');
+                                    }}
+                                    className={cn(
+                                        "px-2.5 py-1 rounded text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5",
+                                        filterTab === 'selected'
+                                            ? "bg-primary text-primary-foreground shadow-xs font-semibold"
+                                            : "text-muted-foreground hover:text-foreground"
+                                    )}
+                                >
+                                    <span>Hanya Terpilih</span>
+                                    <span className={cn(
+                                        "px-1.5 py-0.2 rounded-full text-[10px]",
+                                        filterTab === 'selected' ? "bg-white/20 text-white" : "bg-primary/10 text-primary"
+                                    )}>
+                                        {value.length}
+                                    </span>
+                                </button>
+                            </div>
+
+                            {value.length > 0 && (
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onChange([]);
+                                    }}
+                                    className="text-[11px] text-rose-500 hover:text-rose-600 hover:underline px-1.5 cursor-pointer"
+                                >
+                                    Reset
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col gap-0.5 overflow-y-auto pr-1 custom-scrollbar max-h-52">
                         {paginatedOptions.map((option: any) => {
                             const val = Array.isArray(field.options) ? option : option[0];
                             const label = Array.isArray(field.options) ? option : option[1];
@@ -302,7 +421,7 @@ function MultiSelectField({
                                     key={val}
                                     className={cn(
                                         "flex items-center gap-2.5 cursor-pointer text-sm font-normal text-foreground hover:bg-accent py-2 px-2.5 rounded-md transition-colors",
-                                        isChecked && "bg-accent/60 font-medium"
+                                        isChecked && "bg-primary/10 text-primary font-medium"
                                     )}
                                 >
                                     <Checkbox
@@ -324,7 +443,7 @@ function MultiSelectField({
                                 type="button"
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    setPageSize(prev => prev + 15);
+                                    setPageSize(prev => prev + 25);
                                 }}
                                 className="text-[11px] font-bold text-primary hover:text-primary-hover hover:underline text-center py-2 mt-1 cursor-pointer bg-muted/50 border border-border rounded-md"
                             >
@@ -333,7 +452,7 @@ function MultiSelectField({
                         )}
                         {filteredOptions.length === 0 && (
                             <span className="text-xs text-muted-foreground text-center py-4">
-                                Tidak ada data
+                                {filterTab === 'selected' ? 'Belum ada data yang dipilih' : 'Tidak ada data ditemukan'}
                             </span>
                         )}
                     </div>
@@ -496,9 +615,34 @@ interface Props {
     record: any | null;
     organizationTree?: any[] | null;
     returnUrl?: string | null;
+    roles?: any[];
+    departments?: any[];
+    divisions?: any[];
+    locations?: any[];
+    users?: any[];
+    companyGroups?: any[];
+    organizationGroups?: any[];
+    regions?: any[];
+    companies?: any[];
 }
 
-export default function ResourceForm({ resourceSlug, title, formSchema, formColumns = 1, record, returnUrl }: Props) {
+export default function ResourceForm({
+    resourceSlug,
+    title,
+    formSchema,
+    formColumns = 1,
+    record,
+    returnUrl,
+    roles = [],
+    departments = [],
+    divisions = [],
+    locations = [],
+    users = [],
+    companyGroups = [],
+    organizationGroups = [],
+    regions = [],
+    companies = [],
+}: Props) {
     const isEdit = !!record;
     const [activeTab, setActiveTab] = useState<'info' | 'detail'>('info');
     const [dashboardTab, setDashboardTab] = useState<'setting' | 'authority' | 'filtering'>('setting');
@@ -521,8 +665,6 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
         allowed_departments: [] as string[],
     });
 
-
-
     // Helper to get flattened fields for initial state and validation
     const getFlattenedFields = (schema: any[]): any[] => {
         let fields: any[] = [];
@@ -544,6 +686,10 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
         acc[field.name] = isEdit ? (record[field.name] ?? (isBool ? false : '')) : (field.defaultValue ?? (isBool ? false : ''));
         return acc;
     }, {});
+
+    if (resourceSlug === 'dashboard-types') {
+        initialFormState['authorities'] = record?.authorities || [];
+    }
 
     const { data, setData, post, put, errors, processing } = useForm(initialFormState);
 
@@ -1236,6 +1382,9 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                             items={field.options}
                             placeholder={field.placeholder || `Pilih ${field.label}...`}
                             disabled={isFieldDisabled(field.name)}
+                            multiple={field.multiple ?? false}
+                            inline={field.inline ?? false}
+                            disableParentSelection={field.disableParentSelection ?? false}
                         />
                         {field.helperText && !errors[field.name] && (
                             <p className="text-[11px] text-muted-foreground px-0.5 mt-1 font-normal">
@@ -1474,53 +1623,82 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                         <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden animate-in fade-in duration-200">
                             {/* Scrollable Form Body */}
                             <div className="flex-1 overflow-y-auto p-6 pb-8 space-y-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                                <div className={getGridClass()}>
-                                    {formSchema
-                                        .filter((field: any) => {
-                                            if (resourceSlug !== 'dashboard-types') return true;
-                                            const label = (field.label || '').toLowerCase();
-                                            if (dashboardTab === 'setting') {
-                                                return label.includes('identitas') || label.includes('informasi') || label.includes('visibility') || label.includes('visibilitas');
-                                            }
-                                            if (dashboardTab === 'authority') {
-                                                return label.includes('target pengguna') || label.includes('user matrix') || label.includes('role') || label.includes('cakupan organisasi') || label.includes('organisasi') || label.includes('dynamic scoping');
-                                            }
-                                            if (dashboardTab === 'filtering') {
-                                                return label.includes('cakupan dokumen') || label.includes('dokumen & pengajuan') || (label.includes('scoping') && !label.includes('organisasi') && !label.includes('dynamic'));
-                                            }
-                                            return true;
-                                        })
-                                        .map((field: any) => {
-                                            if (field.isGroup) {
-                                                const GroupIcon = field.icon && (LucideIcons as any)[field.icon]
-                                                    ? (LucideIcons as any)[field.icon]
-                                                    : undefined;
+                                {resourceSlug === 'dashboard-types' && dashboardTab === 'authority' ? (
+                                    <div className="col-span-full space-y-4">
+                                        <div className="p-4 rounded-xl border border-primary/20 bg-primary/5 flex items-start gap-3">
+                                            <LucideIcons.ShieldCheck className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                                            <div>
+                                                <h4 className="text-xs font-bold text-text-main">Matriks Otoritas & Target Pengguna Terpadu</h4>
+                                                <p className="text-[11px] text-text-muted mt-0.5">
+                                                    Tentukan satu atau beberapa kombinasi kriteria (Role, Level Jabatan, Divisi, Departemen, Lokasi, atau Akun Spesifik) yang dapat menggunakan profil dashboard ini.
+                                                </p>
+                                            </div>
+                                        </div>
 
-                                                return (
-                                                    <div key={field.label} className="col-span-full flex flex-col gap-4 pt-2">
-                                                        <div className="flex items-center justify-between pb-2 border-b border-surface-border gap-4">
-                                                            <div className="flex items-center gap-2">
-                                                                {GroupIcon && <GroupIcon className="h-4 w-4 text-primary shrink-0 opacity-80" />}
-                                                                <div>
-                                                                    <h3 className="text-xs font-semibold uppercase tracking-wider text-text-main">{field.label}</h3>
-                                                                    {field.description && (
-                                                                        <p className="text-[11px] text-text-muted mt-0.5">{field.description}</p>
-                                                                    )}
+                                        <AuthorityTableManager
+                                            authorities={data.authorities || []}
+                                            onChange={(newAuths) => setData('authorities', newAuths)}
+                                            roles={roles}
+                                            departments={departments}
+                                            divisions={divisions}
+                                            locations={locations}
+                                            users={users}
+                                            companyGroups={companyGroups}
+                                            organizationGroups={organizationGroups}
+                                            regions={regions}
+                                            companies={companies}
+                                            title="Matriks Target Pengguna Profil"
+                                            showCustom={false}
+                                            showCombinations={true}
+                                            showInitiatorOption={false}
+                                        />
+                                    </div>
+                                ) : (
+                                    <div className={getGridClass()}>
+                                        {formSchema
+                                            .filter((field: any) => {
+                                                if (resourceSlug !== 'dashboard-types') return true;
+                                                const label = (field.label || '').toLowerCase();
+                                                if (dashboardTab === 'setting') {
+                                                    return label.includes('identitas') || label.includes('informasi') || label.includes('visibility') || label.includes('visibilitas');
+                                                }
+                                                if (dashboardTab === 'filtering') {
+                                                    return label.includes('cakupan dokumen') || label.includes('kuncian tipe') || label.includes('dokumen & pengajuan') || (label.includes('scoping') && !label.includes('organisasi') && !label.includes('dynamic'));
+                                                }
+                                                return true;
+                                            })
+                                            .map((field: any) => {
+                                                if (field.isGroup) {
+                                                    const GroupIcon = field.icon && (LucideIcons as any)[field.icon]
+                                                        ? (LucideIcons as any)[field.icon]
+                                                        : undefined;
+
+                                                    return (
+                                                        <div key={field.label} className="col-span-full flex flex-col gap-4 pt-2">
+                                                            <div className="flex items-center justify-between pb-2 border-b border-surface-border gap-4">
+                                                                <div className="flex items-center gap-2">
+                                                                    {GroupIcon && <GroupIcon className="h-4 w-4 text-primary shrink-0 opacity-80" />}
+                                                                    <div>
+                                                                        <h3 className="text-xs font-semibold uppercase tracking-wider text-text-main">{field.label}</h3>
+                                                                        {field.description && (
+                                                                            <p className="text-[11px] text-text-muted mt-0.5">{field.description}</p>
+                                                                        )}
+                                                                    </div>
                                                                 </div>
                                                             </div>
+                                                            <div className={getGridClass()}>
+                                                                {field.schema
+                                                                    .filter((subField: any) => !['can_change_company_group', 'can_change_region', 'can_change_company', 'can_change_division', 'can_change_department', 'use_role_filter'].includes(subField.name))
+                                                                    .map((subField: any) => renderField(subField))}
+                                                            </div>
                                                         </div>
-                                                        <div className={getGridClass()}>
-                                                            {field.schema
-                                                                .filter((subField: any) => !['can_change_company_group', 'can_change_region', 'can_change_company', 'can_change_division', 'can_change_department', 'use_role_filter'].includes(subField.name))
-                                                                .map((subField: any) => renderField(subField))}
-                                                        </div>
-                                                    </div>
-                                                );
-                                            }
+                                                    );
+                                                }
 
-                                            return renderField(field);
-                                        })}
-                                </div>
+                                                return renderField(field);
+                                            })}
+                                    </div>
+                                )}
                             </div>
 
                             {/* Sticky Footer */}

@@ -5,6 +5,9 @@ export interface DetailSidebarTabChild {
     id: string;
     label: string;
     icon?: LucideIcon;
+    badge?: string;
+    badgeVariant?: 'success' | 'warning' | 'default' | 'info';
+    isReviewed?: boolean;
 }
 
 export interface DetailSidebarTabItem {

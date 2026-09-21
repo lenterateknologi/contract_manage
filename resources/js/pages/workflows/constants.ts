@@ -2,9 +2,13 @@ import { CheckCircle2, FileSignature, GitBranch, Settings2, UserCheck, XCircle }
 
 export const AVAILABLE_FIELDS = [
     { value: 'pic', label: 'Data PIC (Penanggung Jawab)' },
-    { value: 'f1', label: 'Sub-dokumen F1 (Permohonan)' },
-    { value: 'f2', label: 'Sub-dokumen F2 (Ringkasan)' },
-    { value: 'agreement', label: 'Sub-dokumen Perjanjian / Draft' },
+    { value: 'f1', label: 'Sub-dokumen F1 (Permohonan Terisi / Ada File)' },
+    { value: 'f2', label: 'Sub-dokumen F2 (Ringkasan Terisi / Ada File)' },
+    { value: 'agreement', label: 'Sub-dokumen Perjanjian / Draft (Ada File / Konten)' },
+    { value: 'review_f1', label: 'Wajib Ditinjau: F1 (Permohonan telah dibuka)' },
+    { value: 'review_f2', label: 'Wajib Ditinjau: F2 (Ringkasan telah dibuka)' },
+    { value: 'review_agreement', label: 'Wajib Ditinjau: Draft Perjanjian telah dibuka' },
+    { value: 'review_all_docs', label: 'Wajib Ditinjau: Semua Dokumen Aktif (F1, F2 & Draft)' },
     { value: 'title', label: 'Field Judul Kontrak' },
     { value: 'vendor', label: 'Field Pihak Kedua ' },
     { value: 'category', label: 'Field Kategori Kontrak' },
@@ -23,6 +27,9 @@ export const AUTOFILLED_PARAMS = [
     { value: 'signed_at', label: 'Isi Waktu Ditandatangani' },
     { value: 'approved_at', label: 'Isi Waktu Disetujui' },
     { value: 'started_at', label: 'Isi Waktu Dimulai' },
+
+    // ── Opsi Reset / Regenerasi ──
+    { value: 'reset_form_no', label: 'Reset / Generate Nomor Pengajuan Baru' },
 
     // ── Opsi Hapus Otomatis (Clear Value) ──
     { value: 'clear_received_at', label: 'Hapus Waktu Diterima' },

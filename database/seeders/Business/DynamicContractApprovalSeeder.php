@@ -3,11 +3,19 @@
 namespace Database\Seeders\Business;
 
 use App\Enums\WorkflowAction;
+use App\Models\Authority;
+use App\Models\Company;
+use App\Models\CompanyGroup;
+use App\Models\ContractType;
+use App\Models\Department;
+use App\Models\Division;
+use App\Models\Location;
+use App\Models\Region;
 use App\Models\Role;
+use App\Models\User;
 use App\Models\Workflow;
 use App\Models\WorkflowStep;
 use App\Models\WorkflowStepAction;
-use App\Models\WorkflowStepAuthority;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -18,9 +26,11 @@ class DynamicContractApprovalSeeder extends Seeder
         $roleMap = Role::pluck('id', 'name')->toArray();
         $staffRoleId = $roleMap['Staff'] ?? null;
         $managerRoleId = $roleMap['Manager'] ?? null;
-        $vpRoleId = $roleMap['VP'] ?? null;
+        $vpRoleId = $roleMap['VP'] ?? ($roleMap['Director'] ?? null);
+        $managerLegalRoleId = $roleMap['Manager Legal'] ?? null;
+        $staffLegalRoleId = $roleMap['Staff Legal'] ?? null;
         $astManagerRoleId = $roleMap['Ast Manager'] ?? null;
-        $legalDivisionId = \App\Models\Division::where('name', 'Legal')->orWhere('code', 'lga')->value('id');
+        $legalDivisionId = Division::where('name', 'Legal')->orWhere('code', 'lga')->value('id');
 
         $wf1Name = 'ALUR PERSETUJUAN KONTRAK DINAMIS (WF 1 - PERMOHONAN & PENUGASAN PIC)';
         $wf2Name = 'ALUR PROSES LEGAL & PENANDATANGANAN (WF 2 - REVIEW & SIGNING)';
@@ -33,9 +43,10 @@ class DynamicContractApprovalSeeder extends Seeder
         ])->pluck('id')->toArray();
 
         if (!empty($existingWfs)) {
-            WorkflowStepAuthority::whereIn('workflow_step_id', function ($q) use ($existingWfs) {
-                $q->select('id')->from('m_workflow_steps')->whereIn('workflow_id', $existingWfs);
-            })->delete();
+            Authority::where('context_type', Authority::CONTEXT_WORKFLOW_STEP)
+                ->whereIn('context_id', function ($q) use ($existingWfs) {
+                    $q->select('id')->from('m_workflow_steps')->whereIn('workflow_id', $existingWfs);
+                })->delete();
 
             WorkflowStepAction::whereIn('workflow_step_id', function ($q) use ($existingWfs) {
                 $q->select('id')->from('m_workflow_steps')->whereIn('workflow_id', $existingWfs);

@@ -78,6 +78,23 @@ class ContractPolicy
         $settings = $user->getContractFilterSettings();
         $isGlobalFull = in_array($user->role, ['Admin', 'Super Admin', 'Director', 'CEO', 'VP']);
 
+        // Contract Type restriction
+        if (! empty($settings['contract_type_ids'])) {
+            $allowedTypeIds = (array) $settings['contract_type_ids'];
+            $contractTypeId = $contract->contract_type_id ?? $contract->contract_type_parent_id;
+            if ($contractTypeId && ! in_array($contractTypeId, $allowedTypeIds)) {
+                return false;
+            }
+        }
+
+        // Category restriction
+        if (! empty($settings['categories'])) {
+            $allowedCats = (array) $settings['categories'];
+            if ($contract->category && ! in_array($contract->category, $allowedCats)) {
+                return false;
+            }
+        }
+
         $contractOrg = $contract->initiator ?: $contract->creator;
         if (! $contractOrg) {
             return true;
@@ -106,6 +123,24 @@ class ContractPolicy
         if (! $divFull) {
             $allowedDivs = array_filter(array_merge([$user->division_id], $settings['allowed_divisions'] ?? []));
             if (! empty($allowedDivs) && ! in_array($contractOrg->division_id, $allowedDivs)) {
+                return false;
+            }
+        }
+
+        // Company Group check
+        $groupFull = $isGlobalFull || ($settings['can_change_company_group'] ?? false);
+        if (! $groupFull) {
+            $allowedGroups = array_filter(array_merge([$user->company_group_id], $settings['allowed_company_groups'] ?? []));
+            if (! empty($allowedGroups) && ! in_array($contractOrg->company_group_id, $allowedGroups)) {
+                return false;
+            }
+        }
+
+        // Region check
+        $regFull = $isGlobalFull || ($settings['can_change_region'] ?? false);
+        if (! $regFull) {
+            $allowedRegs = array_filter(array_merge([$user->region_id], $settings['allowed_regions'] ?? []));
+            if (! empty($allowedRegs) && ! in_array($contractOrg->region_id, $allowedRegs)) {
                 return false;
             }
         }

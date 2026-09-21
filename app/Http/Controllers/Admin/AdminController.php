@@ -107,15 +107,16 @@ class AdminController extends Controller
         }
 
         // Cache master data and users payload for high performance (5 min TTL)
-        $users = Cache::remember('admin_members_tree_users_v3', 300, function () {
-            $allDepts = Department::query()->get(['id', 'name', 'code', 'idorg_level', 'org_level_name', 'org_group_name', 'is_used']);
+        $users = Cache::remember('admin_members_tree_users_v4', 300, function () {
+            $allDepts = Department::query()->where('is_used', true)->get(['id', 'name', 'code', 'idorg_level', 'org_level_name', 'org_group_name', 'is_used']);
             $deptByCode = $allDepts->keyBy('code');
             $deptById = $allDepts->keyBy('id');
 
             return User::query()
                 ->where('is_active', true)
+                ->where('is_used', true)
                 ->select([
-                    'id', 'name', 'email', 'nik', 'code', 'image_src', 'is_used',
+                    'id', 'name', 'email', 'nik', 'code', 'image_src', 'is_used', 'idemployee', 'idreporting_to', 'reporting_to',
                     'company_group_id', 'region_id', 'location_id', 'company_id', 'division_id', 'department_id', 'job_position_id', 'job_level_id', 'role_id'
                 ])
                 ->with([
@@ -189,27 +190,33 @@ class AdminController extends Controller
                         'job_title_name' => $u->jobTitle?->name ?? $u->jobtitle_name ?? 'No Job Title',
                         'job_level_id' => $u->job_level_id,
                         'job_level_name' => $u->jobLevel?->name ?? $u->joblevel_name ?? 'No Job Level',
+                        'job_level_code' => $u->jobLevel?->code ?? '',
+                        'job_level_rank' => $u->jobLevel?->idjoblevel ?? 0,
+                        'hierarchy_tier' => $u->jobLevel?->hierarchy_tier,
+                        'tier_name' => $u->jobLevel?->tier_name,
                         'job_level_group_id' => $u->jobLevel?->job_level_group_id,
                         'job_level_group_name' => $u->jobLevel?->jobLevelGroup?->name ?? $u->jobLevel?->group_name ?? 'No Group Level',
                         'role_name' => $u->roleRelation?->name ?? 'Member',
+                        'reporting_to' => $u->reporting_to,
+                        'idreporting_to' => $u->idreporting_to,
                     ];
                 });
         });
 
         $divisions = Cache::remember('admin_members_divisions', 600, fn () => Division::query()->orderBy('name')->get(['id', 'name', 'code']));
-        $departments = Cache::remember('admin_members_departments', 600, fn () => Department::query()->orderBy('name')->get(['id', 'name', 'code', 'company_id', 'is_used']));
-        $subdepartments = Cache::remember('admin_members_subdepartments', 600, fn () => Department::query()->where('idorg_level', 6)->orderBy('name')->get(['id', 'name', 'code', 'is_used']));
-        $sections = Cache::remember('admin_members_sections', 600, fn () => Department::query()->where('idorg_level', '>=', 7)->orderBy('name')->get(['id', 'name', 'code', 'is_used']));
+        $departments = Cache::remember('admin_members_departments', 600, fn () => Department::query()->where('is_used', true)->orderBy('name')->get(['id', 'name', 'code', 'company_id', 'is_used']));
+        $subdepartments = Cache::remember('admin_members_subdepartments', 600, fn () => Department::query()->where('idorg_level', 6)->where('is_used', true)->orderBy('name')->get(['id', 'name', 'code', 'is_used']));
+        $sections = Cache::remember('admin_members_sections', 600, fn () => Department::query()->where('idorg_level', '>=', 7)->where('is_used', true)->orderBy('name')->get(['id', 'name', 'code', 'is_used']));
         $departmentTraffic = Cache::remember('admin_members_dept_traffic', 300, fn () => $this->organizationQuery->getDepartmentTraffic());
 
-        $companyGroups = Cache::remember('admin_members_company_groups', 600, fn () => CompanyGroup::query()->orderBy('name')->get(['id', 'name', 'code', 'is_used']));
-        $organizationGroups = Cache::remember('admin_members_organization_groups', 600, fn () => OrganizationGroup::query()->orderBy('name')->get(['id', 'name', 'code', 'is_used']));
-        $regions = Cache::remember('admin_members_regions', 600, fn () => Region::query()->orderBy('name')->get(['id', 'name', 'code', 'is_used']));
-        $locations = Cache::remember('admin_members_locations', 600, fn () => Location::query()->orderBy('name')->get(['id', 'name', 'code', 'is_used']));
-        $companies = Cache::remember('admin_members_companies', 600, fn () => Company::query()->orderBy('name')->get(['id', 'name', 'code', 'company_group_id', 'region_id', 'is_used']));
-        $jobTitles = Cache::remember('admin_members_job_titles', 600, fn () => JobTitle::query()->orderBy('name')->get(['id', 'name', 'code', 'job_level_id', 'is_used']));
-        $jobLevels = Cache::remember('admin_members_job_levels', 600, fn () => JobLevel::query()->orderBy('name')->get(['id', 'name', 'code', 'job_level_group_id', 'group_name', 'is_used']));
-        $jobLevelGroups = Cache::remember('admin_members_job_level_groups', 600, fn () => JobLevelGroup::query()->orderBy('name')->get(['id', 'name', 'code', 'is_used']));
+        $companyGroups = Cache::remember('admin_members_company_groups', 600, fn () => CompanyGroup::query()->where('is_used', true)->orderBy('name')->get(['id', 'name', 'code', 'is_used']));
+        $organizationGroups = Cache::remember('admin_members_organization_groups', 600, fn () => OrganizationGroup::query()->where('is_used', true)->orderBy('name')->get(['id', 'name', 'code', 'is_used']));
+        $regions = Cache::remember('admin_members_regions', 600, fn () => Region::query()->where('is_used', true)->orderBy('name')->get(['id', 'name', 'code', 'is_used']));
+        $locations = Cache::remember('admin_members_locations', 600, fn () => Location::query()->where('is_used', true)->orderBy('name')->get(['id', 'name', 'code', 'is_used']));
+        $companies = Cache::remember('admin_members_companies', 600, fn () => Company::query()->where('is_used', true)->orderBy('name')->get(['id', 'name', 'code', 'company_group_id', 'region_id', 'is_used']));
+        $jobTitles = Cache::remember('admin_members_job_titles', 600, fn () => JobTitle::query()->where('is_used', true)->orderBy('name')->get(['id', 'name', 'code', 'job_level_id', 'is_used']));
+        $jobLevels = Cache::remember('admin_members_job_levels', 600, fn () => JobLevel::query()->where('is_used', true)->orderBy('name')->get(['id', 'idjoblevel', 'name', 'code', 'hierarchy_tier', 'tier_name', 'job_level_group_id', 'group_name', 'is_used']));
+        $jobLevelGroups = Cache::remember('admin_members_job_level_groups', 600, fn () => JobLevelGroup::query()->where('is_used', true)->orderBy('name')->get(['id', 'name', 'code', 'is_used']));
         $roles = Cache::remember('admin_members_roles', 600, fn () => Role::query()->orderBy('name')->get(['id', 'name']));
 
         return Inertia::render('admin/Index', [

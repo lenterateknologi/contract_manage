@@ -29,6 +29,7 @@ class User extends Authenticatable
         'mobile_no',
         'username',
         'role_id',
+        'dashboard_type_id',
         'idorganization',
         'org_name',
         'department_id',
@@ -220,6 +221,11 @@ class User extends Authenticatable
     public function roleRelation(): BelongsTo
     {
         return $this->belongsTo(Role::class, 'role_id');
+    }
+
+    public function dashboardType(): BelongsTo
+    {
+        return $this->belongsTo(DashboardType::class, 'dashboard_type_id');
     }
 
     public function department(): BelongsTo
@@ -607,20 +613,11 @@ class User extends Authenticatable
 
     public function getCanCreateOnBehalfAttribute(): bool
     {
-        if ($this->isAdmin()) {
+        if ($this->isAdmin() || $this->isSuperAdmin()) {
             return true;
         }
 
-        if ($this->relationLoaded('roleRelation') && $this->roleRelation) {
-            return (bool) ($this->roleRelation->can_create_on_behalf ?? false);
-        }
-
-        $roleId = $this->attributes['role_id'] ?? null;
-        if (! empty($roleId)) {
-            return (bool) Role::where('id', $roleId)->value('can_create_on_behalf');
-        }
-
-        return false;
+        return Authority::checkUserAllowedOnBehalf($this);
     }
 
     public function getInitialsAttribute(): string
@@ -642,7 +639,15 @@ class User extends Authenticatable
             return $this->contractFilterSettingsCache;
         }
 
-        $dashboardType = DashboardType::resolveForUser($this);
+        $dashboardType = null;
+        if (! empty($this->dashboard_type_id)) {
+            $dashboardType = DashboardType::find($this->dashboard_type_id);
+        }
+
+        if (! $dashboardType) {
+            $dashboardType = DashboardType::resolveForUser($this);
+        }
+
         if ($dashboardType) {
             $this->contractFilterSettingsCache = $dashboardType->getFilterSettings($this);
 
@@ -660,9 +665,9 @@ class User extends Authenticatable
             'allowed_regions' => [],
             'can_change_company' => $isHighLevel,
             'allowed_companies' => [],
-            'can_change_division' => $isHighLevel || in_array($roleName, ['Manager']),
+            'can_change_division' => $isHighLevel,
             'allowed_divisions' => [],
-            'can_change_department' => $isHighLevel || in_array($roleName, ['Manager']),
+            'can_change_department' => $isHighLevel,
             'allowed_departments' => [],
             'contract_type_ids' => [],
             'categories' => [],

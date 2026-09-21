@@ -183,7 +183,7 @@ trait HasWorkflowHelpers
     }
 
     /**
-     * Create WorkflowStepAuthority records for the action.
+     * Create Authority records for the action.
      */
     protected function createAdditionalAuthorities(
         WorkflowStepAction $action,
@@ -203,6 +203,7 @@ trait HasWorkflowHelpers
                 $resolvedRoleId = ! empty($auth['role_id']) ? $this->resolveRoleId($auth['role_id']) : null;
                 $resolvedDeptId = ! empty($auth['department_id']) ? $this->resolveDepartmentId($auth['department_id']) : null;
                 $resolvedDivId = ! empty($auth['division_id']) ? $this->resolveDivisionId($auth['division_id']) : null;
+                $resolvedOrgGrpId = ! empty($auth['organization_group_id']) ? $this->resolveOrganizationGroupId($auth['organization_group_id']) : null;
                 $resolvedLocId = ! empty($auth['location_id']) ? $this->resolveLocationId($auth['location_id']) : null;
                 $resolvedUserId = ! empty($auth['user_id']) ? $this->resolveUserId($auth['user_id']) : null;
                 $resolvedCgId = ! empty($auth['company_group_id']) ? $this->resolveCompanyGroupId($auth['company_group_id']) : null;
@@ -223,6 +224,7 @@ trait HasWorkflowHelpers
                     'role_id' => $resolvedRoleId,
                     'department_id' => $resolvedDeptId,
                     'division_id' => $resolvedDivId,
+                    'organization_group_id' => $resolvedOrgGrpId,
                     'location_id' => $resolvedLocId,
                     'user_id' => $resolvedUserId,
                     'company_group_id' => $resolvedCgId,
@@ -231,6 +233,7 @@ trait HasWorkflowHelpers
                     'role_use_initiator' => (bool) ($auth['role_use_initiator'] ?? false),
                     'department_use_initiator' => (bool) ($auth['department_use_initiator'] ?? false),
                     'division_use_initiator' => (bool) ($auth['division_use_initiator'] ?? false),
+                    'organization_group_use_initiator' => (bool) ($auth['organization_group_use_initiator'] ?? false),
                     'location_use_initiator' => (bool) ($auth['location_use_initiator'] ?? false),
                     'company_group_use_initiator' => (bool) ($auth['company_group_use_initiator'] ?? false),
                     'company_use_initiator' => (bool) ($auth['company_use_initiator'] ?? false),
@@ -417,6 +420,19 @@ trait HasWorkflowHelpers
         }
 
         return Division::where('code', $identifier)->value('id');
+    }
+
+    protected function resolveOrganizationGroupId(?string $identifier): ?string
+    {
+        if (empty($identifier)) {
+            return null;
+        }
+
+        if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $identifier)) {
+            return \App\Models\OrganizationGroup::where('id', $identifier)->value('id');
+        }
+
+        return \App\Models\OrganizationGroup::where('code', $identifier)->orWhere('name', $identifier)->value('id');
     }
 
     protected function resolveLocationId(?string $identifier): ?string

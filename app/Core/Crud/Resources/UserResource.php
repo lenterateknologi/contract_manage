@@ -16,9 +16,11 @@ use App\Models\BusinessUnit;
 use App\Models\Company;
 use App\Models\CompanyGroup;
 use App\Models\ContractFilterTemplate;
+use App\Models\DashboardType;
 use App\Models\Department;
 use App\Models\Division;
 use App\Models\JobLevel;
+use App\Models\JobLevelGroup;
 use App\Models\JobTitle;
 use App\Models\Location;
 use App\Models\OrganizationGroup;
@@ -259,6 +261,13 @@ class UserResource extends Resource
                     $options = ['__empty__' => '- (Tanpa Level / Kosong)'];
 
                     return $options + JobLevel::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray();
+                }),
+            Filter::make('job_level_group_id', 'Group Level Jabatan')
+                ->type('searchable')
+                ->options(function () {
+                    $options = ['__empty__' => '- (Tanpa Group Level / Kosong)'];
+
+                    return $options + JobLevelGroup::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray();
                 }),
             Filter::make('location_id', 'Lokasi Kerja')
                 ->type('searchable')

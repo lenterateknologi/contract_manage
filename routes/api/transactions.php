@@ -23,6 +23,7 @@ Route::prefix('contracts')->group(function () {
         Route::get('/roles', 'getRoles');
         Route::get('/{id}', 'show');
         Route::patch('/{id}', 'update');
+        Route::post('/{id}/review-doc', 'reviewDoc');
         Route::delete('/{id}', 'destroy');
         Route::post('/bulk-delete', 'bulkDestroy');
     });

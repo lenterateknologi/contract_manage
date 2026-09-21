@@ -3,11 +3,19 @@
 namespace Database\Seeders\Business;
 
 use App\Enums\WorkflowAction;
+use App\Models\Authority;
+use App\Models\Company;
+use App\Models\CompanyGroup;
+use App\Models\ContractType;
+use App\Models\Department;
+use App\Models\Division;
+use App\Models\Location;
+use App\Models\Region;
 use App\Models\Role;
+use App\Models\User;
 use App\Models\Workflow;
 use App\Models\WorkflowStep;
 use App\Models\WorkflowStepAction;
-use App\Models\WorkflowStepAuthority;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -18,10 +26,9 @@ class ContractFlowSeeder extends Seeder
         $roleMap = Role::pluck('id', 'name')->toArray();
         $staffRoleId = $roleMap['Staff'] ?? null;
         $managerRoleId = $roleMap['Manager'] ?? null;
-        $vpRoleId = $roleMap['VP'] ?? null;
-        $astManagerRoleId = $roleMap['Ast Manager'] ?? null;
+        $vpRoleId = $roleMap['VP'] ?? ($roleMap['Director'] ?? null);
         $astManagerLegalRoleId = $roleMap['Ast Manager Legal'] ?? ($roleMap['Ast Manager'] ?? null);
-        $managerLegalRoleId = $roleMap['Manager Legal'] ?? ($roleMap['Manager'] ?? null);
+        $managerLegalRoleId = $roleMap['Manager Legal'] ?? null;
         $staffLegalRoleId = $roleMap['Staff Legal'] ?? ($roleMap['Staff'] ?? null);
 
         // Cleanup existing workflows if previously created
@@ -34,9 +41,10 @@ class ContractFlowSeeder extends Seeder
         $existingWfIds = Workflow::whereIn('name', $workflowNames)->pluck('id')->toArray();
 
         if (!empty($existingWfIds)) {
-            WorkflowStepAuthority::whereIn('workflow_step_id', function ($q) use ($existingWfIds) {
-                $q->select('id')->from('m_workflow_steps')->whereIn('workflow_id', $existingWfIds);
-            })->delete();
+            Authority::where('context_type', Authority::CONTEXT_WORKFLOW_STEP)
+                ->whereIn('context_id', function ($q) use ($existingWfIds) {
+                    $q->select('id')->from('m_workflow_steps')->whereIn('workflow_id', $existingWfIds);
+                })->delete();
 
             WorkflowStepAction::whereIn('workflow_step_id', function ($q) use ($existingWfIds) {
                 $q->select('id')->from('m_workflow_steps')->whereIn('workflow_id', $existingWfIds);

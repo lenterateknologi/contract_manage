@@ -16,6 +16,7 @@ interface AuthorityItem {
     company_group_id?: string | null;
     company_id?: string | null;
     region_id?: string | null;
+    organization_group_id?: string | null;
     role_use_initiator?: boolean;
     department_use_initiator?: boolean;
     division_use_initiator?: boolean;
@@ -23,6 +24,7 @@ interface AuthorityItem {
     company_group_use_initiator?: boolean;
     company_use_initiator?: boolean;
     region_use_initiator?: boolean;
+    organization_group_use_initiator?: boolean;
 }
 
 interface AuthorityTableManagerProps {
@@ -34,6 +36,7 @@ interface AuthorityTableManagerProps {
     divisions?: any[];
     locations?: any[];
     companyGroups: any[];
+    organizationGroups?: any[];
     companies?: any[];
     regions: any[];
     title?: string;
@@ -70,6 +73,7 @@ export default function AuthorityTableManager({
     divisions = [],
     locations = [],
     companyGroups = [],
+    organizationGroups = [],
     companies = [],
     regions = [],
     title = 'Otoritas Akses',
@@ -106,6 +110,7 @@ export default function AuthorityTableManager({
     const [modalCompanyGroupIds, setModalCompanyGroupIds] = useState<string[]>([]);
     const [modalCompanyIds, setModalCompanyIds] = useState<string[]>([]);
     const [modalRegionIds, setModalRegionIds] = useState<string[]>([]);
+    const [modalOrganizationGroupIds, setModalOrganizationGroupIds] = useState<string[]>([]);
 
     // Per-dimension initiator flags
     const [roleUseInitiator, setRoleUseInitiator] = useState<boolean>(false);
@@ -115,6 +120,7 @@ export default function AuthorityTableManager({
     const [companyGroupUseInitiator, setCompanyGroupUseInitiator] = useState<boolean>(false);
     const [companyUseInitiator, setCompanyUseInitiator] = useState<boolean>(false);
     const [regionUseInitiator, setRegionUseInitiator] = useState<boolean>(false);
+    const [organizationGroupUseInitiator, setOrganizationGroupUseInitiator] = useState<boolean>(false);
 
     // Close simulator dropdown on click outside
     useEffect(() => {
@@ -137,6 +143,7 @@ export default function AuthorityTableManager({
     const activeDivisions = React.useMemo(() => (divisions || []).filter(d => d.is_used !== false && d.is_used !== 0 && String(d.is_used) !== '0'), [divisions]);
     const activeLocations = React.useMemo(() => (locations || []).filter(l => l.is_used !== false && l.is_used !== 0 && String(l.is_used) !== '0'), [locations]);
     const activeCompanyGroups = React.useMemo(() => (companyGroups || []).filter(cg => cg.is_used !== false && cg.is_used !== 0 && String(cg.is_used) !== '0'), [companyGroups]);
+    const activeOrganizationGroups = React.useMemo(() => (organizationGroups || []).filter(og => og.is_used !== false && og.is_used !== 0 && String(og.is_used) !== '0'), [organizationGroups]);
     const activeCompanies = React.useMemo(() => (companies || []).filter(c => c.is_used !== false && c.is_used !== 0 && String(c.is_used) !== '0'), [companies]);
     const activeRegions = React.useMemo(() => (regions || []).filter(r => r.is_used !== false && r.is_used !== 0 && String(r.is_used) !== '0'), [regions]);
 
@@ -152,6 +159,7 @@ export default function AuthorityTableManager({
             setModalCompanyGroupIds([]);
             setModalCompanyIds([]);
             setModalRegionIds([]);
+            setModalOrganizationGroupIds([]);
             setRoleUseInitiator(false);
             setDepartmentUseInitiator(false);
             setDivisionUseInitiator(false);
@@ -159,6 +167,7 @@ export default function AuthorityTableManager({
             setCompanyGroupUseInitiator(false);
             setCompanyUseInitiator(false);
             setRegionUseInitiator(false);
+            setOrganizationGroupUseInitiator(false);
         }
     };
 
@@ -170,6 +179,7 @@ export default function AuthorityTableManager({
         if (type === 'company_group') setModalCompanyGroupIds(val);
         if (type === 'company') setModalCompanyIds(val);
         if (type === 'region') setModalRegionIds(val);
+        if (type === 'organization_group') setModalOrganizationGroupIds(val);
 
         if (val && val.length > 0) {
             setModalCustomIds([]);
@@ -189,6 +199,7 @@ export default function AuthorityTableManager({
         setModalCompanyGroupIds([]);
         setModalCompanyIds([]);
         setModalRegionIds([]);
+        setModalOrganizationGroupIds([]);
         setRoleUseInitiator(false);
         setDepartmentUseInitiator(false);
         setDivisionUseInitiator(false);
@@ -196,6 +207,7 @@ export default function AuthorityTableManager({
         setCompanyGroupUseInitiator(false);
         setCompanyUseInitiator(false);
         setRegionUseInitiator(false);
+        setOrganizationGroupUseInitiator(false);
         setIsModalOpen(true);
     };
 
@@ -215,6 +227,7 @@ export default function AuthorityTableManager({
         setModalCompanyGroupIds([]);
         setModalCompanyIds([]);
         setModalRegionIds([]);
+        setModalOrganizationGroupIds([]);
         setRoleUseInitiator(false);
         setDepartmentUseInitiator(false);
         setDivisionUseInitiator(false);
@@ -222,6 +235,7 @@ export default function AuthorityTableManager({
         setCompanyGroupUseInitiator(false);
         setCompanyUseInitiator(false);
         setRegionUseInitiator(false);
+        setOrganizationGroupUseInitiator(false);
 
         if (firstAuth) {
             if (isCustomAuth(firstAuth)) {
@@ -236,6 +250,7 @@ export default function AuthorityTableManager({
                 if (firstAuth.company_group_id) setModalCompanyGroupIds([firstAuth.company_group_id]);
                 if (firstAuth.company_id) setModalCompanyIds([firstAuth.company_id]);
                 if (firstAuth.region_id) setModalRegionIds([firstAuth.region_id]);
+                if (firstAuth.organization_group_id) setModalOrganizationGroupIds([firstAuth.organization_group_id]);
 
                 if (firstAuth.role_use_initiator) setRoleUseInitiator(true);
                 if (firstAuth.department_use_initiator) setDepartmentUseInitiator(true);
@@ -244,6 +259,7 @@ export default function AuthorityTableManager({
                 if (firstAuth.company_group_use_initiator) setCompanyGroupUseInitiator(true);
                 if (firstAuth.company_use_initiator) setCompanyUseInitiator(true);
                 if (firstAuth.region_use_initiator) setRegionUseInitiator(true);
+                if (firstAuth.organization_group_use_initiator) setOrganizationGroupUseInitiator(true);
             }
         }
 
@@ -271,6 +287,7 @@ export default function AuthorityTableManager({
         setModalCompanyGroupIds([]);
         setModalCompanyIds([]);
         setModalRegionIds([]);
+        setModalOrganizationGroupIds([]);
         setRoleUseInitiator(false);
         setDepartmentUseInitiator(false);
         setDivisionUseInitiator(false);
@@ -278,6 +295,7 @@ export default function AuthorityTableManager({
         setCompanyGroupUseInitiator(false);
         setCompanyUseInitiator(false);
         setRegionUseInitiator(false);
+        setOrganizationGroupUseInitiator(false);
 
         if (isCustomAuth(auth)) {
             setModalCustomIds([getCustomType(auth)]);
@@ -292,6 +310,7 @@ export default function AuthorityTableManager({
             if (auth.company_group_id) setModalCompanyGroupIds([auth.company_group_id]);
             if (auth.company_id) setModalCompanyIds([auth.company_id]);
             if (auth.region_id) setModalRegionIds([auth.region_id]);
+            if (auth.organization_group_id) setModalOrganizationGroupIds([auth.organization_group_id]);
 
             if (auth.role_use_initiator) setRoleUseInitiator(true);
             if (auth.department_use_initiator) setDepartmentUseInitiator(true);
@@ -300,6 +319,7 @@ export default function AuthorityTableManager({
             if (auth.company_group_use_initiator) setCompanyGroupUseInitiator(true);
             if (auth.company_use_initiator) setCompanyUseInitiator(true);
             if (auth.region_use_initiator) setRegionUseInitiator(true);
+            if (auth.organization_group_use_initiator) setOrganizationGroupUseInitiator(true);
         }
 
         setIsModalOpen(true);
@@ -336,6 +356,7 @@ export default function AuthorityTableManager({
             const cgList = companyGroupUseInitiator ? ['__initiator__'] : (modalCompanyGroupIds.length > 0 ? modalCompanyGroupIds : [null]);
             const compList = companyUseInitiator ? ['__initiator__'] : (modalCompanyIds.length > 0 ? modalCompanyIds : [null]);
             const regList = regionUseInitiator ? ['__initiator__'] : (modalRegionIds.length > 0 ? modalRegionIds : [null]);
+            const ogList = organizationGroupUseInitiator ? ['__initiator__'] : (modalOrganizationGroupIds.length > 0 ? modalOrganizationGroupIds : [null]);
 
             const hasAnyDimension =
                 roleUseInitiator || modalRoleIds.length > 0 ||
@@ -344,7 +365,8 @@ export default function AuthorityTableManager({
                 locationUseInitiator || modalLocationIds.length > 0 ||
                 companyGroupUseInitiator || modalCompanyGroupIds.length > 0 ||
                 companyUseInitiator || modalCompanyIds.length > 0 ||
-                regionUseInitiator || modalRegionIds.length > 0;
+                regionUseInitiator || modalRegionIds.length > 0 ||
+                organizationGroupUseInitiator || modalOrganizationGroupIds.length > 0;
 
             if (hasAnyDimension) {
                 roleList.forEach(r => {
@@ -354,22 +376,26 @@ export default function AuthorityTableManager({
                                 cgList.forEach(cg => {
                                     compList.forEach(cp => {
                                         regList.forEach(rg => {
-                                            newItems.push({
-                                                authority_type: 'group',
-                                                role_id: r === '__initiator__' ? null : r,
-                                                department_id: d === '__initiator__' ? null : d,
-                                                division_id: dv === '__initiator__' ? null : dv,
-                                                location_id: loc === '__initiator__' ? null : loc,
-                                                company_group_id: cg === '__initiator__' ? null : cg,
-                                                company_id: cp === '__initiator__' ? null : cp,
-                                                region_id: rg === '__initiator__' ? null : rg,
-                                                role_use_initiator: r === '__initiator__',
-                                                department_use_initiator: d === '__initiator__',
-                                                division_use_initiator: dv === '__initiator__',
-                                                location_use_initiator: loc === '__initiator__',
-                                                company_group_use_initiator: cg === '__initiator__',
-                                                company_use_initiator: cp === '__initiator__',
-                                                region_use_initiator: rg === '__initiator__',
+                                            ogList.forEach(og => {
+                                                newItems.push({
+                                                    authority_type: 'group',
+                                                    role_id: r === '__initiator__' ? null : r,
+                                                    department_id: d === '__initiator__' ? null : d,
+                                                    division_id: dv === '__initiator__' ? null : dv,
+                                                    location_id: loc === '__initiator__' ? null : loc,
+                                                    company_group_id: cg === '__initiator__' ? null : cg,
+                                                    company_id: cp === '__initiator__' ? null : cp,
+                                                    region_id: rg === '__initiator__' ? null : rg,
+                                                    organization_group_id: og === '__initiator__' ? null : og,
+                                                    role_use_initiator: r === '__initiator__',
+                                                    department_use_initiator: d === '__initiator__',
+                                                    division_use_initiator: dv === '__initiator__',
+                                                    location_use_initiator: loc === '__initiator__',
+                                                    company_group_use_initiator: cg === '__initiator__',
+                                                    company_use_initiator: cp === '__initiator__',
+                                                    region_use_initiator: rg === '__initiator__',
+                                                    organization_group_use_initiator: og === '__initiator__',
+                                                });
                                             });
                                         });
                                     });
@@ -410,6 +436,7 @@ export default function AuthorityTableManager({
                 cg: a.company_group_id,
                 c: a.company_id,
                 rg: a.region_id,
+                og: a.organization_group_id,
                 ru: a.role_use_initiator,
                 du: a.department_use_initiator,
                 dvu: a.division_use_initiator,
@@ -417,6 +444,7 @@ export default function AuthorityTableManager({
                 cgu: a.company_group_use_initiator,
                 cu: a.company_use_initiator,
                 rgu: a.region_use_initiator,
+                ogu: a.organization_group_use_initiator,
             })));
 
             const uniqueNew = newItems.filter(a => !existingKeys.has(JSON.stringify({
@@ -429,6 +457,7 @@ export default function AuthorityTableManager({
                 cg: a.company_group_id,
                 c: a.company_id,
                 rg: a.region_id,
+                og: a.organization_group_id,
                 ru: a.role_use_initiator,
                 du: a.department_use_initiator,
                 dvu: a.division_use_initiator,
@@ -436,6 +465,7 @@ export default function AuthorityTableManager({
                 cgu: a.company_group_use_initiator,
                 cu: a.company_use_initiator,
                 rgu: a.region_use_initiator,
+                ogu: a.organization_group_use_initiator,
             })));
 
             onChange([...authorities, ...uniqueNew]);
@@ -489,6 +519,80 @@ export default function AuthorityTableManager({
     const getRegionLabel = (id?: string | null) => {
         if (!id) return '-';
         return regions.find(r => String(r.id) === id)?.name || id;
+    };
+    const getOrganizationGroupLabel = (id?: string | null) => {
+        if (!id) return '-';
+        return organizationGroups.find(og => String(og.id) === id || String(og.idorg_group) === id || og.code === id || og.name === id)?.name || id;
+    };
+
+    const isUserOrgGroupMatched = (authOrgGroupId: string | null | undefined, useInitiator: boolean | undefined, targetUser: any) => {
+        if (!authOrgGroupId && !useInitiator) return true;
+
+        const userOrgId = String(targetUser.department?.organization_group_id || targetUser.organization_group_id || '');
+        const userIdOrgGroup = targetUser.department?.idorg_group !== undefined && targetUser.department?.idorg_group !== null
+            ? String(targetUser.department.idorg_group)
+            : (targetUser.idorg_group !== undefined && targetUser.idorg_group !== null ? String(targetUser.idorg_group) : '');
+        const userOrgGroupName = (targetUser.org_group_name || targetUser.department?.org_group_name || '').toLowerCase().trim();
+
+        const userOgObj = organizationGroups.find(og => 
+            (userOrgId && String(og.id) === userOrgId) ||
+            (userIdOrgGroup && String(og.idorg_group) === userIdOrgGroup) ||
+            (userOrgGroupName && og.name?.toLowerCase().trim() === userOrgGroupName)
+        );
+        const resolvedUserOgId = userOgObj ? String(userOgObj.id) : userOrgId;
+        const resolvedUserIdOrgGroup = userOgObj && userOgObj.idorg_group !== undefined && userOgObj.idorg_group !== null
+            ? String(userOgObj.idorg_group)
+            : userIdOrgGroup;
+        const resolvedUserOgName = (userOgObj?.name || userOrgGroupName).toLowerCase().trim();
+
+        if (useInitiator) {
+            if (!simInitiatorUser) return false;
+            const initOrgId = String(simInitiatorUser.department?.organization_group_id || simInitiatorUser.organization_group_id || '');
+            const initIdOrgGroup = simInitiatorUser.department?.idorg_group !== undefined && simInitiatorUser.department?.idorg_group !== null
+                ? String(simInitiatorUser.department.idorg_group)
+                : (simInitiatorUser.idorg_group !== undefined && simInitiatorUser.idorg_group !== null ? String(simInitiatorUser.idorg_group) : '');
+            const initOrgGroupName = (simInitiatorUser.org_group_name || simInitiatorUser.department?.org_group_name || '').toLowerCase().trim();
+
+            const initOgObj = organizationGroups.find(og => 
+                (initOrgId && String(og.id) === initOrgId) ||
+                (initIdOrgGroup && String(og.idorg_group) === initIdOrgGroup) ||
+                (initOrgGroupName && og.name?.toLowerCase().trim() === initOrgGroupName)
+            );
+            const resolvedInitOgId = initOgObj ? String(initOgObj.id) : initOrgId;
+            const resolvedInitIdOrgGroup = initOgObj && initOgObj.idorg_group !== undefined && initOgObj.idorg_group !== null
+                ? String(initOgObj.idorg_group)
+                : initIdOrgGroup;
+            const resolvedInitOgName = (initOgObj?.name || initOrgGroupName).toLowerCase().trim();
+
+            return Boolean(
+                (resolvedInitOgId && resolvedUserOgId && resolvedInitOgId === resolvedUserOgId) ||
+                (resolvedInitIdOrgGroup && resolvedUserIdOrgGroup && resolvedInitIdOrgGroup === resolvedUserIdOrgGroup) ||
+                (resolvedInitOgName && resolvedUserOgName && resolvedInitOgName === resolvedUserOgName)
+            );
+        }
+
+        if (authOrgGroupId) {
+            const targetOg = organizationGroups.find(og => 
+                String(og.id) === String(authOrgGroupId) ||
+                String(og.idorg_group) === String(authOrgGroupId) ||
+                og.code === authOrgGroupId ||
+                og.name === authOrgGroupId
+            );
+            const targetOgId = targetOg ? String(targetOg.id) : String(authOrgGroupId);
+            const targetIdOrgGroup = targetOg && targetOg.idorg_group !== undefined && targetOg.idorg_group !== null
+                ? String(targetOg.idorg_group)
+                : null;
+            const targetOgName = (targetOg?.name || String(authOrgGroupId)).toLowerCase().trim();
+
+            return Boolean(
+                (targetOgId && resolvedUserOgId && targetOgId === resolvedUserOgId) ||
+                (targetIdOrgGroup !== null && resolvedUserIdOrgGroup && targetIdOrgGroup === resolvedUserIdOrgGroup) ||
+                (targetOgName && resolvedUserOgName && targetOgName === resolvedUserOgName) ||
+                (targetOgId && resolvedUserIdOrgGroup && targetOgId === resolvedUserIdOrgGroup)
+            );
+        }
+
+        return true;
     };
 
     const getCustomLabel = (id?: string | null) => {
@@ -545,6 +649,7 @@ export default function AuthorityTableManager({
                 const userCompId = String(user.company_id || user.company?.id || '');
                 const userCgId = String(user.company_group_id || user.company?.company_group_id || '');
                 const userRegionId = String(user.region_id || user.company?.region_id || '');
+                const userOrgGroupId = String(user.department?.organization_group_id || user.department?.idorg_group || user.organization_group_id || '');
 
                 if (auth.role_use_initiator) {
                     if (simInitiatorUser) {
@@ -623,6 +728,10 @@ export default function AuthorityTableManager({
                     if (userRegionId !== String(auth.region_id)) return false;
                 }
 
+                if (!isUserOrgGroupMatched(auth.organization_group_id, auth.organization_group_use_initiator, user)) {
+                    return false;
+                }
+
                 return true;
             }).length;
         }
@@ -675,9 +784,10 @@ export default function AuthorityTableManager({
                     const cgName = auth.company_group_use_initiator ? 'sesuai inisiator' : (getCompanyGroupLabel(auth.company_group_id || undefined) || '').toLowerCase();
                     const compName = auth.company_use_initiator ? 'sesuai inisiator' : (getCompanyLabel(auth.company_id || undefined) || '').toLowerCase();
                     const regName = auth.region_use_initiator ? 'sesuai inisiator' : (getRegionLabel(auth.region_id || undefined) || '').toLowerCase();
+                    const ogName = auth.organization_group_use_initiator ? 'sesuai inisiator' : (getOrganizationGroupLabel(auth.organization_group_id || undefined) || '').toLowerCase();
 
                     return roleName.includes(q) || deptName.includes(q) || divName.includes(q) || locName.includes(q) ||
-                        cgName.includes(q) || compName.includes(q) || regName.includes(q);
+                        cgName.includes(q) || compName.includes(q) || regName.includes(q) || ogName.includes(q);
                 }
                 return false;
             });
@@ -706,6 +816,9 @@ export default function AuthorityTableManager({
                 } else if (sortField === 'companyGroup') {
                     valA = a.company_group_use_initiator ? 'Sesuai Inisiator' : (getCompanyGroupLabel(a.company_group_id || undefined) || '');
                     valB = b.company_group_use_initiator ? 'Sesuai Inisiator' : (getCompanyGroupLabel(b.company_group_id || undefined) || '');
+                } else if (sortField === 'organizationGroup') {
+                    valA = a.organization_group_use_initiator ? 'Sesuai Inisiator' : (getOrganizationGroupLabel(a.organization_group_id || undefined) || '');
+                    valB = b.organization_group_use_initiator ? 'Sesuai Inisiator' : (getOrganizationGroupLabel(b.organization_group_id || undefined) || '');
                 } else if (sortField === 'company') {
                     valA = a.company_use_initiator ? 'Sesuai Inisiator' : (getCompanyLabel(a.company_id || undefined) || '');
                     valB = b.company_use_initiator ? 'Sesuai Inisiator' : (getCompanyLabel(b.company_id || undefined) || '');
@@ -729,7 +842,7 @@ export default function AuthorityTableManager({
         }
 
         return result;
-    }, [authorities, searchQuery, sortField, sortDirection, users, roles, departments, divisions, locations, companyGroups, companies, regions, getAuthorityUserCount]);
+    }, [authorities, searchQuery, sortField, sortDirection, users, roles, departments, divisions, locations, companyGroups, organizationGroups, companies, regions, getAuthorityUserCount]);
 
     const isAllFilteredSelected = filteredAuthorities.length > 0 && filteredAuthorities.every(f => selectedIndices.includes(f.originalIndex));
 
@@ -771,6 +884,7 @@ export default function AuthorityTableManager({
             const userCompId = String(user.company_id || user.company?.id || '');
             const userCgId = String(user.company_group_id || user.company?.company_group_id || '');
             const userRegionId = String(user.region_id || user.company?.region_id || '');
+            const userOrgGroupId = String(user.department?.organization_group_id || user.department?.idorg_group || user.organization_group_id || '');
 
             return authorities.some((auth) => {
                 // Custom Actor match (Initiator, Assigned PIC, Creator, Ad-hoc)
@@ -850,6 +964,11 @@ export default function AuthorityTableManager({
                         const userLocName = (user.location_name || user.location?.name || '').toLowerCase().trim();
                         const isLocMatch = userLocId === matchLocId || (userLocName && userLocName === matchLocName);
                         if (!isLocMatch) return false;
+                    }
+
+                    // Cek Organization Group
+                    if (!isUserOrgGroupMatched(auth.organization_group_id, auth.organization_group_use_initiator, user)) {
+                        return false;
                     }
 
                     // Cek Company Group
@@ -1190,6 +1309,15 @@ export default function AuthorityTableManager({
                                     </div>
                                 </th>
                                 <th
+                                    onClick={() => toggleSort('organizationGroup')}
+                                    className="px-3.5 py-3 font-bold uppercase tracking-wider text-white dark:text-zinc-200 cursor-pointer hover:bg-white/10 transition-colors"
+                                >
+                                    <div className="flex items-center">
+                                        <span>Organization Group</span>
+                                        {renderSortIcon('organizationGroup')}
+                                    </div>
+                                </th>
+                                <th
                                     onClick={() => toggleSort('company')}
                                     className="px-3.5 py-3 font-bold uppercase tracking-wider text-white dark:text-zinc-200 cursor-pointer hover:bg-white/10 transition-colors"
                                 >
@@ -1234,7 +1362,7 @@ export default function AuthorityTableManager({
                                         )}
                                     >
                                         <td className="px-3 py-2.5 text-center">
-                                            <Checkbox
+                                             <Checkbox
                                                 checked={isSelected}
                                                 onCheckedChange={() => toggleSelectRow(originalIndex)}
                                                 className="h-4 w-4"
@@ -1322,6 +1450,11 @@ export default function AuthorityTableManager({
                                             {auth.company_group_use_initiator ? (
                                                 <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-[10px] uppercase font-bold text-primary">Sesuai Inisiator</span>
                                             ) : getCompanyGroupLabel(auth.company_group_id)}
+                                        </td>
+                                        <td className="px-3 py-2.5 text-slate-600 dark:text-slate-400">
+                                            {auth.organization_group_use_initiator ? (
+                                                <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-[10px] uppercase font-bold text-primary">Sesuai Inisiator</span>
+                                            ) : getOrganizationGroupLabel(auth.organization_group_id)}
                                         </td>
                                         <td className="px-3 py-2.5 text-slate-600 dark:text-slate-400">
                                             {auth.company_use_initiator ? (
@@ -1590,6 +1723,37 @@ export default function AuthorityTableManager({
                                             options={activeCompanyGroups.map(cg => ({ value: String(cg.id), label: cg.name }))}
                                             placeholder="Semua Company Group..."
                                             disabled={showInitiatorOption && companyGroupUseInitiator}
+                                        />
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                        <div className="flex items-center justify-between">
+                                            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Pilih Organization Group</label>
+                                            {showInitiatorOption && (
+                                                <div className="flex items-center gap-1.5">
+                                                    <Checkbox
+                                                        id="og_initiator"
+                                                        checked={organizationGroupUseInitiator}
+                                                        onCheckedChange={(c) => {
+                                                            setOrganizationGroupUseInitiator(!!c);
+                                                            if (c) {
+                                                                setModalOrganizationGroupIds([]);
+                                                                setModalCustomIds([]);
+                                                                setModalUserIds([]);
+                                                            }
+                                                        }}
+                                                        className="h-3.5 w-3.5"
+                                                    />
+                                                    <label htmlFor="og_initiator" className="text-[11px] text-slate-500 font-medium cursor-pointer">Sesuai Inisiator</label>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <SearchableMultiSelect
+                                            values={modalOrganizationGroupIds}
+                                            onValuesChange={(vals) => handleGroupChange('organization_group', vals)}
+                                            options={activeOrganizationGroups.map(og => ({ value: String(og.id), label: og.name }))}
+                                            placeholder="Semua Organization Group..."
+                                            disabled={showInitiatorOption && organizationGroupUseInitiator}
                                         />
                                     </div>
 

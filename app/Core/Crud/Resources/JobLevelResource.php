@@ -4,6 +4,7 @@ namespace App\Core\Crud\Resources;
 
 use App\Core\Crud\Columns\BooleanColumn;
 use App\Core\Crud\Columns\TextColumn;
+use App\Core\Crud\Fields\SelectInput;
 use App\Core\Crud\Fields\TextInput;
 use App\Core\Crud\Fields\ToggleInput;
 use App\Core\Crud\Filters\Filter;
@@ -32,6 +33,7 @@ class JobLevelResource extends Resource
             TextColumn::make('code', 'Kode Level')->sortable()->searchable(),
             TextColumn::make('name', 'Nama Level')->sortable()->searchable(),
             TextColumn::make('group_name', 'Grup Level')->sortable()->searchable(),
+            TextColumn::make('tier_name', 'Jenjang')->sortable()->searchable(),
             TextColumn::make('job_titles_count', 'Total Posisi')->sortable()->alignRight(),
             TextColumn::make('users_count', 'Total User')->sortable()->alignRight(),
             BooleanColumn::make('is_used', 'Sistem')->sortable()->alignRight(),
@@ -50,6 +52,17 @@ class JobLevelResource extends Resource
                 ->rules(['string', 'max:255']),
             TextInput::make('group_name', 'Grup Level')
                 ->rules(['nullable', 'string', 'max:255']),
+            SelectInput::make('hierarchy_tier', 'Jenjang (Pohon Hierarki)')
+                ->options([
+                    1 => 'Level 1 · Direksi & Executive (VP / Head / Director)',
+                    2 => 'Level 2 · Senior Management (GM & Senior Manager)',
+                    3 => 'Level 3 · Management (Manager)',
+                    4 => 'Level 4 · Middle Management (Assistant Manager & Askep)',
+                    5 => 'Level 5 · Supervisor & Senior Officer',
+                    6 => 'Level 6 · Staff & Officer',
+                    7 => 'Level 7 · Pelaksana & Non-Staff',
+                ])
+                ->rules(['nullable', 'integer', 'min:1', 'max:7']),
             ToggleInput::make('is_used', 'Sistem')
                 ->default(false),
             ToggleInput::make('is_active', 'Portal')
@@ -71,6 +84,16 @@ class JobLevelResource extends Resource
 
                     return $options + $groups;
                 }),
+            Filter::make('hierarchy_tier', 'Jenjang')
+                ->options([
+                    '1' => 'Level 1 · Direksi & Executive',
+                    '2' => 'Level 2 · GM & Senior Manager',
+                    '3' => 'Level 3 · Manager',
+                    '4' => 'Level 4 · Asst. Manager & Askep',
+                    '5' => 'Level 5 · Supervisor & Sr. Officer',
+                    '6' => 'Level 6 · Staff & Officer',
+                    '7' => 'Level 7 · Pelaksana & Non-Staff',
+                ]),
             Filter::make('is_used', 'Status Sistem')
                 ->options([
                     '1' => 'Digunakan (Ya)',

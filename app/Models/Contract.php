@@ -222,6 +222,16 @@ class Contract extends Model
         return $this->hasMany(ContractPurchaseOrder::class, 'contract_id')->latest();
     }
 
+    public function docReviews(): HasMany
+    {
+        return $this->hasMany(SubmissionReview::class, 'submission_id')->latest();
+    }
+
+    public function submissionReviews(): HasMany
+    {
+        return $this->hasMany(SubmissionReview::class, 'submission_id')->latest();
+    }
+
     public function assignedPic(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_pic_id');

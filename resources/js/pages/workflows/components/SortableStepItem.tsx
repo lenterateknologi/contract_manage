@@ -75,6 +75,7 @@ export default function SortableStepItem({
     locations = [],
     users = [],
     companyGroups = [],
+    organizationGroups = [],
     companies = [],
     regions = [],
     allWorkflows = [],
@@ -102,6 +103,7 @@ export default function SortableStepItem({
     locations?: any[];
     users?: any[];
     companyGroups?: any[];
+    organizationGroups?: any[];
     companies?: any[];
     regions?: any[];
     allWorkflows?: any[];
@@ -628,6 +630,7 @@ export default function SortableStepItem({
                                 divisions={divisions}
                                 locations={locations}
                                 companyGroups={companyGroups}
+                                organizationGroups={organizationGroups}
                                 companies={companies}
                                 regions={regions}
                                 simulationContext={simulationContext}
@@ -1073,55 +1076,58 @@ export default function SortableStepItem({
                         )}
 
                         {/* Modal Dialog Otoritas Langkah */}
-                        <Dialog open={actorsModalOpen} onOpenChange={setActorsModalOpen}>
-                            <DialogContent className="sm:max-w-[96vw] w-[96vw] max-w-[96vw] h-[90vh] max-h-[90vh] border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 rounded-[12px] border p-0 shadow-2xl overflow-hidden flex flex-col">
-                                <div className="px-6 py-4 border-b border-primary/20 dark:border-zinc-700/80 bg-primary dark:bg-zinc-800/90 text-white dark:text-zinc-200 flex items-center justify-between rounded-t-[12px] shrink-0">
-                                    <div className="flex items-center gap-3">
-                                        <div className="bg-white/20 text-white border border-white/20 dark:bg-primary/20 dark:text-primary dark:border-primary/30 flex h-9 w-9 items-center justify-center rounded-lg">
-                                            <UsersIcon size={18} />
-                                        </div>
-                                        <div>
-                                            <DialogTitle className="text-sm font-bold tracking-tight text-white dark:text-zinc-100">
-                                                Aktor & Otoritas Tahap {step.step || idx + 1}: {step.description || step.label || 'Tanpa Nama'}
-                                            </DialogTitle>
-                                            <DialogDescription className="text-white/80 dark:text-zinc-400 text-xs font-medium mt-0.5">
-                                                Tentukan aktor dan hak otoritas persetujuan untuk tahap ini
-                                            </DialogDescription>
+                        {actorsModalOpen && (
+                            <Dialog open={actorsModalOpen} onOpenChange={setActorsModalOpen}>
+                                <DialogContent className="sm:max-w-[96vw] w-[96vw] max-w-[96vw] h-[90vh] max-h-[90vh] border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 rounded-[12px] border p-0 shadow-2xl overflow-hidden flex flex-col">
+                                    <div className="px-6 py-4 border-b border-primary/20 dark:border-zinc-700/80 bg-primary dark:bg-zinc-800/90 text-white dark:text-zinc-200 flex items-center justify-between rounded-t-[12px] shrink-0">
+                                        <div className="flex items-center gap-3">
+                                            <div className="bg-white/20 text-white border border-white/20 dark:bg-primary/20 dark:text-primary dark:border-primary/30 flex h-9 w-9 items-center justify-center rounded-lg">
+                                                <UsersIcon size={18} />
+                                            </div>
+                                            <div>
+                                                <DialogTitle className="text-sm font-bold tracking-tight text-white dark:text-zinc-100">
+                                                    Aktor & Otoritas Tahap {step.step || idx + 1}: {step.description || step.label || 'Tanpa Nama'}
+                                                </DialogTitle>
+                                                <DialogDescription className="text-white/80 dark:text-zinc-400 text-xs font-medium mt-0.5">
+                                                    Tentukan aktor dan hak otoritas persetujuan untuk tahap ini
+                                                </DialogDescription>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
 
-                                <div className="p-6 bg-white dark:bg-zinc-900 flex-1 overflow-y-auto">
-                                    <AuthorityTableManager
-                                        title="Otoritas Langkah"
-                                        authorities={step.approver_authorities || []}
-                                        onChange={(vals) => updateLocalStep(idx, { approver_authorities: vals })}
-                                        users={users}
-                                        roles={roles}
-                                        departments={departments}
-                                        divisions={divisions}
-                                        locations={locations}
-                                        companyGroups={companyGroups}
-                                        companies={companies}
-                                        regions={regions}
-                                        showCustom={true}
-                                        simulationContext={simulationContext}
-                                        onOpenSimulationModal={onOpenSimulationModal}
-                                    />
-                                </div>
+                                    <div className="p-6 bg-white dark:bg-zinc-900 flex-1 overflow-y-auto">
+                                        <AuthorityTableManager
+                                            title="Otoritas Langkah"
+                                            authorities={step.approver_authorities || []}
+                                            onChange={(vals) => updateLocalStep(idx, { approver_authorities: vals })}
+                                            users={users}
+                                            roles={roles}
+                                            departments={departments}
+                                            divisions={divisions}
+                                            locations={locations}
+                                            companyGroups={companyGroups}
+                                            organizationGroups={organizationGroups}
+                                            companies={companies}
+                                            regions={regions}
+                                            showCustom={true}
+                                            simulationContext={simulationContext}
+                                            onOpenSimulationModal={onOpenSimulationModal}
+                                        />
+                                    </div>
 
-                                <DialogFooter className="p-4 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-800/50 flex items-center justify-end">
-                                    <Button
-                                        type="button"
-                                        variant="primary"
-                                        onClick={() => setActorsModalOpen(false)}
-                                        className="h-8 text-xs font-bold px-4 rounded-lg"
-                                    >
-                                        Selesai
-                                    </Button>
-                                </DialogFooter>
-                            </DialogContent>
-                        </Dialog>
+                                    <DialogFooter className="p-4 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-800/50 flex items-center justify-end">
+                                        <Button
+                                            type="button"
+                                            variant="primary"
+                                            onClick={() => setActorsModalOpen(false)}
+                                            className="h-8 text-xs font-bold px-4 rounded-lg"
+                                        >
+                                            Selesai
+                                        </Button>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
+                        )}
 
                         {stepTab === 'actions' && (
                             <div className="space-y-3.5 animate-in fade-in duration-200">
@@ -1653,39 +1659,49 @@ export default function SortableStepItem({
             )}
 
             {/* --- Interactive Simulated Modals (accessible outside the expansion block) --- */}
-            <ApproveModal
-                isOpen={activeModal === 'approve'}
-                onClose={() => setActiveModal(null)}
-                step={step}
-                idx={idx}
-                userOptions={userOptions}
-                showToast={showToast}
-            />
+            {activeModal === 'approve' && (
+                <ApproveModal
+                    isOpen={activeModal === 'approve'}
+                    onClose={() => setActiveModal(null)}
+                    step={step}
+                    idx={idx}
+                    userOptions={userOptions}
+                    showToast={showToast}
+                />
+            )}
 
-            <RejectModal isOpen={activeModal === 'reject'} onClose={() => setActiveModal(null)} step={step} idx={idx} showToast={showToast} />
+            {activeModal === 'reject' && (
+                <RejectModal isOpen={activeModal === 'reject'} onClose={() => setActiveModal(null)} step={step} idx={idx} showToast={showToast} />
+            )}
 
-            <AssignModal
-                isOpen={activeModal === 'assign_pic'}
-                onClose={() => setActiveModal(null)}
-                assigneeOptions={assigneeOptions || []}
-                action={currentAssignAction}
-                step={step}
-                idx={idx}
-                actionAlias={currentAssignAction?.alias || currentAssignAction?.name || 'Tugaskan PIC'}
-                showToast={showToast}
-            />
+            {activeModal === 'assign_pic' && (
+                <AssignModal
+                    isOpen={activeModal === 'assign_pic'}
+                    onClose={() => setActiveModal(null)}
+                    assigneeOptions={assigneeOptions || []}
+                    action={currentAssignAction}
+                    step={step}
+                    idx={idx}
+                    actionAlias={currentAssignAction?.alias || currentAssignAction?.name || 'Tugaskan PIC'}
+                    showToast={showToast}
+                />
+            )}
 
-            <ForwardModal isOpen={activeModal === 'add_adhoc'} onClose={() => setActiveModal(null)} step={step} idx={idx} showToast={showToast} />
+            {activeModal === 'add_adhoc' && (
+                <ForwardModal isOpen={activeModal === 'add_adhoc'} onClose={() => setActiveModal(null)} step={step} idx={idx} showToast={showToast} />
+            )}
 
-            <ConditionExpressionModal
-                open={conditionModalOpen}
-                onOpenChange={setConditionModalOpen}
-                step={step}
-                idx={idx}
-                updateLocalStep={updateLocalStep}
-                parsedCondition={parsedCondition}
-                handleConditionChange={handleConditionChange}
-            />
+            {conditionModalOpen && (
+                <ConditionExpressionModal
+                    open={conditionModalOpen}
+                    onOpenChange={setConditionModalOpen}
+                    step={step}
+                    idx={idx}
+                    updateLocalStep={updateLocalStep}
+                    parsedCondition={parsedCondition}
+                    handleConditionChange={handleConditionChange}
+                />
+            )}
         </div>
     );
 }

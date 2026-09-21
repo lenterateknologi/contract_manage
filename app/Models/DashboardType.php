@@ -17,12 +17,15 @@ class DashboardType extends Model
     protected $fillable = [
         'name',
         'description',
+        'priority',
+        'user_ids',
         'role_id',
         'role_ids',
         'division_id',
         'division_ids',
         'department_id',
         'department_ids',
+        'org_group_ids',
         'contract_type_ids',
         'categories',
         'scope_to_user_division',
@@ -32,6 +35,7 @@ class DashboardType extends Model
         'scope_to_user_region',
         'company_group_ids',
         'region_ids',
+        'location_ids',
         'company_ids',
         'branch_ids',
         'business_unit_ids',
@@ -75,9 +79,12 @@ class DashboardType extends Model
     }
 
     protected $casts = [
+        'priority' => 'integer',
+        'user_ids' => 'array',
         'role_ids' => 'array',
         'division_ids' => 'array',
         'department_ids' => 'array',
+        'org_group_ids' => 'array',
         'contract_type_ids' => 'array',
         'categories' => 'array',
         'scope_to_user_division' => 'boolean',
@@ -87,6 +94,7 @@ class DashboardType extends Model
         'scope_to_user_region' => 'boolean',
         'company_group_ids' => 'array',
         'region_ids' => 'array',
+        'location_ids' => 'array',
         'company_ids' => 'array',
         'branch_ids' => 'array',
         'business_unit_ids' => 'array',
@@ -104,6 +112,8 @@ class DashboardType extends Model
         'role_names',
         'division_names',
         'department_names',
+        'org_group_names',
+        'location_names',
         'contract_type_names',
         'users_count',
     ];
@@ -133,10 +143,10 @@ class DashboardType extends Model
         }
 
         if (empty($ids)) {
-            return '- (Semua Role)';
+            return '-';
         }
 
-        return Role::whereIn('id', $ids)->pluck('name')->join(', ') ?: '- (Semua Role)';
+        return Role::whereIn('id', $ids)->pluck('name')->join(', ') ?: '-';
     }
 
     public function getDivisionNamesAttribute(): string
@@ -153,10 +163,10 @@ class DashboardType extends Model
         }
 
         if (empty($ids)) {
-            return '- (Semua Divisi)';
+            return '-';
         }
 
-        return Division::whereIn('id', $ids)->pluck('name')->join(', ') ?: '- (Semua Divisi)';
+        return Division::whereIn('id', $ids)->pluck('name')->join(', ') ?: '-';
     }
 
     public function getDepartmentNamesAttribute(): string
@@ -173,10 +183,34 @@ class DashboardType extends Model
         }
 
         if (empty($ids)) {
-            return '- (Semua Departemen)';
+            return '-';
         }
 
-        return Department::whereIn('id', $ids)->pluck('name')->join(', ') ?: '- (Semua Departemen)';
+        return Department::whereIn('id', $ids)->pluck('name')->join(', ') ?: '-';
+    }
+
+    public function getOrgGroupNamesAttribute(): string
+    {
+        $raw = $this->org_group_ids ?? $this->getAttributeFromArray('org_group_ids');
+        $ids = $this->normalizeIds($raw);
+
+        if (empty($ids)) {
+            return '-';
+        }
+
+        return OrganizationGroup::whereIn('id', $ids)->pluck('name')->join(', ') ?: '-';
+    }
+
+    public function getLocationNamesAttribute(): string
+    {
+        $raw = $this->location_ids ?? $this->getAttributeFromArray('location_ids');
+        $ids = $this->normalizeIds($raw);
+
+        if (empty($ids)) {
+            return '-';
+        }
+
+        return Location::whereIn('id', $ids)->pluck('name')->join(', ') ?: '-';
     }
 
     public function getContractTypeNamesAttribute(): string
@@ -185,18 +219,44 @@ class DashboardType extends Model
         $ids = $this->normalizeIds($raw);
 
         if (empty($ids)) {
-            return '- (Semua Tipe Kontrak)';
+            return '-';
         }
 
-        return ContractType::whereIn('id', $ids)->pluck('name')->join(', ') ?: '- (Semua Tipe Kontrak)';
+        return ContractType::whereIn('id', $ids)->pluck('name')->join(', ') ?: '-';
     }
 
     public function getUsersCountAttribute(): int
     {
+        // 1. Check if linked via m_authorities table
+        $authorities = Authority::where('context_type', Authority::CONTEXT_DASHBOARD_TYPE)
+            ->where('context_id', $this->id)
+            ->where('is_active', true)
+            ->get();
+
+        if ($authorities->isNotEmpty()) {
+            return User::where('is_used', true)->get()->filter(function ($u) use ($authorities) {
+                foreach ($authorities as $rule) {
+                    if (Authority::ruleMatchesUser($rule, $u)) {
+                        return true;
+                    }
+                }
+                return false;
+            })->count();
+        }
+
+        // 2. Direct columns fallback
+        $userIds = self::normalizeIds($this->user_ids ?? ($this->attributes['user_ids'] ?? null));
+        if (! empty($userIds)) {
+            return User::whereIn('id', $userIds)->count();
+        }
+
         $roleIds = self::normalizeIds($this->role_ids ?? ($this->attributes['role_ids'] ?? null));
         if (array_key_exists('role_id', $this->attributes) && ! empty($this->attributes['role_id']) && ! in_array($this->attributes['role_id'], $roleIds)) {
             $roleIds[] = $this->attributes['role_id'];
         }
+
+        $jobLevelIds = self::normalizeIds($this->job_level_ids ?? ($this->attributes['job_level_ids'] ?? null));
+        $jobTitleIds = self::normalizeIds($this->job_title_ids ?? ($this->attributes['job_title_ids'] ?? null));
 
         $divIds = self::normalizeIds($this->division_ids ?? ($this->attributes['division_ids'] ?? null));
         if (array_key_exists('division_id', $this->attributes) && ! empty($this->attributes['division_id']) && ! in_array($this->attributes['division_id'], $divIds)) {
@@ -208,10 +268,23 @@ class DashboardType extends Model
             $deptIds[] = $this->attributes['department_id'];
         }
 
-        $query = User::query();
+        // If no criteria specified at all, then 0 users have access
+        if (empty($roleIds) && empty($jobLevelIds) && empty($jobTitleIds) && empty($divIds) && empty($deptIds)) {
+            return 0;
+        }
+
+        $query = User::query()->where('is_used', true);
 
         if (! empty($roleIds)) {
             $query->whereIn('role_id', $roleIds);
+        }
+
+        if (! empty($jobLevelIds)) {
+            $query->whereIn('job_level_id', $jobLevelIds);
+        }
+
+        if (! empty($jobTitleIds)) {
+            $query->whereIn('job_position_id', $jobTitleIds);
         }
 
         if (! empty($divIds) && ! $this->scope_to_user_division) {
@@ -223,6 +296,11 @@ class DashboardType extends Model
         }
 
         return $query->count();
+    }
+
+    public function authorities(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Authority::class, 'context_id')->where('context_type', Authority::CONTEXT_DASHBOARD_TYPE);
     }
 
     public function role(): BelongsTo
@@ -242,19 +320,21 @@ class DashboardType extends Model
 
     /**
      * Resolves the most specific DashboardType configuration profile for a given user.
-     * Evaluates specificity in order: Specific Role + Div/Dept -> Specific Role -> Role Fallback -> Global.
+     * Evaluates priority (Leveling: 1 is highest priority) then specificity score.
      */
     public static function resolveForUser(?User $user): ?self
     {
         if (! $user) {
-            return self::first();
+            return self::orderBy('priority', 'asc')->first();
         }
 
-        $all = self::all();
+        // Order by priority (1 = highest priority, fallback higher numbers)
+        $all = self::orderBy('priority', 'asc')->get();
         if ($all->isEmpty()) {
             return null;
         }
 
+        $userId = $user->id;
         $userRoleId = $user->role_id;
         $userDivId = $user->division_id;
         $userDeptId = $user->department_id;
@@ -263,62 +343,116 @@ class DashboardType extends Model
 
         $bestMatch = null;
         $highestScore = -1;
+        $bestPriority = PHP_INT_MAX;
 
         foreach ($all as $item) {
             $score = 0;
-            $matches = true;
+            $matches = false;
+            $hasCriteria = false;
 
-            $roleIds = self::normalizeIds($item->role_ids);
-            if (! empty($roleIds)) {
-                if ($userRoleId && in_array($userRoleId, $roleIds)) {
-                    $score += 10;
-                } else {
-                    $matches = false;
+            // Check m_authorities first
+            $itemAuthorities = Authority::where('context_type', Authority::CONTEXT_DASHBOARD_TYPE)
+                ->where('context_id', $item->id)
+                ->where('is_active', true)
+                ->get();
+
+            if ($itemAuthorities->isNotEmpty()) {
+                $hasCriteria = true;
+                foreach ($itemAuthorities as $rule) {
+                    if (Authority::ruleMatchesUser($rule, $user)) {
+                        $matches = true;
+                        $score += 30;
+                        break;
+                    }
+                }
+            } else {
+                // Check direct fields
+                $isTargeted = false;
+                $criteriaMatched = true;
+
+                $userIds = self::normalizeIds($item->user_ids);
+                if (! empty($userIds)) {
+                    $hasCriteria = true;
+                    $isTargeted = true;
+                    if ($userId && in_array((string) $userId, array_map('strval', $userIds))) {
+                        $score += 20;
+                    } else {
+                        $criteriaMatched = false;
+                    }
+                }
+
+                $roleIds = self::normalizeIds($item->role_ids);
+                if (! empty($roleIds)) {
+                    $hasCriteria = true;
+                    $isTargeted = true;
+                    if ($userRoleId && in_array($userRoleId, $roleIds)) {
+                        $score += 10;
+                    } else {
+                        $criteriaMatched = false;
+                    }
+                }
+
+                $levelIds = self::normalizeIds($item->job_level_ids);
+                if (! empty($levelIds)) {
+                    $hasCriteria = true;
+                    $isTargeted = true;
+                    if ($userJobLevelId && in_array($userJobLevelId, $levelIds)) {
+                        $score += 8;
+                    } else {
+                        $criteriaMatched = false;
+                    }
+                }
+
+                $titleIds = self::normalizeIds($item->job_title_ids);
+                if (! empty($titleIds)) {
+                    $hasCriteria = true;
+                    $isTargeted = true;
+                    if ($userJobTitleId && in_array($userJobTitleId, $titleIds)) {
+                        $score += 6;
+                    } else {
+                        $criteriaMatched = false;
+                    }
+                }
+
+                $divIds = self::normalizeIds($item->division_ids);
+                if (! empty($divIds) && ! $item->scope_to_user_division) {
+                    $hasCriteria = true;
+                    $isTargeted = true;
+                    if ($userDivId && in_array($userDivId, $divIds)) {
+                        $score += 5;
+                    } else {
+                        $criteriaMatched = false;
+                    }
+                }
+
+                $deptIds = self::normalizeIds($item->department_ids);
+                if (! empty($deptIds) && ! $item->scope_to_user_department) {
+                    $hasCriteria = true;
+                    $isTargeted = true;
+                    if ($userDeptId && in_array($userDeptId, $deptIds)) {
+                        $score += 4;
+                    } else {
+                        $criteriaMatched = false;
+                    }
+                }
+
+                if ($isTargeted && $criteriaMatched) {
+                    $matches = true;
                 }
             }
 
-            $levelIds = self::normalizeIds($item->job_level_ids);
-            if (! empty($levelIds)) {
-                if ($userJobLevelId && in_array($userJobLevelId, $levelIds)) {
-                    $score += 8;
-                } else {
-                    $matches = false;
+            if ($matches) {
+                $itemPriority = (int) ($item->priority ?? 10);
+                // Lower priority number means higher precedence (Priority 1 > Priority 2 > Priority 10)
+                if ($itemPriority < $bestPriority || ($itemPriority === $bestPriority && $score > $highestScore)) {
+                    $bestPriority = $itemPriority;
+                    $highestScore = $score;
+                    $bestMatch = $item;
                 }
-            }
-
-            $titleIds = self::normalizeIds($item->job_title_ids);
-            if (! empty($titleIds)) {
-                if ($userJobTitleId && in_array($userJobTitleId, $titleIds)) {
-                    $score += 6;
-                } else {
-                    $matches = false;
-                }
-            }
-
-            $divIds = self::normalizeIds($item->division_ids);
-            if (! empty($divIds) && ! $item->scope_to_user_division) {
-                if ($userDivId && in_array($userDivId, $divIds)) {
-                    $score += 5;
-                } else {
-                    $matches = false;
-                }
-            }
-
-            $deptIds = self::normalizeIds($item->department_ids);
-            if (! empty($deptIds) && ! $item->scope_to_user_department) {
-                if ($userDeptId && in_array($userDeptId, $deptIds)) {
-                    $score += 4;
-                } else {
-                    $matches = false;
-                }
-            }
-
-            if ($matches && $score > $highestScore) {
-                $highestScore = $score;
-                $bestMatch = $item;
             }
         }
 
+        // If user matches a specific/leveled profile, return it. Otherwise return global default if any
         return $bestMatch ?: $all->first();
     }
 
@@ -327,17 +461,32 @@ class DashboardType extends Model
      */
     public function getFilterSettings(?User $user = null): array
     {
+        $allowedDepartments = self::normalizeIds($this->department_ids);
+        $orgGroupIds = self::normalizeIds($this->org_group_ids);
+
+        if (! empty($orgGroupIds)) {
+            $idOrgGroups = OrganizationGroup::whereIn('id', $orgGroupIds)->pluck('idorg_group')->filter()->toArray();
+            if (! empty($idOrgGroups)) {
+                $depts = Department::whereIn('idorg_group', $idOrgGroups)->pluck('id')->toArray();
+                $allowedDepartments = array_values(array_unique(array_merge($allowedDepartments, $depts)));
+            }
+        }
+
         return [
-            'can_change_company_group' => ! $this->scope_to_user_company_group && empty($this->company_group_ids),
+            'can_change_company_group' => false,
             'allowed_company_groups' => self::normalizeIds($this->company_group_ids),
-            'can_change_region' => ! $this->scope_to_user_region && empty($this->region_ids),
+            'can_change_region' => false,
             'allowed_regions' => self::normalizeIds($this->region_ids),
-            'can_change_company' => ! $this->scope_to_user_company && empty($this->company_ids),
+            'can_change_location' => false,
+            'allowed_locations' => self::normalizeIds($this->location_ids),
+            'can_change_company' => false,
             'allowed_companies' => self::normalizeIds($this->company_ids),
-            'can_change_division' => ! $this->scope_to_user_division && empty($this->division_ids),
+            'can_change_division' => false,
             'allowed_divisions' => self::normalizeIds($this->division_ids),
-            'can_change_department' => ! $this->scope_to_user_department && empty($this->department_ids),
-            'allowed_departments' => self::normalizeIds($this->department_ids),
+            'can_change_department' => false,
+            'allowed_departments' => $allowedDepartments,
+            'org_group_ids' => $orgGroupIds,
+            'location_ids' => self::normalizeIds($this->location_ids),
             'contract_type_ids' => self::normalizeIds($this->contract_type_ids),
             'categories' => self::normalizeIds($this->categories),
         ];

@@ -101,12 +101,16 @@ class WorkflowStep extends Model
 
     public function approverAuthorities(): HasMany
     {
-        return $this->hasMany(WorkflowStepAuthority::class, 'workflow_step_id')->where('is_additional', false);
+        return $this->hasMany(Authority::class, 'context_id')
+            ->where('context_type', Authority::CONTEXT_WORKFLOW_STEP)
+            ->where('is_additional', false);
     }
 
     public function additionalAuthorities(): HasMany
     {
-        return $this->hasMany(WorkflowStepAuthority::class, 'workflow_step_id')->where('is_additional', true);
+        return $this->hasMany(Authority::class, 'context_id')
+            ->where('context_type', Authority::CONTEXT_WORKFLOW_STEP)
+            ->where('is_additional', true);
     }
 
     public function getRoleAttribute()
@@ -174,6 +178,7 @@ class WorkflowStep extends Model
 
     public function users(): BelongsToMany
     {
-        return $this->belongsToMany(User::class, 'm_workflow_step_authorities', 'workflow_step_id', 'user_id');
+        return $this->belongsToMany(User::class, 'm_authorities', 'context_id', 'user_id')
+            ->where('context_type', Authority::CONTEXT_WORKFLOW_STEP);
     }
 }

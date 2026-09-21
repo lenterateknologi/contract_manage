@@ -51,13 +51,10 @@ beforeEach(function () {
         'description' => 'Self Review Phase',
         'approver_type' => 'user',
     ]);
-    DB::table('m_workflow_step_authorities')->insert([
-        'id' => Str::uuid()->toString(),
-        'workflow_step_id' => $this->step2->id,
+    $this->step2->approverAuthorities()->create([
         'user_id' => $this->creator->id,
+        'authority_type' => 'user',
         'is_additional' => false,
-        'created_at' => now(),
-        'updated_at' => now(),
     ]);
 
     // Actions

@@ -3,12 +3,12 @@
 namespace Database\Seeders\Business;
 
 use App\Enums\WorkflowAction;
+use App\Models\Authority;
 use App\Models\ContractType;
 use App\Models\Role;
 use App\Models\Workflow;
 use App\Models\WorkflowStep;
 use App\Models\WorkflowStepAction;
-use App\Models\WorkflowStepAuthority;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -43,9 +43,10 @@ class TestingPicWorkflowSeeder extends Seeder
         // 1. Cleanup workflow lama jika ada
         $existingWfIds = Workflow::where('name', $wfName)->pluck('id')->toArray();
         if (! empty($existingWfIds)) {
-            WorkflowStepAuthority::whereIn('workflow_step_id', function ($q) use ($existingWfIds) {
-                $q->select('id')->from('m_workflow_steps')->whereIn('workflow_id', $existingWfIds);
-            })->delete();
+            Authority::where('context_type', Authority::CONTEXT_WORKFLOW_STEP)
+                ->whereIn('context_id', function ($q) use ($existingWfIds) {
+                    $q->select('id')->from('m_workflow_steps')->whereIn('workflow_id', $existingWfIds);
+                })->delete();
 
             WorkflowStepAction::whereIn('workflow_step_id', function ($q) use ($existingWfIds) {
                 $q->select('id')->from('m_workflow_steps')->whereIn('workflow_id', $existingWfIds);

@@ -790,6 +790,7 @@ interface WorkflowFlowVisualizerProps {
     divisions?: any[];
     locations?: any[];
     companyGroups?: any[];
+    organizationGroups?: any[];
     companies?: any[];
     regions?: any[];
     simulationContext?: {
@@ -812,6 +813,7 @@ export function WorkflowFlowVisualizer({
     divisions = [],
     locations = [],
     companyGroups = [],
+    organizationGroups = [],
     companies = [],
     regions = [],
     simulationContext,
@@ -1088,7 +1090,9 @@ export function WorkflowFlowVisualizer({
                         auth.company_id ||
                         auth.company_use_initiator ||
                         auth.region_id ||
-                        auth.region_use_initiator
+                        auth.region_use_initiator ||
+                        auth.organization_group_id ||
+                        auth.organization_group_use_initiator
                     );
 
                     if (hasFilters) {
@@ -1185,6 +1189,75 @@ export function WorkflowFlowVisualizer({
                                 }
                             } else if (match && auth.region_id) {
                                 if (userRegionId !== String(auth.region_id)) match = false;
+                            }
+
+                            if (match && (auth.organization_group_use_initiator || auth.organization_group_id)) {
+                                const userOrgId = String(user.department?.organization_group_id || user.organization_group_id || '');
+                                const userIdOrgGroup = user.department?.idorg_group !== undefined && user.department?.idorg_group !== null
+                                    ? String(user.department.idorg_group)
+                                    : (user.idorg_group !== undefined && user.idorg_group !== null ? String(user.idorg_group) : '');
+                                const userOrgGroupName = (user.org_group_name || user.department?.org_group_name || '').toLowerCase().trim();
+
+                                const userOgObj = organizationGroups.find((og: any) => 
+                                    (userOrgId && String(og.id) === userOrgId) ||
+                                    (userIdOrgGroup && String(og.idorg_group) === userIdOrgGroup) ||
+                                    (userOrgGroupName && og.name?.toLowerCase().trim() === userOrgGroupName)
+                                );
+                                const resolvedUserOgId = userOgObj ? String(userOgObj.id) : userOrgId;
+                                const resolvedUserIdOrgGroup = userOgObj && userOgObj.idorg_group !== undefined && userOgObj.idorg_group !== null
+                                    ? String(userOgObj.idorg_group)
+                                    : userIdOrgGroup;
+                                const resolvedUserOgName = (userOgObj?.name || userOrgGroupName).toLowerCase().trim();
+
+                                if (auth.organization_group_use_initiator) {
+                                    if (!simInitiatorUser) {
+                                        match = false;
+                                    } else {
+                                        const initOrgId = String(simInitiatorUser.department?.organization_group_id || simInitiatorUser.organization_group_id || '');
+                                        const initIdOrgGroup = simInitiatorUser.department?.idorg_group !== undefined && simInitiatorUser.department?.idorg_group !== null
+                                            ? String(simInitiatorUser.department.idorg_group)
+                                            : (simInitiatorUser.idorg_group !== undefined && simInitiatorUser.idorg_group !== null ? String(simInitiatorUser.idorg_group) : '');
+                                        const initOrgGroupName = (simInitiatorUser.org_group_name || simInitiatorUser.department?.org_group_name || '').toLowerCase().trim();
+
+                                        const initOgObj = organizationGroups.find((og: any) => 
+                                            (initOrgId && String(og.id) === initOrgId) ||
+                                            (initIdOrgGroup && String(og.idorg_group) === initIdOrgGroup) ||
+                                            (initOrgGroupName && og.name?.toLowerCase().trim() === initOrgGroupName)
+                                        );
+                                        const resolvedInitOgId = initOgObj ? String(initOgObj.id) : initOrgId;
+                                        const resolvedInitIdOrgGroup = initOgObj && initOgObj.idorg_group !== undefined && initOgObj.idorg_group !== null
+                                            ? String(initOgObj.idorg_group)
+                                            : initIdOrgGroup;
+                                        const resolvedInitOgName = (initOgObj?.name || initOrgGroupName).toLowerCase().trim();
+
+                                        const isOrgGroupMatch = 
+                                            (resolvedInitOgId && resolvedUserOgId && resolvedInitOgId === resolvedUserOgId) ||
+                                            (resolvedInitIdOrgGroup && resolvedUserIdOrgGroup && resolvedInitIdOrgGroup === resolvedUserIdOrgGroup) ||
+                                            (resolvedInitOgName && resolvedUserOgName && resolvedInitOgName === resolvedUserOgName);
+
+                                        if (!isOrgGroupMatch) match = false;
+                                    }
+                                } else if (auth.organization_group_id) {
+                                    const targetOg = organizationGroups.find((og: any) => 
+                                        String(og.id) === String(auth.organization_group_id) ||
+                                        String(og.idorg_group) === String(auth.organization_group_id) ||
+                                        og.code === auth.organization_group_id ||
+                                        og.name === auth.organization_group_id
+                                    );
+                                    const targetOgId = targetOg ? String(targetOg.id) : String(auth.organization_group_id);
+                                    const targetIdOrgGroup = targetOg && targetOg.idorg_group !== undefined && targetOg.idorg_group !== null
+                                        ? String(targetOg.idorg_group)
+                                        : null;
+                                    const targetOgName = (targetOg?.name || String(auth.organization_group_id)).toLowerCase().trim();
+
+                                    const isOrgGroupMatch = 
+                                        (targetOgId && resolvedUserOgId && targetOgId === resolvedUserOgId) ||
+                                        (targetIdOrgGroup !== null && resolvedUserIdOrgGroup && targetIdOrgGroup === resolvedUserIdOrgGroup) ||
+                                        (targetOgName && resolvedUserOgName && targetOgName === resolvedUserOgName) ||
+                                        (targetOgId && resolvedUserIdOrgGroup && targetOgId === resolvedUserIdOrgGroup);
+
+                                    if (!isOrgGroupMatch) match = false;
+                                }
                             }
 
                             if (match) {

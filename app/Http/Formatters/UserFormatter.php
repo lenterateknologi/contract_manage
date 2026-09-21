@@ -37,9 +37,21 @@ class UserFormatter
             }
         }
 
+        $dept = $user->relationLoaded('department') ? $user->getRelation('department') : null;
+        $deptAttrs = $dept ? $dept->getAttributes() : [];
+
+        $comp = $user->relationLoaded('company') ? $user->getRelation('company') : null;
+        $compAttrs = $comp ? $comp->getAttributes() : [];
+
+        $div = $user->relationLoaded('division') ? $user->getRelation('division') : null;
+        $divAttrs = $div ? $div->getAttributes() : [];
+
+        $loc = $user->relationLoaded('location') ? $user->getRelation('location') : null;
+        $locAttrs = $loc ? $loc->getAttributes() : [];
+
         return [
             'id' => $user->id,
-            'name' => $user->name,
+            'name' => $attributes['name'] ?? null,
             'nik' => $attributes['nik'] ?? null,
             'jobtitle_name' => $attributes['jobtitle_name'] ?? null,
             'initials' => $user->initials ?? '',
@@ -47,17 +59,27 @@ class UserFormatter
             'role_id' => $attributes['role_id'] ?? null,
             'department_id' => $attributes['division_id'] ?? ($attributes['department_id'] ?? null),
             'division_id' => $attributes['division_id'] ?? null,
-            'department_name' => $user->relationLoaded('department') ? $user->department?->name : null,
-            'division_name' => $user->relationLoaded('division') ? $user->division?->name : null,
+            'department_name' => $deptAttrs['name'] ?? null,
+            'division_name' => $divAttrs['name'] ?? null,
+            'department' => $dept ? [
+                'id' => $deptAttrs['id'] ?? null,
+                'name' => $deptAttrs['name'] ?? null,
+                'code' => $deptAttrs['code'] ?? null,
+                'idorg_group' => $deptAttrs['idorg_group'] ?? null,
+                'org_group_name' => $deptAttrs['org_group_name'] ?? null,
+            ] : null,
+            'organization_group_id' => $deptAttrs['idorg_group'] ?? null,
+            'idorg_group' => $deptAttrs['idorg_group'] ?? ($attributes['idorg_group'] ?? null),
+            'org_group_name' => $deptAttrs['org_group_name'] ?? ($attributes['org_name'] ?? null),
             'company_id' => $attributes['company_id'] ?? null,
-            'company_name' => $user->relationLoaded('company') ? $user->company?->name : null,
-            'company_group_id' => $attributes['company_group_id'] ?? ($user->relationLoaded('company') ? $user->company?->company_group_id : null),
-            'company_group_name' => $user->relationLoaded('company') && $user->company?->relationLoaded('companyGroup') ? $user->company?->companyGroup?->name : null,
-            'region_id' => $attributes['region_id'] ?? ($user->relationLoaded('company') ? $user->company?->region_id : null),
-            'region_name' => $user->relationLoaded('company') && $user->company?->relationLoaded('region') ? $user->company?->region?->name : null,
+            'company_name' => $compAttrs['name'] ?? null,
+            'company_group_id' => $attributes['company_group_id'] ?? ($compAttrs['company_group_id'] ?? null),
+            'company_group_name' => $comp && $comp->relationLoaded('companyGroup') && $comp->getRelation('companyGroup') ? ($comp->getRelation('companyGroup')->getAttributes()['name'] ?? null) : null,
+            'region_id' => $attributes['region_id'] ?? ($compAttrs['region_id'] ?? null),
+            'region_name' => $comp && $comp->relationLoaded('region') && $comp->getRelation('region') ? ($comp->getRelation('region')->getAttributes()['name'] ?? null) : null,
             'location_id' => $attributes['location_id'] ?? null,
             'idlocation' => $attributes['idlocation'] ?? null,
-            'location_name' => $attributes['location_name'] ?? ($user->relationLoaded('location') ? $user->location?->name : null),
+            'location_name' => $attributes['location_name'] ?? ($locAttrs['name'] ?? null),
             'email' => $attributes['email'] ?? null,
             'phone_number' => $attributes['phone_number'] ?? ($attributes['mobile_no'] ?? null),
             'mobile_no' => $attributes['mobile_no'] ?? null,

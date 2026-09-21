@@ -24,11 +24,10 @@ use App\Models\Region;
 use App\Models\Role;
 use App\Models\RoleModuleGroup;
 use App\Models\User;
+use App\Models\Authority;
 use App\Models\Workflow;
-use App\Models\WorkflowInitiatorAuthority;
 use App\Models\WorkflowStep;
 use App\Models\WorkflowStepAction;
-use App\Models\WorkflowStepAuthority;
 use App\Services\MasterData\MasterDataImportService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -274,49 +273,55 @@ class MasterDataAdminController extends Controller
                     ];
                 })->toArray();
 
-                $exportData['workflow_step_authorities'] = WorkflowStepAuthority::with(['user', 'department', 'division'])->get()->map(function ($a) {
-                    return [
-                        'id' => $a->id,
-                        'workflow_step_id' => $a->workflow_step_id,
-                        'role_id' => $a->role_id,
-                        'department_id' => $a->department_id,
-                        'division_id' => $a->division_id,
-                        'user_id' => $a->user_id,
-                        'user_email' => $a->user->email ?? null,
-                        'authority_type' => $a->authority_type,
-                        'is_additional' => $a->is_additional,
-                        'additional_type' => $a->additional_type,
-                        'workflow_step_action_id' => $a->workflow_step_action_id,
-                        'target_step_id' => $a->target_step_id,
-                        'company_group_id' => $a->company_group_id,
-                        'region_id' => $a->region_id,
-                        'role_use_initiator' => $a->role_use_initiator,
-                        'department_use_initiator' => $a->department_use_initiator,
-                        'division_use_initiator' => $a->division_use_initiator,
-                        'company_group_use_initiator' => $a->company_group_use_initiator,
-                        'region_use_initiator' => $a->region_use_initiator,
-                    ];
-                })->toArray();
+                $exportData['workflow_step_authorities'] = Authority::where('context_type', Authority::CONTEXT_WORKFLOW_STEP)
+                    ->with(['user', 'department', 'division'])
+                    ->get()
+                    ->map(function ($a) {
+                        return [
+                            'id' => $a->id,
+                            'workflow_step_id' => $a->context_id,
+                            'role_id' => $a->role_id,
+                            'department_id' => $a->department_id,
+                            'division_id' => $a->division_id,
+                            'user_id' => $a->user_id,
+                            'user_email' => $a->user->email ?? null,
+                            'authority_type' => $a->authority_type,
+                            'is_additional' => $a->is_additional,
+                            'additional_type' => $a->additional_type,
+                            'workflow_step_action_id' => $a->workflow_step_action_id,
+                            'target_step_id' => $a->target_step_id,
+                            'company_group_id' => $a->company_group_id,
+                            'region_id' => $a->region_id,
+                            'role_use_initiator' => $a->role_use_initiator,
+                            'department_use_initiator' => $a->department_use_initiator,
+                            'division_use_initiator' => $a->division_use_initiator,
+                            'company_group_use_initiator' => $a->company_group_use_initiator,
+                            'region_use_initiator' => $a->region_use_initiator,
+                        ];
+                    })->toArray();
 
-                $exportData['workflow_initiator_authorities'] = WorkflowInitiatorAuthority::with(['user', 'department'])->get()->map(function ($a) {
-                    return [
-                        'id' => $a->id,
-                        'workflow_id' => $a->workflow_id,
-                        'role_id' => $a->role_id,
-                        'department_id' => $a->department_id,
-                        'division_id' => $a->division_id,
-                        'user_id' => $a->user_id,
-                        'user_email' => $a->user->email ?? null,
-                        'authority_type' => $a->authority_type,
-                        'company_group_id' => $a->company_group_id,
-                        'region_id' => $a->region_id,
-                        'role_use_initiator' => $a->role_use_initiator,
-                        'department_use_initiator' => $a->department_use_initiator,
-                        'division_use_initiator' => $a->division_use_initiator,
-                        'company_group_use_initiator' => $a->company_group_use_initiator,
-                        'region_use_initiator' => $a->region_use_initiator,
-                    ];
-                })->toArray();
+                $exportData['workflow_initiator_authorities'] = Authority::where('context_type', Authority::CONTEXT_WORKFLOW_INITIATOR)
+                    ->with(['user', 'department'])
+                    ->get()
+                    ->map(function ($a) {
+                        return [
+                            'id' => $a->id,
+                            'workflow_id' => $a->context_id,
+                            'role_id' => $a->role_id,
+                            'department_id' => $a->department_id,
+                            'division_id' => $a->division_id,
+                            'user_id' => $a->user_id,
+                            'user_email' => $a->user->email ?? null,
+                            'authority_type' => $a->authority_type,
+                            'company_group_id' => $a->company_group_id,
+                            'region_id' => $a->region_id,
+                            'role_use_initiator' => $a->role_use_initiator,
+                            'department_use_initiator' => $a->department_use_initiator,
+                            'division_use_initiator' => $a->division_use_initiator,
+                            'company_group_use_initiator' => $a->company_group_use_initiator,
+                            'region_use_initiator' => $a->region_use_initiator,
+                        ];
+                    })->toArray();
 
                 $exportData['workflow_step_actions'] = WorkflowStepAction::all()->map(function ($a) {
                     return [
@@ -637,8 +642,18 @@ class MasterDataAdminController extends Controller
                 // 2. Workflows
                 if (in_array('workflows', $entities)) {
                     DB::table('m_workflow_step_actions')->delete();
-                    DB::table('m_workflow_step_authorities')->delete();
-                    DB::table('m_workflow_initiator_authorities')->delete();
+                    DB::table('m_authorities')->whereIn('context_type', [
+                        Authority::CONTEXT_WORKFLOW_STEP,
+                        Authority::CONTEXT_WORKFLOW_INITIATOR,
+                        Authority::CONTEXT_STEP_ACTION_BUTTON,
+                        Authority::CONTEXT_STEP_ACTION_ASSIGNEE,
+                    ])->delete();
+                    if (Schema::hasTable('m_workflow_step_authorities')) {
+                        DB::table('m_workflow_step_authorities')->delete();
+                    }
+                    if (Schema::hasTable('m_workflow_initiator_authorities')) {
+                        DB::table('m_workflow_initiator_authorities')->delete();
+                    }
                     DB::table('m_workflow_steps')->delete();
                     DB::table('m_workflows')->delete();
                 }

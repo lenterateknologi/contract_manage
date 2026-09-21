@@ -100,7 +100,26 @@ export default function AdminIndex({
     filters = {},
     counts,
 }: Readonly<Props & { locations?: any; divisions?: any; subdepartments?: any; sections?: any; jobTitles?: any; jobLevels?: any; jobLevelGroups?: any; organizationGroups?: any }>) {
-    const [membersTab, setMembersTab] = useState<'org' | 'job'>('org');
+    const [membersTab, setMembersTab] = useState<'org' | 'job'>(() => {
+        if (typeof window !== 'undefined') {
+            const urlParams = new URLSearchParams(window.location.search);
+            const tabParam = urlParams.get('tab');
+            if (tabParam === 'org' || tabParam === 'job') return tabParam;
+            const savedTab = localStorage.getItem('admin_members_active_tab');
+            if (savedTab === 'org' || savedTab === 'job') return savedTab;
+        }
+        return 'org';
+    });
+
+    const handleTabChange = (tab: 'org' | 'job') => {
+        setMembersTab(tab);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('admin_members_active_tab', tab);
+            const url = new URL(window.location.href);
+            url.searchParams.set('tab', tab);
+            window.history.replaceState({}, '', url.toString());
+        }
+    };
 
     // View Metadata Mapping
     const viewTitleMap: Record<string, string> = {
@@ -147,7 +166,7 @@ export default function AdminIndex({
                             <div className="inline-flex p-1 bg-slate-100 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-inner">
                                 <button
                                     type="button"
-                                    onClick={() => setMembersTab('org')}
+                                    onClick={() => handleTabChange('org')}
                                     className={cn(
                                         "flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all",
                                         membersTab === 'org'
@@ -160,7 +179,7 @@ export default function AdminIndex({
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={() => setMembersTab('job')}
+                                    onClick={() => handleTabChange('job')}
                                     className={cn(
                                         "flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all",
                                         membersTab === 'job'
@@ -194,11 +213,19 @@ export default function AdminIndex({
                         ) : (
                             <JobHierarchyFlow
                                 users={usersList}
+                                masterGroups={companyGroups}
+                                masterOrganizationGroups={organizationGroups}
+                                masterRegions={regions}
+                                masterLocations={locations}
+                                masterCompanies={companies}
+                                masterDivisions={divisions}
+                                masterDepartments={departments}
+                                masterSubdepartments={subdepartments}
+                                masterSections={sections}
                                 masterJobLevelGroups={jobLevelGroups}
                                 masterJobLevels={jobLevels}
                                 masterJobTitles={jobTitles}
-                                masterCompanies={companies}
-                                masterDepartments={departments}
+                                masterRoles={rolesArray}
                             />
                         )}
                     </div>

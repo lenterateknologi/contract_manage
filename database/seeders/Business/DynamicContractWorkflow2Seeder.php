@@ -3,11 +3,19 @@
 namespace Database\Seeders\Business;
 
 use App\Enums\WorkflowAction;
+use App\Models\Authority;
+use App\Models\Company;
+use App\Models\CompanyGroup;
+use App\Models\ContractType;
+use App\Models\Department;
+use App\Models\Division;
+use App\Models\Location;
+use App\Models\Region;
 use App\Models\Role;
+use App\Models\User;
 use App\Models\Workflow;
 use App\Models\WorkflowStep;
 use App\Models\WorkflowStepAction;
-use App\Models\WorkflowStepAuthority;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -16,18 +24,23 @@ class DynamicContractWorkflow2Seeder extends Seeder
     public function run(): void
     {
         $roleMap = Role::pluck('id', 'name')->toArray();
+        $staffRoleId = $roleMap['Staff'] ?? null;
         $managerRoleId = $roleMap['Manager'] ?? null;
         $vpRoleId = $roleMap['VP'] ?? null;
-        $managerLegalRoleId = $roleMap['Manager Legal'] ?? ($roleMap['Manager'] ?? null);
-        $staffLegalRoleId = $roleMap['Staff Legal'] ?? ($roleMap['Staff'] ?? null);
+        $managerLegalRoleId = $roleMap['Manager Legal'] ?? null;
+        $staffLegalRoleId = $roleMap['Staff Legal'] ?? null;
+        $astManagerRoleId = $roleMap['Ast Manager'] ?? null;
 
-        $targetWf1Id = 'dcc0af6c-20a9-4bb8-8c3e-962f72d00be6';
-        $wf1 = Workflow::find($targetWf1Id);
+        // Cari ID Workflow 1 Utama
+        $wf1Name = 'ALUR PERSETUJUAN KONTRAK DINAMIS (BERJENJANG & PAJAK)';
+        $wf1 = Workflow::where('name', $wf1Name)->first();
 
         if (! $wf1) {
-            $this->command->error("Workflow 1 dengan ID {$targetWf1Id} tidak ditemukan!");
+            $this->command->error("Workflow 1 Utama ('{$wf1Name}') tidak ditemukan. Harap jalankan DynamicContractApprovalSeeder terlebih dahulu.");
             return;
         }
+
+        $targetWf1Id = $wf1->id;
 
         // 1. Update Workflow 1 menjadi tipe 'main'
         $wf1->update([
@@ -42,9 +55,10 @@ class DynamicContractWorkflow2Seeder extends Seeder
 
         if ($existingWf2) {
             $existingId = $existingWf2->id;
-            WorkflowStepAuthority::whereIn('workflow_step_id', function ($q) use ($existingId) {
-                $q->select('id')->from('m_workflow_steps')->where('workflow_id', $existingId);
-            })->delete();
+            Authority::where('context_type', Authority::CONTEXT_WORKFLOW_STEP)
+                ->whereIn('context_id', function ($q) use ($existingId) {
+                    $q->select('id')->from('m_workflow_steps')->where('workflow_id', $existingId);
+                })->delete();
 
             WorkflowStepAction::whereIn('workflow_step_id', function ($q) use ($existingId) {
                 $q->select('id')->from('m_workflow_steps')->where('workflow_id', $existingId);
@@ -290,9 +304,10 @@ class DynamicContractWorkflow2Seeder extends Seeder
 
         if ($existingWf3) {
             $existingId3 = $existingWf3->id;
-            WorkflowStepAuthority::whereIn('workflow_step_id', function ($q) use ($existingId3) {
-                $q->select('id')->from('m_workflow_steps')->where('workflow_id', $existingId3);
-            })->delete();
+            Authority::where('context_type', Authority::CONTEXT_WORKFLOW_STEP)
+                ->whereIn('context_id', function ($q) use ($existingId3) {
+                    $q->select('id')->from('m_workflow_steps')->where('workflow_id', $existingId3);
+                })->delete();
 
             WorkflowStepAction::whereIn('workflow_step_id', function ($q) use ($existingId3) {
                 $q->select('id')->from('m_workflow_steps')->where('workflow_id', $existingId3);

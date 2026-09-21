@@ -7,6 +7,7 @@ use App\Models\Approval;
 use App\Models\Contract;
 use App\Models\ContractStatus;
 use App\Models\ContractVersion;
+use App\Models\NumberingFormat;
 use App\Models\User;
 use App\Models\Workflow;
 use App\Models\WorkflowStep;
@@ -496,6 +497,44 @@ class ContractWorkflowService
                         $query->where(function ($q) use ($regionId) {
                             $q->where('region_id', $regionId)
                                 ->orWhereHas('company', fn ($cq) => $cq->where('region_id', $regionId));
+                        });
+                        $hasFilters = true;
+                    }
+
+                    if ($a->organization_group_use_initiator) {
+                        $orgGroupId = data_get($contract->initiator, 'department.organization_group_id')
+                            ?: data_get($contract->initiator, 'department.idorg_group')
+                            ?: data_get($contract->initiator, 'organization_group_id');
+                        if (! $orgGroupId) {
+                            $invalidInitiatorFilter = true;
+                        }
+                    } else {
+                        $orgGroupId = $a->organization_group_id;
+                    }
+
+                    if (($a->organization_group_use_initiator || $orgGroupId) && ($isGroup || empty($a->authority_type) || $a->authority_type === 'organization_group')) {
+                        $isUuid = is_string($orgGroupId) && preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', (string) $orgGroupId);
+                        $isNumeric = is_numeric($orgGroupId);
+
+                        $query->whereHas('department', function ($dq) use ($orgGroupId, $isUuid, $isNumeric) {
+                            $dq->where(function ($subDq) use ($orgGroupId, $isUuid, $isNumeric) {
+                                if ($isNumeric) {
+                                    $subDq->where('idorg_group', $orgGroupId);
+                                }
+                                if (! $isUuid) {
+                                    $subDq->orWhere('org_group_name', $orgGroupId);
+                                }
+                                $subDq->orWhereHas('organizationGroup', function ($ogq) use ($orgGroupId, $isUuid, $isNumeric) {
+                                    if ($isUuid) {
+                                        $ogq->where('id', $orgGroupId);
+                                    } elseif ($isNumeric) {
+                                        $ogq->where('idorg_group', $orgGroupId);
+                                    } else {
+                                        $ogq->where('code', $orgGroupId)
+                                            ->orWhere('name', $orgGroupId);
+                                    }
+                                });
+                            });
                         });
                         $hasFilters = true;
                     }
@@ -1608,6 +1647,20 @@ class ContractWorkflowService
 
                 case 'started_at':
                     $metadata['started_at'] = now()->toIso8601String();
+                    $metaUpdated = true;
+                    break;
+
+                // ── OPSI RESET / REGENERASI ──
+                case 'reset_form_no':
+                    $initiator = $contract->initiator ?: ($contract->initiated_by_id ? User::with('department')->find($contract->initiated_by_id) : null);
+                    $contractType = $contract->contractType ?: ($contract->contract_type_id ? \App\Models\ContractType::find($contract->contract_type_id) : null);
+                    $newFormNo = NumberingFormat::generateNextNumber('contract', [
+                        'kode_departemen' => $initiator?->department?->code ?? 'GEN',
+                        'kode_perjanjian' => $contractType?->code ?? 'KTR',
+                    ]);
+                    $updates['form_no'] = $newFormNo;
+                    $metadata['form_no'] = $newFormNo;
+                    $metadata['meta_nomor'] = $newFormNo;
                     $metaUpdated = true;
                     break;
 

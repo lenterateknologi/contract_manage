@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\BackupController;
 use App\Http\Controllers\Admin\MasterConfigController;
 use App\Http\Controllers\Admin\MasterDataAdminController;
+use App\Http\Controllers\Admin\OnBehalfAuthorityController;
 use App\Http\Controllers\Admin\OrganizationController;
 use App\Http\Controllers\Admin\VendorAdminController;
 use App\Http\Controllers\Admin\WorkflowAdminController;
@@ -34,6 +35,11 @@ Route::middleware(['admin'])->prefix('admin')->group(function () {
 
         Route::get('/access-mapping/{role?}', 'accessMapping')->name('admin.access-mapping');
         Route::get('/navigation-mapping/{role?}', 'navigationMapping')->name('admin.navigation-mapping');
+    });
+
+    Route::controller(OnBehalfAuthorityController::class)->prefix('on-behalf-authorities')->group(function () {
+        Route::get('/', 'index')->name('admin.on-behalf-authorities.index');
+        Route::post('/', 'save')->name('admin.on-behalf-authorities.save');
     });
 
     Route::controller(MasterConfigController::class)->group(function () {

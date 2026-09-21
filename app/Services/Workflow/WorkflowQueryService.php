@@ -130,12 +130,37 @@ class WorkflowQueryService
                             // 4. User match
                                 ->orWhereHas('initiatorAuthorities', function ($q) use ($user) {
                                     $q->where('user_id', $user->id);
+                                })
+                            // 5. Organization Group match
+                                ->orWhereHas('initiatorAuthorities', function ($q) use ($user) {
+                                    $orgGroupId = data_get($user, 'department.idorg_group') ?: data_get($user, 'idorg_group');
+                                    $orgGroupName = data_get($user, 'department.org_group_name') ?: data_get($user, 'org_name');
+                                    if (empty($orgGroupId) && empty($orgGroupName)) {
+                                        $q->whereRaw('1 = 0');
+                                    } else {
+                                        $q->where(function ($subQ) use ($orgGroupId, $orgGroupName) {
+                                            if ($orgGroupId) {
+                                                $isNum = is_numeric($orgGroupId);
+                                                $subQ->where('organization_group_id', (string) $orgGroupId)
+                                                    ->orWhereHas('organizationGroup', function ($ogq) use ($orgGroupId, $isNum) {
+                                                        if ($isNum) {
+                                                            $ogq->where('idorg_group', $orgGroupId);
+                                                        } else {
+                                                            $ogq->where('id', $orgGroupId);
+                                                        }
+                                                    });
+                                            }
+                                            if ($orgGroupName) {
+                                                $subQ->orWhereHas('organizationGroup', fn ($ogq) => $ogq->where('name', $orgGroupName));
+                                            }
+                                        });
+                                    }
                                 });
                         });
                 });
             }
         })
-            ->with(['steps', 'contractType', 'initiatorAuthorities.role', 'initiatorAuthorities.department', 'initiatorAuthorities.division', 'initiatorAuthorities.user', 'initiatorAuthorities.companyGroup', 'initiatorAuthorities.region'])
+            ->with(['steps', 'contractType', 'initiatorAuthorities.role', 'initiatorAuthorities.department', 'initiatorAuthorities.division', 'initiatorAuthorities.user', 'initiatorAuthorities.companyGroup', 'initiatorAuthorities.region', 'initiatorAuthorities.organizationGroup'])
             ->get();
     }
 

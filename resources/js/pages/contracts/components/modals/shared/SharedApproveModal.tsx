@@ -5,7 +5,7 @@ import { FormTextarea } from '@/components/ui/inputs/FormTextarea';
 import { formatFileSize } from '@/lib/formatters';
 import { cn } from '@/lib/utils';
 import { contractApi, resolveTransitionPreview } from '@/pages/contracts/utils';
-import { AlertCircle, CheckCircle2, Gavel, Loader2, Paperclip, Plus, Send, UserPen, X, XCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Eye, Gavel, Loader2, Paperclip, Plus, Send, UserPen, X, XCircle } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 export interface SharedActionModalProps {
@@ -344,6 +344,30 @@ export function SharedActionModal({
                 missingDocs.push('Field Masa Berlaku Kontrak');
             }
 
+            // Review / Flag Checks
+            const stepKey = contract?.workflow_step_id ? `step_${contract.workflow_step_id}` : 'general';
+            const reviews = ((contract as any)?.doc_reviews?.[stepKey] || contract?.metadata?.doc_reviews?.[stepKey] || contract?.metadata?.[`doc_reviews_${stepKey}`] || {}) as Record<string, any>;
+
+            if (requiredFields.includes('review_f1') && !reviews.f1?.reviewed) {
+                missingDocs.push('Wajib Ditinjau: F1 (Permohonan belum dibuka)');
+            }
+            if (requiredFields.includes('review_f2') && !reviews.f2?.reviewed) {
+                missingDocs.push('Wajib Ditinjau: F2 (Ringkasan belum dibuka)');
+            }
+            if (requiredFields.includes('review_agreement') && !reviews.agreement?.reviewed) {
+                missingDocs.push('Wajib Ditinjau: Draft Perjanjian (Draft belum dibuka)');
+            }
+            if (requiredFields.includes('review_all_docs')) {
+                const meta = contract?.workflow_step?.meta || {};
+                const hasF1 = meta.show_tab_f1 !== false && ((contract as any)?.f1_mode || 'upload') !== 'none';
+                const hasF2 = meta.show_tab_f2 !== false && ((contract as any)?.f2_mode || 'upload') !== 'none';
+                const hasAgreement = meta.show_tab_agreement !== false && ((contract as any)?.contract_mode || 'upload') !== 'none';
+
+                if (hasF1 && !reviews.f1?.reviewed) missingDocs.push('Wajib Ditinjau: F1 (Permohonan)');
+                if (hasF2 && !reviews.f2?.reviewed) missingDocs.push('Wajib Ditinjau: F2 (Ringkasan)');
+                if (hasAgreement && !reviews.agreement?.reviewed) missingDocs.push('Wajib Ditinjau: Draft Perjanjian');
+            }
+
             if (missingDocs.length > 0) {
                 alert(`Tidak dapat melanjutkan persetujuan. Data/dokumen berikut wajib diisi terlebih dahulu:\n- ${missingDocs.join('\n- ')}`);
                 return;
@@ -543,6 +567,80 @@ export function SharedActionModal({
                         {modalConfig.infoText}
                     </p>
 
+                    {/* Status Peninjauan Dokumen (Document Review Tracking) */}
+                    {(() => {
+                        if (isReject) return null;
+                        const meta = contract?.workflow_step?.meta || {};
+                        const hasF1 = meta.show_tab_f1 !== false && ((contract as any)?.f1_mode || 'upload') !== 'none';
+                        const hasF2 = meta.show_tab_f2 !== false && ((contract as any)?.f2_mode || 'upload') !== 'none';
+                        const hasAgreement = meta.show_tab_agreement !== false && ((contract as any)?.contract_mode || 'upload') !== 'none';
+
+                        if (!hasF1 && !hasF2 && !hasAgreement) return null;
+
+                        const stepKey = contract?.workflow_step_id ? `step_${contract.workflow_step_id}` : 'general';
+                        const reviews = ((contract as any)?.doc_reviews?.[stepKey] || contract?.metadata?.doc_reviews?.[stepKey] || contract?.metadata?.[`doc_reviews_${stepKey}`] || {}) as Record<string, any>;
+
+                        const docList: any[] = [];
+                        if (hasF1) {
+                            const isRev = !!reviews.f1?.reviewed;
+                            docList.push({ id: 'f1', label: 'F1 (Permohonan)', isReviewed: isRev, info: reviews.f1 });
+                        }
+                        if (hasF2) {
+                            const isRev = !!reviews.f2?.reviewed;
+                            docList.push({ id: 'f2', label: 'F2 (Ringkasan)', isReviewed: isRev, info: reviews.f2 });
+                        }
+                        if (hasAgreement) {
+                            const isRev = !!reviews.agreement?.reviewed;
+                            docList.push({ id: 'agreement', label: 'Draft Perjanjian', isReviewed: isRev, info: reviews.agreement });
+                        }
+
+                        const reviewedCount = docList.filter(d => d.isReviewed).length;
+
+                        return (
+                            <div className="rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/70 dark:bg-zinc-900/50 p-3 space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-[11px] font-bold text-foreground flex items-center gap-1.5">
+                                        <Eye size={13} className="text-primary" />
+                                        Peninjauan Dokumen Tahap Ini
+                                    </span>
+                                    <span className={cn(
+                                        'text-[9.5px] font-bold px-2 py-0.5 rounded-full',
+                                        reviewedCount === docList.length
+                                            ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold'
+                                            : 'bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold'
+                                    )}>
+                                        {reviewedCount} / {docList.length} Ditinjau
+                                    </span>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
+                                    {docList.map((doc) => (
+                                        <div
+                                            key={doc.id}
+                                            className={cn(
+                                                'flex items-center justify-between p-2 rounded-lg border text-xs font-medium transition-colors',
+                                                doc.isReviewed
+                                                    ? 'bg-emerald-50/80 border-emerald-200 text-emerald-800 dark:bg-emerald-950/30 dark:border-emerald-800/50 dark:text-emerald-300'
+                                                    : 'bg-amber-50/80 border-amber-200 text-amber-800 dark:bg-amber-950/30 dark:border-amber-800/50 dark:text-amber-300'
+                                            )}
+                                        >
+                                            <div className="flex items-center gap-1.5 truncate">
+                                                {doc.isReviewed ? (
+                                                    <CheckCircle2 size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                                ) : (
+                                                    <AlertCircle size={13} className="text-amber-600 dark:text-amber-400 shrink-0" />
+                                                )}
+                                                <span className="truncate text-[11px] font-semibold">{doc.label}</span>
+                                            </div>
+                                            <span className="text-[9.5px] font-bold px-1.5 py-0.2 rounded bg-white/70 dark:bg-black/30 shrink-0 ml-1">
+                                                {doc.isReviewed ? 'Sudah Dibuka' : 'Belum Dibuka'}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        );
+                    })()}
+
                     {/* Check-list Syarat Dokumen / Data Wajib Aksi Ini */}
                     {(() => {
                         const requiredFields = getActionRequiredFields();
@@ -649,6 +747,32 @@ export function SharedActionModal({
                         }
                         if (requiredFields.includes('period')) {
                             reqList.push({ label: 'Masa Berlaku', isFilled: !!((contract.contract_date || contract.start_date) && contract.end_date) });
+                        }
+
+                        // Review Requirements
+                        const reqStepKey = contract?.workflow_step_id ? `step_${contract.workflow_step_id}` : 'general';
+                        const reqReviews = ((contract as any)?.doc_reviews?.[reqStepKey] || contract?.metadata?.doc_reviews?.[reqStepKey] || contract?.metadata?.[`doc_reviews_${reqStepKey}`] || {}) as Record<string, any>;
+
+                        if (requiredFields.includes('review_f1')) {
+                            reqList.push({ label: 'Tinjau F1 (Permohonan)', isFilled: !!reqReviews.f1?.reviewed });
+                        }
+                        if (requiredFields.includes('review_f2')) {
+                            reqList.push({ label: 'Tinjau F2 (Ringkasan)', isFilled: !!reqReviews.f2?.reviewed });
+                        }
+                        if (requiredFields.includes('review_agreement')) {
+                            reqList.push({ label: 'Tinjau Draft Perjanjian', isFilled: !!reqReviews.agreement?.reviewed });
+                        }
+                        if (requiredFields.includes('review_all_docs')) {
+                            const meta = contract?.workflow_step?.meta || {};
+                            const hasF1 = meta.show_tab_f1 !== false && ((contract as any)?.f1_mode || 'upload') !== 'none';
+                            const hasF2 = meta.show_tab_f2 !== false && ((contract as any)?.f2_mode || 'upload') !== 'none';
+                            const hasAgreement = meta.show_tab_agreement !== false && ((contract as any)?.contract_mode || 'upload') !== 'none';
+
+                            const allReviewed = (!hasF1 || !!reqReviews.f1?.reviewed) &&
+                                                (!hasF2 || !!reqReviews.f2?.reviewed) &&
+                                                (!hasAgreement || !!reqReviews.agreement?.reviewed);
+
+                            reqList.push({ label: 'Tinjau Semua Dokumen Aktif', isFilled: allReviewed });
                         }
 
                         if (reqList.length === 0) return null;

@@ -459,6 +459,38 @@ export const ContractDetailView = ({
         [contract],
     );
 
+    // Tracking review status per step
+    const currentStepKey = contract.workflow_step_id ? `step_${contract.workflow_step_id}` : 'general';
+    const stepReviews = useMemo(() => {
+        return (
+            (contract as any).doc_reviews?.[currentStepKey] ||
+            contract.metadata?.doc_reviews?.[currentStepKey] ||
+            contract.metadata?.[`doc_reviews_${currentStepKey}`] ||
+            {}
+        ) as Record<string, any>;
+    }, [(contract as any).doc_reviews, contract.metadata, currentStepKey]);
+
+    // Track viewed tabs to avoid duplicate review calls in same session
+    const reviewedInSessionRef = React.useRef<Set<string>>(new Set());
+
+    useEffect(() => {
+        if (detailTab === 'documents' && ['f1', 'f2', 'agreement'].includes(docSubTab)) {
+            const isAlreadyReviewed = !!stepReviews[docSubTab]?.reviewed;
+            const sessionKey = `${contract.id}_${currentStepKey}_${docSubTab}`;
+
+            if (!isAlreadyReviewed && !reviewedInSessionRef.current.has(sessionKey)) {
+                reviewedInSessionRef.current.add(sessionKey);
+                contractApi.reviewDoc(contract.id, docSubTab).then((res) => {
+                    if (res?.contract) {
+                        handleContractUpdate(res.contract, true);
+                    }
+                }).catch((err) => {
+                    console.error('Failed to log doc review:', err);
+                });
+            }
+        }
+    }, [detailTab, docSubTab, contract.id, currentStepKey, stepReviews]);
+
     // Build hierarchical tree tabs for sub-sidebar
     const detailSidebarTabs: DetailSidebarTabItem[] = useMemo(() => {
         const meta = contract.workflow_step?.meta || {};
@@ -471,9 +503,39 @@ export const ContractDetailView = ({
 
         if (hasF1 || hasF2 || hasAgreement) {
             const children: DetailSidebarTabChild[] = [];
-            if (hasF1) children.push({ id: 'f1', label: 'F1 (Permohonan)', icon: FileText });
-            if (hasF2) children.push({ id: 'f2', label: 'F2 (Ringkasan)', icon: FileCheck });
-            if (hasAgreement) children.push({ id: 'agreement', label: 'Draft Perjanjian', icon: PenTool });
+            if (hasF1) {
+                const isRev = !!stepReviews.f1?.reviewed;
+                children.push({
+                    id: 'f1',
+                    label: 'F1 (Permohonan)',
+                    icon: FileText,
+                    isReviewed: isRev,
+                    badge: isRev ? 'Direview' : 'Perlu Review',
+                    badgeVariant: isRev ? 'success' : 'warning',
+                });
+            }
+            if (hasF2) {
+                const isRev = !!stepReviews.f2?.reviewed;
+                children.push({
+                    id: 'f2',
+                    label: 'F2 (Ringkasan)',
+                    icon: FileCheck,
+                    isReviewed: isRev,
+                    badge: isRev ? 'Direview' : 'Perlu Review',
+                    badgeVariant: isRev ? 'success' : 'warning',
+                });
+            }
+            if (hasAgreement) {
+                const isRev = !!stepReviews.agreement?.reviewed;
+                children.push({
+                    id: 'agreement',
+                    label: 'Draft Perjanjian',
+                    icon: PenTool,
+                    isReviewed: isRev,
+                    badge: isRev ? 'Direview' : 'Perlu Review',
+                    badgeVariant: isRev ? 'success' : 'warning',
+                });
+            }
 
             result.push({
                 id: 'documents',
@@ -774,6 +836,20 @@ export const ContractDetailView = ({
                                                             />
                                                         )}
                                                         <span>{child.label}</span>
+                                                        {child.badge && (
+                                                            <span
+                                                                className={cn(
+                                                                    'text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0',
+                                                                    child.badgeVariant === 'success' || child.isReviewed
+                                                                        ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold'
+                                                                        : child.badgeVariant === 'warning'
+                                                                          ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold'
+                                                                          : 'bg-surface-muted text-text-desc'
+                                                                )}
+                                                            >
+                                                                {child.badge}
+                                                            </span>
+                                                        )}
                                                     </button>
                                                 );
                                             })}

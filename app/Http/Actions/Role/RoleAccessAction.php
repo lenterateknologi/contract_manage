@@ -54,6 +54,22 @@ class RoleAccessAction
                         'module_group_id' => $targetGroupId,
                     ],
                 );
+
+                // Auto-provision RoleModuleGroup if group not mapped yet for this role
+                if ($canRead && $targetGroupId) {
+                    $hasRmg = RoleModuleGroup::where('role_id', $role->id)
+                        ->where('module_group_id', $targetGroupId)
+                        ->exists();
+
+                    if (! $hasRmg) {
+                        $maxSeq = (int) RoleModuleGroup::where('role_id', $role->id)->max('sequence') ?: 0;
+                        RoleModuleGroup::create([
+                            'role_id' => $role->id,
+                            'module_group_id' => $targetGroupId,
+                            'sequence' => $maxSeq + 1,
+                        ]);
+                    }
+                }
             }
         });
     }
@@ -142,6 +158,32 @@ class RoleAccessAction
         });
 
         // 2. Get Navigation Structure for the Drag & Drop Tab
+        // Auto-reconcile any groups that have active access but are missing from m_role_module_groups
+        $activeGroupIds = AccessModule::where('role_id', $role->id)
+            ->where('can_read', true)
+            ->whereNotNull('module_group_id')
+            ->distinct()
+            ->pluck('module_group_id');
+
+        $existingGroupIds = RoleModuleGroup::where('role_id', $role->id)
+            ->pluck('module_group_id')
+            ->all();
+
+        $missingGroupIds = array_diff($activeGroupIds->all(), $existingGroupIds);
+        if (! empty($missingGroupIds)) {
+            $maxSeq = (int) RoleModuleGroup::where('role_id', $role->id)->max('sequence') ?: 0;
+            foreach ($missingGroupIds as $gId) {
+                if (ModuleGroup::where('id', $gId)->exists()) {
+                    $maxSeq++;
+                    RoleModuleGroup::create([
+                        'role_id' => $role->id,
+                        'module_group_id' => $gId,
+                        'sequence' => $maxSeq,
+                    ]);
+                }
+            }
+        }
+
         $groups = ModuleGroup::select('m_module_groups.*')
             ->join('m_role_module_groups', function ($join) use ($role) {
                 $join->on('m_module_groups.id', '=', 'm_role_module_groups.module_group_id')
