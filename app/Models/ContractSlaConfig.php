@@ -76,7 +76,7 @@ class ContractSlaConfig extends Model
 
     public function getSlaDraftingFormattedAttribute(): string
     {
-        $hours = $this->sla_drafting_hours ?? 0;
+        $hours = array_key_exists('sla_drafting_hours', $this->attributes) ? ($this->attributes['sla_drafting_hours'] ?? 0) : 0;
         $days = round($hours / 24, 1);
         $daysClean = ($days == (int) $days) ? (int) $days : $days;
         return "{$daysClean} Hari ({$hours} Jam)";
@@ -84,8 +84,8 @@ class ContractSlaConfig extends Model
 
     public function getSlaTotalFormattedAttribute(): string
     {
-        $hours = $this->sla_total_hours ?? 0;
-        if (is_array($this->sla_stages) && count($this->sla_stages) > 0) {
+        $hours = array_key_exists('sla_total_hours', $this->attributes) ? ($this->attributes['sla_total_hours'] ?? 0) : 0;
+        if (array_key_exists('sla_stages', $this->attributes) && is_array($this->sla_stages) && count($this->sla_stages) > 0) {
             $calcHours = 0;
             foreach ($this->sla_stages as $st) {
                 $calcHours += (int) ($st['duration_hours'] ?? ($st['hours'] ?? 0));
@@ -101,14 +101,14 @@ class ContractSlaConfig extends Model
 
     public function getSlaCutoffFormattedAttribute(): string
     {
-        $hour = $this->sla_cutoff_hour ?? 16;
+        $hour = array_key_exists('sla_cutoff_hour', $this->attributes) ? ($this->attributes['sla_cutoff_hour'] ?? 16) : 16;
         return sprintf('%02d:00 WIB', $hour);
     }
 
     public function getSlaWorkingHoursFormattedAttribute(): string
     {
-        $start = $this->sla_start_hour ?? 8;
-        $cutoff = $this->sla_cutoff_hour ?? 16;
+        $start = array_key_exists('sla_start_hour', $this->attributes) ? ($this->attributes['sla_start_hour'] ?? 8) : 8;
+        $cutoff = array_key_exists('sla_cutoff_hour', $this->attributes) ? ($this->attributes['sla_cutoff_hour'] ?? 16) : 16;
         return sprintf('%02d:00 - %02d:00 WIB', $start, $cutoff);
     }
 
