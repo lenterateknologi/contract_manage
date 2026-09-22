@@ -340,10 +340,10 @@ export function ContractActionSection({
                                             const isAssignPicAction = action.action_code === 'assign' || action.action_code === 'assign_pic' || (action.action_code === 'approve' && contract.requires_pic_assignment);
                                             const hasPicAssigned = !!(contract.assigned_pic_id || contract.assigned_pic || (contract as any).assignedPic);
 
-                                            // Requirements validation: only block forward approval actions, allow reject / setup actions
-                                            const isApproveType = action.action_code === 'approve' || action.action_code === 'submit' || action.action_code === 'send';
-                                            const reqStatus = isApproveType ? resolveContractRequirements(contract, action) : null;
-                                            const isActionBlocked = !!(isApproveType && reqStatus && !reqStatus.allFilled);
+                                            // Requirements validation: block actions when requirements not met, allow reject / rollback actions
+                                            const isRejectAction = action.action_code === 'reject' || action.action_code === 'rollback';
+                                            const reqStatus = !isRejectAction ? resolveContractRequirements(contract, action) : null;
+                                            const isActionBlocked = !!(!isRejectAction && reqStatus && !reqStatus.allFilled);
                                             const missingItems = isActionBlocked ? reqStatus.items.filter((i) => !i.isFilled) : [];
 
                                             return (
