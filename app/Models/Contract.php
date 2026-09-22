@@ -79,7 +79,9 @@ class Contract extends Model
         'created_by',
         'current_version',
         'workflow_id',
+        'workflow_step_id',
         'origin_workflow_id',
+        'origin_workflow_step_id',
         'is_in_sub_workflow',
         'branch_step_number',
         'current_step_number',
@@ -216,6 +218,11 @@ class Contract extends Model
     public function originWorkflow(): BelongsTo
     {
         return $this->belongsTo(Workflow::class, 'origin_workflow_id');
+    }
+
+    public function originWorkflowStep(): BelongsTo
+    {
+        return $this->belongsTo(WorkflowStep::class, 'origin_workflow_step_id');
     }
 
     public function workflowStep(): BelongsTo

@@ -293,10 +293,17 @@ export interface Contract {
     };
     workflow_id?: string;
     origin_workflow_id?: string;
+    origin_workflow_step_id?: string | null;
     origin_workflow?: {
         id: string;
         name: string;
         meta?: Record<string, any>;
+    } | null;
+    origin_workflow_step?: {
+        id: string;
+        step?: number;
+        label?: string;
+        name?: string;
     } | null;
     workflow?: {
         id: string;

@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/buttons/Button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from '@/components/ui/dialogs/Dialog';
 import { SearchableMultiSelect } from '@/components/ui/selection/SearchableMultiSelect';
+import { SearchableMultiSelectPortal } from '@/components/ui/selection/SearchableMultiSelectPortal';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/selection/Select';
 import LucideIcons from '@/lib/lucide-dynamic';
 import { cn } from '@/lib/utils';
@@ -25,7 +26,7 @@ import {
     Zap,
 } from 'lucide-react';
 import React, { useState } from 'react';
-import { MASTER_ACTIONS, TRANSITION_OPTIONS } from '../constants';
+import { AUTOFILLED_PARAMS, AVAILABLE_FIELDS, MASTER_ACTIONS, TRANSITION_OPTIONS } from '../constants';
 import AuthorityTableManager from './AuthorityTableManager';
 
 export interface CustomActionItem {
@@ -58,10 +59,20 @@ export interface CustomActionItem {
     custom_status_value?: string;
     unlocks_other_actions?: boolean;
     target_status?: string | null;
+    required_fields?: string[];
+    autofilled_fields?: string[];
     meta?: Record<string, any>;
 }
 
-export const CUSTOM_ACTION_TEMPLATES = [
+export const CUSTOM_ACTION_TEMPLATES: Array<{
+    action_code: string;
+    name: string;
+    alias: string;
+    description: string;
+    badgeBg: string;
+    icon: any;
+    defaultData: Partial<CustomActionItem>;
+}> = [
     {
         action_code: 'approve',
         name: 'Setujui',
@@ -140,9 +151,9 @@ export const CUSTOM_ACTION_TEMPLATES = [
     {
         action_code: 'branch',
         name: 'Pindah Workflow (Cabang)',
-        alias: 'Pindah Alur Kerja',
-        description: 'Aksi untuk memindahkan alur kerja ke sub-workflow cabang (approval khusus/tambahan) dan kembali ke alur asal.',
-        badgeBg: 'bg-sky-600 text-white',
+        alias: 'Pindah Alur / Cabang',
+        description: 'Aksi untuk mengalihkan proses ke workflow/alur kerja lain sebagai alur cabang.',
+        badgeBg: 'bg-amber-600 text-white',
         icon: GitBranch,
         defaultData: {
             scope: 'all_steps',
@@ -151,7 +162,6 @@ export const CUSTOM_ACTION_TEMPLATES = [
             execution_type: 'cross_workflow',
             transition_config: {
                 type: 'cross_workflow',
-                workflow_id: '',
                 sequence: 1,
                 return_mode: 'branch_next',
             },
@@ -972,6 +982,35 @@ export function CustomActionsManager({
                                             </div>
                                         </div>
                                     )}
+
+                                    {/* Kolom Wajib & Autofill / Reset Data Otomatis */}
+                                    <div className="sm:col-span-12 pt-2 border-t border-dashed border-slate-200 dark:border-zinc-800 grid grid-cols-1 sm:grid-cols-12 gap-3">
+                                        <div className="sm:col-span-6 space-y-1">
+                                            <label className="text-[11px] font-semibold text-slate-700 dark:text-zinc-300 block">
+                                                Kolom Wajib Diisi (Required):
+                                            </label>
+                                            <SearchableMultiSelectPortal
+                                                values={act.required_fields || []}
+                                                onValuesChange={(vals: string[]) => updateAction(actIdx, { required_fields: vals })}
+                                                options={AVAILABLE_FIELDS}
+                                                placeholder="Pilih Kolom..."
+                                                triggerClassName="min-h-[34px] py-1 px-3 text-xs rounded-lg"
+                                            />
+                                        </div>
+
+                                        <div className="sm:col-span-6 space-y-1">
+                                            <label className="text-[11px] font-semibold text-slate-700 dark:text-zinc-300 block">
+                                                Aksi & Pengisian Data Otomatis (Autofill / Reset):
+                                            </label>
+                                            <SearchableMultiSelectPortal
+                                                values={act.autofilled_fields || []}
+                                                onValuesChange={(vals: string[]) => updateAction(actIdx, { autofilled_fields: vals })}
+                                                options={AUTOFILLED_PARAMS}
+                                                placeholder="Pilih Aksi / Kolom Otomatis..."
+                                                triggerClassName="min-h-[34px] py-1 px-3 text-xs rounded-lg"
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
                             )}
                         </div>

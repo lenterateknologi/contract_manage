@@ -77,8 +77,10 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
         // Tab: Lite (Sederhana - Hanya yang sudah dieksekusi atau step aktif sekarang)
         if (viewTab === 'lite') {
             const currentStepId = contract.workflow_step_id;
+            const currentWorkflowId = contract.workflow_id;
             const pendingSeq = activePendingApproval?.sequence;
             const pendingStepId = activePendingApproval?.workflow_step_id;
+            const pendingWfId = activePendingApproval?.workflow_step?.workflow_id || (activePendingApproval as any)?.workflow_id;
 
             result = result.filter(
                 (a) =>
@@ -86,7 +88,9 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                     a.status === 'rejected' ||
                     (currentStepId && a.workflow_step_id === currentStepId) ||
                     (pendingStepId && a.workflow_step_id === pendingStepId) ||
-                    (pendingSeq != null && a.sequence === pendingSeq) ||
+                    (pendingSeq != null &&
+                        a.sequence === pendingSeq &&
+                        ((a.workflow_step?.workflow_id || (a as any).workflow_id) === (pendingWfId || currentWorkflowId))) ||
                     a.id === activePendingApproval?.id,
             );
         }
@@ -416,10 +420,17 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                                 {block.groups.map(
                                     (group: { sequence: number; stepName: string; stepDescription?: string; items: ContractApproval[] }, idx: number) => {
                                         const currentStepId = contract.workflow_step_id;
+                                        const currentWfId = contract.workflow_id;
                                         const allApprovedItems = group.items.length > 0 && group.items.every((a) => a.status === 'approved');
                                         const isGroupCurrentStep = group.items.some((a) => a.workflow_step_id === currentStepId);
                                         const isCompleted = contract.status === 'approved' || allApprovedItems;
-                                        const isPendingStep = activePendingApproval && (group.sequence === activePendingApproval.sequence || group.items.some((a) => a.id === activePendingApproval.id || a.workflow_step_id === activePendingApproval.workflow_step_id));
+                                        
+                                        const pendingWfId = activePendingApproval?.workflow_step?.workflow_id || (activePendingApproval as any)?.workflow_id;
+                                        const isSameWorkflow = block.workflowId === (pendingWfId || currentWfId);
+                                        const isPendingStep = activePendingApproval && isSameWorkflow && (
+                                            group.sequence === activePendingApproval.sequence ||
+                                            group.items.some((a) => a.id === activePendingApproval.id || a.workflow_step_id === activePendingApproval.workflow_step_id)
+                                        );
                                         const isActive = contract.status !== 'approved' && !isCompleted && (isGroupCurrentStep || Boolean(isPendingStep));
                                         const isRejectedState = group.items.some((a) => a.status === 'rejected');
 

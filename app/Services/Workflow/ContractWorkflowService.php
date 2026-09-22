@@ -1473,28 +1473,45 @@ class ContractWorkflowService
 
                     if ($workflowId) {
                         $targetSequence = max(1, (int) ($transition['sequence'] ?? 1));
-
-                        // Dynamic return: if returning to origin from sub-workflow, calculate next step from branch point
+                        $targetStep = null;
                         $metadata = $contract->metadata ?? [];
-                        if (($transition['return_mode'] ?? '') === 'branch_origin' || ($transition['return_mode'] ?? '') === 'origin_step') {
-                            if (isset($metadata['branch_from_step_num'])) {
-                                $targetSequence = (int) $metadata['branch_from_step_num'];
-                            }
-                        } elseif (($transition['return_mode'] ?? '') === 'branch_next' || ($workflowId === $contract->origin_workflow_id && isset($metadata['branch_from_step_num']))) {
-                            if (isset($metadata['branch_from_step_num'])) {
-                                $targetSequence = (int) $metadata['branch_from_step_num'] + 1;
+
+                        // Dynamic return: if returning to origin from sub-workflow, calculate target step from branch point
+                        $returnMode = $transition['return_mode'] ?? '';
+                        $originWfId = $contract->origin_workflow_id ?: $contract->workflow_id;
+                        $originStepNum = $contract->branch_step_number ?? (isset($metadata['branch_from_step_num']) ? (int) $metadata['branch_from_step_num'] : null);
+                        $originStepId = $contract->origin_workflow_step_id ?? (isset($metadata['branch_from_step_id']) ? $metadata['branch_from_step_id'] : null);
+
+                        if ($workflowId === $originWfId) {
+                            if ($returnMode === 'branch_origin' || $returnMode === 'origin_step') {
+                                if ($originStepId) {
+                                    $targetStep = WorkflowStep::where('workflow_id', $originWfId)->where('id', $originStepId)->first();
+                                }
+                                if (! $targetStep && $originStepNum !== null) {
+                                    $targetStep = WorkflowStep::where('workflow_id', $originWfId)->where('step', $originStepNum)->first();
+                                }
+                            } elseif ($returnMode === 'branch_next' || empty($returnMode)) {
+                                if ($originStepNum !== null) {
+                                    $targetStep = WorkflowStep::where('workflow_id', $originWfId)
+                                        ->where('step', '>', $originStepNum)
+                                        ->orderBy('step', 'asc')
+                                        ->first();
+                                }
+                            } elseif ($returnMode === '1' || $returnMode === 'origin_first') {
+                                $targetStep = WorkflowStep::where('workflow_id', $originWfId)->orderBy('step', 'asc')->first();
                             }
                         }
 
-                        $targetStep = WorkflowStep::where('workflow_id', $workflowId)->where('step', $targetSequence)->first();
+                        if (! $targetStep) {
+                            $targetStep = WorkflowStep::where('workflow_id', $workflowId)->where('step', $targetSequence)->first();
+                        }
                         if (! $targetStep) {
                             $targetStep = WorkflowStep::where('workflow_id', $workflowId)->where('step', '>=', $targetSequence)->orderBy('step')->first()
                                 ?: WorkflowStep::where('workflow_id', $workflowId)->orderBy('step', 'desc')->first();
                         }
 
                         if ($targetStep) {
-                            // If jumping into a sub-workflow from main workflow, record the branch origin step number
-                            $originWfId = $contract->origin_workflow_id ?: $contract->workflow_id;
+                            // If jumping into a sub-workflow from main workflow, record the branch origin step
                             if ($workflowId !== $originWfId) {
                                 $metadata['branch_from_step_num'] = $currentStep->step;
                                 $metadata['branch_from_step_id'] = $currentStep->id;
@@ -1507,6 +1524,7 @@ class ContractWorkflowService
 
                                 $contract->update([
                                     'origin_workflow_id' => $originWfId,
+                                    'origin_workflow_step_id' => $currentStep->id,
                                     'workflow_id' => $workflowId,
                                     'workflow_step_id' => $targetStep->id,
                                     'is_in_sub_workflow' => true,
@@ -1525,6 +1543,7 @@ class ContractWorkflowService
                                     'workflow_step_id' => $targetStep->id,
                                     'is_in_sub_workflow' => false,
                                     'branch_step_number' => null,
+                                    'origin_workflow_step_id' => null,
                                     'current_step_number' => $targetStep->step,
                                     'current_sub_workflow_id' => null,
                                     'metadata' => $metadata,
@@ -1681,6 +1700,41 @@ class ContractWorkflowService
 
                 case 'started_at':
                     $metadata['started_at'] = now()->toIso8601String();
+                    $metaUpdated = true;
+                    break;
+
+                // ── OPSI ORIGIN WORKFLOW & STEP ──
+                case 'set_origin_workflow_step':
+                    if ($contract->workflow_step_id) {
+                        $updates['origin_workflow_step_id'] = $contract->workflow_step_id;
+                        $metadata['origin_workflow_step_id'] = $contract->workflow_step_id;
+                        $stepNumber = $contract->workflowStep?->step ?? $contract->current_step_number;
+                        if ($stepNumber !== null) {
+                            $updates['branch_step_number'] = $stepNumber;
+                            $metadata['branch_from_step_num'] = $stepNumber;
+                        }
+                        $metaUpdated = true;
+                    }
+                    break;
+
+                case 'set_origin_workflow':
+                    if ($contract->workflow_id) {
+                        $updates['origin_workflow_id'] = $contract->workflow_id;
+                        $metadata['origin_workflow_id'] = $contract->workflow_id;
+                        $metaUpdated = true;
+                    }
+                    break;
+
+                case 'clear_origin_workflow_step':
+                    $updates['origin_workflow_step_id'] = null;
+                    $updates['branch_step_number'] = null;
+                    unset($metadata['origin_workflow_step_id'], $metadata['branch_from_step_num'], $metadata['branch_from_step_id']);
+                    $metaUpdated = true;
+                    break;
+
+                case 'clear_origin_workflow':
+                    $updates['origin_workflow_id'] = null;
+                    unset($metadata['origin_workflow_id']);
                     $metaUpdated = true;
                     break;
 

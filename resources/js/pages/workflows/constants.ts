@@ -28,6 +28,12 @@ export const AUTOFILLED_PARAMS = [
     { value: 'approved_at', label: 'Isi Waktu Disetujui' },
     { value: 'started_at', label: 'Isi Waktu Dimulai' },
 
+    // ── Opsi Alur Kerja & Sub-Workflow Origin ──
+    { value: 'set_origin_workflow_step', label: 'Simpan Step Saat Ini sebagai Origin Step' },
+    { value: 'set_origin_workflow', label: 'Simpan Workflow Saat Ini sebagai Origin Workflow' },
+    { value: 'clear_origin_workflow_step', label: 'Hapus / Reset Origin Step' },
+    { value: 'clear_origin_workflow', label: 'Hapus / Reset Origin Workflow' },
+
     // ── Opsi Reset / Regenerasi ──
     { value: 'reset_form_no', label: 'Reset / Generate Nomor Pengajuan Baru' },
 

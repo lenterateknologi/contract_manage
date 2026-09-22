@@ -30,7 +30,8 @@ return new class extends Migration
 
         if (! Schema::hasColumn('t_contracts', 'is_in_sub_workflow')) {
             Schema::table('t_contracts', function (Blueprint $table) {
-                $table->boolean('is_in_sub_workflow')->default(false)->after('origin_workflow_id');
+                $table->uuid('origin_workflow_step_id')->nullable()->after('origin_workflow_id');
+                $table->boolean('is_in_sub_workflow')->default(false)->after('origin_workflow_step_id');
                 $table->integer('branch_step_number')->nullable()->after('is_in_sub_workflow');
                 $table->integer('current_step_number')->nullable()->after('branch_step_number');
                 $table->uuid('current_sub_workflow_id')->nullable()->after('current_step_number');

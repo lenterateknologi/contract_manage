@@ -327,10 +327,12 @@ export const ContractDetailView = ({
     const availableCustomActions = useMemo(() => {
         if (isSubStepReviewer) return [];
 
+        // ponytail: Gunakan custom action dari workflow aktif saat ini (sub atau origin)
         const customActions: any[] =
             contract.workflow?.meta?.custom_actions ||
-            contract.origin_workflow?.meta?.custom_actions ||
-            ((contract.workflow_step as any)?.workflow as any)?.meta?.custom_actions || [];
+            ((contract.workflow_step as any)?.workflow as any)?.meta?.custom_actions ||
+            (!contract.is_in_sub_workflow ? contract.origin_workflow?.meta?.custom_actions : []) ||
+            [];
         if (!customActions || !Array.isArray(customActions) || customActions.length === 0) return [];
 
         const hasAssignedPic = !!contract.assigned_pic_id;

@@ -37,7 +37,7 @@ class ContractListQuery
     private const SELECT = [
         'id', 'form_no', 'title', 'description', 'contract_date', 'end_date',
         'contract_type_id', 'transaction_type', 'status', 'current_version',
-        'workflow_id', 'origin_workflow_id', 'workflow_step_id', 'created_by', 'submitted_at',
+        'workflow_id', 'origin_workflow_id', 'origin_workflow_step_id', 'workflow_step_id', 'created_by', 'submitted_at',
         'created_at', 'updated_at', 'initiated_by_id', 'vendor_id', 'parent_id',
         'submission_type_id', 'contract_no', 'assigned_pic_id', 'assigned_by_id',
         'received_at', 'assigned_at', 'finished_at', 'closed_at', 'closed_by',
