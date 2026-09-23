@@ -15,8 +15,8 @@ export function DashboardSkeleton() {
                         <Skeleton className="h-6 w-80 rounded-md" />
                     </div>
                     <div className="flex items-center gap-2">
-                        <Skeleton className="h-9 w-32 rounded-lg" />
-                        <Skeleton className="h-9 w-36 rounded-lg" />
+                        <Skeleton className="h-11 w-32 rounded-lg" />
+                        <Skeleton className="h-11 w-36 rounded-lg" />
                     </div>
                 </div>
             </div>

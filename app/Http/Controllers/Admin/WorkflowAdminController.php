@@ -70,7 +70,7 @@ class WorkflowAdminController extends Controller
         }
 
         $query = $this->workflowQuery->list($request);
-        $paginator = $query->orderBy('name')->paginate($request->input('per_page', 15))->withQueryString();
+        $paginator = $query->orderBy('name')->paginate($request->input('per_page', 25))->withQueryString();
 
         // 2. Transform to clean lightweight DTO (instant page load)
         $paginator->getCollection()->transform(function ($wf) use ($allTypes, $rootMap) {

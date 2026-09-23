@@ -26,7 +26,7 @@ class VendorAdminController extends Controller
 
         return Inertia::render('admin/Index', [
             'currentView' => 'vendors',
-            'vendors' => $query->orderBy('vendor_name')->paginate($request->input('per_page', 15))->withQueryString(),
+            'vendors' => $query->orderBy('vendor_name')->paginate($request->input('per_page', 25))->withQueryString(),
             'filters' => $request->only(['search', 'category', 'is_active']),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],

@@ -175,9 +175,9 @@ export function DataTable<T extends Record<string, any>>({
                 <div className="flex-1 overflow-auto custom-scrollbar min-h-0">
                     <table className="w-full text-left border-collapse min-w-full w-max">
                         <thead className="bg-primary dark:bg-zinc-800/90 text-white dark:text-zinc-200">
-                            <tr className="h-9 border-b border-primary/20 dark:border-zinc-700/80 select-none bg-primary dark:bg-zinc-800/90 text-white dark:text-zinc-200">
+                            <tr className="h-11 border-b border-primary/20 dark:border-zinc-700/80 select-none bg-primary dark:bg-zinc-800/90 text-white dark:text-zinc-200">
                                 {onSelectionChange && (
-                                    <th className="h-9 py-1.5 px-3 w-9 sticky top-0 left-0 z-30 bg-primary dark:bg-zinc-800 text-white dark:text-zinc-200 align-middle">
+                                    <th className="h-11 py-2 px-3 w-11 sticky top-0 left-0 z-30 bg-primary dark:bg-zinc-800 text-white dark:text-zinc-200 align-middle">
                                         <Checkbox
                                             checked={isAllSelected}
                                             onCheckedChange={handleSelectAll}
