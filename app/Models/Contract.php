@@ -24,6 +24,26 @@ class Contract extends Model
 
     protected static function booted(): void
     {
+        static::saving(function (Contract $contract) {
+            $typeId = $contract->contract_type_id ?? $contract->contract_type_parent_id;
+            if ($typeId) {
+                $type = ($contract->relationLoaded('contractType') && $contract->contractType && $contract->contractType->id === $typeId)
+                    ? $contract->contractType
+                    : ContractType::find($typeId);
+
+                if ($type) {
+                    $contract->contract_type_ancestry_id = $type->ancestry_id ?: ($type->parent_id ? null : $type->id);
+                    if (! empty($type->name)) {
+                        $contract->transaction_type = strtolower($type->name);
+                    }
+                } else {
+                    $contract->contract_type_ancestry_id = null;
+                }
+            } else {
+                $contract->contract_type_ancestry_id = null;
+            }
+        });
+
         static::saved(fn () => static::refreshMaterializedView());
         static::deleted(fn () => static::refreshMaterializedView());
         static::restored(fn () => static::refreshMaterializedView());
@@ -72,6 +92,7 @@ class Contract extends Model
         'end_date',
         'contract_type_id',
         'contract_type_parent_id',
+        'contract_type_ancestry_id',
         'submission_type_id',
         'transaction_type',
         'status',
@@ -152,6 +173,11 @@ class Contract extends Model
     public function contractTypeParent(): BelongsTo
     {
         return $this->belongsTo(ContractType::class, 'contract_type_parent_id');
+    }
+
+    public function contractTypeAncestry(): BelongsTo
+    {
+        return $this->belongsTo(ContractType::class, 'contract_type_ancestry_id');
     }
 
     public function submissionType(): BelongsTo

@@ -41,7 +41,7 @@ class StoreContractRequest extends FormRequest
             'contract_type_id' => 'required|exists:m_contract_types,id',
             'contract_type_parent_id' => 'nullable|exists:m_contract_types,id',
             'submission_type_id' => 'nullable|exists:m_submission_types,id',
-            'transaction_type' => 'nullable|string|in:Perjanjian Baru,Addendum,Amandement,Perubahan Perjanjian',
+            'transaction_type' => 'nullable|string',
             'tax_required' => 'nullable|boolean',
             'initiated_by_id' => 'nullable|uuid|exists:m_users,id',
             'vendor_id' => 'nullable|uuid|exists:m_vendors,id',

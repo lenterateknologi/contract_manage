@@ -90,7 +90,7 @@ class ContractDetailQuery
         'created_at', 'updated_at', 'initiated_by_id', 'vendor_id', 'parent_id',
         'submission_type_id', 'contract_no', 'assigned_pic_id', 'assigned_by_id',
         'received_at', 'assigned_at', 'finished_at', 'closed_at', 'closed_by',
-        'contract_type_parent_id', 'metadata', 'is_digital_signature',
+        'contract_type_parent_id', 'contract_type_ancestry_id', 'metadata', 'is_digital_signature',
         'updated_by', 'is_in_sub_workflow', 'branch_step_number', 'current_step_number',
         'current_sub_workflow_id', 'workflow_iteration',
     ];

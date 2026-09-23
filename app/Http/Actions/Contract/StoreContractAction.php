@@ -57,7 +57,7 @@ class StoreContractAction
                 'contract_type_id' => $validated['contract_type_id'],
                 'contract_type_parent_id' => $validated['contract_type_parent_id'] ?? null,
                 'submission_type_id' => $validated['submission_type_id'] ?? null,
-                'transaction_type' => $validated['transaction_type'] ?? TransactionType::NewAgreement->value,
+                'transaction_type' => $contractType?->name ? strtolower($contractType->name) : ($validated['transaction_type'] ?? null),
                 'status' => ContractStatusEnum::Draft->value,
                 'created_by' => $userId,
                 'initiated_by_id' => $initiatorId,

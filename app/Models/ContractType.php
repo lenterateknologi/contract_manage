@@ -33,6 +33,7 @@ class ContractType extends Model
         'contract_form_template_id',
         'is_active',
         'level',
+        'ancestry_id',
     ];
 
     protected $casts = [
@@ -145,14 +146,30 @@ class ContractType extends Model
     {
         static::saving(function (ContractType $contractType) {
             $level = 0;
+            $ancestryId = null;
+
             if ($contractType->parent_id) {
-                // Find parent's level if possible to avoid multiple queries
                 $parent = self::find($contractType->parent_id);
                 if ($parent) {
                     $level = $parent->level + 1;
+                    // If chosen parent has no parent_id (root/level 0), it is the ancestry_id.
+                    // If chosen parent has a parent_id, take its ancestry_id (or parent's parent recursively).
+                    $ancestryId = $parent->ancestry_id ?: ($parent->parent_id ? null : $parent->id);
+
+                    if (! $ancestryId && $parent->parent_id) {
+                        $curr = $parent;
+                        while ($curr && $curr->parent_id) {
+                            $curr = self::find($curr->parent_id);
+                        }
+                        $ancestryId = $curr ? $curr->id : $parent->parent_id;
+                    }
+                } else {
+                    $ancestryId = $contractType->parent_id;
                 }
             }
+
             $contractType->level = $level;
+            $contractType->ancestry_id = $ancestryId;
         });
 
         static::saved(function () {
@@ -166,6 +183,11 @@ class ContractType extends Model
             Cache::forget('options_contract_types_all');
             Cache::forget('contract_opts_types');
         });
+    }
+
+    public function ancestry(): BelongsTo
+    {
+        return $this->belongsTo(ContractType::class, 'ancestry_id');
     }
 
     public function parent(): BelongsTo
