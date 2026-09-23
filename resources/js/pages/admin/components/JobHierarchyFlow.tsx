@@ -12,15 +12,12 @@ import {
     NodeProps,
     MarkerType,
     ReactFlowInstance,
-    getNodesBounds,
-    getViewportForBounds,
     applyNodeChanges,
     applyEdgeChanges,
     OnNodesChange,
     OnEdgesChange,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { toPng } from 'html-to-image';
 import {
     Building2,
     MapPin,
@@ -49,7 +46,6 @@ import {
     FolderClosed,
     FolderTree,
     GitBranch,
-    Download,
     Tags,
     Sparkles,
     RefreshCw,
@@ -574,7 +570,6 @@ export function JobHierarchyFlow({
     const [userSearchText, setUserSearchText] = useState('');
     const [selectedNode, setSelectedNode] = useState<JobTreeNodeData | null>(null);
     const [collapsedNodeIds, setCollapsedNodeIds] = useState<Set<string>>(new Set());
-    const [isExporting, setIsExporting] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
 
     // Filter is_used: 'used_only' | 'all'
@@ -1030,57 +1025,6 @@ export function JobHierarchyFlow({
         );
     }, [selectedNode, userSearchText]);
 
-    const handleExportPng = async () => {
-        if (!reactFlowInstance || nodes.length === 0) return;
-        setIsExporting(true);
-
-        try {
-            const nodesBounds = getNodesBounds(nodes);
-            const padding = 80;
-            const exportWidth = Math.max(nodesBounds.width + padding * 2, 1024);
-            const exportHeight = Math.max(nodesBounds.height + padding * 2, 768);
-
-            const viewport = getViewportForBounds(
-                nodesBounds,
-                exportWidth,
-                exportHeight,
-                0.1,
-                2,
-                padding
-            );
-
-            const flowViewportEl = document.querySelector('.react-flow__viewport') as HTMLElement | null;
-            if (!flowViewportEl) {
-                setIsExporting(false);
-                return;
-            }
-
-            const isDark = document.documentElement.classList.contains('dark');
-            const bgColor = isDark ? '#09090b' : '#f8fafc';
-
-            const dataUrl = await toPng(flowViewportEl, {
-                backgroundColor: bgColor,
-                width: exportWidth,
-                height: exportHeight,
-                pixelRatio: 2,
-                style: {
-                    width: `${exportWidth}px`,
-                    height: `${exportHeight}px`,
-                    transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})`,
-                },
-            });
-
-            const link = document.createElement('a');
-            link.download = `pohon-hirarki-jabatan-hd-${new Date().toISOString().split('T')[0]}.png`;
-            link.href = dataUrl;
-            link.click();
-        } catch (err) {
-            console.error('Error exporting PNG:', err);
-        } finally {
-            setIsExporting(false);
-        }
-    };
-
     return (
         <div className="flex flex-col h-full w-full bg-slate-50 dark:bg-zinc-950 rounded-xl border border-slate-200 dark:border-zinc-800 overflow-hidden shadow-xs relative">
             {/* Header & Controls Toolbar */}
@@ -1153,19 +1097,6 @@ export function JobHierarchyFlow({
                             </button>
                         )}
                     </div>
-
-                    {/* Export HD PNG Button */}
-                    <button
-                        type="button"
-                        onClick={handleExportPng}
-                        disabled={isExporting || nodes.length === 0}
-                        className="inline-flex items-center gap-1.5 h-8 px-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-zinc-700 text-xs font-semibold shadow-2xs transition-all cursor-pointer disabled:opacity-60"
-                        title="Ekspor hierarki jabatan menjadi gambar PNG resolusi tinggi (HD)"
-                    >
-                        <Download size={13} className={cn('text-emerald-600', isExporting && 'animate-bounce')} />
-                        <span>{isExporting ? 'Exporting...' : 'Export PNG (HD)'}</span>
-                    </button>
-
                     {/* Server-side Sync Button */}
                     <button
                         type="button"

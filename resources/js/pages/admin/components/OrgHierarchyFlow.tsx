@@ -12,11 +12,8 @@ import {
     NodeProps,
     MarkerType,
     ReactFlowInstance,
-    getNodesBounds,
-    getViewportForBounds,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { toPng } from 'html-to-image';
 import {
     Building2,
     MapPin,
@@ -47,7 +44,6 @@ import {
     FolderClosed,
     FolderTree,
     GitBranch,
-    Download,
 } from 'lucide-react';
 import { router } from '@inertiajs/react';
 import { cn } from '@/lib/utils';
@@ -1223,83 +1219,6 @@ export function OrgHierarchyFlow({
         );
     }, [selectedNode, userSearchText]);
 
-    // Export entire organizational tree flow to high-definition PNG (HD 2x)
-    const [isExporting, setIsExporting] = useState(false);
-
-    const handleExportPng = async () => {
-        if (nodes.length === 0) return;
-        try {
-            setIsExporting(true);
-
-            // Compute exact content bounding box based on node positions and explicit dimensions
-            let minX = Infinity;
-            let minY = Infinity;
-            let maxX = -Infinity;
-            let maxY = -Infinity;
-
-            nodes.forEach((n) => {
-                const w = n.type === 'employeeListNode' ? 340 : 240;
-                const h = n.type === 'employeeListNode' ? 220 : 110;
-                const posX = n.position.x;
-                const posY = n.position.y;
-
-                if (posX < minX) minX = posX;
-                if (posY < minY) minY = posY;
-                if (posX + w > maxX) maxX = posX + w;
-                if (posY + h > maxY) maxY = posY + h;
-            });
-
-            if (minX === Infinity) {
-                const rawBounds = getNodesBounds(nodes);
-                minX = rawBounds.x;
-                minY = rawBounds.y;
-                maxX = rawBounds.x + rawBounds.width;
-                maxY = rawBounds.y + rawBounds.height;
-            }
-
-            const contentWidth = Math.max(maxX - minX, 100);
-            const contentHeight = Math.max(maxY - minY, 100);
-            const padding = 50;
-            const imageWidth = contentWidth + padding * 2;
-            const imageHeight = contentHeight + padding * 2;
-
-            const viewportElem = document.querySelector('.react-flow__viewport') as HTMLElement;
-            if (!viewportElem) {
-                setIsExporting(false);
-                return;
-            }
-
-            // Transform to tightly frame and center only the diagram content with padding
-            const transform = {
-                x: -minX + padding,
-                y: -minY + padding,
-                zoom: 1,
-            };
-
-            const isDark = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
-            const dataUrl = await toPng(viewportElem, {
-                backgroundColor: isDark ? '#09090b' : '#f8fafc',
-                width: imageWidth,
-                height: imageHeight,
-                pixelRatio: 2, // High-DPI 2x crisp HD rendering
-                style: {
-                    width: `${imageWidth}px`,
-                    height: `${imageHeight}px`,
-                    transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.zoom})`,
-                },
-            });
-
-            const a = document.createElement('a');
-            a.download = `struktur-organisasi-${new Date().toISOString().slice(0, 10)}.png`;
-            a.href = dataUrl;
-            a.click();
-        } catch (err) {
-            console.error('Failed to export high-definition PNG:', err);
-        } finally {
-            setIsExporting(false);
-        }
-    };
-
     return (
         <div className="flex h-full w-full flex-col bg-slate-50 dark:bg-zinc-950 relative overflow-hidden">
             {/* Header Control Toolbar */}
@@ -1400,19 +1319,6 @@ export function OrgHierarchyFlow({
                             </div>
                         )}
                     </div>
-
-                    {/* Export HD PNG Button */}
-                    <button
-                        type="button"
-                        onClick={handleExportPng}
-                        disabled={isExporting || nodes.length === 0}
-                        className="inline-flex items-center gap-1.5 h-8 px-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-zinc-700 text-xs font-semibold shadow-2xs transition-all cursor-pointer disabled:opacity-60"
-                        title="Ekspor seluruh struktur bagan menjadi file gambar PNG kualitas tinggi (HD)"
-                    >
-                        <Download size={13} className={cn('text-emerald-600', isExporting && 'animate-bounce')} />
-                        <span>{isExporting ? 'Mengekspor HD...' : 'Export PNG (HD)'}</span>
-                    </button>
-
                     {/* Server-side Sync / Refresh Button */}
                     <button
                         type="button"
