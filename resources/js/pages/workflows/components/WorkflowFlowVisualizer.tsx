@@ -35,9 +35,11 @@ import {
     Network,
     PenTool,
     RotateCcw,
+    Settings2,
     Sparkles,
     Square,
     UserCheck,
+    Zap,
 } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 
@@ -424,6 +426,87 @@ const CrossWorkflowTargetNode = ({ data, selected }: NodeProps) => {
     );
 };
 
+// --- Custom Siku-Siku (Orthogonal Multi-Lane) Forward Edge ---
+const OrthogonalForwardEdge = ({
+    id,
+    sourceX,
+    sourceY,
+    targetX,
+    targetY,
+    style = {},
+    markerEnd,
+    label,
+    data,
+}: EdgeProps) => {
+    const isSequentialNext = Boolean(data?.isSequentialNext);
+    const lane = Number(data?.lane || 0);
+    const laneSpacing = Number(data?.laneSpacing || 28);
+    const cornerRadius = 10;
+
+    // Untuk langkah sekuensial (langsung 1 tahap di bawahnya): garis vertikal lurus halus dari kanan membelok ke atas
+    if (isSequentialNext) {
+        const outX = sourceX + 24;
+        const edgePath = `M ${sourceX} ${sourceY} L ${outX - cornerRadius} ${sourceY} Q ${outX} ${sourceY} ${outX} ${sourceY + cornerRadius} L ${outX} ${targetY - cornerRadius} Q ${outX} ${targetY} ${outX - cornerRadius} ${targetY} L ${targetX} ${targetY}`;
+        const labelX = outX;
+        const labelY = (sourceY + targetY) / 2;
+
+        return (
+            <>
+                <BaseEdge id={id} path={edgePath} style={style} markerEnd={markerEnd} />
+                {label && (
+                    <EdgeLabelRenderer>
+                        <div
+                            style={{
+                                position: 'absolute',
+                                transform: `translate(0%, -50%) translate(${labelX + 8}px, ${labelY}px)`,
+                                pointerEvents: 'all',
+                            }}
+                            className="nodrag nopan select-none"
+                        >
+                            <div className="flex items-center gap-1 rounded-md border border-emerald-300 dark:border-emerald-900 bg-white/95 dark:bg-zinc-900/95 px-2 py-0.5 text-[9px] font-medium text-emerald-700 dark:text-emerald-300 shadow-2xs whitespace-nowrap backdrop-blur-xs">
+                                <ArrowRight size={10} className="text-emerald-500" />
+                                <span>{label}</span>
+                            </div>
+                        </div>
+                    </EdgeLabelRenderer>
+                )}
+            </>
+        );
+    }
+
+    // Untuk loncatan forward multi-step (misal Step 1 -> Step 4): alokasikan jalur orthogonal terpisah di sisi kanan
+    const maxX = Math.max(sourceX, targetX);
+    const outX = maxX + (32 + lane * laneSpacing);
+
+    const edgePath = `M ${sourceX} ${sourceY} L ${outX - cornerRadius} ${sourceY} Q ${outX} ${sourceY} ${outX} ${sourceY + cornerRadius} L ${outX} ${targetY - cornerRadius} Q ${outX} ${targetY} ${outX - cornerRadius} ${targetY} L ${targetX} ${targetY}`;
+
+    const labelX = outX;
+    const labelY = (sourceY + targetY) / 2;
+
+    return (
+        <>
+            <BaseEdge id={id} path={edgePath} style={style} markerEnd={markerEnd} />
+            {label && (
+                <EdgeLabelRenderer>
+                    <div
+                        style={{
+                            position: 'absolute',
+                            transform: `translate(0%, -50%) translate(${labelX + 8}px, ${labelY}px)`,
+                            pointerEvents: 'all',
+                        }}
+                        className="nodrag nopan select-none"
+                    >
+                        <div className="flex items-center gap-1 rounded-md border border-emerald-300 dark:border-emerald-900 bg-white/95 dark:bg-zinc-900/95 px-2 py-0.5 text-[9px] font-medium text-emerald-700 dark:text-emerald-300 shadow-2xs whitespace-nowrap backdrop-blur-xs">
+                            <ArrowRight size={10} className="text-emerald-500" />
+                            <span>{label}</span>
+                        </div>
+                    </div>
+                </EdgeLabelRenderer>
+            )}
+        </>
+    );
+};
+
 // --- Custom Siku-Siku (Orthogonal Multi-Lane) Rollback Edge ---
 const OrthogonalSikuRollbackEdge = ({
     id,
@@ -522,6 +605,13 @@ const CustomStepNode = ({ data, selected }: NodeProps) => {
                 position={Position.Left}
                 id="left-target"
                 className="!h-3.5 !w-3.5 !rounded-full !border-2 !border-white !bg-indigo-600 dark:!border-zinc-900"
+            />
+            {/* Right Target Handle (Incoming Multi-Step Forward Flow) */}
+            <Handle
+                type="target"
+                position={Position.Right}
+                id="right-target"
+                className="!h-3.5 !w-3.5 !rounded-full !border-2 !border-white !bg-emerald-600 dark:!border-zinc-900"
             />
 
             {/* Card Header */}
@@ -669,6 +759,7 @@ const CustomStepNode = ({ data, selected }: NodeProps) => {
                             const isReject = codeLower === 'reject' || codeLower.includes('tolak') || codeLower.includes('revisi') || codeLower.includes('kembali');
                             const isAssign = codeLower === 'assign' || codeLower.includes('tugas');
                             const isSign = codeLower === 'signature' || codeLower === 'sign' || codeLower.includes('tanda tangan');
+                            const isCustomAct = Boolean(act?.is_custom_action || act?.isCustomAction);
 
                             const displayLabel = act?.alias || act?.label || act?.name || (rawCode ? rawCode.toUpperCase() : `Aksi ${aIdx + 1}`);
                             const currentStepNum = Number(step?.step) || 1;
@@ -724,11 +815,19 @@ const CustomStepNode = ({ data, selected }: NodeProps) => {
                                             {!isCrossWf && !isApprove && !isReject && !isAssign && !isSign && <Activity size={11} />}
                                         </div>
                                         <div className="min-w-0 flex-1 truncate">
-                                            <span className="block font-semibold text-[11px] truncate leading-tight">
-                                                {displayLabel}
-                                            </span>
+                                            <div className="flex items-center gap-1 leading-tight truncate">
+                                                <span className="font-semibold text-[11px] truncate">
+                                                    {displayLabel}
+                                                </span>
+                                                {isCustomAct && (
+                                                    <span className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded text-[8.5px] font-bold bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-300/40 shrink-0">
+                                                        <Zap size={9} />
+                                                        <span>Khusus</span>
+                                                    </span>
+                                                )}
+                                            </div>
                                             {flowDestinationText && (
-                                                <span className="block text-[9.5px] opacity-80 truncate leading-tight font-normal">
+                                                <span className="block text-[9.5px] opacity-80 truncate leading-tight font-normal mt-0.5">
                                                     {flowDestinationText}
                                                 </span>
                                             )}
@@ -778,12 +877,14 @@ const nodeTypes = {
 
 const edgeTypes = {
     orthogonalSikuRollbackEdge: OrthogonalSikuRollbackEdge,
+    orthogonalForwardEdge: OrthogonalForwardEdge,
 };
 
 interface WorkflowFlowVisualizerProps {
     steps: any[];
     workflow?: any;
     allWorkflows?: any[];
+    customActions?: any[];
     users?: any[];
     roles?: any[];
     departments?: any[];
@@ -803,10 +904,46 @@ interface WorkflowFlowVisualizerProps {
     onOpenSimulationModal?: () => void;
 }
 
+// Helper to merge standard step actions with workflow custom actions
+export const getEffectiveStepActions = (
+    step: any,
+    customActions: any[] = []
+): any[] => {
+    const rawActions = Array.isArray(step?.actions) ? [...step.actions] : [];
+    const stepId = String(step?.id || '');
+    const currentStepNum = Number(step?.step) || 1;
+
+    const matchedCustomActions: any[] = [];
+
+    (customActions || []).forEach((ca: any) => {
+        if (!ca || ca.is_active === false) return;
+
+        const isMatchScope =
+            ca.scope === 'all_steps' ||
+            (ca.scope === 'specific_steps' && Array.isArray(ca.step_ids) && (ca.step_ids.includes(stepId) || ca.step_ids.includes(String(currentStepNum))));
+
+        if (isMatchScope) {
+            matchedCustomActions.push({
+                ...ca,
+                is_custom_action: true,
+                isCustomAction: true,
+                name: ca.name || ca.alias || 'Aksi Khusus',
+                alias: ca.alias || ca.name || 'Aksi Khusus',
+                action_code: ca.action_code || 'custom',
+                transition_config: ca.transition_config,
+                next_workflow_id: ca.transition_config?.workflow_id || ca.next_workflow_id,
+            });
+        }
+    });
+
+    return [...rawActions, ...matchedCustomActions];
+};
+
 export function WorkflowFlowVisualizer({
     steps = [],
     workflow,
     allWorkflows = [],
+    customActions: customActionsProp,
     users = [],
     roles = [],
     departments = [],
@@ -818,6 +955,15 @@ export function WorkflowFlowVisualizer({
     regions = [],
     simulationContext,
 }: WorkflowFlowVisualizerProps) {
+    const effectiveCustomActions = useMemo(() => {
+        if (customActionsProp && Array.isArray(customActionsProp)) {
+            return customActionsProp;
+        }
+        if (workflow?.meta?.custom_actions && Array.isArray(workflow.meta.custom_actions)) {
+            return workflow.meta.custom_actions;
+        }
+        return [];
+    }, [customActionsProp, workflow?.meta?.custom_actions]);
     // --- Layout & Mode Settings with LocalStorage Persistence ---
     const [viewMode, _setViewMode] = useState<'connected' | 'all' | 'single'>(() => {
         if (typeof window !== 'undefined') {
@@ -947,6 +1093,24 @@ export function WorkflowFlowVisualizer({
             const next = typeof updater === 'function' ? updater(prev) : updater;
             if (typeof window !== 'undefined') {
                 localStorage.setItem('wf_vis_show_users', String(next));
+            }
+            return next;
+        });
+    };
+
+    const [showGroups, _setShowGroups] = useState<boolean>(() => {
+        if (typeof window !== 'undefined') {
+            const saved = localStorage.getItem('wf_vis_show_groups');
+            if (saved !== null) return saved === 'true';
+        }
+        return true;
+    });
+
+    const setShowGroups = (updater: boolean | ((prev: boolean) => boolean)) => {
+        _setShowGroups((prev) => {
+            const next = typeof updater === 'function' ? updater(prev) : updater;
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('wf_vis_show_groups', String(next));
             }
             return next;
         });
@@ -1328,14 +1492,16 @@ export function WorkflowFlowVisualizer({
         if (viewMode === 'connected') {
             // Traverse seluruh alur yang terhubung maju (sub-workflow) tanpa mencampur 2 master workflow
             const visitedWfIds = new Set<string>([primaryWfId]);
-            const queue: any[] = [{ id: primaryWfId, steps: sortedPrimarySteps }];
+            const queue: any[] = [{ id: primaryWfId, steps: sortedPrimarySteps, customActions: effectiveCustomActions }];
 
             while (queue.length > 0) {
                 const current = queue.shift();
                 const curSteps = current.steps || [];
+                const curCustomActions = current.customActions || [];
 
                 curSteps.forEach((s: any) => {
-                    (s.actions || []).forEach((act: any) => {
+                    const combinedActions = getEffectiveStepActions(s, curCustomActions);
+                    combinedActions.forEach((act: any) => {
                         const tConfig = parseTransitionConfig(act);
                         const targetId = tConfig?.workflow_id || act.next_workflow_id;
                         if (targetId && !visitedWfIds.has(String(targetId))) {
@@ -1344,16 +1510,38 @@ export function WorkflowFlowVisualizer({
                             if (foundWf && (!isMasterWorkflow(foundWf) || String(targetId) === primaryWfId)) {
                                 visitedWfIds.add(String(targetId));
                                 const sortedSteps = (foundWf.steps || []).slice().sort((a: any, b: any) => (Number(a.step) || 0) - (Number(b.step) || 0));
+                                const subCustomActions = foundWf.meta?.custom_actions || [];
                                 workflowsToRender.push({
                                     id: String(targetId),
                                     workflow: foundWf,
                                     steps: sortedSteps,
                                     isPrimary: false,
                                 });
-                                queue.push({ id: String(targetId), steps: sortedSteps });
+                                queue.push({ id: String(targetId), steps: sortedSteps, customActions: subCustomActions });
                             }
                         }
                     });
+                });
+
+                // Cek juga custom_actions langsung di level workflow jika ada
+                (curCustomActions || []).forEach((ca: any) => {
+                    if (ca.is_active === false) return;
+                    const targetId = ca.transition_config?.workflow_id || ca.next_workflow_id;
+                    if (targetId && !visitedWfIds.has(String(targetId))) {
+                        const foundWf = (allWorkflows || []).find((w: any) => String(w.id) === String(targetId));
+                        if (foundWf && (!isMasterWorkflow(foundWf) || String(targetId) === primaryWfId)) {
+                            visitedWfIds.add(String(targetId));
+                            const sortedSteps = (foundWf.steps || []).slice().sort((a: any, b: any) => (Number(a.step) || 0) - (Number(b.step) || 0));
+                            const subCustomActions = foundWf.meta?.custom_actions || [];
+                            workflowsToRender.push({
+                                id: String(targetId),
+                                workflow: foundWf,
+                                steps: sortedSteps,
+                                isPrimary: false,
+                            });
+                            queue.push({ id: String(targetId), steps: sortedSteps, customActions: subCustomActions });
+                        }
+                    }
                 });
 
                 // Cek hanya sub-workflow anak (parent_workflow_id mengarah ke current)
@@ -1364,13 +1552,14 @@ export function WorkflowFlowVisualizer({
                         if (isChildOfCurrent) {
                             visitedWfIds.add(otherId);
                             const sortedSteps = (otherWf.steps || []).slice().sort((a: any, b: any) => (Number(a.step) || 0) - (Number(b.step) || 0));
+                            const subCustomActions = otherWf.meta?.custom_actions || [];
                             workflowsToRender.push({
                                 id: otherId,
                                 workflow: otherWf,
                                 steps: sortedSteps,
                                 isPrimary: false,
                             });
-                            queue.push({ id: otherId, steps: sortedSteps });
+                            queue.push({ id: otherId, steps: sortedSteps, customActions: subCustomActions });
                         }
                     }
                 });
@@ -1403,25 +1592,39 @@ export function WorkflowFlowVisualizer({
             );
             const groupId = `group-wf-${wfItem.id}`;
             const isPrimary = wfItem.isPrimary;
+            const currentWfCustomActions = isPrimary ? effectiveCustomActions : (wfItem.workflow?.meta?.custom_actions || []);
 
-            // Group Container Node
-            generatedNodes.push({
-                id: groupId,
-                type: 'workflowGroupNode',
-                position: { x: colX - GROUP_PADDING_X, y: START_Y - GROUP_PADDING_TOP },
-                style: { width: GROUP_WIDTH, height: groupHeight, zIndex: -1 },
-                data: {
-                    title: wfItem.workflow.name || `Alur Kerja (${colIdx + 1})`,
-                    subtitle: wfItem.workflow.contract_type?.name ? `Kategori: ${wfItem.workflow.contract_type.name}` : undefined,
-                    badge: isPrimary ? 'Workflow Utama' : `Sub-Alur #${colIdx}`,
-                    isPrimary,
-                    stepCount,
-                    themeIndex: colIdx,
-                },
-            });
+            // Group Container Node (Hanya dirender jika showGroups aktif)
+            if (showGroups) {
+                generatedNodes.push({
+                    id: groupId,
+                    type: 'workflowGroupNode',
+                    position: { x: colX - GROUP_PADDING_X, y: START_Y - GROUP_PADDING_TOP },
+                    style: { width: GROUP_WIDTH, height: groupHeight, zIndex: -1 },
+                    data: {
+                        title: wfItem.workflow.name || `Alur Kerja (${colIdx + 1})`,
+                        subtitle: wfItem.workflow.contract_type?.name ? `Kategori: ${wfItem.workflow.contract_type.name}` : undefined,
+                        badge: isPrimary ? 'Workflow Utama' : `Sub-Alur #${colIdx}`,
+                        isPrimary,
+                        stepCount,
+                        themeIndex: colIdx,
+                    },
+                });
+            }
 
-            // Kumpulkan kandidat rollback internal untuk alokasi multi-lane anti-tumpang tindih
+            // Kumpulkan kandidat rollback dan forward internal untuk alokasi multi-lane anti-tumpang tindih
             const wfRollbackCandidates: Array<{
+                id: string;
+                sourceNodeId: string;
+                targetNodeId: string;
+                sourceStepNum: number;
+                targetStepNum: number;
+                aIdx: number;
+                act: any;
+                span: number;
+            }> = [];
+
+            const wfForwardCandidates: Array<{
                 id: string;
                 sourceNodeId: string;
                 targetNodeId: string;
@@ -1445,13 +1648,18 @@ export function WorkflowFlowVisualizer({
                 }
 
                 const { eligibleUsers, dynamicRoles, criteriaSummary } = calculateStepUsers(step);
+                const effectiveActions = getEffectiveStepActions(step, currentWfCustomActions);
+                const stepWithEffectiveActions = {
+                    ...step,
+                    actions: effectiveActions,
+                };
 
                 generatedNodes.push({
                     id: nodeId,
                     type: 'workflowStepNode',
                     position: { x: stepX, y: stepY },
                     data: {
-                        step,
+                        step: stepWithEffectiveActions,
                         allSteps: wfItem.steps,
                         allWorkflows,
                         workflowId: wfItem.id,
@@ -1468,7 +1676,7 @@ export function WorkflowFlowVisualizer({
                 });
 
                 // Evaluasi Aksi untuk Forward dan Rollback Internal dalam Workflow ini
-                (step.actions || []).forEach((act: any, aIdx: number) => {
+                effectiveActions.forEach((act: any, aIdx: number) => {
                     const isLastStep = sIdx === wfItem.steps.length - 1;
                     const {
                         targetStepNum,
@@ -1487,25 +1695,15 @@ export function WorkflowFlowVisualizer({
 
                     // Internal Forward Edge
                     if (isForwardDirection && showForwardRoutes) {
-                        generatedEdges.push({
+                        wfForwardCandidates.push({
                             id: `edge-forward-${wfItem.id}-${stepNum}[${aIdx}]->${targetStepNum}`,
-                            source: nodeId,
-                            target: targetNodeId,
-                            sourceHandle: `action-handle-right-${aIdx}`,
-                            targetHandle: 'top-target',
-                            type: 'smoothstep',
-                            animated: animatedLines,
-                            style: { stroke: '#10b981', strokeWidth: 2.5 },
-                            markerEnd: {
-                                type: MarkerType.ArrowClosed,
-                                color: '#10b981',
-                                width: 18,
-                                height: 18,
-                            },
-                            label: showLabels ? (act?.alias || `Maju -> Step ${targetStepNum}`) : undefined,
-                            labelStyle: { fill: '#047857', fontWeight: 500, fontSize: 10 },
-                            labelBgStyle: { fill: '#ecfdf5', fillOpacity: 0.95, rx: 6, ry: 6 },
-                            labelBgPadding: [6, 4],
+                            sourceNodeId: nodeId,
+                            targetNodeId,
+                            sourceStepNum: stepNum,
+                            targetStepNum,
+                            aIdx,
+                            act,
+                            span: Math.abs(targetStepNum - stepNum),
                         });
                     }
 
@@ -1524,6 +1722,83 @@ export function WorkflowFlowVisualizer({
                     }
                 });
             });
+
+            // Alokasikan Multi-Lane Non-Overlapping untuk Garis Maju (Forward)
+            if (showForwardRoutes && wfForwardCandidates.length > 0) {
+                // Urutkan rentang forward: langkah berdekatan di dalam, langkah jauh di luar
+                wfForwardCandidates.sort((a, b) => {
+                    if (a.span !== b.span) return a.span - b.span;
+                    return a.sourceStepNum - b.sourceStepNum;
+                });
+
+                const occupiedForwardLanes: Array<Array<{ start: number; end: number }>> = [];
+
+                wfForwardCandidates.forEach((cand) => {
+                    const isSequential = cand.span === 1 && cand.targetStepNum === cand.sourceStepNum + 1;
+
+                    if (isSequential) {
+                        // Maju ke 1 step langsung di bawahnya: sambungkan dari handle kanan ke top-target
+                        generatedEdges.push({
+                            id: cand.id,
+                            source: cand.sourceNodeId,
+                            target: cand.targetNodeId,
+                            sourceHandle: `action-handle-right-${cand.aIdx}`,
+                            targetHandle: 'top-target',
+                            type: 'orthogonalForwardEdge',
+                            animated: animatedLines,
+                            data: {
+                                isSequentialNext: true,
+                            },
+                            style: { stroke: '#10b981', strokeWidth: 2.5 },
+                            markerEnd: {
+                                type: MarkerType.ArrowClosed,
+                                color: '#10b981',
+                                width: 18,
+                                height: 18,
+                            },
+                            label: showLabels ? (cand.act?.alias || `Maju -> Step ${cand.targetStepNum}`) : undefined,
+                        });
+                    } else {
+                        // Loncatan forward multi-step (misal Step 1 -> Step 3): alokasikan jalur orthogonal terpisah di kanan
+                        let assignedLane = 0;
+                        while (true) {
+                            if (!occupiedForwardLanes[assignedLane]) {
+                                occupiedForwardLanes[assignedLane] = [];
+                                break;
+                            }
+                            const hasConflict = occupiedForwardLanes[assignedLane].some(
+                                (interval) => Math.max(interval.start, cand.sourceStepNum) <= Math.min(interval.end, cand.targetStepNum)
+                            );
+                            if (!hasConflict) break;
+                            assignedLane++;
+                        }
+                        occupiedForwardLanes[assignedLane].push({ start: cand.sourceStepNum, end: cand.targetStepNum });
+
+                        generatedEdges.push({
+                            id: cand.id,
+                            source: cand.sourceNodeId,
+                            target: cand.targetNodeId,
+                            sourceHandle: `action-handle-right-${cand.aIdx}`,
+                            targetHandle: 'right-target',
+                            type: 'orthogonalForwardEdge',
+                            animated: animatedLines,
+                            data: {
+                                isSequentialNext: false,
+                                lane: assignedLane,
+                                laneSpacing: 28,
+                            },
+                            style: { stroke: '#059669', strokeWidth: 2.5 },
+                            markerEnd: {
+                                type: MarkerType.ArrowClosed,
+                                color: '#059669',
+                                width: 18,
+                                height: 18,
+                            },
+                            label: showLabels ? (cand.act?.alias || `Lompat -> Step ${cand.targetStepNum}`) : undefined,
+                        });
+                    }
+                });
+            }
 
             // Alokasikan Multi-Lane Non-Overlapping untuk Garis Rollback/Back
             if (showRollbackRoutes && wfRollbackCandidates.length > 0) {
@@ -1598,11 +1873,13 @@ export function WorkflowFlowVisualizer({
         // 3. Buat Cross-Workflow Edges Menghubungkan Antar Workflow Container
         if (showCrossRoutes) {
             workflowsToRender.forEach((sourceWfItem) => {
+                const sourceWfCustomActions = sourceWfItem.isPrimary ? effectiveCustomActions : (sourceWfItem.workflow?.meta?.custom_actions || []);
                 sourceWfItem.steps.forEach((step: any) => {
                     const stepNum = Number(step.step) || 1;
                     const sourceNodeId = `wf-${sourceWfItem.id}-step-${stepNum}`;
+                    const effectiveActions = getEffectiveStepActions(step, sourceWfCustomActions);
 
-                    (step.actions || []).forEach((act: any, aIdx: number) => {
+                    effectiveActions.forEach((act: any, aIdx: number) => {
                         const tConfig = parseTransitionConfig(act);
                         const isCrossWf = tConfig?.type === 'cross_workflow' || Boolean(act?.next_workflow_id);
 
@@ -1706,6 +1983,7 @@ export function WorkflowFlowVisualizer({
         workflow,
         sortedPrimarySteps,
         allWorkflows,
+        effectiveCustomActions,
         viewMode,
         showForwardRoutes,
         showRollbackRoutes,
@@ -1714,6 +1992,7 @@ export function WorkflowFlowVisualizer({
         animatedLines,
         showLabels,
         showUsers,
+        showGroups,
         calculateStepUsers,
     ]);
 
@@ -1863,6 +2142,22 @@ export function WorkflowFlowVisualizer({
                     >
                         <UserCheck size={12} className={showUsers ? 'text-indigo-600 dark:text-indigo-400' : ''} />
                         <span>{showUsers ? 'Orang Aktif' : 'Sembunyikan Orang'}</span>
+                    </button>
+
+                    {/* Toggle Grouping Container */}
+                    <button
+                        type="button"
+                        onClick={() => setShowGroups(!showGroups)}
+                        className={cn(
+                            'px-2.5 py-1.5 rounded-xl border text-[10px] font-medium transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs',
+                            showGroups
+                                ? 'bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800'
+                                : 'bg-slate-100 dark:bg-zinc-800 text-slate-500 border-slate-200 dark:border-zinc-700 hover:text-slate-700 dark:hover:text-zinc-300'
+                        )}
+                        title="Tampilkan / Sembunyikan Kotak Pembungkus Grouping Workflow"
+                    >
+                        <Layers size={12} className={showGroups ? 'text-indigo-600 dark:text-indigo-400' : ''} />
+                        <span>{showGroups ? 'Grup Aktif' : 'Sembunyikan Grup'}</span>
                     </button>
 
                     {/* Filter Rute Checkboxes (Independen: Maju, Rollback, Antar-Alur) */}

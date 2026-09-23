@@ -159,27 +159,38 @@ function GenericFormTab({
                 const synced = { ...prev };
                 let hasChanged = false;
 
-                // Detect vendor change: compare current meta_p2_entity in form vs fresh autofill
-                const vendorRelatedFields = new Set([
+                const p1RelatedFields = new Set([
+                    'meta_p1_entity',
+                    'meta_p1_signer',
+                    'meta_p1_signer_position',
+                    'meta_p1_alamat',
+                ]);
+                const p2RelatedFields = new Set([
                     'meta_p2_entity',
                     'meta_p2_signer',
                     'meta_p2_signer_position',
                     'meta_p2_alamat',
                     'meta_lampiran', // vendor document/attachment list
                 ]);
+
+                // Detect P1 (First Party / Pembeli) change
+                const currentP1Entity = synced['meta_p1_entity'] ?? '';
+                const freshP1Entity = getAutofillValue({ name: 'meta_p1_entity' }, selected, docType, users) ?? '';
+                const p1Changed = currentP1Entity && freshP1Entity && currentP1Entity !== freshP1Entity;
+
+                // Detect P2 (Second Party / Penjual) change
                 const currentP2Entity = synced['meta_p2_entity'] ?? '';
-                const freshP2Entity = fields.find((f) => f.name === 'meta_p2_entity')
-                    ? getAutofillValue({ name: 'meta_p2_entity' }, selected, docType, users) ?? ''
-                    : '';
-                const vendorChanged = currentP2Entity && freshP2Entity && currentP2Entity !== freshP2Entity;
+                const freshP2Entity = getAutofillValue({ name: 'meta_p2_entity' }, selected, docType, users) ?? '';
+                const p2Changed = currentP2Entity && freshP2Entity && currentP2Entity !== freshP2Entity;
 
                 fields.forEach((f) => {
                     if (f.type !== 'kop_surat' && f.type !== 'form_title') {
-                        const isVendorField = vendorRelatedFields.has(f.name);
-                        const forceUpdate = isVendorField && vendorChanged;
+                        const isP1Field = p1RelatedFields.has(f.name);
+                        const isP2Field = p2RelatedFields.has(f.name);
+                        const forceUpdate = (isP1Field && p1Changed) || (isP2Field && p2Changed);
                         const val = getAutofillValue(f, selected, docType, users);
 
-                        // For force-update (vendor changed): apply even if val is null/empty (clears stale data)
+                        // For force-update (party changed): apply even if val is null/empty (clears stale data)
                         if (forceUpdate) {
                             const freshVal = val ?? '';
                             if (synced[f.name] !== freshVal) {
@@ -264,9 +275,25 @@ function GenericFormTab({
                     }
                 });
 
-                // --- Vendor change detection: if vendor has changed since last save, override all vendor-sourced fields ---
-                // Compare saved meta_p2_entity with current vendor name from contract
-                const vendorRelatedFields = [
+                // --- P1 (First Party / Pembeli) change detection: if P1 has changed since last save, override all P1 fields ---
+                const p1RelatedFields = [
+                    'meta_p1_entity',
+                    'meta_p1_signer',
+                    'meta_p1_signer_position',
+                    'meta_p1_alamat',
+                ];
+                const savedP1Entity = savedData['meta_p1_entity'];
+                const currentP1Entity = autofilled['meta_p1_entity'] ?? '';
+                if (savedP1Entity && currentP1Entity && savedP1Entity !== currentP1Entity) {
+                    p1RelatedFields.forEach((key) => {
+                        if (autofilled[key] !== undefined && autofilled[key] !== null) {
+                            finalData[key] = autofilled[key];
+                        }
+                    });
+                }
+
+                // --- P2 (Vendor / Penjual) change detection: if P2 has changed since last save, override all P2 fields ---
+                const p2RelatedFields = [
                     'meta_p2_entity',
                     'meta_p2_signer',
                     'meta_p2_signer_position',
@@ -275,11 +302,9 @@ function GenericFormTab({
                 ];
                 const savedP2Entity = savedData['meta_p2_entity'];
                 const currentP2Entity = autofilled['meta_p2_entity'] ?? '';
-                // If vendor name in saved data differs from current vendor on contract → replace all vendor-sourced fields
                 if (savedP2Entity && currentP2Entity && savedP2Entity !== currentP2Entity) {
-                    vendorRelatedFields.forEach((key) => {
+                    p2RelatedFields.forEach((key) => {
                         if (autofilled[key] !== undefined && autofilled[key] !== null) {
-                            // Replace with fresh autofill value (even if empty, to clear stale data)
                             finalData[key] = autofilled[key];
                         }
                     });

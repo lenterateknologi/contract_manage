@@ -119,7 +119,7 @@ export interface HierarchyUser {
 
 export type HierarchyLevelKey = 'group' | 'org_group' | 'region' | 'location' | 'company' | 'division' | 'department' | 'subdepartment' | 'section' | 'job_level' | 'job_title' | 'role' | 'employee';
 
-interface LevelConfig {
+export interface LevelConfig {
     key: HierarchyLevelKey;
     label: string;
     field?: keyof HierarchyUser;
@@ -128,7 +128,7 @@ interface LevelConfig {
     badgeBg: string;
 }
 
-const ALL_LEVELS: LevelConfig[] = [
+export const ALL_LEVELS: LevelConfig[] = [
     { key: 'group', label: 'Company Group', field: 'group_name', icon: Layers, color: 'text-indigo-600 dark:text-indigo-400', badgeBg: 'bg-indigo-50 border-indigo-200 text-indigo-700 dark:bg-indigo-950/40 dark:border-indigo-800 dark:text-indigo-300' },
     { key: 'org_group', label: 'Group Organisasi', field: 'org_group_name', icon: FolderClosed, color: 'text-sky-600 dark:text-sky-400', badgeBg: 'bg-sky-50 border-sky-200 text-sky-700 dark:bg-sky-950/40 dark:border-sky-800 dark:text-sky-300' },
     { key: 'region', label: 'Region', field: 'region_name', icon: MapPin, color: 'text-emerald-600 dark:text-emerald-400', badgeBg: 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-300' },
@@ -366,17 +366,23 @@ export function MultiSelectDropdown({
         }
     };
 
-    const allOptionNames = useMemo(() => {
-        return options.map((o) => o.name).filter(Boolean);
-    }, [options]);
+    const displayedOptionNames = useMemo(() => {
+        return filteredOptions.map((o) => o.name).filter(Boolean);
+    }, [filteredOptions]);
 
-    const isAllChecked = options.length > 0 && options.every((o) => selectedValues.includes(o.name));
+    const isAllFilteredChecked =
+        displayedOptionNames.length > 0 &&
+        displayedOptionNames.every((name) => selectedValues.includes(name));
 
     const handleSelectAll = () => {
-        if (isAllChecked) {
-            onChange([]);
+        if (isAllFilteredChecked) {
+            // Uncheck only the currently displayed/filtered options
+            const displayedSet = new Set(displayedOptionNames);
+            onChange(selectedValues.filter((v) => !displayedSet.has(v)));
         } else {
-            onChange(allOptionNames);
+            // Add all currently displayed/filtered options to selection
+            const combined = Array.from(new Set([...selectedValues, ...displayedOptionNames]));
+            onChange(combined);
         }
     };
 
@@ -416,9 +422,9 @@ export function MultiSelectDropdown({
                         <button
                             type="button"
                             onClick={handleSelectAll}
-                            className={cn('text-xs cursor-pointer hover:underline', isAllChecked ? 'text-primary font-bold' : 'text-slate-600 hover:text-slate-900')}
+                            className={cn('text-xs cursor-pointer hover:underline', isAllFilteredChecked ? 'text-primary font-bold' : 'text-slate-600 hover:text-slate-900')}
                         >
-                            {isAllChecked ? 'Batalkan Semua' : 'Pilih Semua'}
+                            {isAllFilteredChecked ? 'Batalkan Semua' : 'Pilih Semua'}
                         </button>
                         {selectedValues.length > 0 && (
                             <button
@@ -481,6 +487,22 @@ interface OrgHierarchyFlowProps {
     masterJobLevels?: any[];
     masterJobTitles?: any[];
     masterRoles?: any[];
+    // External filter props (if controlled by parent Index)
+    enabledLevelKeys?: HierarchyLevelKey[];
+    usedFilter?: 'used_only' | 'all';
+    searchQuery?: string;
+    selectedGroups?: string[];
+    selectedOrganizationGroups?: string[];
+    selectedRegions?: string[];
+    selectedLocations?: string[];
+    selectedCompanies?: string[];
+    selectedDivisions?: string[];
+    selectedDepartments?: string[];
+    selectedSubdepartments?: string[];
+    selectedSections?: string[];
+    selectedJobLevels?: string[];
+    selectedJobTitles?: string[];
+    selectedRoles?: string[];
 }
 
 export function OrgHierarchyFlow({
@@ -497,19 +519,36 @@ export function OrgHierarchyFlow({
     masterJobLevels = [],
     masterJobTitles = [],
     masterRoles = [],
+    enabledLevelKeys: extEnabledLevelKeys,
+    usedFilter: extUsedFilter,
+    searchQuery: extSearchQuery,
+    selectedGroups: extSelectedGroups,
+    selectedOrganizationGroups: extSelectedOrgGroups,
+    selectedRegions: extSelectedRegions,
+    selectedLocations: extSelectedLocations,
+    selectedCompanies: extSelectedCompanies,
+    selectedDivisions: extSelectedDivisions,
+    selectedDepartments: extSelectedDepartments,
+    selectedSubdepartments: extSelectedSubdepartments,
+    selectedSections: extSelectedSections,
+    selectedJobLevels: extSelectedJobLevels,
+    selectedJobTitles: extSelectedJobTitles,
+    selectedRoles: extSelectedRoles,
 }: OrgHierarchyFlowProps) {
     const savedInitial = useMemo(() => loadSavedSettings(), []);
 
     // Enabled levels state (Default: group + employee list or restored from cache)
-    const [enabledLevelKeys, setEnabledLevelKeys] = useState<HierarchyLevelKey[]>(() => {
+    const [internalEnabledLevelKeys, setInternalEnabledLevelKeys] = useState<HierarchyLevelKey[]>(() => {
         return savedInitial.enabledLevelKeys && savedInitial.enabledLevelKeys.length > 0
             ? savedInitial.enabledLevelKeys
             : ['group', 'employee'];
     });
+    const enabledLevelKeys = extEnabledLevelKeys ?? internalEnabledLevelKeys;
 
     // Active selected node data for Drawer / Modal list of people
     const [selectedNode, setSelectedNode] = useState<TreeNodeData | null>(null);
-    const [searchFilter, setSearchFilter] = useState('');
+    const [internalSearchFilter, setInternalSearchFilter] = useState('');
+    const searchFilter = extSearchQuery ?? internalSearchFilter;
     const [userSearchText, setUserSearchText] = useState('');
     const [isConfigOpen, setIsConfigOpen] = useState<boolean>(() => {
         return savedInitial.isConfigOpen !== undefined ? savedInitial.isConfigOpen : true;
@@ -521,9 +560,13 @@ export function OrgHierarchyFlow({
     const reactFlowInstanceRef = useRef<ReactFlowInstance<any, any> | null>(null);
 
     // Filter is_used: 'used_only' (is_used = true across all active levels) | 'all' (all data)
-    const [usedFilter, setUsedFilter] = useState<'used_only' | 'all'>(() => {
+    const [internalUsedFilter, setInternalUsedFilter] = useState<'used_only' | 'all'>(() => {
         return savedInitial.usedFilter || 'used_only';
     });
+    const usedFilter = extUsedFilter ?? internalUsedFilter;
+
+    // Minimizable Toolbar State
+    const [isToolbarCollapsed, setIsToolbarCollapsed] = useState(false);
 
     // Server-side cache sync / refresh state
     const [isSyncing, setIsSyncing] = useState(false);
@@ -541,18 +584,31 @@ export function OrgHierarchyFlow({
     };
 
     // Multiple Select Filter States (restored from cache)
-    const [selectedGroups, setSelectedGroups] = useState<string[]>(() => savedInitial.selectedGroups || []);
-    const [selectedOrganizationGroups, setSelectedOrganizationGroups] = useState<string[]>(() => savedInitial.selectedOrganizationGroups || []);
-    const [selectedRegions, setSelectedRegions] = useState<string[]>(() => savedInitial.selectedRegions || []);
-    const [selectedLocations, setSelectedLocations] = useState<string[]>(() => savedInitial.selectedLocations || []);
-    const [selectedCompanies, setSelectedCompanies] = useState<string[]>(() => savedInitial.selectedCompanies || []);
-    const [selectedDivisions, setSelectedDivisions] = useState<string[]>(() => savedInitial.selectedDivisions || []);
-    const [selectedDepartments, setSelectedDepartments] = useState<string[]>(() => savedInitial.selectedDepartments || []);
-    const [selectedSubdepartments, setSelectedSubdepartments] = useState<string[]>(() => savedInitial.selectedSubdepartments || []);
-    const [selectedSections, setSelectedSections] = useState<string[]>(() => savedInitial.selectedSections || []);
-    const [selectedJobLevels, setSelectedJobLevels] = useState<string[]>(() => savedInitial.selectedJobLevels || []);
-    const [selectedJobTitles, setSelectedJobTitles] = useState<string[]>(() => savedInitial.selectedJobTitles || []);
-    const [selectedRoles, setSelectedRoles] = useState<string[]>(() => savedInitial.selectedRoles || []);
+    const [internalSelectedGroups, setInternalSelectedGroups] = useState<string[]>(() => savedInitial.selectedGroups || []);
+    const [internalSelectedOrganizationGroups, setInternalSelectedOrganizationGroups] = useState<string[]>(() => savedInitial.selectedOrganizationGroups || []);
+    const [internalSelectedRegions, setInternalSelectedRegions] = useState<string[]>(() => savedInitial.selectedRegions || []);
+    const [internalSelectedLocations, setInternalSelectedLocations] = useState<string[]>(() => savedInitial.selectedLocations || []);
+    const [internalSelectedCompanies, setInternalSelectedCompanies] = useState<string[]>(() => savedInitial.selectedCompanies || []);
+    const [internalSelectedDivisions, setInternalSelectedDivisions] = useState<string[]>(() => savedInitial.selectedDivisions || []);
+    const [internalSelectedDepartments, setInternalSelectedDepartments] = useState<string[]>(() => savedInitial.selectedDepartments || []);
+    const [internalSelectedSubdepartments, setInternalSelectedSubdepartments] = useState<string[]>(() => savedInitial.selectedSubdepartments || []);
+    const [internalSelectedSections, setInternalSelectedSections] = useState<string[]>(() => savedInitial.selectedSections || []);
+    const [internalSelectedJobLevels, setInternalSelectedJobLevels] = useState<string[]>(() => savedInitial.selectedJobLevels || []);
+    const [internalSelectedJobTitles, setInternalSelectedJobTitles] = useState<string[]>(() => savedInitial.selectedJobTitles || []);
+    const [internalSelectedRoles, setInternalSelectedRoles] = useState<string[]>(() => savedInitial.selectedRoles || []);
+
+    const selectedGroups = extSelectedGroups ?? internalSelectedGroups;
+    const selectedOrganizationGroups = extSelectedOrgGroups ?? internalSelectedOrganizationGroups;
+    const selectedRegions = extSelectedRegions ?? internalSelectedRegions;
+    const selectedLocations = extSelectedLocations ?? internalSelectedLocations;
+    const selectedCompanies = extSelectedCompanies ?? internalSelectedCompanies;
+    const selectedDivisions = extSelectedDivisions ?? internalSelectedDivisions;
+    const selectedDepartments = extSelectedDepartments ?? internalSelectedDepartments;
+    const selectedSubdepartments = extSelectedSubdepartments ?? internalSelectedSubdepartments;
+    const selectedSections = extSelectedSections ?? internalSelectedSections;
+    const selectedJobLevels = extSelectedJobLevels ?? internalSelectedJobLevels;
+    const selectedJobTitles = extSelectedJobTitles ?? internalSelectedJobTitles;
+    const selectedRoles = extSelectedRoles ?? internalSelectedRoles;
 
     // Auto-save client-side cache to localStorage
     useEffect(() => {
@@ -1221,330 +1277,6 @@ export function OrgHierarchyFlow({
 
     return (
         <div className="flex h-full w-full flex-col bg-slate-50 dark:bg-zinc-950 relative overflow-hidden">
-            {/* Header Control Toolbar */}
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white px-5 py-3 dark:border-zinc-800 dark:bg-zinc-900 z-10">
-                <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                        <Users className="h-5 w-5" />
-                    </div>
-                    <div>
-                        <h1 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                            Pohon Struktur & Mapping Organisasi
-                            <span className="text-[10px] font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded-full border border-primary/20">
-                                {filteredUsers.length} Anggota Terfilter
-                            </span>
-                        </h1>
-                        <p className="text-[11px] text-slate-500">
-                            Setiap level pohon menyaring entitas berstatus <code className="text-primary font-semibold">is_used: true</code>.
-                        </p>
-                    </div>
-                </div>
-
-                {/* Right Actions */}
-                <div className="flex items-center gap-2">
-                    {/* Filter Is Used Selector */}
-                    <div className="flex items-center rounded-xl border border-slate-200 bg-slate-100 p-0.5 dark:border-zinc-800 dark:bg-zinc-800/80">
-                        <button
-                            type="button"
-                            onClick={() => setUsedFilter('used_only')}
-                            className={cn(
-                                'px-2.5 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer',
-                                usedFilter === 'used_only'
-                                    ? 'bg-white text-primary shadow-xs dark:bg-zinc-900 dark:text-primary'
-                                    : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
-                            )}
-                            title="Tampilkan hanya entitas dengan is_used = true di semua level hierarki"
-                        >
-                            Is Used: True
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setUsedFilter('all')}
-                            className={cn(
-                                'px-2.5 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer',
-                                usedFilter === 'all'
-                                    ? 'bg-white text-slate-900 shadow-xs dark:bg-zinc-900 dark:text-slate-100'
-                                    : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
-                            )}
-                            title="Tampilkan semua master data"
-                        >
-                            Semua Data
-                        </button>
-                    </div>
-
-                    {/* Find Card in Canvas (Search & Jump directly to Card) */}
-                    <div className="flex items-center rounded-xl border border-amber-300 dark:border-amber-700/80 bg-amber-50/50 dark:bg-amber-950/30 p-0.5">
-                        <div className="relative w-44">
-                            <Crosshair size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-amber-600 dark:text-amber-400" />
-                            <input
-                                type="text"
-                                placeholder="Find card / loncat ke card..."
-                                value={cardFindQuery}
-                                onChange={(e) => setCardFindQuery(e.target.value)}
-                                className="h-7 w-full rounded-lg border-0 bg-transparent pl-7 pr-6 text-xs text-slate-900 placeholder:text-amber-700/60 dark:placeholder:text-amber-300/60 focus:outline-none dark:text-slate-100"
-                            />
-                            {cardFindQuery && (
-                                <button
-                                    onClick={() => setCardFindQuery('')}
-                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
-                                >
-                                    <X size={12} />
-                                </button>
-                            )}
-                        </div>
-
-                        {cardFindQuery && (
-                            <div className="flex items-center gap-1 pl-1 pr-1 border-l border-amber-200 dark:border-amber-800">
-                                <span className="text-[10px] font-bold text-amber-800 dark:text-amber-300 whitespace-nowrap px-1">
-                                    {matchedNodes.length > 0 ? `${currentCardFindIndex + 1}/${matchedNodes.length}` : '0'}
-                                </span>
-                                <button
-                                    type="button"
-                                    onClick={() => jumpToCardNode(currentCardFindIndex - 1)}
-                                    disabled={matchedNodes.length === 0}
-                                    className="p-1 rounded hover:bg-amber-100 dark:hover:bg-amber-900/60 text-amber-800 dark:text-amber-300 disabled:opacity-40 cursor-pointer"
-                                    title="Card sebelumnya"
-                                >
-                                    <ChevronUp size={12} />
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => jumpToCardNode(currentCardFindIndex + 1)}
-                                    disabled={matchedNodes.length === 0}
-                                    className="p-1 rounded hover:bg-amber-100 dark:hover:bg-amber-900/60 text-amber-800 dark:text-amber-300 disabled:opacity-40 cursor-pointer"
-                                    title="Card berikutnya"
-                                >
-                                    <ChevronDown size={12} />
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                    {/* Server-side Sync / Refresh Button */}
-                    <button
-                        type="button"
-                        onClick={handleSyncData}
-                        disabled={isSyncing}
-                        className="inline-flex items-center gap-1.5 h-8 px-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-zinc-700 text-xs font-semibold shadow-2xs transition-all cursor-pointer disabled:opacity-60"
-                        title="Segarkan data hierarki langsung dari database terbaru"
-                    >
-                        <RefreshCw size={13} className={cn('text-primary', isSyncing && 'animate-spin')} />
-                        <span>{isSyncing ? 'Menyinkronkan...' : 'Sync Data'}</span>
-                    </button>
-
-                    {/* Hierarchy Setting Toggle Button */}
-                    <button
-                        onClick={() => setIsConfigOpen(!isConfigOpen)}
-                        className={cn(
-                            'inline-flex items-center gap-1.5 h-8 px-3 rounded-xl border text-xs font-semibold transition-all cursor-pointer',
-                            isConfigOpen
-                                ? 'bg-primary text-white border-primary shadow-sm'
-                                : 'bg-white dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50'
-                        )}
-                    >
-                        <SlidersHorizontal size={13} />
-                        <span>Filter & Level ({activeLevels.length})</span>
-                    </button>
-                </div>
-            </div>
-
-            {/* Filter Controls Panel (Multi-Select Filters & Level Toggles) */}
-            {isConfigOpen && (
-                <div className="border-b border-slate-200 bg-slate-50/95 dark:bg-zinc-900/95 backdrop-blur-md px-5 py-3 dark:border-zinc-800 z-10 space-y-3 animate-in slide-in-from-top duration-150">
-                    {/* Row 1: Multiple Select Criteria */}
-                    <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 mr-1">
-                            <Filter size={13} className="text-primary" /> Filter Entitas (Multi-Select):
-                        </span>
-
-                        {/* Multi Select Groups */}
-                        <MultiSelectDropdown
-                            title="Group"
-                            options={optGroups}
-                            selectedValues={selectedGroups}
-                            onChange={setSelectedGroups}
-                            icon={Layers}
-                        />
-
-                        {/* Multi Select Organization Groups */}
-                        <MultiSelectDropdown
-                            title="Group Organisasi"
-                            options={optOrganizationGroups}
-                            selectedValues={selectedOrganizationGroups}
-                            onChange={setSelectedOrganizationGroups}
-                            icon={FolderClosed}
-                        />
-
-                        {/* Multi Select Regions */}
-                        <MultiSelectDropdown
-                            title="Region"
-                            options={optRegions}
-                            selectedValues={selectedRegions}
-                            onChange={setSelectedRegions}
-                            icon={MapPin}
-                        />
-
-                        {/* Multi Select Locations */}
-                        <MultiSelectDropdown
-                            title="Location"
-                            options={optLocations}
-                            selectedValues={selectedLocations}
-                            onChange={setSelectedLocations}
-                            icon={Building2}
-                        />
-
-                        {/* Multi Select Companies */}
-                        <MultiSelectDropdown
-                            title="Company"
-                            options={optCompanies}
-                            selectedValues={selectedCompanies}
-                            onChange={setSelectedCompanies}
-                            icon={Building}
-                        />
-
-                        {/* Multi Select Divisions */}
-                        <MultiSelectDropdown
-                            title="Division"
-                            options={optDivisions}
-                            selectedValues={selectedDivisions}
-                            onChange={setSelectedDivisions}
-                            icon={Network}
-                        />
-
-                        {/* Multi Select Departments */}
-                        <MultiSelectDropdown
-                            title="Department"
-                            options={optDepartments}
-                            selectedValues={selectedDepartments}
-                            onChange={setSelectedDepartments}
-                            icon={Briefcase}
-                        />
-
-                        {/* Multi Select Sub-Departments */}
-                        <MultiSelectDropdown
-                            title="Sub-Departemen"
-                            options={optSubdepartments}
-                            selectedValues={selectedSubdepartments}
-                            onChange={setSelectedSubdepartments}
-                            icon={FolderTree}
-                        />
-
-                        {/* Multi Select Sections */}
-                        <MultiSelectDropdown
-                            title="Seksi / Rayon"
-                            options={optSections}
-                            selectedValues={selectedSections}
-                            onChange={setSelectedSections}
-                            icon={GitBranch}
-                        />
-
-                        {/* Multi Select Job Levels */}
-                        <MultiSelectDropdown
-                            title="Job Level"
-                            options={optJobLevels}
-                            selectedValues={selectedJobLevels}
-                            onChange={setSelectedJobLevels}
-                            icon={Layers}
-                        />
-
-                        {/* Multi Select Job Titles */}
-                        <MultiSelectDropdown
-                            title="Job Title"
-                            options={optJobTitles}
-                            selectedValues={selectedJobTitles}
-                            onChange={setSelectedJobTitles}
-                            icon={UserCheck}
-                        />
-
-                        {/* Multi Select Role Akses */}
-                        <MultiSelectDropdown
-                            title="Role Akses"
-                            options={optRoles}
-                            selectedValues={selectedRoles}
-                            onChange={setSelectedRoles}
-                            icon={Shield}
-                        />
-
-                        {/* Reset All Filters Button */}
-                        {hasActiveMultiFilters && (
-                            <button
-                                type="button"
-                                onClick={resetAllFilters}
-                                className="inline-flex items-center gap-1 h-8 px-2.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 text-xs font-semibold cursor-pointer transition-colors"
-                            >
-                                <RotateCcw size={12} />
-                                Reset Filter
-                            </button>
-                        )}
-                    </div>
-
-                    {/* Row 2: Level Toggles & Quick Presets */}
-                    <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-200/80 dark:border-zinc-800">
-                        <div className="flex flex-wrap items-center gap-1.5">
-                            <span className="text-xs font-bold text-slate-700 dark:text-slate-300 mr-2">
-                                Tampilkan Level:
-                            </span>
-                            {ALL_LEVELS.map((lvl) => {
-                                const isChecked = enabledLevelKeys.includes(lvl.key);
-                                const Icon = lvl.icon;
-
-                                return (
-                                    <button
-                                        key={lvl.key}
-                                        onClick={() => toggleLevel(lvl.key)}
-                                        className={cn(
-                                            'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-semibold border transition-all cursor-pointer',
-                                            isChecked
-                                                ? 'bg-white dark:bg-zinc-800 border-primary text-primary shadow-sm ring-1 ring-primary/20'
-                                                : 'bg-white/40 dark:bg-zinc-800/40 border-slate-200 dark:border-zinc-800 text-slate-400 dark:text-zinc-500 hover:border-slate-300'
-                                        )}
-                                    >
-                                        <div
-                                            className={cn(
-                                                'w-3.5 h-3.5 rounded flex items-center justify-center border text-[9px]',
-                                                isChecked ? 'bg-primary text-white border-primary' : 'border-slate-300 dark:border-zinc-700'
-                                            )}
-                                        >
-                                            {isChecked && <Check size={10} strokeWidth={3} />}
-                                        </div>
-                                        <Icon size={12} className={isChecked ? lvl.color : 'text-slate-400'} />
-                                        <span>{lvl.label}</span>
-                                    </button>
-                                );
-                            })}
-                        </div>
-
-                        {/* Quick Presets */}
-                        <div className="flex items-center gap-1.5 text-xs">
-                            <span className="text-[11px] font-semibold text-slate-400 mr-1">Preset:</span>
-                            <button
-                                onClick={() => setPreset('group-only')}
-                                className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-800 text-[11px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 cursor-pointer"
-                            >
-                                Hanya Group
-                            </button>
-                            <button
-                                onClick={() => setPreset('group-employee')}
-                                className="px-2.5 py-1 rounded-lg border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/40 text-[11px] font-bold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 cursor-pointer"
-                            >
-                                Group ➔ Employee
-                            </button>
-                            <button
-                                onClick={() => setPreset('company-employee')}
-                                className="px-2.5 py-1 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/40 text-[11px] font-bold text-blue-700 dark:text-blue-300 hover:bg-blue-100 cursor-pointer"
-                            >
-                                Company ➔ Employee
-                            </button>
-                            <button
-                                onClick={() => setPreset('full')}
-                                className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-800 text-[11px] font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 cursor-pointer"
-                            >
-                                Lengkap
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
             {/* React Flow Viewport Canvas */}
             <div className="flex-1 w-full h-full relative">
                 {nodes.length === 0 ? (

@@ -23,6 +23,16 @@ class ContractFormatter
     public static function formatContract(Contract $c, bool $isDetail = true): array
     {
         if ($isDetail) {
+            // Auto-sync current step approvers with latest master authority & role settings
+            if ($c->status === 'in_review' && $c->workflow_step_id && $c->workflowStep) {
+                try {
+                    app(ContractWorkflowService::class)->createApprovalForStep($c, $c->workflowStep);
+                    $c->unsetRelation('approvals');
+                } catch (\Throwable $e) {
+                    // Ignore sync errors during formatting
+                }
+            }
+
             $c->loadMissing([
                 'initiator.department', 'initiator.company', 'initiator.division', 'initiator.location', 'initiator.supervisor.department', 'initiator.reportingTo.department',
                 'creator.department', 'creator.company', 'creator.division', 'creator.location', 'creator.supervisor.department', 'creator.reportingTo.department',

@@ -431,7 +431,7 @@ class ContractController extends Controller
 
         $contract = $this->updateAction->execute($contract, $validated);
 
-        return response()->json(ContractFormatter::formatContract($contract->fresh()));
+        return response()->json(ContractFormatter::formatContract($this->contractDetailQuery->find($contract->id)));
     }
 
     public function reviewDoc(Request $request, string $id): JsonResponse
@@ -526,7 +526,7 @@ class ContractController extends Controller
         return response()->json([
             'message' => $isEligibleReviewer ? 'Dokumen berhasil ditandai telah direview di database' : 'Dokumen dibuka (view-only)',
             'metadata' => $contract->metadata,
-            'contract' => ContractFormatter::formatContract($contract->fresh()),
+            'contract' => ContractFormatter::formatContract($this->contractDetailQuery->find($contract->id)),
         ]);
     }
 

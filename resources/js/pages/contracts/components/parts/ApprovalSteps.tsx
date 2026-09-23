@@ -23,9 +23,11 @@ interface Props {
 }
 
 type ViewTab = 'lite' | 'pro';
+type SortBy = 'time' | 'step';
 
 export default function ApprovalSteps({ contract, approvals, creator, submittedAt, meId, onApprove }: Props) {
     const [viewTab, setViewTab] = useState<ViewTab>('lite');
+    const [sortBy, setSortBy] = useState<SortBy>('time');
     const [search, setSearch] = useState('');
     const debouncedSearch = useDebounce(search, 500);
     const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
@@ -110,6 +112,18 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
         }
 
         return result.sort((a, b) => {
+            if (sortBy === 'time') {
+                const aTime = a.decided_at ? new Date(a.decided_at).getTime() : a.created_at ? new Date(a.created_at).getTime() : 0;
+                const bTime = b.decided_at ? new Date(b.decided_at).getTime() : b.created_at ? new Date(b.created_at).getTime() : 0;
+                
+                // If one has no timestamp (aTime === 0) and the other has one, put the untimed item at the very bottom
+                if (aTime === 0 && bTime !== 0) return 1;
+                if (bTime === 0 && aTime !== 0) return -1;
+
+                if (aTime !== bTime && aTime !== 0 && bTime !== 0) {
+                    return aTime - bTime;
+                }
+            }
             if (a.sort_order !== undefined && b.sort_order !== undefined && a.sort_order !== b.sort_order) {
                 return (a.sort_order || 0) - (b.sort_order || 0);
             }
@@ -118,25 +132,87 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
             }
             return a.id.localeCompare(b.id);
         });
-    }, [approvals, viewTab, debouncedSearch, contract.workflow_step_id, activePendingApproval]);
+    }, [approvals, viewTab, sortBy, debouncedSearch, contract.workflow_step_id, activePendingApproval]);
 
     // Build a hierarchical tree of steps
     const stepTree = useMemo(() => {
         const rootWorkflowId = contract.origin_workflow_id || contract.workflow_id;
+
+        if (sortBy === 'time') {
+            // Chronological execution grouping: merge consecutive steps belonging to the same sub-workflow under a single header
+            const blocks: any[] = [];
+            let currentBlock: any = null;
+
+            filteredSteps.forEach((a) => {
+                const wfId = a.workflow_step?.workflow_id || contract.workflow_id;
+                const wfName = a.workflow_step?.workflow?.name || contract.workflow?.name || 'Alur Kerja';
+                const wfObj = a.workflow_step?.workflow as any;
+                const batchNo = a.batch_no ?? 1;
+                
+                // Determine whether this step is part of an actual sub-workflow
+                const isExplicitSubWorkflow = wfObj?.workflow_type === 'sub_workflow' || Boolean(wfObj?.is_sub_workflow);
+                const isExplicitMainWorkflow = wfObj?.workflow_type === 'main';
+                const isSubWf = isExplicitSubWorkflow || (!isExplicitMainWorkflow && Boolean(rootWorkflowId && wfId !== rootWorkflowId));
+
+                const stepName = a.step_name || a.workflow_step?.label || a.workflow_step?.name || a.role || `Persetujuan Step ${a.sequence}`;
+                const stepDescription = a.step_description || a.workflow_step?.description;
+
+                // Merge adjacent items if they share the exact same sub-workflow and batch
+                if (
+                    currentBlock &&
+                    currentBlock.workflowId === wfId &&
+                    currentBlock.batchNo === batchNo &&
+                    isSubWf
+                ) {
+                    currentBlock.groups.push({
+                        sequence: a.sequence,
+                        batchNo: batchNo,
+                        stepName: stepName,
+                        stepDescription: stepDescription,
+                        items: [a],
+                    });
+                } else {
+                    currentBlock = {
+                        workflowId: wfId,
+                        workflowName: wfName,
+                        batchNo: batchNo,
+                        isSubWorkflow: isSubWf,
+                        groups: [
+                            {
+                                sequence: a.sequence,
+                                batchNo: batchNo,
+                                stepName: stepName,
+                                stepDescription: stepDescription,
+                                items: [a],
+                            },
+                        ],
+                    };
+                    blocks.push(currentBlock);
+                }
+            });
+            return blocks;
+        }
+
+        // Structural Grouping by workflow block and sequence
         const blocks: any[] = [];
         let currentBlock: any = null;
 
         filteredSteps.forEach((a) => {
             const wfId = a.workflow_step?.workflow_id || contract.workflow_id;
             const wfName = a.workflow_step?.workflow?.name || contract.workflow?.name || 'Alur Kerja';
+            const wfObj = a.workflow_step?.workflow as any;
             const batchNo = a.batch_no ?? 1;
+
+            const isExplicitSubWorkflow = wfObj?.workflow_type === 'sub_workflow' || Boolean(wfObj?.is_sub_workflow);
+            const isExplicitMainWorkflow = wfObj?.workflow_type === 'main';
+            const isSubWf = isExplicitSubWorkflow || (!isExplicitMainWorkflow && Boolean(rootWorkflowId && wfId !== rootWorkflowId));
 
             if (!currentBlock || currentBlock.workflowId !== wfId || currentBlock.batchNo !== batchNo) {
                 currentBlock = {
                     workflowId: wfId,
                     workflowName: wfName,
                     batchNo: batchNo,
-                    isSubWorkflow: Boolean(rootWorkflowId && wfId !== rootWorkflowId),
+                    isSubWorkflow: isSubWf,
                     groups: [],
                 };
                 blocks.push(currentBlock);
@@ -180,7 +256,7 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
             block.groups.sort((a: any, b: any) => Number(a.sequence) - Number(b.sequence));
         });
         return blocks;
-    }, [filteredSteps, contract.workflow_id, contract.origin_workflow_id, contract.workflow?.name]);
+    }, [filteredSteps, sortBy, contract.workflow_id, contract.origin_workflow_id, contract.workflow?.name]);
 
     const showProjectedManager = approvals.length === 0 && creator.role?.toLowerCase() === 'staff';
 
@@ -246,8 +322,8 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
         <div className="animate-in fade-in flex flex-col flex-1 min-h-0 h-full overflow-hidden duration-300 p-2.5 lg:p-3 gap-2">
             {/* Unified Clean Header Bar - Compact & Solid */}
             <div className="shrink-0 flex items-center justify-between gap-2 bg-surface-muted border border-surface-border p-1 px-2 rounded-lg">
-                {/* Left: View Mode Tabs (Lite / Pro) */}
-                <div className="flex items-center gap-1.5">
+                {/* Left: View Mode Tabs (Lite / Pro) & Sort Toggle */}
+                <div className="flex items-center gap-1.5 flex-wrap">
                     <div className="flex items-center gap-0.5 rounded border border-surface-border bg-surface-base p-0.5">
                         {tabs.map((tab) => (
                             <button
@@ -266,6 +342,38 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                         ))}
                     </div>
 
+                    {/* Sort Order Toggle */}
+                    <div className="flex items-center gap-0.5 rounded border border-surface-border bg-surface-base p-0.5">
+                        <button
+                            type="button"
+                            onClick={() => setSortBy('time')}
+                            className={cn(
+                                'flex items-center gap-1 rounded px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider transition-colors cursor-pointer',
+                                sortBy === 'time'
+                                    ? 'bg-primary/15 text-primary border border-primary/30'
+                                    : 'text-text-soft hover:text-text-main',
+                            )}
+                            title="Urutkan berdasarkan waktu eksekusi riil"
+                        >
+                            <Clock size={11} />
+                            <span>Waktu</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setSortBy('step')}
+                            className={cn(
+                                'flex items-center gap-1 rounded px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider transition-colors cursor-pointer',
+                                sortBy === 'step'
+                                    ? 'bg-primary/15 text-primary border border-primary/30'
+                                    : 'text-text-soft hover:text-text-main',
+                            )}
+                            title="Urutkan berdasarkan nomor langkah alur kerja"
+                        >
+                            <Layers size={11} />
+                            <span>Alur</span>
+                        </button>
+                    </div>
+
                     {currentStepInfo && !currentStepInfo.isCompleted && !currentStepInfo.isRejected && (
                         <span className="hidden sm:inline-flex items-center gap-1 text-[9.5px] font-bold uppercase tracking-wider text-amber-900 dark:text-amber-100 bg-amber-200 dark:bg-amber-950 border border-amber-400 dark:border-amber-700 px-1.5 py-0.5 rounded">
                             <span className="w-1.5 h-1.5 rounded-full bg-amber-600" />
@@ -276,7 +384,7 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
 
                 {/* Right: Search & Export */}
                 <div className="flex items-center gap-1.5">
-                    <div className="w-32 sm:w-44">
+                    <div className="w-28 sm:w-40">
                         <SearchInput
                             placeholder="CARI..."
                             value={search}

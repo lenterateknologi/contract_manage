@@ -38,6 +38,8 @@ interface ContractInfoFormProps {
     setTypeId: (val: string) => void;
     submissionTypeId: string;
     setSubmissionTypeId: (val: string) => void;
+    firstPartyId?: string;
+    setFirstPartyId?: (val: string) => void;
     vendorId: string;
     setVendorId: (val: string) => void;
     types: ContractType[];
@@ -81,6 +83,8 @@ export function ContractInfoForm({
     setTypeId,
     submissionTypeId,
     setSubmissionTypeId,
+    firstPartyId = 'internal',
+    setFirstPartyId,
     vendorId,
     setVendorId,
     types,
@@ -101,12 +105,76 @@ export function ContractInfoForm({
         () => submissionTypes.find((st) => String(st.id) === String(submissionTypeId)),
         [submissionTypes, submissionTypeId]
     );
-    const activeVendor = React.useMemo(() => vendors.find((v) => String(v.id) === String(vendorId)) || selected.vendor, [vendors, vendorId, selected.vendor]);
-    const vendorTaxInfo = React.useMemo(() => resolveVendorTaxPkp(activeVendor), [activeVendor]);
+    const initUser = selected.initiator || selected.creator;
+    const internalCompanyName = initUser?.company?.name || initUser?.company_name || 'PT. Lentera Teknologi';
+    const internalUserName = initUser?.name ? ` (${initUser.name})` : '';
 
-    const vendorOptions = Array.isArray(vendors)
-        ? vendors.map((v) => ({ value: String(v.id), label: v.name }))
-        : [];
+    const firstPartyVendor = React.useMemo(() => {
+        if (!firstPartyId || firstPartyId === 'internal') return null;
+        return vendors.find((v) => String(v.id) === String(firstPartyId)) || null;
+    }, [vendors, firstPartyId]);
+
+    const secondPartyVendor = React.useMemo(() => {
+        if (!vendorId || vendorId === 'internal') return null;
+        return vendors.find((v) => String(v.id) === String(vendorId)) || selected.vendor || null;
+    }, [vendors, vendorId, selected.vendor]);
+
+    const p1TaxInfo = React.useMemo(() => {
+        if (!firstPartyId || firstPartyId === 'internal') {
+            // Internal / User Login has no vendor PKP data -> Not PKP / Non-PKP
+            return { isPkp: false, pkpStatus: 'Non-PKP' };
+        }
+        return resolveVendorTaxPkp(firstPartyVendor);
+    }, [firstPartyId, firstPartyVendor]);
+
+    const p2TaxInfo = React.useMemo(() => {
+        if (!vendorId || vendorId === 'internal') {
+            // Internal / User Login has no vendor PKP data -> Not PKP / Non-PKP
+            return { isPkp: false, pkpStatus: 'Non-PKP' };
+        }
+        return resolveVendorTaxPkp(secondPartyVendor);
+    }, [vendorId, secondPartyVendor]);
+
+    const partyOptions = React.useMemo(() => {
+        const list = [
+            {
+                value: 'internal',
+                label: `${internalCompanyName}${internalUserName} (Internal / Pemohon)`,
+            },
+        ];
+
+        if (Array.isArray(vendors)) {
+            vendors.forEach((v) => {
+                list.push({
+                    value: String(v.id),
+                    label: v.name || v.vendor_name || `Vendor #${v.id}`,
+                });
+            });
+        }
+
+        return list;
+    }, [vendors, internalCompanyName, internalUserName]);
+
+    const firstPartyDisplayName = React.useMemo(() => {
+        if (firstPartyId === 'internal') {
+            return `${internalCompanyName} (Internal)`;
+        }
+        const found = partyOptions.find((p) => p.value === firstPartyId);
+        if (found) return found.label;
+        return selected.p1_entity || `${internalCompanyName} (Internal)`;
+    }, [firstPartyId, partyOptions, internalCompanyName, selected.p1_entity]);
+
+    const secondPartyDisplayName = React.useMemo(() => {
+        if (vendorId === 'internal') {
+            return `${internalCompanyName} (Internal)`;
+        }
+        const found = partyOptions.find((p) => p.value === vendorId);
+        if (found) return found.label;
+        return selected.p2_entity || selected.vendor?.name || 'Tanpa Vendor';
+    }, [vendorId, partyOptions, internalCompanyName, selected.p2_entity, selected.vendor]);
+
+    // Current active tax info based on which party is selected (taxRequired: true = P1, false = P2)
+    const activeSelectedTaxInfo = taxRequired ? p1TaxInfo : p2TaxInfo;
 
     const formattedPrice = React.useMemo(() => {
         const val = price || (selected.metadata?.meta_harga ?? selected.metadata?.f2_price ?? selected.meta?.f2_price);
@@ -179,30 +247,20 @@ export function ContractInfoForm({
                         </div>
                     )}
 
-                    {/* Kategori Dokumen */}
-                    {selected.show_category !== false && (
-                        <div className="py-2.5 flex items-center justify-between gap-3">
-                            <FieldLabel icon={Tag} required={!!(selected.require_category || selected.workflow_step?.meta?.require_category)}>Kategori Dokumen</FieldLabel>
-                            <span className="font-semibold text-foreground text-right">
-                                {categoryDisplayName}
-                            </span>
-                        </div>
-                    )}
-
-                    {/* Alur Kerja (Workflow) */}
+                    {/* Pihak Pertama */}
                     <div className="py-2.5 flex items-center justify-between gap-3">
-                        <FieldLabel icon={GitBranch}>Alur Kerja</FieldLabel>
-                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 font-semibold text-xs border border-indigo-200/60 dark:border-indigo-800/40">
-                            {selected.workflow?.name || selected.workflow_step?.workflow?.name || 'Alur Standar'}
+                        <FieldLabel icon={Building2}>Pihak Pertama</FieldLabel>
+                        <span className="font-semibold text-foreground text-right truncate max-w-[220px]">
+                            {firstPartyDisplayName}
                         </span>
                     </div>
 
-                    {/* Vendor */}
+                    {/* Pihak Kedua */}
                     {selected.show_vendor !== false && (
                         <div className="py-2.5 flex items-center justify-between gap-3">
-                            <FieldLabel icon={Building2} required={!!(selected.require_vendor || selected.workflow_step?.meta?.require_vendor)}>Pihak Kedua </FieldLabel>
+                            <FieldLabel icon={Building2} required={!!(selected.require_vendor || selected.workflow_step?.meta?.require_vendor)}>Pihak Kedua</FieldLabel>
                             <span className="font-semibold text-foreground text-right truncate max-w-[220px]">
-                                {selected.vendor?.name || 'Tanpa Vendor'}
+                                {secondPartyDisplayName}
                             </span>
                         </div>
                     )}
@@ -232,30 +290,32 @@ export function ContractInfoForm({
                     {/* Ketentuan Pajak */}
                     {selected.show_tax_toggle !== false && (
                         <div className="py-2.5 flex items-center justify-between gap-3">
-                            <div className="flex items-center gap-2">
-                                <FieldLabel icon={Receipt} required={!!(selected.require_tax_toggle || selected.workflow_step?.meta?.require_tax_toggle)}>Pajak</FieldLabel>
-                                {vendorTaxInfo.pkpStatus && vendorTaxInfo.pkpStatus !== '-' && (
-                                    <span className={cn(
-                                        "text-[10px] font-bold px-1.5 py-0.2 rounded border",
-                                        taxRequired
-                                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
-                                            : "bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20"
-                                    )}>
-                                        PKP: {vendorTaxInfo.pkpStatus}
-                                    </span>
-                                )}
+                            <FieldLabel icon={Receipt} required={!!(selected.require_tax_toggle || selected.workflow_step?.meta?.require_tax_toggle)}>Penentuan Pajak</FieldLabel>
+                            <div className="flex flex-col items-end gap-1">
+                                <span className="font-semibold text-foreground text-right">
+                                    {taxRequired
+                                        ? `Pihak I (${firstPartyDisplayName})`
+                                        : `Pihak II (${secondPartyDisplayName})`}
+                                </span>
+                                <span className={cn(
+                                    "inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded border",
+                                    activeSelectedTaxInfo.isPkp
+                                        ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20"
+                                        : "bg-slate-500/10 text-slate-700 dark:text-slate-400 border-slate-500/20"
+                                )}>
+                                    {activeSelectedTaxInfo.isPkp ? (
+                                        <>
+                                            <CheckCircle2 size={10} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                            <span>Kena Pajak ({activeSelectedTaxInfo.pkpStatus || 'PKP'})</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <XCircle size={10} className="text-slate-500 dark:text-slate-400 shrink-0" />
+                                            <span>Bebas Pajak ({activeSelectedTaxInfo.pkpStatus || 'Non-PKP'})</span>
+                                        </>
+                                    )}
+                                </span>
                             </div>
-                            {taxRequired ? (
-                                <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
-                                    <CheckCircle2 size={13} className="shrink-0" />
-                                    Dikenakan Pajak (PPN/PPh)
-                                </span>
-                            ) : (
-                                <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
-                                    <XCircle size={13} className="shrink-0" />
-                                    Tanpa Pajak
-                                </span>
-                            )}
                         </div>
                     )}
                 </div>
@@ -298,62 +358,45 @@ export function ContractInfoForm({
                 </div>
             )}
 
-            {/* Pihak Kedua  */}
+            {/* Pihak Pertama */}
+            <div className="flex flex-col gap-1.5">
+                <FieldLabel icon={Building2}>Pihak Pertama</FieldLabel>
+                {canEditVendor ? (
+                    <SearchableSelect
+                        value={firstPartyId}
+                        onValueChange={(val) => setFirstPartyId?.(val)}
+                        options={partyOptions}
+                        placeholder="Pilih Pihak Pertama"
+                        searchPlaceholder="Cari pihak pertama..."
+                        size="sm"
+                    />
+                ) : (
+                    <span className="text-xs font-semibold text-foreground truncate">
+                        {firstPartyDisplayName}
+                    </span>
+                )}
+            </div>
+
+            {/* Pihak Kedua */}
             {selected.show_vendor !== false && (
                 <div className="flex flex-col gap-1.5">
-                    <FieldLabel icon={Building2} required={!!(selected.require_vendor || selected.workflow_step?.meta?.require_vendor)}>Pihak Kedua </FieldLabel>
+                    <FieldLabel icon={Building2} required={!!(selected.require_vendor || selected.workflow_step?.meta?.require_vendor)}>Pihak Kedua</FieldLabel>
                     {canEditVendor ? (
                         <SearchableSelect
                             value={vendorId}
                             onValueChange={setVendorId}
-                            options={vendorOptions}
-                            placeholder="Pilih Vendor"
-                            searchPlaceholder="Cari vendor..."
+                            options={partyOptions}
+                            placeholder="Pilih Pihak Kedua"
+                            searchPlaceholder="Cari pihak kedua..."
                             size="sm"
                         />
                     ) : (
                         <span className="text-xs font-semibold text-foreground truncate">
-                            {selected.vendor?.name || vendorOptions.find((o) => o.value === vendorId)?.label || 'Tanpa Vendor'}
+                            {secondPartyDisplayName}
                         </span>
                     )}
                 </div>
             )}
-
-            {/* Kategori Dokumen */}
-            {selected.show_category !== false && (
-                <div className="flex flex-col gap-1.5">
-                    <FieldLabel icon={Tag} required={!!(selected.require_category || selected.workflow_step?.meta?.require_category)}>Kategori Dokumen</FieldLabel>
-                    {canEditCategory ? (
-                        <TreeSelect
-                            value={typeId}
-                            onValueChange={(val) => setTypeId(val)}
-                            items={types}
-                            placeholder="Pilih Kategori"
-                            disableParentSelection={true}
-                            size="sm"
-                        />
-                    ) : (
-                        <span className="text-xs font-semibold text-foreground">
-                            {categoryDisplayName}
-                        </span>
-                    )}
-                </div>
-            )}
-
-            {/* Alur Kerja (Workflow) Info */}
-            <div className="flex flex-col gap-1.5">
-                <FieldLabel icon={GitBranch}>Alur Kerja</FieldLabel>
-                <div className="flex items-center gap-1.5 text-xs font-medium text-foreground">
-                    <span className="font-semibold text-foreground">
-                        {selected.workflow?.name || selected.workflow_step?.workflow?.name || 'Alur Standar'}
-                    </span>
-                    {selected.workflow_step?.step && (
-                        <span className="text-[10px] text-muted-foreground">
-                            • Tahap {selected.workflow_step.step}: {selected.workflow_step.name || selected.workflow_step.label || 'Berjalan'}
-                        </span>
-                    )}
-                </div>
-            </div>
 
             {/* Masa Berlaku */}
             {selected.show_period !== false && (
@@ -415,62 +458,46 @@ export function ContractInfoForm({
             {/* Pajak */}
             {selected.show_tax_toggle !== false && (
                 <div className="flex flex-col gap-1.5">
-                    <div className="flex items-center justify-between">
-                        <FieldLabel icon={Receipt} required={!!(selected.require_tax_toggle || selected.workflow_step?.meta?.require_tax_toggle)}>Penentuan Pajak</FieldLabel>
-                        {vendorTaxInfo.pkpStatus && vendorTaxInfo.pkpStatus !== '-' && (
-                            <span className={cn(
-                                "text-[10px] font-bold px-1.5 py-0.5 rounded border",
-                                taxRequired
-                                    ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
-                                    : "bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20"
-                            )}>
-                                Status PKP: {vendorTaxInfo.pkpStatus}
-                            </span>
-                        )}
-                    </div>
+                    <FieldLabel icon={Receipt} required={!!(selected.require_tax_toggle || selected.workflow_step?.meta?.require_tax_toggle)}>Penentuan Pajak</FieldLabel>
                     {canEditTaxToggle ? (
-                        <label
-                            htmlFor="tax_required_checkbox"
-                            className="flex items-center justify-between cursor-pointer rounded-xl border border-border bg-muted/30 px-3.5 py-2.5 hover:bg-muted/60 transition-colors"
-                        >
-                            <div className="flex items-center gap-2.5">
-                                <Checkbox
-                                    id="tax_required_checkbox"
-                                    checked={taxRequired}
-                                    onCheckedChange={(c) => onTaxRequiredChange(!!c)}
-                                />
-                                <span className="text-xs font-medium text-foreground select-none">
-                                    Dikenakan Pajak (PPN/PPh)
-                                </span>
-                            </div>
-
-                            <span className="text-[10px] font-bold text-muted-foreground">
-                                {taxRequired ? 'Kena Pajak' : 'Bebas Pajak'}
-                            </span>
-                        </label>
+                        <SearchableSelect
+                            value={taxRequired ? 'p1' : 'p2'}
+                            onValueChange={(val) => onTaxRequiredChange(val === 'p1')}
+                            options={[
+                                { value: 'p1', label: `Pihak I (${firstPartyDisplayName})` },
+                                { value: 'p2', label: `Pihak II (${secondPartyDisplayName})` },
+                            ]}
+                            placeholder="Pilih Penanggung / Ketentuan Pajak"
+                            searchPlaceholder="Cari pihak penanggung pajak..."
+                            size="sm"
+                        />
                     ) : (
+                        <span className="text-xs font-semibold text-foreground">
+                            {taxRequired
+                                ? `Pihak I (${firstPartyDisplayName})`
+                                : `Pihak II (${secondPartyDisplayName})`}
+                        </span>
+                    )}
+                    <div className="flex items-center gap-2 mt-0.5">
                         <span className={cn(
-                            "inline-flex items-center gap-1.5 text-xs font-medium",
-                            taxRequired ? "text-emerald-600 dark:text-emerald-400 font-semibold" : "text-muted-foreground"
+                            "inline-flex items-center gap-1.5 text-xs font-semibold px-2 py-0.5 rounded-md border",
+                            activeSelectedTaxInfo.isPkp
+                                ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30"
+                                : "bg-slate-500/10 text-slate-700 dark:text-slate-400 border-slate-500/30"
                         )}>
-                            {taxRequired ? (
+                            {activeSelectedTaxInfo.isPkp ? (
                                 <>
-                                    <CheckCircle2 size={13} className="shrink-0" />
-                                    Dikenakan Pajak (PPN/PPh)
+                                    <CheckCircle2 size={12} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                    <span>Status: <strong>Kena Pajak ({activeSelectedTaxInfo.pkpStatus || 'PKP'})</strong></span>
                                 </>
                             ) : (
                                 <>
-                                    <XCircle size={13} className="shrink-0" />
-                                    Tanpa Pajak
+                                    <XCircle size={12} className="text-slate-500 dark:text-slate-400 shrink-0" />
+                                    <span>Status: <strong>Tidak Kena Pajak / Bebas ({activeSelectedTaxInfo.pkpStatus || 'Non-PKP'})</strong></span>
                                 </>
                             )}
                         </span>
-                    )}
-                    {vendorTaxInfo.pkpStatus && vendorTaxInfo.pkpStatus !== '-' && (
-                        <p className="text-[10px] text-muted-foreground italic">
-                            * Pajak disinkronkan otomatis dari status PKP pihak kedua ({vendorTaxInfo.pkpStatus}).
-                        </p>
-                    )}
+                    </div>
                 </div>
             )}
         </div>

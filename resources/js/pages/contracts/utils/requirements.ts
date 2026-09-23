@@ -93,7 +93,7 @@ const REQUIREMENT_RESOLVERS: Record<string, RequirementResolver> = {
     vendor: (c) => ({
         id: 'vendor',
         label: 'Pihak Kedua (Vendor)',
-        isFilled: !!(c.vendor_id || c.vendor?.id),
+        isFilled: !!(c.vendor_id || c.vendor?.id || c.p2_entity || c.metadata?.second_party_id || c.metadata?.meta_p2_entity),
         type: 'field',
         targetTab: 'overview',
     }),

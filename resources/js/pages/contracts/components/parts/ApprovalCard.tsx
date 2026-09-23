@@ -1,10 +1,10 @@
 import { UserAvatarIcon } from '@/components/profile/UserAvatar';
-import { ActionBadge, FileChipIcon } from '@/components/ui';
+import { ActionBadge, FileChipIcon, getActionConfig } from '@/components/ui';
 import { Badge } from '@/components/ui/feedback/Badge';
 import { formatFileSize } from '@/lib/formatters';
 import { cn, formatDateTime } from '@/lib/utils';
 import { Contract, ContractApproval } from '@/pages/contracts/types';
-import { Check, CheckCircle2, ChevronDown, Clock, Download, Lock, X } from 'lucide-react';
+import { Check, CheckCircle2, ChevronDown, Clock, Download, Lock, LogIn, X } from 'lucide-react';
 import { useState } from 'react';
 import { StatusBadge } from '../ui/ui';
 
@@ -24,6 +24,9 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false,
     const isApproved = a.status === 'approved';
     const isRejected = a.status === 'rejected';
     const isSkipped = (a.status as string) === 'SKIPPED';
+    const cleanActionAlias = (a.action_alias || '').toLowerCase().trim();
+    const cleanActionCode = (a.action_code || '').toLowerCase().trim();
+    const isEffectivelyRejected = isRejected || cleanActionCode === 'reject' || cleanActionAlias.includes('tolak') || cleanActionAlias.includes('reject');
 
     // Status is truly Pending if explicitly marked as pending or passed via isPending prop
     const isCardPending = !isApproved && !isRejected && !isSkipped && Boolean(isPending || a.status === 'pending');
@@ -34,18 +37,46 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false,
 
     const finalStepNumber = (displaySubSteps && hasValidSubStep) ? `${stepNumber}.${a.sub_step}` : stepNumber;
 
-    // Cari workflow step yang cocok untuk card ini
-    const matchedStep = contract?.workflow?.steps?.find((s: any) => s.step === a.sequence || s.id === a.workflow_step_id) || a.workflow_step;
+    // Cari workflow step yang cocok untuk card ini (prioritaskan data workflow_step yang sudah di-attach pada approval)
+    const matchedStep = a.workflow_step || contract?.workflow?.steps?.find((s: any) => (a.workflow_step_id && s.id === a.workflow_step_id) || s.step === a.sequence);
     const stepMeta = (matchedStep as any)?.meta || {};
+    const stepActions: any[] = (matchedStep as any)?.action_configs || (matchedStep as any)?.actions || [];
 
-    // Ambil target status: jika sudah diputuskan (approved/rejected), cari action terkait jika ada, atau gunakan target_status dari step
-    const targetStatusCode = stepMeta.target_status || null;
+    // Cari action spesifik yang dieksekusi approver
+    const executedAction = stepActions.find((act: any) => {
+        if (a.action_id && act.id === a.action_id) return true;
+        if (a.action_alias && act.alias && act.alias.toLowerCase() === a.action_alias.toLowerCase()) return true;
+        return false;
+    }) || (a.action_code ? stepActions.find((act: any) => (act.action_code || act.code)?.toLowerCase() === a.action_code?.toLowerCase()) : null);
+
+    // Prioritaskan target_status dari executed action, lalu target_status dari step meta
+    const targetStatusCode = executedAction?.target_status || stepMeta.target_status || null;
+
+    // Resolve konfigurasi action & warna spesifik kartu
+    const actionConfig = getActionConfig(
+        a.action_code || (isRejected ? 'reject' : 'approve'),
+        a.action_alias,
+        isApproved,
+        isEffectivelyRejected,
+        targetStatusCode,
+        null
+    );
+
+    const cardCustomStyle = (isApproved || isRejected || isEffectivelyRejected) && actionConfig.hexColor
+        ? {
+            backgroundColor: `${actionConfig.hexColor}08`,
+            borderColor: `${actionConfig.hexColor}30`,
+        }
+        : undefined;
 
     return (
         <div
+            style={cardCustomStyle}
             className={cn(
-                'group relative flex flex-col w-full transition-all duration-200 py-0.5',
-                isCardPending ? 'rounded-lg bg-amber-500/5 p-1.5 border border-amber-500/25 shadow-2xs' : '',
+                'group relative flex flex-col w-full transition-all duration-200 py-1 px-1.5 rounded-lg border border-transparent',
+                isCardPending ? 'bg-amber-500/5 border-amber-500/25 shadow-2xs' : '',
+                (isApproved && !isEffectivelyRejected && !cardCustomStyle) ? 'bg-emerald-500/5 border-emerald-500/20' : '',
+                ((isRejected || isEffectivelyRejected) && !cardCustomStyle) ? 'bg-rose-500/5 border-rose-500/20' : '',
                 isLite ? 'gap-1' : 'gap-1.5',
             )}
         >
@@ -88,7 +119,8 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false,
                                 <span className={cn("text-text-main truncate font-bold leading-tight", isLite ? "text-[11px]" : "text-[11px]")}>
                                     {a.approver.name}
                                 </span>
-                                {isApproved && <Check size={11} className="shrink-0 text-emerald-500" strokeWidth={2.5} />}
+                                {isApproved && !isEffectivelyRejected && <Check size={11} className="shrink-0 text-emerald-500" strokeWidth={2.5} />}
+                                {(isRejected || isEffectivelyRejected) && <X size={11} className="shrink-0 text-rose-500" strokeWidth={2.5} />}
                             </div>
                             <div className="flex items-center gap-1.5 text-[9.5px] text-text-soft flex-wrap">
                                 {a.batch_no && a.batch_no > 1 && (
@@ -177,15 +209,15 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false,
                     )}
                 </div>
 
-                {/* Status & Timestamp */}
-                <div className="flex items-center gap-1.5 shrink-0">
+                {/* Status & Timestamps */}
+                <div className="flex items-center gap-2 shrink-0">
                     {/* Status Badge */}
-                    {a.action_code && a.action_code !== 'approve' && (isApproved || isRejected) ? (
-                        <ActionBadge actionCode={a.action_code} alias={a.action_alias} size="xs" isApproved={isApproved} isRejected={isRejected} />
+                    {(a.action_alias || (a.action_code && a.action_code !== 'approve')) && (isApproved || isRejected || isEffectivelyRejected) ? (
+                        <ActionBadge actionCode={a.action_code || (isEffectivelyRejected ? 'reject' : 'approve')} alias={a.action_alias} targetStatus={targetStatusCode} size="xs" isApproved={isApproved} isRejected={isEffectivelyRejected} />
                     ) : isApproved ? (
-                        <StatusBadge status="approved" size="sm" />
-                    ) : isRejected ? (
-                        <StatusBadge status="rejected" size="sm" />
+                        <ActionBadge actionCode="approve" alias="Setujui" targetStatus={targetStatusCode} size="xs" isApproved={true} />
+                    ) : (isRejected || isEffectivelyRejected) ? (
+                        <ActionBadge actionCode="reject" alias="Tolak" targetStatus={targetStatusCode || 'rejected'} size="xs" isRejected={true} />
                     ) : isCardPending ? (
                         <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 border border-amber-500/40 px-2 py-0.5 text-[9px] font-bold tracking-wider uppercase text-amber-700 dark:text-amber-300 shadow-2xs">
                             <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping shrink-0" />
@@ -202,15 +234,24 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false,
                         <StatusBadge status={targetStatusCode} size="sm" />
                     ) : null}
 
-                    {a.decided_at ? (
-                        <span className="text-text-soft flex items-center gap-1 text-[10px] font-medium" title="Waktu Keputusan / Aksi">
-                            <Clock size={10} className="text-text-soft shrink-0" /> {formatDateTime(a.decided_at)}
-                        </span>
-                    ) : (a.created_at || a.step_entry_at) ? (
-                        <span className="text-text-soft flex items-center gap-1 text-[10px] font-medium" title="Waktu Masuk Step">
-                            <Clock size={10} className="text-text-soft shrink-0" /> {formatDateTime(a.step_entry_at || a.created_at)}
-                        </span>
-                    ) : null}
+                    {/* Timestamps: Waktu Masuk & Waktu Eksekusi */}
+                    <div className="flex flex-col items-end gap-0.5 text-[9.5px]">
+                        {/* Waktu Eksekusi / Keputusan (Jika sudah diputuskan) */}
+                        {a.decided_at && (
+                            <span className="text-text-main font-semibold flex items-center gap-1" title="Waktu Eksekusi / Keputusan">
+                                <Clock size={10} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                <span className="text-text-soft font-normal">Selesai:</span> {formatDateTime(a.decided_at)}
+                            </span>
+                        )}
+
+                        {/* Waktu Sampai / Masuk Step */}
+                        {(a.step_entry_at || a.created_at) && (
+                            <span className="text-text-soft flex items-center gap-1 font-medium" title="Waktu Sampai / Masuk Step">
+                                <LogIn size={10} className="text-muted-foreground shrink-0" />
+                                <span className="text-text-soft font-normal">Masuk:</span> {formatDateTime(a.step_entry_at || a.created_at)}
+                            </span>
+                        )}
+                    </div>
                 </div>
             </div>
 

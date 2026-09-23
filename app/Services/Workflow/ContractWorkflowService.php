@@ -2026,8 +2026,13 @@ class ContractWorkflowService
 
         $requireVendor = (! empty($stepMeta['require_vendor']) && (! $actionCode || $actionCode === 'approve'))
             || in_array('vendor', $actionReqFields);
-        if ($requireVendor && empty($contract->vendor_id)) {
-            throw new \Exception('Tidak dapat melanjutkan persetujuan. Field Pihak Kedua  wajib dipilih terlebih dahulu.');
+        $hasVendorOrParty2 = ! empty($contract->vendor_id)
+            || ! empty($contract->p2_entity)
+            || ! empty(data_get($contract->metadata, 'second_party_id'))
+            || ! empty(data_get($contract->metadata, 'p2_vendor_id'))
+            || ! empty(data_get($contract->metadata, 'meta_p2_entity'));
+        if ($requireVendor && ! $hasVendorOrParty2) {
+            throw new \Exception('Tidak dapat melanjutkan persetujuan. Field Pihak Kedua wajib dipilih terlebih dahulu.');
         }
 
         $requireCategory = (! empty($stepMeta['require_category']) && (! $actionCode || $actionCode === 'approve'))

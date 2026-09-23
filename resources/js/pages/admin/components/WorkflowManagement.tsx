@@ -53,11 +53,38 @@ const INITIATOR_LABELS: Record<string, string> = {
     user: 'Spesifik User',
 };
 
+function getCookie(name: string): string | null {
+    if (typeof document === 'undefined') return null;
+    const match = document.cookie.match(new RegExp('(^|;\\s*)(' + name + ')=([^;]*)'));
+    return match ? decodeURIComponent(match[3]) : null;
+}
+
 export function WorkflowManagement({ workflows, contractTypes, filters }: Readonly<WorkflowManagementProps>) {
     const { showToast } = useToast();
     const { canCreate, canDelete } = usePermissions('ADMIN_WORKFLOWS');
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [search, setSearch] = useState(filters.search || '');
+
+    React.useEffect(() => {
+        // Auto-apply saved filter from cookie on initial visit if no custom filter query present in URL
+        if (typeof window !== 'undefined') {
+            const currentSearch = window.location.search;
+            if (!currentSearch || currentSearch === '' || currentSearch === '?') {
+                const storageKey = 'saved_filter_workflows';
+                const raw = getCookie(storageKey) || localStorage.getItem(storageKey);
+                if (raw) {
+                    try {
+                        const saved = JSON.parse(raw);
+                        if (saved && typeof saved === 'object' && Object.keys(saved).length > 0) {
+                            router.get(window.location.pathname, { ...saved, page: 1 }, { preserveState: true, replace: true });
+                        }
+                    } catch (e) {
+                        // Ignore parse errors
+                    }
+                }
+            }
+        }
+    }, []);
 
     const filterCategories = useMemo(() => {
         return [
@@ -268,6 +295,7 @@ export function WorkflowManagement({ workflows, contractTypes, filters }: Readon
             onFilterChange={handleFilterChange}
             onResetFilters={handleResetFilters}
             totalResults={workflows.total || 0}
+            resourceKey="workflows"
             actions={
                 <div className="flex items-center gap-2">
                     {selectedIds.size > 0 && (

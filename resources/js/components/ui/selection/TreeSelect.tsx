@@ -325,7 +325,8 @@ export function TreeSelect({
                                 }
                             }}
                             className={cn(
-                                "flex flex-1 items-center gap-2 py-1.5 text-left text-sm transition-colors rounded-sm cursor-pointer",
+                                "flex flex-1 items-center gap-2 py-1.5 text-left transition-colors rounded-sm cursor-pointer",
+                                isSmall ? "text-xs" : "text-sm",
                                 depth === 0 ? "font-semibold px-3" : "font-medium px-2",
                                 fullySelected ? "text-primary font-medium" : "text-popover-foreground/80"
                             )}

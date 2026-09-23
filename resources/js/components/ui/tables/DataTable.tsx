@@ -43,16 +43,16 @@ export interface DataTableProps<T> {
     onRowClick?: (row: T) => void;
     onSelectionChange?: (selectedRows: T[]) => void;
     selectedRows?: T[];
-    bulkActions?: any; // Component or Array of action objects
+    bulkActions?: React.ReactNode | ((selectedRows: T[]) => React.ReactNode);
     searchKey?: string;
     searchPlaceholder?: string;
     searchValue?: string;
     onSearchChange?: (value: string) => void;
 
     // Filtering integration
-    filters?: any[];
-    activeFilters?: Record<string, any>;
-    onFilterChange?: (filters: Record<string, any>) => void;
+    filters?: unknown[];
+    activeFilters?: Record<string, unknown>;
+    onFilterChange?: (filters: Record<string, unknown>) => void;
 
     // Layout & Extras
     headerActions?: React.ReactNode;
@@ -76,7 +76,7 @@ export interface DataTableProps<T> {
  * Primary structural reference: TableContract style
  * Premium aesthetics, lightened typography, centralized logic.
  */
-export function DataTable<T extends Record<string, any>>({
+export function DataTable<T extends Record<string, unknown>>({
     columns,
     data = [],
     loading = false,
@@ -258,9 +258,10 @@ export function DataTable<T extends Record<string, any>>({
                                     const prevRow = rowIdx > 0 ? displayData[rowIdx - 1] : null;
                                     const subHeader = renderSubHeader ? renderSubHeader(row, prevRow, rowIdx) : null;
                                     const totalColSpan = columns.length + (onSelectionChange ? 1 : 0) + (rowActions ? 1 : 0);
+                                    const rowKey = typeof row.id !== 'undefined' && row.id !== null ? String(row.id) : String(rowIdx);
 
                                     return (
-                                        <React.Fragment key={row.id || rowIdx}>
+                                        <React.Fragment key={rowKey}>
                                             {subHeader && (
                                                 <tr className="bg-slate-50/90 dark:bg-zinc-800/80 border-y border-surface-border select-none">
                                                     <td colSpan={totalColSpan} className="px-4 py-2 text-xs font-semibold text-text-main">
@@ -323,7 +324,7 @@ export function DataTable<T extends Record<string, any>>({
                                                                 col.className
                                                             )}
                                                         >
-                                                            {col.cell ? col.cell(row) : ((col.accessorKey as string).split('.').reduce((acc: any, part: string) => acc && acc[part], row) as React.ReactNode)}
+                                                            {col.cell ? col.cell(row) : ((col.accessorKey as string).split('.').reduce((acc: Record<string, unknown> | undefined, part: string) => acc ? (acc[part] as Record<string, unknown> | undefined) : undefined, row as Record<string, unknown>) as React.ReactNode)}
                                                         </td>
                                                     );
                                                 })}

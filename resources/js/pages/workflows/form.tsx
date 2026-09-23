@@ -1479,6 +1479,7 @@ export default function WorkflowEditor({
                                     steps={form.data.steps}
                                     workflow={workflow}
                                     allWorkflows={allWorkflows}
+                                    customActions={form.data.meta?.custom_actions || workflow?.meta?.custom_actions || []}
                                     users={users}
                                     roles={roles}
                                     departments={departments}

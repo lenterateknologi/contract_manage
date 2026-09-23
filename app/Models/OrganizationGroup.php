@@ -43,4 +43,20 @@ class OrganizationGroup extends Model
     {
         return $this->hasMany(Department::class, 'idorg_group', 'idorg_group');
     }
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\HasManyThrough<User, Department, OrganizationGroup>
+     */
+    public function users(): \Illuminate\Database\Eloquent\Relations\HasManyThrough
+    {
+        return $this->hasManyThrough(
+            User::class,
+            Department::class,
+            'idorg_group',
+            'department_id',
+            'idorg_group',
+            'id'
+        );
+    }
 }
+

@@ -22,7 +22,7 @@ class OrganizationGroupResource extends Resource
 
     public static string $defaultSortDir = 'asc';
 
-    public static array $withCount = ['departments'];
+    public static array $withCount = ['departments', 'users'];
 
     public static function table(): array
     {
@@ -32,6 +32,7 @@ class OrganizationGroupResource extends Resource
             TextColumn::make('name', 'Nama Group Organisasi')->sortable()->searchable(),
             TextColumn::make('oracle_code', 'Oracle Code')->sortable()->searchable(),
             TextColumn::make('departments_count', 'Total Unit / Dept')->sortable()->alignRight(),
+            TextColumn::make('users_count', 'Pengguna')->sortable()->alignRight(),
             BooleanColumn::make('is_used', 'Sistem')->sortable()->alignRight(),
             BooleanColumn::make('is_active', 'Portal')->sortable()->alignRight(),
         ];

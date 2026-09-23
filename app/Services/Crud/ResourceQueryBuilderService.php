@@ -373,8 +373,12 @@ class ResourceQueryBuilderService
                 'region_name' => 'region.name',
             ];
             $actualSortBy = $sortColumnMap[$sortBy] ?? $sortBy;
+            $withCountCols = $resourceClass::$withCount ?? [];
+            $withCountFields = array_map(fn ($rel) => is_string($rel) ? "{$rel}_count" : '', $withCountCols);
 
-            if (str_contains($actualSortBy, '.')) {
+            if (in_array($actualSortBy, $withCountFields, true) || str_ends_with($actualSortBy, '_count')) {
+                $query->orderBy($actualSortBy, $sortDir);
+            } elseif (str_contains($actualSortBy, '.')) {
                 [$relation, $relColumn] = explode('.', $actualSortBy, 2);
                 $method = method_exists($modelInstance, $relation) ? $relation : Str::camel($relation);
                 if (method_exists($modelInstance, $method)) {
@@ -402,7 +406,7 @@ class ResourceQueryBuilderService
                 if (Schema::hasColumn($tableName, $actualSortBy)) {
                     $query->orderBy("{$tableName}.{$actualSortBy}", $sortDir);
                 } else {
-                    $query->orderBy("{$tableName}.id", $sortDir);
+                    $query->orderBy($actualSortBy, $sortDir);
                 }
             }
         } elseif (! empty($resourceClass::$defaultSortBy)) {

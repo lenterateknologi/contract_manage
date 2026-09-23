@@ -105,14 +105,17 @@ export function SearchableSelect({
                 >
                     {/* Search (only shown if options > 3) */}
                     {options.length > 3 && (
-                        <div className="flex items-center border-b border-border px-3 bg-muted/20">
-                            <Search size={14} className="mr-2 shrink-0 text-muted-foreground" />
+                        <div className={cn("flex items-center border-b border-border px-3 bg-muted/20", isSmall ? "py-1" : "")}>
+                            <Search size={isSmall ? 13 : 14} className="mr-2 shrink-0 text-muted-foreground" />
                             <input
                                 autoFocus
                                 value={search}
                                 onChange={e => setSearch(e.target.value)}
                                 placeholder={searchPlaceholder}
-                                className="flex h-9 w-full bg-transparent py-2 text-sm outline-hidden placeholder:text-muted-foreground text-foreground"
+                                className={cn(
+                                    "flex w-full bg-transparent outline-hidden placeholder:text-muted-foreground text-foreground",
+                                    isSmall ? "h-7 py-1 text-xs" : "h-9 py-2 text-sm"
+                                )}
                             />
                         </div>
                     )}
@@ -134,16 +137,17 @@ export function SearchableSelect({
                                             setSearch('');
                                         }}
                                         className={cn(
-                                            'relative flex w-full cursor-pointer select-none items-center rounded-md py-2 pl-8 pr-2 text-sm outline-hidden transition-colors text-left',
+                                            'relative flex w-full cursor-pointer select-none items-center rounded-md outline-hidden transition-colors text-left',
+                                            isSmall ? 'py-1.5 pl-7 pr-2 text-xs' : 'py-2 pl-8 pr-2 text-sm',
                                             'hover:bg-accent hover:text-accent-foreground',
                                             isSelected && 'bg-accent text-accent-foreground font-medium',
                                             opt.italic && 'italic text-muted-foreground'
                                         )}
                                     >
-                                        <span className="absolute left-2.5 flex h-3.5 w-3.5 items-center justify-center">
-                                            {isSelected && <Check size={14} className="text-primary" />}
+                                        <span className={cn("absolute flex items-center justify-center", isSmall ? "left-2 h-3 w-3" : "left-2.5 h-3.5 w-3.5")}>
+                                            {isSelected && <Check size={isSmall ? 12 : 14} className="text-primary" />}
                                         </span>
-                                        {opt.label}
+                                        <span className="truncate">{opt.label}</span>
                                     </button>
                                 );
                             })

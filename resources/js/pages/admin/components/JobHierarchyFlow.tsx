@@ -63,6 +63,7 @@ import { HierarchyUser, MultiSelectDropdown } from './OrgHierarchyFlow';
 const JOB_STORAGE_KEY = 'job_hierarchy_view_settings_v3';
 
 interface SavedJobHierarchySettings {
+    groupByMode?: 'job_title' | 'role';
     usedFilter?: 'used_only' | 'all';
     selectedGroups?: string[];
     selectedOrganizationGroups?: string[];
@@ -120,18 +121,39 @@ interface Props {
     masterJobLevels?: MasterItem[];
     masterJobTitles?: MasterItem[];
     masterRoles?: MasterItem[];
+    // External filter props
+    groupByMode?: 'job_title' | 'role';
+    onGroupByModeChange?: (mode: 'job_title' | 'role') => void;
+    usedFilter?: 'used_only' | 'all';
+    searchQuery?: string;
+    selectedGroups?: string[];
+    selectedOrganizationGroups?: string[];
+    selectedRegions?: string[];
+    selectedLocations?: string[];
+    selectedCompanies?: string[];
+    selectedDivisions?: string[];
+    selectedDepartments?: string[];
+    selectedSubdepartments?: string[];
+    selectedSections?: string[];
+    selectedJobLevelGroups?: string[];
+    selectedJobLevels?: string[];
+    selectedJobTitles?: string[];
+    selectedRoles?: string[];
+    visibleTiers?: Record<string, boolean>;
 }
 
 export type SeniorityTierKey =
-    | 'tier_1_executive'
-    | 'tier_2_gm'
-    | 'tier_3_manager'
-    | 'tier_4_asst_manager'
-    | 'tier_5_supervisor'
-    | 'tier_6_staff'
-    | 'tier_7_non_staff';
+    | 'tier_1_c_level'
+    | 'tier_2_vp'
+    | 'tier_3_head'
+    | 'tier_4_gm'
+    | 'tier_5_manager'
+    | 'tier_6_asst_manager'
+    | 'tier_7_supervisor'
+    | 'tier_8_staff'
+    | 'tier_9_non_staff';
 
-interface TierDefinition {
+export interface TierDefinition {
     key: SeniorityTierKey;
     rank: number;
     title: string;
@@ -143,12 +165,12 @@ interface TierDefinition {
     edgeColor: string;
 }
 
-const SENIORITY_TIERS: TierDefinition[] = [
+export const SENIORITY_TIERS: TierDefinition[] = [
     {
-        key: 'tier_1_executive',
+        key: 'tier_1_c_level',
         rank: 1,
-        title: 'Direksi & Executive (VP / Head / Director)',
-        subtitle: 'CEO, MD, DMD, VP, Head, Chief, Director, Management',
+        title: 'Direksi & C-Level (Board / Management)',
+        subtitle: 'CEO, President, Director, Direksi, MD, DMD, Chief',
         icon: Crown,
         headerColor: 'from-amber-500/15 via-amber-500/5 to-transparent text-amber-600 dark:text-amber-400',
         headerBorder: 'border-amber-400/50 dark:border-amber-500/50',
@@ -156,8 +178,30 @@ const SENIORITY_TIERS: TierDefinition[] = [
         edgeColor: '#f59e0b',
     },
     {
-        key: 'tier_2_gm',
+        key: 'tier_2_vp',
         rank: 2,
+        title: 'Vice President (VP / EVP / SVP / AVP)',
+        subtitle: 'Executive VP, Senior VP, Vice President, Assistant VP',
+        icon: Award,
+        headerColor: 'from-indigo-500/15 via-indigo-500/5 to-transparent text-indigo-600 dark:text-indigo-400',
+        headerBorder: 'border-indigo-400/50 dark:border-indigo-500/50',
+        badgeBg: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/70 dark:text-indigo-300 border-indigo-300/80 dark:border-indigo-800/80',
+        edgeColor: '#6366f1',
+    },
+    {
+        key: 'tier_3_head',
+        rank: 3,
+        title: 'Division Head & Department Head',
+        subtitle: 'Division Head, Dept Head, Head of Unit, Project Head',
+        icon: Workflow,
+        headerColor: 'from-violet-500/15 via-violet-500/5 to-transparent text-violet-600 dark:text-violet-400',
+        headerBorder: 'border-violet-400/50 dark:border-violet-500/50',
+        badgeBg: 'bg-violet-100 text-violet-800 dark:bg-violet-950/70 dark:text-violet-300 border-violet-300/80 dark:border-violet-800/80',
+        edgeColor: '#8b5cf6',
+    },
+    {
+        key: 'tier_4_gm',
+        rank: 4,
         title: 'Senior Manager & General Manager (GM)',
         subtitle: 'General Manager (GM), Senior Manager, Group Manager',
         icon: Award,
@@ -167,8 +211,8 @@ const SENIORITY_TIERS: TierDefinition[] = [
         edgeColor: '#a855f7',
     },
     {
-        key: 'tier_3_manager',
-        rank: 3,
+        key: 'tier_5_manager',
+        rank: 5,
         title: 'Manager',
         subtitle: 'Manager, Manager Kebun, Department Manager',
         icon: Briefcase,
@@ -178,8 +222,8 @@ const SENIORITY_TIERS: TierDefinition[] = [
         edgeColor: '#3b82f6',
     },
     {
-        key: 'tier_4_asst_manager',
-        rank: 4,
+        key: 'tier_6_asst_manager',
+        rank: 6,
         title: 'Assistant Manager & Superintendent (Askep)',
         subtitle: 'Assistant Manager, Askep, Superintendent',
         icon: Workflow,
@@ -189,8 +233,8 @@ const SENIORITY_TIERS: TierDefinition[] = [
         edgeColor: '#14b8a6',
     },
     {
-        key: 'tier_5_supervisor',
-        rank: 5,
+        key: 'tier_7_supervisor',
+        rank: 7,
         title: 'Supervisor & Senior Officer',
         subtitle: 'Supervisor, Senior Officer, Senior Assistant',
         icon: UserCheck,
@@ -200,8 +244,8 @@ const SENIORITY_TIERS: TierDefinition[] = [
         edgeColor: '#10b981',
     },
     {
-        key: 'tier_6_staff',
-        rank: 6,
+        key: 'tier_8_staff',
+        rank: 8,
         title: 'Staff & Officer',
         subtitle: 'Officer, Assistant, Staff, Specialist, Pelaksana Staff',
         icon: Users,
@@ -211,8 +255,8 @@ const SENIORITY_TIERS: TierDefinition[] = [
         edgeColor: '#0ea5e9',
     },
     {
-        key: 'tier_7_non_staff',
-        rank: 7,
+        key: 'tier_9_non_staff',
+        rank: 9,
         title: 'Pelaksana & Non-Staff',
         subtitle: 'Foreman, Operator, Harian, Magang / Mahasiswa',
         icon: Layers,
@@ -223,48 +267,223 @@ const SENIORITY_TIERS: TierDefinition[] = [
     },
 ];
 
+export const ROLE_TIERS: TierDefinition[] = [
+    {
+        key: 'tier_1_c_level',
+        rank: 1,
+        title: 'Super Admin & C-Level (Direksi)',
+        subtitle: 'Super Admin, Admin, CEO, COO, CFO, Director, Management',
+        icon: Crown,
+        headerColor: 'from-amber-500/15 via-amber-500/5 to-transparent text-amber-600 dark:text-amber-400',
+        headerBorder: 'border-amber-400/50 dark:border-amber-500/50',
+        badgeBg: 'bg-amber-100 text-amber-800 dark:bg-amber-950/70 dark:text-amber-300 border-amber-300/80 dark:border-amber-800/80',
+        edgeColor: '#f59e0b',
+    },
+    {
+        key: 'tier_2_vp',
+        rank: 2,
+        title: 'Role VP (Vice President)',
+        subtitle: 'VP, Vice President, Executive VP, SVP',
+        icon: Award,
+        headerColor: 'from-indigo-500/15 via-indigo-500/5 to-transparent text-indigo-600 dark:text-indigo-400',
+        headerBorder: 'border-indigo-400/50 dark:border-indigo-500/50',
+        badgeBg: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/70 dark:text-indigo-300 border-indigo-300/80 dark:border-indigo-800/80',
+        edgeColor: '#6366f1',
+    },
+    {
+        key: 'tier_3_head',
+        rank: 3,
+        title: 'Role Head (Div & Dept Head)',
+        subtitle: 'Head, Division Head, Department Head, Unit Head',
+        icon: Workflow,
+        headerColor: 'from-violet-500/15 via-violet-500/5 to-transparent text-violet-600 dark:text-violet-400',
+        headerBorder: 'border-violet-400/50 dark:border-violet-500/50',
+        badgeBg: 'bg-violet-100 text-violet-800 dark:bg-violet-950/70 dark:text-violet-300 border-violet-300/80 dark:border-violet-800/80',
+        edgeColor: '#8b5cf6',
+    },
+    {
+        key: 'tier_4_gm',
+        rank: 4,
+        title: 'Role General Manager (GM)',
+        subtitle: 'General Manager (GM), Senior Manager',
+        icon: Award,
+        headerColor: 'from-purple-500/15 via-purple-500/5 to-transparent text-purple-600 dark:text-purple-400',
+        headerBorder: 'border-purple-400/50 dark:border-purple-500/50',
+        badgeBg: 'bg-purple-100 text-purple-800 dark:bg-purple-950/70 dark:text-purple-300 border-purple-300/80 dark:border-purple-800/80',
+        edgeColor: '#a855f7',
+    },
+    {
+        key: 'tier_5_manager',
+        rank: 5,
+        title: 'Role Manager',
+        subtitle: 'Manager, Dept Manager, Area Manager',
+        icon: Briefcase,
+        headerColor: 'from-blue-500/15 via-blue-500/5 to-transparent text-blue-600 dark:text-blue-400',
+        headerBorder: 'border-blue-400/50 dark:border-blue-500/50',
+        badgeBg: 'bg-blue-100 text-blue-800 dark:bg-blue-950/70 dark:text-blue-300 border-blue-300/80 dark:border-blue-800/80',
+        edgeColor: '#3b82f6',
+    },
+    {
+        key: 'tier_6_asst_manager',
+        rank: 6,
+        title: 'Role Assistant Manager',
+        subtitle: 'Assistant Manager, Ast Manager, Askep',
+        icon: Workflow,
+        headerColor: 'from-teal-500/15 via-teal-500/5 to-transparent text-teal-600 dark:text-teal-400',
+        headerBorder: 'border-teal-400/50 dark:border-teal-500/50',
+        badgeBg: 'bg-teal-100 text-teal-800 dark:bg-teal-950/70 dark:text-teal-300 border-teal-300/80 dark:border-teal-800/80',
+        edgeColor: '#14b8a6',
+    },
+    {
+        key: 'tier_7_supervisor',
+        rank: 7,
+        title: 'Role Supervisor',
+        subtitle: 'Supervisor, Senior Officer',
+        icon: UserCheck,
+        headerColor: 'from-emerald-500/15 via-emerald-500/5 to-transparent text-emerald-600 dark:text-emerald-400',
+        headerBorder: 'border-emerald-400/50 dark:border-emerald-500/50',
+        badgeBg: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 border-emerald-300/80 dark:border-emerald-800/80',
+        edgeColor: '#10b981',
+    },
+    {
+        key: 'tier_8_staff',
+        rank: 8,
+        title: 'Role Staff & Creator',
+        subtitle: 'Staff, Officer, Creator, Assistant, Member',
+        icon: Users,
+        headerColor: 'from-sky-500/15 via-sky-500/5 to-transparent text-sky-600 dark:text-sky-400',
+        headerBorder: 'border-sky-400/50 dark:border-sky-500/50',
+        badgeBg: 'bg-sky-100 text-sky-800 dark:bg-sky-950/70 dark:text-sky-300 border-sky-300/80 dark:border-sky-800/80',
+        edgeColor: '#0ea5e9',
+    },
+    {
+        key: 'tier_9_non_staff',
+        rank: 9,
+        title: 'Role Pelaksana & Lainnya',
+        subtitle: 'Non-Staff, Magang, Viewer, Default',
+        icon: Layers,
+        headerColor: 'from-slate-500/15 via-slate-500/5 to-transparent text-slate-600 dark:text-slate-400',
+        headerBorder: 'border-slate-300/60 dark:border-slate-700/60',
+        badgeBg: 'bg-slate-100 text-slate-800 dark:bg-zinc-800 dark:text-slate-300 border-slate-300/60 dark:border-zinc-700/60',
+        edgeColor: '#64748b',
+    },
+];
+
 /**
- * Classify any user into one of the 7 hierarchical seniority tiers
- * Uses database mapping (hierarchy_tier from m_job_levels) first, with smart fallback.
+ * Classify any user into one of the hierarchical seniority tiers
+ * Mode-aware: If mode is 'role', classifies by Role hierarchy.
+ * If mode is 'job_title', classifies by Job Title and Job Level hierarchy.
  */
-function classifyUserTier(u: HierarchyUser): SeniorityTierKey {
-    // 1. Direct database master tier mapping from m_job_levels (editable in /admin/core/job-levels)
+function classifyUserTier(u: HierarchyUser, mode: 'job_title' | 'role' = 'job_title'): SeniorityTierKey {
+    // ----------------------------------------------------
+    // A. CLASSIFICATION BY ROLE AKSES (when mode === 'role')
+    // ----------------------------------------------------
+    if (mode === 'role') {
+        const roleStr = (u.role_name || '').toUpperCase().trim();
+
+        // 1. C-Level / Board Roles (Super Admin, Admin, CEO, COO, CFO, Director, Management)
+        if (/\b(SUPER ADMIN|ADMIN|CEO|COO|CFO|DIRECTOR|MANAGEMENT|PRESIDENT|DIREKSI|KOMISARIS)\b/.test(roleStr)) {
+            return 'tier_1_c_level';
+        }
+
+        // 2. VP Roles
+        if (/\b(VP|VICE PRESIDENT|EVP|SVP|AVP)\b/.test(roleStr)) {
+            return 'tier_2_vp';
+        }
+
+        // 3. Head Roles (Head, Div Head, Dept Head, Unit Head)
+        if (/\b(HEAD|DIV HEAD|DEPT HEAD|SECTION HEAD|HEAD OF)\b/.test(roleStr)) {
+            return 'tier_3_head';
+        }
+
+        // 4. GM & Senior Manager Roles
+        if (/\b(GM|GENERAL MANAGER|SENIOR MANAGER|SR\. MANAGER|GROUP MANAGER)\b/.test(roleStr)) {
+            return 'tier_4_gm';
+        }
+
+        // 5. Manager Roles (must NOT contain Ast/Asst/Assistant)
+        if (/\b(MANAGER|MGR)\b/.test(roleStr) && !/\b(ASSISTANT|ASST|AST|DEPUTY)\b/.test(roleStr)) {
+            return 'tier_5_manager';
+        }
+
+        // 6. Assistant Manager / Superintendent Roles (Ast Manager, Asst Manager, Askep)
+        if (/\b(ASSISTANT MANAGER|ASST\. MANAGER|ASST MANAGER|AST MANAGER|AST\. MANAGER|ASKEP|SUPERINTENDENT|ASST|AST)\b/.test(roleStr)) {
+            return 'tier_6_asst_manager';
+        }
+
+        // 7. Supervisor Roles
+        if (/\b(SUPERVISOR|SPV|SENIOR OFFICER|SR\. OFFICER)\b/.test(roleStr)) {
+            return 'tier_7_supervisor';
+        }
+
+        // 9. Non-Staff Roles
+        if (/\b(NON STAFF|NON-STAFF|OPERATOR|FOREMAN|KHT|HARIAN|MAHASISWA|MAGANG|INTERN)\b/.test(roleStr)) {
+            return 'tier_9_non_staff';
+        }
+
+        // 8. Staff / Member / Reviewer / Approver / Default
+        return 'tier_8_staff';
+    }
+
+    // ----------------------------------------------------
+    // B. CLASSIFICATION BY JOB TITLE & LEVEL (when mode === 'job_title')
+    // ----------------------------------------------------
+    const titleStr = (u.job_title_name || '').toUpperCase();
+    const rank = (u as any).job_level_rank || 0;
+    const searchString = `${u.job_level_name || ''} ${(u as any).job_level_code || ''} ${u.job_title_name || ''}`.toUpperCase();
+
+    // 1. Check Job Title First for VP (e.g. VP FINANCE, VP HR, EVP, SVP, AVP)
+    if (
+        /\b(VP|VICE PRESIDENT|EVP|SVP|AVP)\b/.test(titleStr) ||
+        [76, 51, 52].includes(rank)
+    ) {
+        return 'tier_2_vp';
+    }
+
+    // 2. Check Job Title First for Head (e.g. BUSINESS DEVELOPMENT HEAD, TAX HEAD, DIV HEAD, DEPT HEAD)
+    if (
+        /\b(HEAD|DIV HEAD|DEPT HEAD|SECTION HEAD|HEAD OF)\b/.test(titleStr) ||
+        [44, 45, 46, 47].includes(rank)
+    ) {
+        return 'tier_3_head';
+    }
+
+    // 3. Direct database master tier mapping from m_job_levels (editable in /admin/core/job-levels)
     const dbTier = (u as any).hierarchy_tier;
     if (dbTier) {
         const tierMap: Record<number, SeniorityTierKey> = {
-            1: 'tier_1_executive',
-            2: 'tier_2_gm',
-            3: 'tier_3_manager',
-            4: 'tier_4_asst_manager',
-            5: 'tier_5_supervisor',
-            6: 'tier_6_staff',
-            7: 'tier_7_non_staff',
+            1: 'tier_1_c_level',
+            2: 'tier_2_vp',
+            3: 'tier_3_head',
+            4: 'tier_4_gm',
+            5: 'tier_5_manager',
+            6: 'tier_6_asst_manager',
+            7: 'tier_7_supervisor',
+            8: 'tier_8_staff',
+            9: 'tier_9_non_staff',
         };
         if (tierMap[dbTier]) {
             return tierMap[dbTier];
         }
     }
 
-    const rank = (u as any).job_level_rank || 0;
-    const searchString = `${u.job_level_name || ''} ${(u as any).job_level_code || ''} ${u.job_title_name || ''}`.toUpperCase();
-
-    // 1. Executive / VP / Head / Director / CEO / MD / DMD
+    // 4. C-Level / Direksi / President / Director / CEO / MD / DMD
     if (
-        [76, 74, 73, 66, 65, 52, 51, 50, 49, 48, 47, 46, 45, 44].includes(rank) ||
-        /\b(VP|DIRECTOR|HEAD|CHIEF|CEO|MD|DMD|MANAGEMENT|PRESIDENT|DIREKSI)\b/.test(searchString)
+        [74, 73, 65, 66, 48, 49, 50].includes(rank) ||
+        /\b(DIRECTOR|CHIEF|CEO|MD|DMD|MANAGEMENT|PRESIDENT|DIREKSI|KOMISARIS)\b/.test(searchString)
     ) {
-        return 'tier_1_executive';
+        return 'tier_1_c_level';
     }
 
-    // 2. Senior Manager & General Manager
+    // 4. Senior Manager & General Manager
     if (
         [72, 71, 43, 42, 41, 40].includes(rank) ||
         /\b(GM|GENERAL MANAGER|SENIOR MANAGER|SR\. MANAGER|GROUP MANAGER)\b/.test(searchString)
     ) {
-        return 'tier_2_gm';
+        return 'tier_4_gm';
     }
 
-    // 3. Manager
+    // 5. Manager
     if (
         [70, 69, 68, 39, 38, 37, 36, 35].includes(rank) ||
         (searchString.includes('MANAGER') &&
@@ -274,36 +493,36 @@ function classifyUserTier(u: HierarchyUser): SeniorityTierKey {
             !searchString.includes('GENERAL') &&
             !searchString.includes('GROUP'))
     ) {
-        return 'tier_3_manager';
+        return 'tier_5_manager';
     }
 
-    // 4. Assistant Manager & Superintendent (Askep)
+    // 6. Assistant Manager & Superintendent (Askep)
     if (
         [64, 63, 62, 61, 60, 59, 34, 33, 32, 31, 30].includes(rank) ||
         /\b(ASSISTANT MANAGER|ASST\. MANAGER|ASST MANAGER|ASKEP|SUPERINTENDENT)\b/.test(searchString)
     ) {
-        return 'tier_4_asst_manager';
+        return 'tier_6_asst_manager';
     }
 
-    // 5. Supervisor & Senior Officer
+    // 7. Supervisor & Senior Officer
     if (
         [58, 57, 56, 55, 54, 53, 29, 28].includes(rank) ||
         /\b(SUPERVISOR|SENIOR OFFICER|SENIOR ASSISTAN|SR\. OFFICER|SPV)\b/.test(searchString)
     ) {
-        return 'tier_5_supervisor';
+        return 'tier_7_supervisor';
     }
 
-    // 7. Non-Staff / Foreman / Operator / Mahasiswa / KHT
+    // 9. Non-Staff / Foreman / Operator / Mahasiswa / KHT
     if (
         (rank >= 1 && rank <= 23) ||
         (u as any).job_level_group_name === 'NON STAFF' ||
         /\b(NON STAFF|NON-STAFF|OPERATOR|FOREMAN|KHT|HARIAN|MAHASISWA|MAGANG|INTERN|MHS)\b/.test(searchString)
     ) {
-        return 'tier_7_non_staff';
+        return 'tier_9_non_staff';
     }
 
-    // 6. Default to Staff & Officer
-    return 'tier_6_staff';
+    // 8. Default to Staff & Officer
+    return 'tier_8_staff';
 }
 
 interface JobTreeNodeData extends Record<string, unknown> {
@@ -330,29 +549,50 @@ interface JobTreeNodeData extends Record<string, unknown> {
 const JobTierNode = ({ data }: NodeProps<Node<JobTreeNodeData>>) => {
     const isExpanded = data.isExpanded !== false;
     const isDark = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
+    const isRoleMode = data.levelKey?.startsWith('tier_') && data.levelLabel?.includes('ROLE');
 
     return (
         <div
             className={cn(
-                'relative px-5 py-4 rounded-2xl border-2 shadow-xl transition-all min-w-[360px] max-w-[440px] cursor-grab active:cursor-grabbing backdrop-blur-md',
-                isDark
-                    ? 'bg-gradient-to-br from-slate-900/95 via-slate-900/90 to-slate-950/95 border-amber-500/40 text-slate-100 shadow-amber-950/30'
-                    : 'bg-gradient-to-br from-white via-amber-50/25 to-white border-amber-300/70 text-slate-900 shadow-amber-100/60'
+                'relative px-5 py-4 rounded-2xl border-2 shadow-xl transition-all w-[380px] cursor-grab active:cursor-grabbing backdrop-blur-md select-none',
+                isRoleMode
+                    ? isDark
+                        ? 'bg-gradient-to-br from-slate-900/95 via-zinc-900/90 to-zinc-950/95 border-violet-500/40 text-slate-100 shadow-violet-950/30'
+                        : 'bg-gradient-to-br from-white via-violet-50/25 to-white border-violet-300/70 text-slate-900 shadow-violet-100/60'
+                    : isDark
+                        ? 'bg-gradient-to-br from-slate-900/95 via-slate-900/90 to-slate-950/95 border-amber-500/40 text-slate-100 shadow-amber-950/30'
+                        : 'bg-gradient-to-br from-white via-amber-50/25 to-white border-amber-300/70 text-slate-900 shadow-amber-100/60'
             )}
             onClick={() => {
                 if (typeof data.onSelect === 'function') data.onSelect(data);
             }}
         >
-            <Handle type="target" position={Position.Top} className="!bg-amber-500 !w-3.5 !h-3.5 !-top-2 border-2 border-white dark:border-slate-900" />
+            {/* Top Handle for Seniority connection from higher tier */}
+            <Handle
+                id="tier-top"
+                type="target"
+                position={Position.Top}
+                className={cn(
+                    '!w-3.5 !h-3.5 !-top-2 border-2 border-white dark:border-slate-900',
+                    isRoleMode ? '!bg-violet-500' : '!bg-amber-500'
+                )}
+            />
 
             <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
-                    <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 shrink-0">
-                        <Crown className="w-5 h-5" />
+                    <div
+                        className={cn(
+                            'p-2.5 rounded-xl border shrink-0',
+                            isRoleMode
+                                ? 'bg-violet-500/10 border-violet-500/20 text-violet-600 dark:text-violet-400'
+                                : 'bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400'
+                        )}
+                    >
+                        {isRoleMode ? <Shield className="w-5 h-5" /> : <Crown className="w-5 h-5" />}
                     </div>
                     <div>
-                        <span className={cn('text-[10px] font-extrabold tracking-wider uppercase px-2 py-0.5 rounded-md border', data.badgeBg || 'bg-amber-100 text-amber-800 border-amber-300')}>
-                            {data.levelLabel || 'JENJANG JABATAN'}
+                        <span className={cn('text-[10px] font-extrabold tracking-wider uppercase px-2 py-0.5 rounded-md border', data.badgeBg || (isRoleMode ? 'bg-violet-100 text-violet-800 border-violet-300' : 'bg-amber-100 text-amber-800 border-amber-300'))}>
+                            {data.levelLabel || (isRoleMode ? 'JENJANG ROLE' : 'JENJANG JABATAN')}
                         </span>
                         <h4 className="font-extrabold text-sm tracking-tight mt-1 line-clamp-1">
                             {String(data.title || data.label || 'Jenjang Jabatan')}
@@ -368,10 +608,17 @@ const JobTierNode = ({ data }: NodeProps<Node<JobTreeNodeData>>) => {
 
             <div className="mt-3 pt-2.5 border-t border-slate-200/70 dark:border-slate-800 flex items-center justify-between text-xs">
                 <span className="flex items-center gap-1.5 font-semibold text-slate-600 dark:text-slate-300">
-                    <Briefcase className="w-3.5 h-3.5 text-amber-500" />
-                    {Number(data.subItemsCount || 0)} Posisi Jabatan
+                    {isRoleMode ? <Shield className="w-3.5 h-3.5 text-violet-500" /> : <Briefcase className="w-3.5 h-3.5 text-amber-500" />}
+                    {Number(data.subItemsCount || 0)} {isRoleMode ? 'Role Akses' : 'Posisi Jabatan'}
                 </span>
-                <span className="flex items-center gap-1.5 font-extrabold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+                <span
+                    className={cn(
+                        'flex items-center gap-1.5 font-extrabold px-2 py-0.5 rounded-full border',
+                        isRoleMode
+                            ? 'text-violet-600 dark:text-violet-400 bg-violet-500/10 border-violet-500/20'
+                            : 'text-amber-600 dark:text-amber-400 bg-amber-500/10 border-amber-500/20'
+                    )}
+                >
                     <Users className="w-3.5 h-3.5" />
                     {Number(data.totalUsers || 0)} Karyawan
                 </span>
@@ -384,22 +631,255 @@ const JobTierNode = ({ data }: NodeProps<Node<JobTreeNodeData>>) => {
                         e.stopPropagation();
                         if (typeof data.onToggle === 'function') (data.onToggle as () => void)();
                     }}
-                    className="absolute -bottom-3 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-amber-600 text-white shadow-md hover:bg-amber-500 transition-colors z-10 cursor-pointer flex items-center gap-1 text-[10px] font-bold"
-                    title={isExpanded ? 'Sembunyikan Posisi' : 'Tampilkan Posisi'}
+                    className={cn(
+                        'absolute -bottom-3 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full text-white shadow-md transition-colors z-10 cursor-pointer flex items-center gap-1 text-[10px] font-bold',
+                        isRoleMode ? 'bg-violet-600 hover:bg-violet-500' : 'bg-amber-600 hover:bg-amber-500'
+                    )}
+                    title={isExpanded ? (isRoleMode ? 'Sembunyikan Role' : 'Sembunyikan Posisi') : (isRoleMode ? 'Buka Role' : 'Tampilkan Posisi')}
                 >
                     {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                    <span>{isExpanded ? 'Sembunyikan' : 'Buka Posisi'}</span>
+                    <span>{isExpanded ? 'Sembunyikan' : isRoleMode ? 'Buka Role' : 'Buka Posisi'}</span>
                 </button>
             )}
 
-            <Handle type="source" position={Position.Bottom} className="!bg-amber-500 !w-3.5 !h-3.5 !-bottom-2 border-2 border-white dark:border-slate-900" />
+            {/* Bottom Handle for Seniority hierarchy line down to next tier */}
+            <Handle
+                id="tier-bottom"
+                type="source"
+                position={Position.Bottom}
+                className={cn(
+                    '!w-3.5 !h-3.5 !-bottom-2 border-2 border-white dark:border-slate-900',
+                    isRoleMode ? '!bg-violet-500' : '!bg-amber-500'
+                )}
+            />
+
+            {/* Right Handle to connect cleanly to horizontal position cards on the right */}
+            <Handle
+                id="tier-right"
+                type="source"
+                position={Position.Right}
+                className={cn(
+                    '!w-3.5 !h-3.5 !-right-2 border-2 border-white dark:border-slate-900',
+                    isRoleMode ? '!bg-violet-500' : '!bg-cyan-500'
+                )}
+            />
         </div>
     );
 };
 
-// 2. UNIFIED Position Card (1 Single Card containing Position Name, Grade, AND its List of Employees)
+// 2. ROLE HEADER CARD (Compact parent node representing the Role Akses, e.g. "Head", "Manager", "VP")
+const RoleHeaderCard = ({ data }: NodeProps<Node<JobTreeNodeData>>) => {
+    const { title, totalUsers, subItemsCount, isExpanded, onToggle, onSelect } = data;
+    const isDark = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
+
+    return (
+        <div
+            className={cn(
+                'w-[260px] rounded-2xl border-2 shadow-lg transition-all text-left relative cursor-grab active:cursor-grabbing backdrop-blur-md p-3.5 select-none',
+                isDark
+                    ? 'bg-gradient-to-br from-slate-900/95 via-zinc-900/90 to-zinc-950/95 border-violet-500/40 text-slate-100 shadow-violet-950/40'
+                    : 'bg-gradient-to-br from-white via-violet-50/40 to-white border-violet-300 text-slate-900 shadow-violet-100/70'
+            )}
+            onClick={() => {
+                if (typeof onSelect === 'function') onSelect(data);
+            }}
+        >
+            {/* Left handle connects from Tier node */}
+            <Handle
+                id="role-left"
+                type="target"
+                position={Position.Left}
+                className="!w-3.5 !h-3.5 !bg-violet-500 border-2 border-white dark:border-zinc-900 !-left-2"
+            />
+
+            <div className="flex items-start justify-between gap-2">
+                <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="p-2 rounded-xl bg-violet-500/15 border border-violet-500/25 text-violet-600 dark:text-violet-400 shrink-0">
+                        <Shield className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                        <span className="text-[9px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded border bg-violet-500/15 text-violet-700 dark:text-violet-300 border-violet-500/25">
+                            ROLE AKSES
+                        </span>
+                        <h4 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 truncate mt-1 leading-tight" title={title}>
+                            {title}
+                        </h4>
+                    </div>
+                </div>
+            </div>
+
+            <div className="mt-2.5 pt-2 border-t border-violet-200/60 dark:border-violet-800/60 flex items-center justify-between text-[11px]">
+                <span className="flex items-center gap-1 font-semibold text-slate-600 dark:text-slate-300">
+                    <Network className="w-3 h-3 text-violet-500" />
+                    {subItemsCount || 0} Divisi
+                </span>
+                <span className="flex items-center gap-1 font-extrabold text-violet-700 dark:text-violet-300 bg-violet-100 dark:bg-violet-950/80 px-2 py-0.5 rounded-full border border-violet-300 dark:border-violet-800 text-[10px]">
+                    <Users className="w-3 h-3" />
+                    {totalUsers || 0} Orang
+                </span>
+            </div>
+
+            {/* Right handle connects to Division child cards */}
+            <Handle
+                id="role-right"
+                type="source"
+                position={Position.Right}
+                className="!w-3.5 !h-3.5 !bg-violet-500 border-2 border-white dark:border-zinc-900 !-right-2"
+            />
+        </div>
+    );
+};
+
+// 3. DIVISION UNIFIED CARD (Contains Division Name + List of Employees with that Role in that Division)
+const DivisionUnifiedCard = ({ data }: NodeProps<Node<JobTreeNodeData>>) => {
+    const { title, subtitle, users, totalUsers, onSelect, onSelectUser } = data;
+    const [filterText, setFilterText] = useState('');
+    const isDark = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
+
+    const displayed = useMemo(() => {
+        if (!filterText.trim()) return users.slice(0, 50);
+        const q = filterText.toLowerCase();
+        return users
+            .filter(
+                (u) =>
+                    u.name?.toLowerCase().includes(q) ||
+                    u.nik?.toLowerCase().includes(q) ||
+                    u.department_name?.toLowerCase().includes(q) ||
+                    u.job_title_name?.toLowerCase().includes(q)
+            )
+            .slice(0, 50);
+    }, [users, filterText]);
+
+    return (
+        <div
+            className={cn(
+                'w-[320px] rounded-2xl border-2 shadow-lg transition-all text-left relative cursor-grab active:cursor-grabbing backdrop-blur-md overflow-hidden',
+                isDark
+                    ? 'bg-gradient-to-b from-slate-900 via-zinc-900 to-zinc-950 border-purple-500/30 text-slate-100 shadow-purple-950/40'
+                    : 'bg-gradient-to-b from-white via-purple-50/20 to-white border-purple-200 text-slate-900 shadow-slate-200/80'
+            )}
+        >
+            {/* Left handle connects from Role Header Card */}
+            <Handle
+                id="div-left"
+                type="target"
+                position={Position.Left}
+                className="!w-3.5 !h-3.5 !bg-purple-500 border-2 border-white dark:border-zinc-900 !-left-2"
+            />
+
+            {/* Division Header */}
+            <div
+                className="p-3 border-b border-purple-500/15 bg-gradient-to-r from-purple-500/10 via-violet-500/5 to-transparent cursor-pointer transition-colors hover:bg-purple-500/15"
+                onClick={() => {
+                    if (typeof onSelect === 'function') onSelect(data);
+                }}
+            >
+                <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                        <div className="p-1.5 rounded-lg border bg-purple-500/15 border-purple-500/25 text-purple-600 dark:text-purple-400 shrink-0">
+                            <Network className="w-3.5 h-3.5" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                            <span className="text-[9px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded border bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/25">
+                                DIVISI / UNIT
+                            </span>
+                            <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate mt-0.5 leading-tight" title={title}>
+                                {title}
+                            </h4>
+                            {subtitle && (
+                                <p className="text-[9.5px] text-slate-500 dark:text-slate-400 truncate">
+                                    {subtitle}
+                                </p>
+                            )}
+                        </div>
+                    </div>
+                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full shrink-0 flex items-center gap-1 border text-purple-700 dark:text-purple-300 bg-purple-100/80 dark:bg-purple-950/70 border-purple-300/80 dark:border-purple-800">
+                        <Users className="w-3 h-3" />
+                        {totalUsers} orang
+                    </span>
+                </div>
+            </div>
+
+            {/* In-Card Search (shown if > 2 people) */}
+            {totalUsers > 2 && (
+                <div className="px-3 pt-2 pb-1 bg-slate-50/50 dark:bg-zinc-900/50 border-b border-slate-100 dark:border-zinc-800/80">
+                    <div className="relative">
+                        <Search size={11} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                            type="text"
+                            placeholder={`Cari ${totalUsers} orang...`}
+                            value={filterText}
+                            onChange={(e) => setFilterText(e.target.value)}
+                            className="h-6 w-full rounded-lg border border-slate-200/80 bg-white pl-7 pr-2 text-[10px] text-slate-900 focus:border-purple-500 focus:outline-none dark:border-zinc-800 dark:bg-zinc-800 dark:text-slate-100"
+                        />
+                    </div>
+                </div>
+            )}
+
+            {/* Employee List inside the Division Card */}
+            <div className="p-2 max-h-[250px] overflow-y-auto space-y-1.5 [scrollbar-width:thin]">
+                {displayed.length === 0 ? (
+                    <div className="py-4 text-center text-xs text-slate-400">
+                        Tidak ada orang ditemukan.
+                    </div>
+                ) : (
+                    displayed.map((u) => (
+                        <div
+                            key={u.id}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                if (typeof onSelectUser === 'function') {
+                                    onSelectUser(u);
+                                } else if (typeof onSelect === 'function') {
+                                    onSelect(data);
+                                }
+                            }}
+                            className="p-1.5 rounded-xl bg-slate-50/80 dark:bg-zinc-800/50 border border-transparent flex items-center gap-2 cursor-pointer transition-all hover:bg-purple-500/10 dark:hover:bg-purple-950/40 hover:border-purple-500/20 group"
+                        >
+                            <div className="h-6 w-6 rounded-full flex items-center justify-center font-extrabold text-[10px] shrink-0 border bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/25 group-hover:scale-105 transition-transform">
+                                {u.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                                <div className="text-[11px] font-bold text-slate-900 dark:text-slate-100 truncate transition-colors group-hover:text-purple-600 dark:group-hover:text-purple-400">
+                                    {u.name}
+                                </div>
+                                <div className="text-[9px] text-slate-500 dark:text-slate-400 truncate flex items-center gap-1">
+                                    <span className="font-medium text-slate-600 dark:text-slate-300 truncate">
+                                        {u.job_title_name || u.department_name || 'Staff'}
+                                    </span>
+                                    <span>·</span>
+                                    <span className="font-mono text-[9px] text-slate-400">{u.nik}</span>
+                                </div>
+                                {u.reporting_to && (
+                                    <div className="text-[8.5px] text-amber-600 dark:text-amber-400 truncate font-semibold flex items-center gap-1 mt-0.5">
+                                        <UserCheck size={9} className="shrink-0" />
+                                        <span>Atasan: {u.reporting_to}</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    ))
+                )}
+
+                {totalUsers > 50 && !filterText && (
+                    <div
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (typeof onSelect === 'function') onSelect(data);
+                        }}
+                        className="text-center py-1.5 text-[10px] font-bold hover:underline cursor-pointer text-purple-600 dark:text-purple-400"
+                    >
+                        + Buka {totalUsers - 50} orang lainnya di panel...
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+// 4. UNIFIED Position Card (Used in Jabatan mode: 1 Single Card containing Position Name AND its List of Employees)
 const UnifiedJobPositionCard = ({ data }: NodeProps<Node<JobTreeNodeData>>) => {
-    const { title, users, totalUsers, onSelect, onSelectUser } = data;
+    const { title, levelKey, levelLabel, users, totalUsers, onSelect, onSelectUser } = data;
     const [filterText, setFilterText] = useState('');
     const isDark = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
 
@@ -427,26 +907,35 @@ const UnifiedJobPositionCard = ({ data }: NodeProps<Node<JobTreeNodeData>>) => {
                     : 'bg-gradient-to-b from-white via-slate-50/50 to-white border-cyan-200 text-slate-900 shadow-slate-200/80'
             )}
         >
+            {/* Left Handle connects from Tier Header on the left */}
             <Handle
+                id="pos-left"
+                type="target"
+                position={Position.Left}
+                className="!w-3.5 !h-3.5 border-2 border-white dark:border-zinc-900 !-left-2 !bg-cyan-500"
+            />
+            {/* Top Handle for vertical fallback */}
+            <Handle
+                id="pos-top"
                 type="target"
                 position={Position.Top}
-                className="!w-3 !h-3 !bg-cyan-500 border-2 border-white dark:border-zinc-900 !-top-1.5"
+                className="!w-3 !h-3 border-2 border-white dark:border-zinc-900 !-top-1.5 opacity-0 pointer-events-none !bg-cyan-500"
             />
 
             {/* Position Header */}
             <div
-                className="p-3.5 bg-gradient-to-r from-cyan-500/10 via-sky-500/5 to-transparent border-b border-cyan-500/15 cursor-pointer hover:bg-cyan-500/15 transition-colors"
+                className="p-3.5 border-b cursor-pointer transition-colors bg-gradient-to-r from-cyan-500/10 via-sky-500/5 to-transparent border-cyan-500/15 hover:bg-cyan-500/15"
                 onClick={() => {
                     if (typeof onSelect === 'function') onSelect(data);
                 }}
             >
                 <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
-                        <div className="p-1.5 rounded-lg bg-cyan-500/15 border border-cyan-500/25 text-cyan-600 dark:text-cyan-400 shrink-0">
+                        <div className="p-1.5 rounded-lg border shrink-0 bg-cyan-500/15 border-cyan-500/25 text-cyan-600 dark:text-cyan-400">
                             <Briefcase className="w-3.5 h-3.5" />
                         </div>
                         <div className="min-w-0 flex-1">
-                            <span className="text-[9px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border border-cyan-500/25">
+                            <span className="text-[9px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded border bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/25">
                                 {gradeLabel}
                             </span>
                             <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate mt-1 leading-tight" title={title}>
@@ -454,7 +943,7 @@ const UnifiedJobPositionCard = ({ data }: NodeProps<Node<JobTreeNodeData>>) => {
                             </h4>
                         </div>
                     </div>
-                    <span className="text-[10px] font-extrabold text-cyan-700 dark:text-cyan-300 bg-cyan-100/80 dark:bg-cyan-950/70 border border-cyan-300/80 dark:border-cyan-800 px-2 py-0.5 rounded-full shrink-0 flex items-center gap-1">
+                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full shrink-0 flex items-center gap-1 border text-cyan-700 dark:text-cyan-300 bg-cyan-100/80 dark:bg-cyan-950/70 border-cyan-300/80 dark:border-cyan-800">
                         <Users className="w-3 h-3" />
                         {totalUsers} orang
                     </span>
@@ -495,17 +984,19 @@ const UnifiedJobPositionCard = ({ data }: NodeProps<Node<JobTreeNodeData>>) => {
                                     onSelect(data);
                                 }
                             }}
-                            className="p-1.5 rounded-xl bg-slate-50/80 dark:bg-zinc-800/50 hover:bg-cyan-500/10 dark:hover:bg-cyan-950/40 border border-transparent hover:border-cyan-500/20 flex items-center gap-2 cursor-pointer transition-all group"
+                            className="p-1.5 rounded-xl bg-slate-50/80 dark:bg-zinc-800/50 border border-transparent flex items-center gap-2 cursor-pointer transition-all hover:bg-cyan-500/10 dark:hover:bg-cyan-950/40 hover:border-cyan-500/20 group"
                         >
-                            <div className="h-6 w-6 rounded-full bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 flex items-center justify-center font-extrabold text-[10px] shrink-0 border border-cyan-500/25 group-hover:scale-105 transition-transform">
+                            <div className="h-6 w-6 rounded-full flex items-center justify-center font-extrabold text-[10px] shrink-0 border bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/25 group-hover:scale-105 transition-transform">
                                 {u.name.charAt(0).toUpperCase()}
                             </div>
                             <div className="min-w-0 flex-1">
-                                <div className="text-[11px] font-bold text-slate-900 dark:text-slate-100 truncate group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">
+                                <div className="text-[11px] font-bold text-slate-900 dark:text-slate-100 truncate transition-colors group-hover:text-cyan-600 dark:group-hover:text-cyan-400">
                                     {u.name}
                                 </div>
                                 <div className="text-[9px] text-slate-500 dark:text-slate-400 truncate flex items-center gap-1">
-                                    <span className="font-medium text-slate-600 dark:text-slate-300 truncate">{u.department_name}</span>
+                                    <span className="font-medium text-slate-600 dark:text-slate-300 truncate">
+                                        {u.department_name || u.division_name}
+                                    </span>
                                     <span>·</span>
                                     <span className="font-mono text-[9px] text-slate-400">{u.nik}</span>
                                 </div>
@@ -526,7 +1017,7 @@ const UnifiedJobPositionCard = ({ data }: NodeProps<Node<JobTreeNodeData>>) => {
                             e.stopPropagation();
                             if (typeof onSelect === 'function') onSelect(data);
                         }}
-                        className="text-center py-1.5 text-[10px] font-bold text-cyan-600 dark:text-cyan-400 hover:underline cursor-pointer"
+                        className="text-center py-1.5 text-[10px] font-bold hover:underline cursor-pointer text-cyan-600 dark:text-cyan-400"
                     >
                         + Buka {totalUsers - 50} orang lainnya di panel...
                     </div>
@@ -536,7 +1027,7 @@ const UnifiedJobPositionCard = ({ data }: NodeProps<Node<JobTreeNodeData>>) => {
             <Handle
                 type="source"
                 position={Position.Bottom}
-                className="!w-3 !h-3 !bg-cyan-500 border-2 border-white dark:border-zinc-900 !-bottom-1.5"
+                className="!w-3 !h-3 !bg-cyan-500 border-2 border-white dark:border-zinc-900 !-bottom-1.5 opacity-0 pointer-events-none"
             />
         </div>
     );
@@ -544,6 +1035,8 @@ const UnifiedJobPositionCard = ({ data }: NodeProps<Node<JobTreeNodeData>>) => {
 
 const nodeTypes = {
     job_tier_node: JobTierNode,
+    role_header_card: RoleHeaderCard,
+    division_unified_card: DivisionUnifiedCard,
     job_position_card: UnifiedJobPositionCard,
 };
 
@@ -562,53 +1055,99 @@ export function JobHierarchyFlow({
     masterJobLevels = [],
     masterJobTitles = [],
     masterRoles = [],
+    // Group by mode (job_title vs role)
+    groupByMode: extGroupByMode,
+    onGroupByModeChange: extOnGroupByModeChange,
+    usedFilter: extUsedFilter,
+    searchQuery: extSearchQuery,
+    selectedGroups: extSelectedGroups,
+    selectedOrganizationGroups: extSelectedOrgGroups,
+    selectedRegions: extSelectedRegions,
+    selectedLocations: extSelectedLocations,
+    selectedCompanies: extSelectedCompanies,
+    selectedDivisions: extSelectedDivisions,
+    selectedDepartments: extSelectedDepartments,
+    selectedSubdepartments: extSelectedSubdepartments,
+    selectedSections: extSelectedSections,
+    selectedJobLevelGroups: extSelectedJobLevelGroups,
+    selectedJobLevels: extSelectedJobLevels,
+    selectedJobTitles: extSelectedJobTitles,
+    selectedRoles: extSelectedRoles,
+    visibleTiers: extVisibleTiers,
 }: Readonly<Props>) {
     const savedInitial = useMemo(() => loadSavedJobSettings(), []);
 
+    const [internalGroupByMode, setInternalGroupByMode] = useState<'job_title' | 'role'>(() => {
+        return savedInitial.groupByMode || 'job_title';
+    });
+    const groupByMode = extGroupByMode ?? internalGroupByMode;
+
     const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
-    const [searchQuery, setSearchQuery] = useState('');
+    const [internalSearchQuery, setInternalSearchQuery] = useState('');
+    const searchQuery = extSearchQuery ?? internalSearchQuery;
     const [userSearchText, setUserSearchText] = useState('');
     const [selectedNode, setSelectedNode] = useState<JobTreeNodeData | null>(null);
     const [collapsedNodeIds, setCollapsedNodeIds] = useState<Set<string>>(new Set());
     const [isSyncing, setIsSyncing] = useState(false);
 
     // Filter is_used: 'used_only' | 'all'
-    const [usedFilter, setUsedFilter] = useState<'used_only' | 'all'>(() => {
+    const [internalUsedFilter, setInternalUsedFilter] = useState<'used_only' | 'all'>(() => {
         return savedInitial.usedFilter || 'used_only';
     });
+    const usedFilter = extUsedFilter ?? internalUsedFilter;
+
+    // Minimizable Toolbar State
+    const [isToolbarCollapsed, setIsToolbarCollapsed] = useState(false);
 
     const [isConfigOpen, setIsConfigOpen] = useState<boolean>(() => {
         return savedInitial.isConfigOpen !== undefined ? savedInitial.isConfigOpen : true;
     });
 
     // Multi-select state filters
-    const [selectedGroups, setSelectedGroups] = useState<string[]>(() => savedInitial.selectedGroups || []);
-    const [selectedOrganizationGroups, setSelectedOrganizationGroups] = useState<string[]>(() => savedInitial.selectedOrganizationGroups || []);
-    const [selectedRegions, setSelectedRegions] = useState<string[]>(() => savedInitial.selectedRegions || []);
-    const [selectedLocations, setSelectedLocations] = useState<string[]>(() => savedInitial.selectedLocations || []);
-    const [selectedCompanies, setSelectedCompanies] = useState<string[]>(() => savedInitial.selectedCompanies || []);
-    const [selectedDivisions, setSelectedDivisions] = useState<string[]>(() => savedInitial.selectedDivisions || []);
-    const [selectedDepartments, setSelectedDepartments] = useState<string[]>(() => savedInitial.selectedDepartments || []);
-    const [selectedSubdepartments, setSelectedSubdepartments] = useState<string[]>(() => savedInitial.selectedSubdepartments || []);
-    const [selectedSections, setSelectedSections] = useState<string[]>(() => savedInitial.selectedSections || []);
-    const [selectedJobLevelGroups, setSelectedJobLevelGroups] = useState<string[]>(() => savedInitial.selectedJobLevelGroups || []);
-    const [selectedJobLevels, setSelectedJobLevels] = useState<string[]>(() => savedInitial.selectedJobLevels || []);
-    const [selectedJobTitles, setSelectedJobTitles] = useState<string[]>(() => savedInitial.selectedJobTitles || []);
-    const [selectedRoles, setSelectedRoles] = useState<string[]>(() => savedInitial.selectedRoles || []);
+    const [internalSelectedGroups, setInternalSelectedGroups] = useState<string[]>(() => savedInitial.selectedGroups || []);
+    const [internalSelectedOrganizationGroups, setInternalSelectedOrganizationGroups] = useState<string[]>(() => savedInitial.selectedOrganizationGroups || []);
+    const [internalSelectedRegions, setInternalSelectedRegions] = useState<string[]>(() => savedInitial.selectedRegions || []);
+    const [internalSelectedLocations, setInternalSelectedLocations] = useState<string[]>(() => savedInitial.selectedLocations || []);
+    const [internalSelectedCompanies, setInternalSelectedCompanies] = useState<string[]>(() => savedInitial.selectedCompanies || []);
+    const [internalSelectedDivisions, setInternalSelectedDivisions] = useState<string[]>(() => savedInitial.selectedDivisions || []);
+    const [internalSelectedDepartments, setInternalSelectedDepartments] = useState<string[]>(() => savedInitial.selectedDepartments || []);
+    const [internalSelectedSubdepartments, setInternalSelectedSubdepartments] = useState<string[]>(() => savedInitial.selectedSubdepartments || []);
+    const [internalSelectedSections, setInternalSelectedSections] = useState<string[]>(() => savedInitial.selectedSections || []);
+    const [internalSelectedJobLevelGroups, setInternalSelectedJobLevelGroups] = useState<string[]>(() => savedInitial.selectedJobLevelGroups || []);
+    const [internalSelectedJobLevels, setInternalSelectedJobLevels] = useState<string[]>(() => savedInitial.selectedJobLevels || []);
+    const [internalSelectedJobTitles, setInternalSelectedJobTitles] = useState<string[]>(() => savedInitial.selectedJobTitles || []);
+    const [internalSelectedRoles, setInternalSelectedRoles] = useState<string[]>(() => savedInitial.selectedRoles || []);
 
-    const [visibleTiers, setVisibleTiers] = useState<Record<string, boolean>>(() => {
+    const selectedGroups = extSelectedGroups ?? internalSelectedGroups;
+    const selectedOrganizationGroups = extSelectedOrgGroups ?? internalSelectedOrganizationGroups;
+    const selectedRegions = extSelectedRegions ?? internalSelectedRegions;
+    const selectedLocations = extSelectedLocations ?? internalSelectedLocations;
+    const selectedCompanies = extSelectedCompanies ?? internalSelectedCompanies;
+    const selectedDivisions = extSelectedDivisions ?? internalSelectedDivisions;
+    const selectedDepartments = extSelectedDepartments ?? internalSelectedDepartments;
+    const selectedSubdepartments = extSelectedSubdepartments ?? internalSelectedSubdepartments;
+    const selectedSections = extSelectedSections ?? internalSelectedSections;
+    const selectedJobLevelGroups = extSelectedJobLevelGroups ?? internalSelectedJobLevelGroups;
+    const selectedJobLevels = extSelectedJobLevels ?? internalSelectedJobLevels;
+    const selectedJobTitles = extSelectedJobTitles ?? internalSelectedJobTitles;
+    const selectedRoles = extSelectedRoles ?? internalSelectedRoles;
+
+    const [internalVisibleTiers, setInternalVisibleTiers] = useState<Record<string, boolean>>(() => {
         return (
             savedInitial.visibleTiers || {
-                tier_1_executive: true,
-                tier_2_gm: true,
-                tier_3_manager: true,
-                tier_4_asst_manager: true,
-                tier_5_supervisor: true,
-                tier_6_staff: true,
-                tier_7_non_staff: true,
+                tier_1_c_level: true,
+                tier_2_vp: true,
+                tier_3_head: true,
+                tier_4_gm: true,
+                tier_5_manager: true,
+                tier_6_asst_manager: true,
+                tier_7_supervisor: true,
+                tier_8_staff: true,
+                tier_9_non_staff: true,
             }
         );
     });
+    const visibleTiers = extVisibleTiers ?? internalVisibleTiers;
 
     // Auto-save client-side cache to localStorage
     useEffect(() => {
@@ -852,51 +1391,56 @@ export function JobHierarchyFlow({
         const generatedNodes: Node<JobTreeNodeData>[] = [];
         const generatedEdges: Edge[] = [];
 
-        // 1. Group filtered users by Seniority Tier
+        const currentTierDefs = groupByMode === 'role' ? ROLE_TIERS : SENIORITY_TIERS;
+
+        // 1. Group filtered users by Seniority / Role Tier
         const usersByTier = new Map<SeniorityTierKey, HierarchyUser[]>();
-        SENIORITY_TIERS.forEach((t) => usersByTier.set(t.key, []));
+        currentTierDefs.forEach((t) => usersByTier.set(t.key, []));
 
         filteredUsers.forEach((u) => {
-            const tierKey = classifyUserTier(u);
-            usersByTier.get(tierKey)!.push(u);
+            const tierKey = classifyUserTier(u, groupByMode);
+            usersByTier.get(tierKey)?.push(u);
         });
 
         // 2. Filter active tiers that have users and are enabled in visibleTiers
-        const activeTiers = SENIORITY_TIERS.filter((t) => {
+        const activeTiers = currentTierDefs.filter((t) => {
             if (visibleTiers[t.key] === false) return false;
             const count = (usersByTier.get(t.key) || []).length;
             return count > 0;
         });
 
-        let currentY = 0;
+        let currentY = 50;
+        const TIER_X = 50;
+        const TIER_WIDTH = 380;
+        const TIER_TO_POSITION_GAP = 120; // horizontal gap between Tier card and first Position card
         const POSITION_CARD_WIDTH = 350;
-        const POSITION_HORIZONTAL_GAP = 30;
+        const POSITION_HORIZONTAL_GAP = 35;
         const POSITION_STEP = POSITION_CARD_WIDTH + POSITION_HORIZONTAL_GAP;
 
         let previousTierNodeId: string | null = null;
 
-        activeTiers.forEach((tierDef) => {
+        activeTiers.forEach((tierDef, tierIdx) => {
             const tierUsers = usersByTier.get(tierDef.key) || [];
             const tierNodeId = `tier__${tierDef.key}`;
             const isTierCollapsed = collapsedNodeIds.has(tierNodeId);
 
-            // Group users in this tier by Job Title
-            const titleMap = new Map<string, HierarchyUser[]>();
+            // Group users in this tier by either Job Title or Role Akses based on groupByMode
+            const groupMap = new Map<string, HierarchyUser[]>();
             tierUsers.forEach((u) => {
-                const tName = u.job_title_name || 'Tanpa Posisi';
-                if (!titleMap.has(tName)) titleMap.set(tName, []);
-                titleMap.get(tName)!.push(u);
+                const groupKey = groupByMode === 'role'
+                    ? (u.role_name || 'Member')
+                    : (u.job_title_name || 'Tanpa Posisi');
+                if (!groupMap.has(groupKey)) groupMap.set(groupKey, []);
+                groupMap.get(groupKey)!.push(u);
             });
 
-            const distinctTitles = Array.from(titleMap.keys()).sort();
-            const totalPositionsWidth = Math.max(1, distinctTitles.length) * POSITION_STEP - POSITION_HORIZONTAL_GAP;
+            const distinctGroupKeys = Array.from(groupMap.keys()).sort();
 
-            // Tier Header Node
-            const tierCenterX = Math.max(0, (totalPositionsWidth / 2) - 190);
+            // Tier Header Node placed cleanly on the Left Backbone Column (TIER_X)
             generatedNodes.push({
                 id: tierNodeId,
                 type: 'job_tier_node',
-                position: { x: tierCenterX, y: currentY },
+                position: { x: TIER_X, y: currentY },
                 draggable: true,
                 data: {
                     nodeId: tierNodeId,
@@ -904,92 +1448,238 @@ export function JobHierarchyFlow({
                     label: tierDef.title,
                     subtitle: tierDef.subtitle,
                     levelKey: tierDef.key,
-                    levelLabel: `LEVEL ${tierDef.rank} · ${tierDef.title.split(' ')[0]}`,
+                    levelLabel: groupByMode === 'role'
+                        ? `JENJANG ROLE ${tierDef.rank} · ${tierDef.title.split(' ')[0]}`
+                        : `LEVEL ${tierDef.rank} · ${tierDef.title.split(' ')[0]}`,
                     badgeBg: tierDef.badgeBg,
                     users: tierUsers,
                     totalUsers: tierUsers.length,
-                    subItemsCount: distinctTitles.length,
-                    hasChildren: distinctTitles.length > 0,
+                    subItemsCount: distinctGroupKeys.length,
+                    hasChildren: distinctGroupKeys.length > 0,
                     isExpanded: !isTierCollapsed,
                     onToggle: () => toggleCollapse(tierNodeId),
                     onSelect: (d) => setSelectedNode(d),
                 },
             });
 
-            // Connect from previous higher Tier down to this Tier (Hierarchy Seniority Edge)
+            // Connect Seniority Backbone Line straight DOWN from previous Tier to current Tier
             if (previousTierNodeId) {
                 generatedEdges.push({
                     id: `edge_seniority_${previousTierNodeId}_${tierNodeId}`,
                     source: previousTierNodeId,
+                    sourceHandle: 'tier-bottom',
                     target: tierNodeId,
+                    targetHandle: 'tier-top',
                     type: 'smoothstep',
                     animated: true,
-                    style: { stroke: tierDef.edgeColor, strokeWidth: 2.5 },
+                    style: { stroke: tierDef.edgeColor, strokeWidth: 3 },
                     markerEnd: {
                         type: MarkerType.ArrowClosed,
                         color: tierDef.edgeColor,
+                        width: 18,
+                        height: 18,
                     },
                 });
             }
             previousTierNodeId = tierNodeId;
 
-            // Render Unified Position Cards (1 card per position) if Tier is expanded
+            // Render Cards horizontally to the RIGHT of this Tier Line
             if (!isTierCollapsed) {
-                let positionX = 0;
+                if (groupByMode === 'role') {
+                    // =========================================================================
+                    // ROLE MODE: Tier -> Role Card -> Division Cards (with employee lists)
+                    // =========================================================================
+                    let rolePositionX = TIER_X + TIER_WIDTH + TIER_TO_POSITION_GAP;
+                    let maxDivisionRowsInTier = 1;
 
-                distinctTitles.forEach((tName) => {
-                    const positionUsers = titleMap.get(tName) || [];
-                    const positionId = `position__${tierDef.key}__${tName}`;
+                    distinctGroupKeys.forEach((roleName) => {
+                        const roleUsers = groupMap.get(roleName) || [];
+                        const roleNodeId = `role_card__${tierDef.key}__${roleName}`;
 
-                    // Unified Position Card (contains Position info + its Employees list in 1 card)
-                    generatedNodes.push({
-                        id: positionId,
-                        type: 'job_position_card',
-                        position: { x: positionX, y: currentY + 120 },
-                        draggable: true,
-                        data: {
-                            nodeId: positionId,
-                            title: tName,
-                            label: tName,
-                            levelKey: 'job_title',
-                            levelLabel: 'Posisi / Jabatan',
-                            users: positionUsers,
-                            totalUsers: positionUsers.length,
-                            onSelect: (d) => setSelectedNode(d),
-                            onSelectUser: (u) => {
-                                setSelectedNode({
-                                    title: u.name,
-                                    label: u.name,
-                                    levelKey: 'user',
-                                    levelLabel: u.job_title_name || 'Karyawan',
-                                    users: [u],
-                                    totalUsers: 1,
-                                    badgeBg: 'bg-cyan-100 text-cyan-800 border-cyan-300',
-                                });
+                        // Group role users by division
+                        const divMap = new Map<string, HierarchyUser[]>();
+                        roleUsers.forEach((u) => {
+                            const div = u.division_name || u.company_name || 'Umum / Lainnya';
+                            if (!divMap.has(div)) divMap.set(div, []);
+                            divMap.get(div)!.push(u);
+                        });
+
+                        const distinctDivisions = Array.from(divMap.keys()).sort();
+                        if (distinctDivisions.length > maxDivisionRowsInTier) {
+                            maxDivisionRowsInTier = distinctDivisions.length;
+                        }
+
+                        // 1. ROLE CARD
+                        generatedNodes.push({
+                            id: roleNodeId,
+                            type: 'role_header_card',
+                            position: { x: rolePositionX, y: currentY },
+                            draggable: true,
+                            data: {
+                                nodeId: roleNodeId,
+                                title: roleName,
+                                label: roleName,
+                                levelKey: 'role',
+                                levelLabel: 'Role Akses',
+                                users: roleUsers,
+                                totalUsers: roleUsers.length,
+                                subItemsCount: distinctDivisions.length,
+                                onSelect: (d) => setSelectedNode(d),
                             },
-                        },
+                        });
+
+                        // Connector: Tier Node -> Role Card
+                        generatedEdges.push({
+                            id: `edge_${tierNodeId}_${roleNodeId}`,
+                            source: tierNodeId,
+                            sourceHandle: 'tier-right',
+                            target: roleNodeId,
+                            targetHandle: 'role-left',
+                            type: 'straight',
+                            style: { stroke: '#8b5cf6', strokeWidth: 2 },
+                            markerEnd: {
+                                type: MarkerType.ArrowClosed,
+                                color: '#8b5cf6',
+                                width: 14,
+                                height: 14,
+                            },
+                        });
+
+                        // 2. DIVISION CARDS (Rendered to the right of the Role Card)
+                        const DIVISION_X = rolePositionX + 260 + 80;
+                        const DIVISION_HEIGHT = 270;
+                        const DIVISION_GAP = 25;
+
+                        distinctDivisions.forEach((divName, divIdx) => {
+                            const divUsers = divMap.get(divName) || [];
+                            const divNodeId = `div_card__${tierDef.key}__${roleName}__${divName}`;
+                            const divY = currentY + divIdx * (DIVISION_HEIGHT + DIVISION_GAP);
+
+                            generatedNodes.push({
+                                id: divNodeId,
+                                type: 'division_unified_card',
+                                position: { x: DIVISION_X, y: divY },
+                                draggable: true,
+                                data: {
+                                    nodeId: divNodeId,
+                                    title: divName,
+                                    label: divName,
+                                    subtitle: `Role: ${roleName}`,
+                                    levelKey: 'division',
+                                    levelLabel: 'Divisi',
+                                    users: divUsers,
+                                    totalUsers: divUsers.length,
+                                    onSelect: (d) => setSelectedNode(d),
+                                    onSelectUser: (u) => {
+                                        setSelectedNode({
+                                            title: u.name,
+                                            label: u.name,
+                                            levelKey: 'user',
+                                            levelLabel: `${u.role_name || 'Role'} · ${u.division_name || 'Divisi'}`,
+                                            users: [u],
+                                            totalUsers: 1,
+                                            badgeBg: 'bg-violet-100 text-violet-800 border-violet-300',
+                                        });
+                                    },
+                                },
+                            });
+
+                            // Connector: Role Card -> Division Card
+                            generatedEdges.push({
+                                id: `edge_${roleNodeId}_${divNodeId}`,
+                                source: roleNodeId,
+                                sourceHandle: 'role-right',
+                                target: divNodeId,
+                                targetHandle: 'div-left',
+                                type: 'smoothstep',
+                                style: { stroke: '#a855f7', strokeWidth: 1.8 },
+                                markerEnd: {
+                                    type: MarkerType.ArrowClosed,
+                                    color: '#a855f7',
+                                    width: 12,
+                                    height: 12,
+                                },
+                            });
+                        });
+
+                        // Advance X for next role branch (account for division width)
+                        rolePositionX += 260 + 80 + 320 + 80;
                     });
 
-                    // Edge from Tier Header directly to Unified Position Card
-                    generatedEdges.push({
-                        id: `edge_${tierNodeId}_${positionId}`,
-                        source: tierNodeId,
-                        target: positionId,
-                        type: 'smoothstep',
-                        style: { stroke: '#06b6d4', strokeWidth: 1.8 },
+                    // Dynamic row height spacing for next tier
+                    const tierRowHeight = Math.max(380, maxDivisionRowsInTier * 295 + 60);
+                    currentY += tierRowHeight;
+                } else {
+                    // =========================================================================
+                    // JABATAN MODE: Tier -> Unified Position Cards
+                    // =========================================================================
+                    let positionX = TIER_X + TIER_WIDTH + TIER_TO_POSITION_GAP;
+
+                    distinctGroupKeys.forEach((groupName) => {
+                        const groupUsers = groupMap.get(groupName) || [];
+                        const positionId = `card__${tierDef.key}__${groupName}`;
+
+                        // Unified Card (contains Position info + its Employees list)
+                        generatedNodes.push({
+                            id: positionId,
+                            type: 'job_position_card',
+                            position: { x: positionX, y: currentY },
+                            draggable: true,
+                            data: {
+                                nodeId: positionId,
+                                title: groupName,
+                                label: groupName,
+                                levelKey: 'job_title',
+                                levelLabel: 'Posisi / Jabatan',
+                                users: groupUsers,
+                                totalUsers: groupUsers.length,
+                                onSelect: (d) => setSelectedNode(d),
+                                onSelectUser: (u) => {
+                                    setSelectedNode({
+                                        title: u.name,
+                                        label: u.name,
+                                        levelKey: 'user',
+                                        levelLabel: u.job_title_name || 'Karyawan',
+                                        users: [u],
+                                        totalUsers: 1,
+                                        badgeBg: 'bg-cyan-100 text-cyan-800 border-cyan-300',
+                                    });
+                                },
+                            },
+                        });
+
+                        // Straight horizontal line connector directly to Card
+                        generatedEdges.push({
+                            id: `edge_${tierNodeId}_${positionId}`,
+                            source: tierNodeId,
+                            sourceHandle: 'tier-right',
+                            target: positionId,
+                            targetHandle: 'pos-left',
+                            type: 'straight',
+                            style: { stroke: '#06b6d4', strokeWidth: 2 },
+                            markerEnd: {
+                                type: MarkerType.ArrowClosed,
+                                color: '#06b6d4',
+                                width: 14,
+                                height: 14,
+                            },
+                        });
+
+                        // Advance X for the next card in this tier row
+                        positionX += POSITION_STEP;
                     });
 
-                    positionX += POSITION_STEP;
-                });
+                    // Calculate height spacing so the next tier node has clean vertical clearance
+                    const tierRowHeight = (!isTierCollapsed && distinctGroupKeys.length > 0) ? 380 : 180;
+                    currentY += tierRowHeight;
+                }
+            } else {
+                currentY += 180;
             }
-
-            // Advance Y coordinate for the next lower tier
-            const tierBlockHeight = !isTierCollapsed ? 440 : 160;
-            currentY += tierBlockHeight;
         });
 
         return { nodes: generatedNodes, edges: generatedEdges };
-    }, [filteredUsers, collapsedNodeIds, visibleTiers]);
+    }, [filteredUsers, collapsedNodeIds, visibleTiers, groupByMode]);
 
     // Live Node & Edge States for interactive Drag & Drop
     const [nodes, setNodes] = useState<Node<JobTreeNodeData>[]>(computedFlow.nodes);
@@ -1026,278 +1716,7 @@ export function JobHierarchyFlow({
     }, [selectedNode, userSearchText]);
 
     return (
-        <div className="flex flex-col h-full w-full bg-slate-50 dark:bg-zinc-950 rounded-xl border border-slate-200 dark:border-zinc-800 overflow-hidden shadow-xs relative">
-            {/* Header & Controls Toolbar */}
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white px-5 py-3 dark:border-zinc-800 dark:bg-zinc-900 z-10">
-                <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 border border-amber-500/20">
-                        <Crown className="h-5 w-5" />
-                    </div>
-                    <div>
-                        <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                            Pohon Jenjang Hierarki Jabatan
-                            <span className="text-[10px] font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full border border-amber-500/20">
-                                {filteredUsers.length} Karyawan Terfilter
-                            </span>
-                        </h3>
-                        <p className="text-[11px] text-slate-500">
-                            Piramida Senioritas: Direksi &rarr; GM &rarr; Manager &rarr; Asst. Manager &rarr; Supervisor &rarr; Staff &rarr; Non-Staff (Bebas Drag & Drop)
-                        </p>
-                    </div>
-                </div>
-
-                {/* Right Action Tools */}
-                <div className="flex items-center gap-2">
-                    {/* Filter Is Used Selector */}
-                    <div className="flex items-center rounded-xl border border-slate-200 bg-slate-100 p-0.5 dark:border-zinc-800 dark:bg-zinc-800/80">
-                        <button
-                            type="button"
-                            onClick={() => setUsedFilter('used_only')}
-                            className={cn(
-                                'px-2.5 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer',
-                                usedFilter === 'used_only'
-                                    ? 'bg-white text-indigo-600 shadow-xs dark:bg-zinc-900 dark:text-indigo-400'
-                                    : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
-                            )}
-                            title="Tampilkan hanya entitas dengan is_used = true di semua level hierarki"
-                        >
-                            Is Used: True
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setUsedFilter('all')}
-                            className={cn(
-                                'px-2.5 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer',
-                                usedFilter === 'all'
-                                    ? 'bg-white text-slate-900 shadow-xs dark:bg-zinc-900 dark:text-slate-100'
-                                    : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
-                            )}
-                            title="Tampilkan semua master data"
-                        >
-                            Semua Data
-                        </button>
-                    </div>
-
-                    {/* Search Input */}
-                    <div className="relative">
-                        <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                        <input
-                            type="text"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="Cari nama, NIK, jabatan..."
-                            className="h-8 pl-8 pr-7 text-xs rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500 w-44 sm:w-56"
-                        />
-                        {searchQuery && (
-                            <button
-                                onClick={() => setSearchQuery('')}
-                                className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
-                            >
-                                <X className="w-3.5 h-3.5" />
-                            </button>
-                        )}
-                    </div>
-                    {/* Server-side Sync Button */}
-                    <button
-                        type="button"
-                        onClick={handleSyncData}
-                        disabled={isSyncing}
-                        className="inline-flex items-center gap-1.5 h-8 px-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-zinc-700 text-xs font-semibold shadow-2xs transition-all cursor-pointer disabled:opacity-60"
-                        title="Segarkan data hierarki langsung dari database"
-                    >
-                        <RefreshCw size={13} className={cn('text-indigo-600', isSyncing && 'animate-spin')} />
-                        <span>{isSyncing ? 'Menyinkronkan...' : 'Sync Data'}</span>
-                    </button>
-
-                    {/* Filter & Level Panel Toggle Button */}
-                    <button
-                        type="button"
-                        onClick={() => setIsConfigOpen(!isConfigOpen)}
-                        className={cn(
-                            'inline-flex items-center gap-1.5 h-8 px-3 rounded-xl border text-xs font-semibold transition-all cursor-pointer',
-                            isConfigOpen
-                                ? 'bg-amber-600 text-white border-amber-600 shadow-sm'
-                                : 'bg-white dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50'
-                        )}
-                    >
-                        <SlidersHorizontal size={13} />
-                        <span>Filter & Level</span>
-                    </button>
-                </div>
-            </div>
-
-            {/* Filter Controls Panel (Multi-Select Filters & Level Toggles) */}
-            {isConfigOpen && (
-                <div className="border-b border-slate-200 bg-slate-50/95 dark:bg-zinc-900/95 backdrop-blur-md px-5 py-3 dark:border-zinc-800 z-10 space-y-3 animate-in slide-in-from-top duration-150">
-                    {/* Row 1: Multiple Select Criteria */}
-                    <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 mr-1">
-                            <Filter size={13} className="text-amber-600" /> Filter Organisasi (Multi-Select):
-                        </span>
-
-                        {/* Multi Select Groups */}
-                        <MultiSelectDropdown
-                            title="Group"
-                            options={optGroups}
-                            selectedValues={selectedGroups}
-                            onChange={setSelectedGroups}
-                            icon={Layers}
-                        />
-
-                        {/* Multi Select Organization Groups */}
-                        <MultiSelectDropdown
-                            title="Group Organisasi"
-                            options={optOrganizationGroups}
-                            selectedValues={selectedOrganizationGroups}
-                            onChange={setSelectedOrganizationGroups}
-                            icon={FolderClosed}
-                        />
-
-                        {/* Multi Select Regions */}
-                        <MultiSelectDropdown
-                            title="Region"
-                            options={optRegions}
-                            selectedValues={selectedRegions}
-                            onChange={setSelectedRegions}
-                            icon={MapPin}
-                        />
-
-                        {/* Multi Select Locations */}
-                        <MultiSelectDropdown
-                            title="Lokasi"
-                            options={optLocations}
-                            selectedValues={selectedLocations}
-                            onChange={setSelectedLocations}
-                            icon={Navigation}
-                        />
-
-                        {/* Multi Select Companies */}
-                        <MultiSelectDropdown
-                            title="Company"
-                            options={optCompanies}
-                            selectedValues={selectedCompanies}
-                            onChange={setSelectedCompanies}
-                            icon={Building2}
-                        />
-
-                        {/* Multi Select Divisions */}
-                        <MultiSelectDropdown
-                            title="Divisi"
-                            options={optDivisions}
-                            selectedValues={selectedDivisions}
-                            onChange={setSelectedDivisions}
-                            icon={Network}
-                        />
-
-                        {/* Multi Select Departments */}
-                        <MultiSelectDropdown
-                            title="Departemen"
-                            options={optDepartments}
-                            selectedValues={selectedDepartments}
-                            onChange={setSelectedDepartments}
-                            icon={Building}
-                        />
-
-                        {/* Multi Select Subdepartments */}
-                        <MultiSelectDropdown
-                            title="Subdepartemen"
-                            options={optSubdepartments}
-                            selectedValues={selectedSubdepartments}
-                            onChange={setSelectedSubdepartments}
-                            icon={FolderTree}
-                        />
-
-                        {/* Multi Select Sections */}
-                        <MultiSelectDropdown
-                            title="Seksi / Rayon"
-                            options={optSections}
-                            selectedValues={selectedSections}
-                            onChange={setSelectedSections}
-                            icon={GitBranch}
-                        />
-
-                        {/* Multi Select Group Level */}
-                        <MultiSelectDropdown
-                            title="Group Level"
-                            options={optJobLevelGroups}
-                            selectedValues={selectedJobLevelGroups}
-                            onChange={setSelectedJobLevelGroups}
-                            icon={Layers}
-                        />
-
-                        {/* Multi Select Job Level */}
-                        <MultiSelectDropdown
-                            title="Job Level (Grade)"
-                            options={optJobLevels}
-                            selectedValues={selectedJobLevels}
-                            onChange={setSelectedJobLevels}
-                            icon={Tags}
-                        />
-
-                        {/* Multi Select Job Title */}
-                        <MultiSelectDropdown
-                            title="Job Title"
-                            options={optJobTitles}
-                            selectedValues={selectedJobTitles}
-                            onChange={setSelectedJobTitles}
-                            icon={UserCheck}
-                        />
-
-                        {/* Multi Select Role Akses */}
-                        <MultiSelectDropdown
-                            title="Role Akses"
-                            options={optRoles}
-                            selectedValues={selectedRoles}
-                            onChange={setSelectedRoles}
-                            icon={Shield}
-                        />
-
-                        {/* Reset All Filters Button */}
-                        {hasActiveMultiFilters && (
-                            <button
-                                type="button"
-                                onClick={resetAllFilters}
-                                className="inline-flex items-center gap-1 h-8 px-2.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 text-xs font-semibold cursor-pointer transition-colors"
-                            >
-                                <RotateCcw size={12} />
-                                Reset Filter
-                            </button>
-                        )}
-                    </div>
-
-                    {/* Row 2: Hierarchical Tier Toggles */}
-                    <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-200/80 dark:border-zinc-800 text-xs text-slate-600 dark:text-slate-400">
-                        <span className="font-bold text-slate-700 dark:text-slate-300">Jenjang Senioritas:</span>
-
-                        {SENIORITY_TIERS.map((tier) => {
-                            const isVisible = visibleTiers[tier.key] !== false;
-                            const IconComponent = tier.icon;
-                            return (
-                                <button
-                                    key={tier.key}
-                                    type="button"
-                                    onClick={() =>
-                                        setVisibleTiers((prev) => ({
-                                            ...prev,
-                                            [tier.key]: !isVisible,
-                                        }))
-                                    }
-                                    className={cn(
-                                        'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-semibold border transition-all cursor-pointer',
-                                        isVisible
-                                            ? 'bg-white dark:bg-zinc-800 border-slate-300 dark:border-zinc-700 text-slate-800 dark:text-slate-200 shadow-2xs'
-                                            : 'bg-slate-100 dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 text-slate-400 opacity-50'
-                                    )}
-                                >
-                                    <IconComponent className="w-3.5 h-3.5 text-amber-500" />
-                                    <span>{tier.title.split(' ')[0]} {tier.title.split(' ')[1] || ''}</span>
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
-            )}
-
+        <div className="flex h-full w-full flex-col bg-slate-50 dark:bg-zinc-950 relative overflow-hidden">
             {/* Flow Canvas with Drag & Drop */}
             <div className="flex-1 w-full h-full min-h-[500px] relative">
                 <ReactFlow

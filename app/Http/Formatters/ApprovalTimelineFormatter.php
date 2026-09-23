@@ -310,6 +310,30 @@ class ApprovalTimelineFormatter
                     }
                 }
 
+                $stepWorkflowPayload = [
+                    'id' => $step->id,
+                    'step' => $step->step,
+                    'label' => $stepLabel,
+                    'description' => $step->description,
+                    'workflow_id' => $step->workflow_id,
+                    'workflow' => [
+                        'id' => $workflow->id,
+                        'name' => $workflow->name,
+                        'workflow_type' => data_get($workflow, 'workflow_type', 'main'),
+                        'is_sub_workflow' => (data_get($workflow, 'workflow_type') === 'sub_workflow') || (bool) data_get($workflow->meta, 'is_sub_workflow', false),
+                    ],
+                    'meta' => $step->meta ?? [],
+                    'action_configs' => $step->relationLoaded('actions') ? $step->actions->map(fn ($act) => [
+                        'id' => $act->id,
+                        'action_code' => $act->action_code instanceof WorkflowAction ? $act->action_code->value : $act->action_code,
+                        'alias' => $act->alias,
+                        'target_status' => $act->target_status,
+                        'required_fields' => $act->required_fields ?? [],
+                        'autofilled_fields' => $act->autofilled_fields ?? [],
+                        'is_visible' => (bool) ($act->is_visible ?? true),
+                    ])->toArray() : [],
+                ];
+
                 // 1. ADD AD-HOC (SUB-STEPS) FIRST
                 foreach ($adhocApprovals as $a) {
                     $isSigner = $a->role === 'Penandatangan';
@@ -349,17 +373,7 @@ class ApprovalTimelineFormatter
                         'step_description' => $isSigner ? 'Proses penandatanganan dokumen' : 'Persetujuan tambahan di luar alur kerja template',
                         'step_category' => $isSigner ? 'signing' : null,
                         'sort_order' => $globalOrder++,
-                        'workflow_step' => [
-                            'id' => $step->id,
-                            'step' => $step->step,
-                            'label' => $stepLabel,
-                            'description' => $step->description,
-                            'workflow_id' => $step->workflow_id,
-                            'workflow' => [
-                                'id' => $workflow->id,
-                                'name' => $workflow->name,
-                            ],
-                        ],
+                        'workflow_step' => $stepWorkflowPayload,
                         'approver' => UserFormatter::format($a->approver),
                     ];
                 }
@@ -386,17 +400,7 @@ class ApprovalTimelineFormatter
                             'step_description' => $step->description,
                             'step_category' => $step->step_category,
                             'sort_order' => $globalOrder++,
-                            'workflow_step' => [
-                                'id' => $step->id,
-                                'step' => $step->step,
-                                'label' => $stepLabel,
-                                'description' => $step->description,
-                                'workflow_id' => $step->workflow_id,
-                                'workflow' => [
-                                    'id' => $workflow->id,
-                                    'name' => $workflow->name,
-                                ],
-                            ],
+                            'workflow_step' => $stepWorkflowPayload,
                         ];
                     }
                 } else {
@@ -551,6 +555,8 @@ class ApprovalTimelineFormatter
                                     'workflow' => [
                                         'id' => $workflow->id,
                                         'name' => $workflow->name,
+                                        'workflow_type' => data_get($workflow, 'workflow_type', 'main'),
+                                        'is_sub_workflow' => (data_get($workflow, 'workflow_type') === 'sub_workflow') || (bool) data_get($workflow->meta, 'is_sub_workflow', false),
                                     ],
                                     'meta' => $step->meta ?? [],
                                     'action_configs' => $step->relationLoaded('actions') ? $step->actions->map(fn ($act) => [
@@ -614,6 +620,8 @@ class ApprovalTimelineFormatter
                                          'workflow' => [
                                              'id' => $workflow->id,
                                              'name' => $workflow->name,
+                                             'workflow_type' => data_get($workflow, 'workflow_type', 'main'),
+                                             'is_sub_workflow' => (data_get($workflow, 'workflow_type') === 'sub_workflow') || (bool) data_get($workflow->meta, 'is_sub_workflow', false),
                                          ],
                                          'meta' => $step->meta ?? [],
                                          'action_configs' => $step->relationLoaded('actions') ? $step->actions->map(fn ($act) => [
@@ -714,17 +722,7 @@ class ApprovalTimelineFormatter
                             'step_description' => $step->description,
                             'step_category' => $step->step_category,
                             'sort_order' => $globalOrder++,
-                            'workflow_step' => [
-                                'id' => $step->id,
-                                'step' => $step->step,
-                                'label' => $stepLabel,
-                                'description' => $step->description,
-                                'workflow_id' => $step->workflow_id,
-                                'workflow' => [
-                                    'id' => $workflow->id,
-                                    'name' => $workflow->name,
-                                ],
-                            ],
+                            'workflow_step' => $stepWorkflowPayload,
                             'approver_authorities' => $authoritiesPayload,
                             'debug_sql_queries' => $stepSqlQueries,
                         ];

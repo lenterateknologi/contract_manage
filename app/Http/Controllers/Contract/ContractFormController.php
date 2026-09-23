@@ -413,17 +413,18 @@ class ContractFormController extends Controller
             }
         }
 
+        $initUser = $contract->initiator ?? $contract->creator;
         if (empty($formData['meta_p1_entity'])) {
-            $formData['meta_p1_entity'] = 'PT. Lentera Teknologi';
+            $formData['meta_p1_entity'] = $contract->p1_entity ?? ($initUser->company_name ?? ($initUser->company->name ?? 'PT. Lentera Teknologi'));
         }
         if (empty($formData['meta_p1_signer'])) {
-            $formData['meta_p1_signer'] = $contract->initiator->name ?? $contract->creator->name ?? '';
+            $formData['meta_p1_signer'] = $contract->p1_signer ?? ($initUser->name ?? '');
         }
         if (empty($formData['meta_p1_signer_position'])) {
-            $formData['meta_p1_signer_position'] = $contract->initiator->role ?? $contract->creator->role ?? 'Direktur';
+            $formData['meta_p1_signer_position'] = $contract->p1_signer_position ?? ($initUser->jobtitle_name ?? ($initUser->jobPosition->name ?? ($initUser->role ?? 'Direktur')));
         }
         if (empty($formData['meta_p1_alamat'])) {
-            $formData['meta_p1_alamat'] = 'The Manhattan Square Mid Tower Lt. 12, Jl. TB Simatupang No.1, Jakarta Selatan';
+            $formData['meta_p1_alamat'] = $contract->p1_address ?? ($initUser->company->address ?? ($initUser->location_name ?? ($initUser->address ?? 'The Manhattan Square Mid Tower Lt. 12, Jl. TB Simatupang No.1, Jakarta Selatan')));
         }
 
         if ($contract->vendor_id && $contract->vendor) {

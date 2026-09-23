@@ -6,6 +6,14 @@ import React, { useState } from 'react';
 export function VendorInfoCard({ selected, isTabView = false }: { selected: Contract; isTabView?: boolean }) {
     const [minimized, setMinimized] = useState(false);
     const secondParty = (selected as any)?.vendor || {};
+    const initUser = selected.initiator || selected.creator;
+    const isInternalParty = !selected.vendor_id && !selected.vendor?.id && (
+        selected.metadata?.second_party_id === 'internal' ||
+        selected.metadata?.p2_vendor_id === 'internal' ||
+        selected.p2_entity === initUser?.company?.name ||
+        selected.p2_entity === initUser?.company_name
+    );
+
     const detail = (secondParty?.vendor_detail || secondParty?.detail || {}) as Record<string, any>;
     const tax = (detail.tax || {}) as Record<string, any>;
     const legality = (detail.legality || {}) as Record<string, any>;
@@ -13,11 +21,11 @@ export function VendorInfoCard({ selected, isTabView = false }: { selected: Cont
     const paymentMethods = (Array.isArray(detail.paymentMethod) ? detail.paymentMethod : []) as Record<string, any>[];
     const businessFields = (Array.isArray(detail.businessFields) ? detail.businessFields : []) as Record<string, any>[];
 
-    const partyName = secondParty?.name || secondParty?.vendor_name || detail?.name || selected.metadata?.meta_p2_entity || selected.p2_entity || 'Nama Pihak Kedua Tidak Tersedia';
-    const picName = secondParty?.pic_name || detail?.pic || selected.metadata?.meta_p2_signer || selected.p2_signer || '—';
-    const picPosition = secondParty?.pic_position || detail?.pic_position || detail?.jobTitle || selected.metadata?.meta_p2_signer_position || selected.p2_signer_position || '—';
-    const address = secondParty?.address || detail?.address || selected.metadata?.meta_p2_alamat || selected.p2_address || '—';
-    const partyCode = secondParty?.vendor_code || detail?.registrationNumber || '-';
+    const partyName = secondParty?.name || secondParty?.vendor_name || detail?.name || selected.metadata?.meta_p2_entity || selected.p2_entity || (isInternalParty ? (initUser?.company?.name || initUser?.company_name || 'PT. Lentera Teknologi (Internal)') : 'Nama Pihak Kedua Tidak Tersedia');
+    const picName = secondParty?.pic_name || detail?.pic || selected.metadata?.meta_p2_signer || selected.p2_signer || (isInternalParty ? (initUser?.name || '—') : '—');
+    const picPosition = secondParty?.pic_position || detail?.pic_position || detail?.jobTitle || selected.metadata?.meta_p2_signer_position || selected.p2_signer_position || (isInternalParty ? (initUser?.jobtitle_name || initUser?.role_name || 'Direktur') : '—');
+    const address = secondParty?.address || detail?.address || selected.metadata?.meta_p2_alamat || selected.p2_address || (isInternalParty ? (initUser?.company?.address || initUser?.address || 'The Manhattan Square Mid Tower Lt. 12, Jl. TB Simatupang No.1, Jakarta Selatan') : '—');
+    const partyCode = secondParty?.vendor_code || detail?.registrationNumber || (isInternalParty ? (initUser?.employee_id || initUser?.nip || 'INTERNAL') : '-');
 
     const renderDocRow = (label: string, value: any, isFile = false) => {
         let display: React.ReactNode = '-';

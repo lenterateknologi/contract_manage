@@ -90,6 +90,7 @@ class AdminController extends Controller
         if ($request->has('refresh')) {
             Cache::forget('admin_members_tree_users_v2');
             Cache::forget('admin_members_tree_users_v3');
+            Cache::forget('admin_members_tree_users_v4');
             Cache::forget('admin_members_divisions');
             Cache::forget('admin_members_departments');
             Cache::forget('admin_members_subdepartments');

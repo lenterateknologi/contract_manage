@@ -136,14 +136,27 @@ export const getAutofillValue = (field: any, contract: Contract, docType?: 'f1' 
             if (start && end) return `${start} s/d ${end}`;
             return start || end;
         },
-        meta_p1_entity: () => 'PT. LENTERA TEKNOLOGI',
-        meta_p1_signer: () => contract.p1_signer ?? (contract as any).initiator?.name ?? '',
-        meta_p1_signer_position: () => contract.p1_signer_position ?? (contract as any).initiator?.role ?? '',
-        meta_p1_alamat: () => cleanSingleLineText('The Manhattan Square Mid Tower Lt. 12, Jl. TB Simatupang No.1, Jakarta Selatan'),
-        meta_p2_entity: () => vendor?.name ?? vendor?.vendor_name ?? '',
-        meta_p2_signer: () => vendor?.pic_name ?? vendor?.pic ?? vendor?.detail?.pic ?? '',
-        meta_p2_signer_position: () => vendor?.pic_position ?? vendor?.detail?.pic_position ?? '',
-        meta_p2_alamat: () => cleanSingleLineText(vendor?.address ?? vendor?.detail?.address),
+        meta_p1_entity: () => {
+            const initUser = (contract as any)?.initiator || (contract as any)?.creator;
+            return contract.p1_entity || initUser?.company_name || initUser?.company?.name || 'PT. LENTERA TEKNOLOGI';
+        },
+        meta_p1_signer: () => {
+            const initUser = (contract as any)?.initiator || (contract as any)?.creator;
+            return contract.p1_signer || initUser?.name || '';
+        },
+        meta_p1_signer_position: () => {
+            const initUser = (contract as any)?.initiator || (contract as any)?.creator;
+            return contract.p1_signer_position || initUser?.jobtitle_name || initUser?.job_position_name || initUser?.role || initUser?.role_name || '';
+        },
+        meta_p1_alamat: () => {
+            const initUser = (contract as any)?.initiator || (contract as any)?.creator;
+            const addr = contract.p1_address || initUser?.company?.address || initUser?.location_name || initUser?.address || 'The Manhattan Square Mid Tower Lt. 12, Jl. TB Simatupang No.1, Jakarta Selatan';
+            return cleanSingleLineText(addr);
+        },
+        meta_p2_entity: () => contract.p2_entity ?? vendor?.name ?? vendor?.vendor_name ?? '',
+        meta_p2_signer: () => contract.p2_signer ?? vendor?.pic_name ?? vendor?.pic ?? vendor?.detail?.pic ?? '',
+        meta_p2_signer_position: () => contract.p2_signer_position ?? vendor?.pic_position ?? vendor?.detail?.pic_position ?? vendor?.detail?.jobTitle?.[0] ?? '',
+        meta_p2_alamat: () => cleanSingleLineText(contract.p2_address ?? vendor?.address ?? vendor?.detail?.address ?? vendor?.detail?.mailingAddress),
         meta_lokasi: () => (contract as any).location ?? '',
         meta_nilai_transaksi: () => contract.metadata?.meta_harga ?? (contract as any).amount ?? '',
         meta_harga: () => contract.metadata?.meta_harga ?? (contract as any).amount ?? '',

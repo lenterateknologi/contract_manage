@@ -17,7 +17,7 @@ class ContractListQuery
     private const WITH = [
         'creator:id,name,role_id,department_id,division_id,company_id,email,nik,jobtitle_name,phone_number,mobile_no',
         'creator.department:id,name',
-        'contractType:id,name,parent_id,f1_input_mechanism,f1_form_template_id,f2_input_mechanism,f2_form_template_id,contract_input_mechanism,contract_form_template_id',
+        'contractType:id,name,parent_id,ancestry_id,f1_input_mechanism,f1_form_template_id,f2_input_mechanism,f2_form_template_id,contract_input_mechanism,contract_form_template_id',
         'submissionType:id,name',
         'statusDetail:code,label,color,bg_color,icon',
         'workflow:id,name,contract_type_id,meta',

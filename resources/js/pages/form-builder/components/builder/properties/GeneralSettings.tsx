@@ -35,21 +35,21 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ selectedField,
                                 <option value="meta_no_kontrak">No. Kontrak (meta_no_kontrak)</option>
                                 <option value="meta_judul_kontrak">Judul Perjanjian (meta_judul_kontrak)</option>
                                 <option value="meta_tipe_perjanjian">Tipe Perjanjian (meta_tipe_perjanjian)</option>
+                                <option value="meta_sub_topik">Sub Topik (meta_sub_topik)</option>
                                 <option value="meta_tgl_dibuat">Tanggal Dibuat (meta_tgl_dibuat)</option>
                             </optgroup>
                             <optgroup label="Para Pihak">
-                                <option value="meta_p1_entity">Nama Pihak I / PT (meta_p1_entity)</option>
-                                <option value="meta_p1_signer">Penandatangan Pihak I (meta_p1_signer)</option>
-                                <option value="meta_p1_signer_position">Jabatan Penandatangan Pihak I (meta_p1_signer_position)</option>
-                                <option value="meta_p1_alamat">Alamat Pihak I (meta_p1_alamat)</option>
-                                <option value="meta_p2_entity">Nama Pihak II / Vendor (meta_p2_entity)</option>
-                                <option value="meta_p2_signer">Penandatangan Pihak II (meta_p2_signer)</option>
-                                <option value="meta_p2_signer_position">Jabatan Penandatangan Pihak II (meta_p2_signer_position)</option>
-                            </optgroup>
-                            <optgroup label="Alamat & Kontak Resmi">
-                                <option value="meta_p2_alamat">Alamat Pihak II / Vendor (meta_p2_alamat)</option>
+                                <option value="meta_p1_entity">Nama Pihak I / Pembeli / PT (meta_p1_entity)</option>
+                                <option value="meta_p1_signer">Penandatangan / Wakil Pihak I / Pembeli (meta_p1_signer)</option>
+                                <option value="meta_p1_signer_position">Jabatan Penandatangan Pihak I / Pembeli (meta_p1_signer_position)</option>
+                                <option value="meta_p1_alamat">Alamat Pihak I / Pembeli (meta_p1_alamat)</option>
+                                <option value="meta_p2_entity">Nama Pihak II / Penjual / Supplier (meta_p2_entity)</option>
+                                <option value="meta_p2_signer">Penandatangan / Wakil Pihak II / Penjual (meta_p2_signer)</option>
+                                <option value="meta_p2_signer_position">Jabatan Penandatangan Pihak II / Penjual (meta_p2_signer_position)</option>
+                                <option value="meta_p2_alamat">Alamat Pihak II / Penjual / Supplier (meta_p2_alamat)</option>
                             </optgroup>
                             <optgroup label="Detail Kontrak">
+                                <option value="meta_harga">Harga Barang / Nilai Transaksi (meta_harga)</option>
                                 <option value="meta_nilai_transaksi">Harga / Nilai Transaksi (meta_nilai_transaksi)</option>
                                 <option value="meta_masa_berlaku">Masa Berlaku (meta_masa_berlaku)</option>
                                 <option value="meta_lokasi">Lokasi Area (meta_lokasi)</option>
@@ -57,6 +57,7 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ selectedField,
                                 <option value="meta_ringkasan_klausul">Ringkasan Klausul (meta_ringkasan_klausul)</option>
                                 <option value="meta_ruang_lingkup">Ruang Lingkup (meta_ruang_lingkup)</option>
                                 <option value="meta_lampiran">Daftar Lampiran (meta_lampiran)</option>
+                                <option value="meta_deskripsi">Deskripsi / Keterangan (meta_deskripsi)</option>
                                 <option value="meta_tax_required">Status Pajak (meta_tax_required)</option>
                             </optgroup>
                             <optgroup label="Tanda Tangan & Persetujuan">

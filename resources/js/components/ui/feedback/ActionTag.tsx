@@ -1,5 +1,6 @@
 import LucideIcons from '@/lib/lucide-dynamic';
 import { cn } from '@/lib/utils';
+import { usePage } from '@inertiajs/react';
 import {
     AlertCircle,
     CheckCircle2,
@@ -35,8 +36,18 @@ export function getActionConfig(
     isRejected?: boolean,
     targetStatusParam?: string | null,
     statusInfo?: StatusInfo | null,
-    masterStatuses?: any[]
+    masterStatusesParam?: any[]
 ): ActionConfig {
+    let masterStatuses = masterStatusesParam;
+    if (!masterStatuses || masterStatuses.length === 0) {
+        try {
+            const pageProps = usePage<any>()?.props;
+            masterStatuses = pageProps?.masterContractStatuses || [];
+        } catch (e) {
+            // Outside Inertia context
+        }
+    }
+
     let code = '';
     let alias = aliasParam;
     let targetStatus = targetStatusParam;
@@ -59,10 +70,12 @@ export function getActionConfig(
 
     const cleanCode = code.toLowerCase().trim();
     const cleanStatus = (targetStatus || '').toLowerCase().trim();
+    const cleanAlias = (alias || '').toLowerCase().trim();
+    const isEffectivelyRejected = isRejected || cleanCode === 'reject' || cleanStatus === 'rejected' || cleanAlias.includes('tolak') || cleanAlias.includes('reject');
 
     // Default icon based on action code
     let defaultIcon: LucideIcon = CheckCircle2;
-    if (isRejected) {
+    if (isEffectivelyRejected) {
         defaultIcon = AlertCircle;
     } else {
         switch (cleanCode) {
@@ -116,7 +129,7 @@ export function getActionConfig(
     // Tentukan status key efektif: Prioritaskan target_status, jika tidak ada fallback ke status default aksi
     let effectiveStatusKey = cleanStatus && cleanStatus !== 'default' ? cleanStatus : '';
     if (!effectiveStatusKey) {
-        if (isRejected) {
+        if (isEffectivelyRejected) {
             effectiveStatusKey = 'rejected';
         } else {
             switch (cleanCode) {
@@ -146,9 +159,13 @@ export function getActionConfig(
 
     // Fallback classes jika belum ada Master Status
     const fallbackBg = cleanCode === 'reject' ? 'bg-rose-700' : 'bg-emerald-700';
-    const buttonClass = `${fallbackBg} hover:opacity-90 active:opacity-100 text-white shadow-sm cursor-pointer`;
-    const iconBgClass = `${fallbackBg} text-white`;
-    const badgeClass = `${fallbackBg} text-white border border-transparent shadow-xs`;
+    const buttonClass = hexColor
+        ? 'hover:opacity-90 active:opacity-100 text-white shadow-sm cursor-pointer'
+        : `${fallbackBg} hover:opacity-90 active:opacity-100 text-white shadow-sm cursor-pointer`;
+    const iconBgClass = hexColor ? 'text-white' : `${fallbackBg} text-white`;
+    const badgeClass = hexColor
+        ? 'text-white border border-transparent shadow-xs'
+        : `${fallbackBg} text-white border border-transparent shadow-xs`;
 
     // Ambil icon dari status jika action tidak memiliki custom icon
     let finalIcon = defaultIcon;
@@ -205,7 +222,15 @@ export const ActionBadge: React.FC<ActionBadgeProps> = ({
     size = 'sm',
     className,
 }) => {
-    const config = getActionConfig(actionCode, alias, isApproved, isRejected, targetStatus);
+    let masterStatuses: any[] = [];
+    try {
+        const pageProps = usePage<any>()?.props;
+        masterStatuses = pageProps?.masterContractStatuses || [];
+    } catch (e) {
+        // Fallback when outside Inertia context
+    }
+
+    const config = getActionConfig(actionCode, alias, isApproved, isRejected, targetStatus, null, masterStatuses);
     const Icon = config.icon;
 
     const sizeClasses = {

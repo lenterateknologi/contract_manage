@@ -13,7 +13,7 @@ class Column implements JsonSerializable
 
     protected string $type = 'text';
 
-    protected bool $isSortable = false;
+    protected bool $isSortable = true;
 
     protected bool $isSearchable = false;
 
