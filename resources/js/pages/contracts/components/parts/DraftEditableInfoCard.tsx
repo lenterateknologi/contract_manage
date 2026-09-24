@@ -1,15 +1,29 @@
-import { Contract, ContractType } from '@/pages/contracts/types';
-import { ChevronDown, ChevronUp, Info, Tag, GitBranch } from 'lucide-react';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ContractInfoForm } from './ContractInfoForm';
 import { TreeSelect } from '@/components/ui/selection/TreeSelect';
+import { Contract, ContractType } from '@/pages/contracts/types';
 import { resolveVendorTaxPkp } from '@/pages/contracts/utils';
+import {
+    AlertCircle,
+    CheckCircle2,
+    ChevronDown,
+    ChevronUp,
+    CornerDownRight,
+    Edit3,
+    Eye,
+    GitBranch,
+    Info,
+    Layers,
+    Lock,
+    Tag,
+    UserCheck,
+} from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ContractInfoForm } from './ContractInfoForm';
 
 // Re-export for backward compatibility
+export { AdvancedInfoCard } from './AdvancedInfoCard';
+export { PicInfoCard } from './PicInfoCard';
 export { RequesterInfoCard } from './RequesterInfoCard';
 export { VendorInfoCard } from './VendorInfoCard';
-export { PicInfoCard } from './PicInfoCard';
-export { AdvancedInfoCard } from './AdvancedInfoCard';
 
 export interface FormTemplateInfo {
     id: string;
@@ -59,8 +73,7 @@ export function DraftEditableInfoCard({
     resetRef,
 }: DraftEditableInfoCardProps) {
     const is_readonly =
-        selected.allow_info_edit === false ||
-        (!selected.can_approve && selected.created_by !== meId && selected.initiated_by_id !== meId);
+        selected.allow_info_edit === false || (!selected.can_approve && selected.created_by !== meId && selected.initiated_by_id !== meId);
     const [title, setTitle] = useState(selected.title);
     const [description, setDescription] = useState(selected.description || '');
     const [typeId, setTypeId] = useState(() => {
@@ -72,7 +85,11 @@ export function DraftEditableInfoCard({
         if (s.metadata?.first_party_id) return String(s.metadata.first_party_id);
         if (s.metadata?.p1_vendor_id) return String(s.metadata.p1_vendor_id);
         if (s.p1_entity && Array.isArray(vList)) {
-            const found = vList.find((v) => (v.name && v.name.toLowerCase() === s.p1_entity.toLowerCase()) || (v.vendor_name && v.vendor_name.toLowerCase() === s.p1_entity.toLowerCase()));
+            const found = vList.find(
+                (v) =>
+                    (v.name && v.name.toLowerCase() === s.p1_entity.toLowerCase()) ||
+                    (v.vendor_name && v.vendor_name.toLowerCase() === s.p1_entity.toLowerCase()),
+            );
             if (found) return String(found.id);
         }
         return 'internal';
@@ -84,7 +101,11 @@ export function DraftEditableInfoCard({
         if (s.vendor_id) return String(s.vendor_id);
         if (s.vendor?.id) return String(s.vendor.id);
         if (s.p2_entity && Array.isArray(vList)) {
-            const found = vList.find((v) => (v.name && v.name.toLowerCase() === s.p2_entity.toLowerCase()) || (v.vendor_name && v.vendor_name.toLowerCase() === s.p2_entity.toLowerCase()));
+            const found = vList.find(
+                (v) =>
+                    (v.name && v.name.toLowerCase() === s.p2_entity.toLowerCase()) ||
+                    (v.vendor_name && v.vendor_name.toLowerCase() === s.p2_entity.toLowerCase()),
+            );
             if (found) return String(found.id);
         }
         return '';
@@ -127,8 +148,8 @@ export function DraftEditableInfoCard({
         const typeVal = selected.contract_type_id
             ? String(selected.contract_type_id)
             : types.find((x) => x.name === selected.contract_type)?.id
-                ? String(types.find((x) => x.name === selected.contract_type)?.id)
-                : '';
+              ? String(types.find((x) => x.name === selected.contract_type)?.id)
+              : '';
         setTypeId(typeVal);
         setFirstPartyId(resolveInitialFirstParty(selected, vendors));
         setVendorId(resolveInitialSecondParty(selected, vendors));
@@ -162,7 +183,11 @@ export function DraftEditableInfoCard({
                 entity: initUser?.company?.name || initUser?.company_name || 'PT. LENTERA TEKNOLOGI',
                 signer: initUser?.name || '',
                 signer_position: initUser?.jobtitle_name || initUser?.job_position_name || initUser?.role || initUser?.role_name || 'Direktur',
-                address: initUser?.company?.address || initUser?.location_name || initUser?.address || 'The Manhattan Square Mid Tower Lt. 12, Jl. TB Simatupang No.1, Jakarta Selatan',
+                address:
+                    initUser?.company?.address ||
+                    initUser?.location_name ||
+                    initUser?.address ||
+                    'The Manhattan Square Mid Tower Lt. 12, Jl. TB Simatupang No.1, Jakarta Selatan',
             };
         }
 
@@ -177,10 +202,10 @@ export function DraftEditableInfoCard({
         }
 
         return {
-            entity: role === 'p1' ? (selected.p1_entity || 'PT. LENTERA TEKNOLOGI') : (selected.p2_entity || ''),
-            signer: role === 'p1' ? (selected.p1_signer || '') : (selected.p2_signer || ''),
-            signer_position: role === 'p1' ? (selected.p1_signer_position || '') : (selected.p2_signer_position || ''),
-            address: role === 'p1' ? (selected.p1_address || '') : (selected.p2_address || ''),
+            entity: role === 'p1' ? selected.p1_entity || 'PT. LENTERA TEKNOLOGI' : selected.p2_entity || '',
+            signer: role === 'p1' ? selected.p1_signer || '' : selected.p2_signer || '',
+            signer_position: role === 'p1' ? selected.p1_signer_position || '' : selected.p2_signer_position || '',
+            address: role === 'p1' ? selected.p1_address || '' : selected.p2_address || '',
         };
     };
 
@@ -218,8 +243,8 @@ export function DraftEditableInfoCard({
         const typeVal = selected.contract_type_id
             ? String(selected.contract_type_id)
             : types.find((x) => x.name === selected.contract_type)?.id
-                ? String(types.find((x) => x.name === selected.contract_type)?.id)
-                : '';
+              ? String(types.find((x) => x.name === selected.contract_type)?.id)
+              : '';
         const p = selected.metadata?.meta_harga ?? selected.metadata?.f2_price ?? selected.meta?.f2_price;
         return {
             title: selected.title,
@@ -252,7 +277,21 @@ export function DraftEditableInfoCard({
             price !== originalState.price ||
             taxRequired !== originalState.taxRequired
         );
-    }, [title, description, typeId, firstPartyId, vendorId, submissionTypeId, kopSubTopik, contractNo, contractDate, endDate, price, taxRequired, originalState]);
+    }, [
+        title,
+        description,
+        typeId,
+        firstPartyId,
+        vendorId,
+        submissionTypeId,
+        kopSubTopik,
+        contractNo,
+        contractDate,
+        endDate,
+        price,
+        taxRequired,
+        originalState,
+    ]);
 
     const [saving, setSaving] = useState(false);
 
@@ -266,7 +305,7 @@ export function DraftEditableInfoCard({
                 title,
                 description,
                 contract_type_id: typeId || null,
-                vendor_id: vendorId === 'internal' ? null : (vendorId || null),
+                vendor_id: vendorId === 'internal' ? null : vendorId || null,
                 submission_type_id: submissionTypeId || null,
                 kop_sub_topik: kopSubTopik || null,
                 contract_no: contractNo || null,
@@ -330,18 +369,18 @@ export function DraftEditableInfoCard({
     const canEditCategory = !is_readonly && selected.allow_category_edit !== false;
 
     return (
-        <div className="flex flex-col gap-4 relative">
+        <div className="relative flex flex-col gap-4">
             {/* Card 1: Informasi Pengajuan */}
             <div className="flex flex-col gap-3">
-                <div className="bg-primary text-primary-foreground shrink-0 flex h-9.5 min-h-[38px] max-h-[38px] items-center justify-between px-4 rounded-xl shadow-xs">
-                    <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-tight text-primary-foreground">
+                <div className="bg-primary text-primary-foreground flex h-9.5 max-h-[38px] min-h-[38px] shrink-0 items-center justify-between rounded-xl px-4 shadow-xs">
+                    <div className="text-primary-foreground flex items-center gap-2 text-xs font-semibold tracking-tight uppercase">
                         <Info size={15} className="text-primary-foreground/90" /> Informasi Pengajuan
                     </div>
                     <div className="flex items-center gap-2">
                         <button
                             type="button"
                             onClick={() => setMinimized(!minimized)}
-                            className="bg-white/15 hover:bg-white/25 text-white border border-white/20 h-6 w-6 flex items-center justify-center rounded-md transition-all active:scale-95 cursor-pointer"
+                            className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-md border border-white/20 bg-white/15 text-white transition-all hover:bg-white/25 active:scale-95"
                         >
                             {minimized ? <ChevronDown size={13} /> : <ChevronUp size={13} />}
                         </button>
@@ -349,7 +388,7 @@ export function DraftEditableInfoCard({
                 </div>
 
                 {!minimized && (
-                    <div className="bg-surface-base text-text-main border border-surface-border rounded-xl shadow-xs p-4 flex flex-col gap-3">
+                    <div className="bg-surface-base text-text-main border-surface-border flex flex-col gap-3 rounded-xl border p-4 shadow-xs">
                         <ContractInfoForm
                             is_readonly={is_readonly}
                             title={title}
@@ -391,15 +430,15 @@ export function DraftEditableInfoCard({
 
             {/* Card 2: Kategori & Alur Kerja */}
             <div className="flex flex-col gap-3">
-                <div className="bg-primary text-primary-foreground shrink-0 flex h-9.5 min-h-[38px] max-h-[38px] items-center justify-between px-4 rounded-xl shadow-xs">
-                    <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-tight text-primary-foreground">
+                <div className="bg-primary text-primary-foreground flex h-9.5 max-h-[38px] min-h-[38px] shrink-0 items-center justify-between rounded-xl px-4 shadow-xs">
+                    <div className="text-primary-foreground flex items-center gap-2 text-xs font-semibold tracking-tight uppercase">
                         <GitBranch size={15} className="text-primary-foreground/90" /> Kategori & Alur Kerja
                     </div>
                     <div className="flex items-center gap-2">
                         <button
                             type="button"
                             onClick={() => setWorkflowMinimized(!workflowMinimized)}
-                            className="bg-white/15 hover:bg-white/25 text-white border border-white/20 h-6 w-6 flex items-center justify-center rounded-md transition-all active:scale-95 cursor-pointer"
+                            className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-md border border-white/20 bg-white/15 text-white transition-all hover:bg-white/25 active:scale-95"
                         >
                             {workflowMinimized ? <ChevronDown size={13} /> : <ChevronUp size={13} />}
                         </button>
@@ -407,16 +446,43 @@ export function DraftEditableInfoCard({
                 </div>
 
                 {!workflowMinimized && (
-                    <div className="bg-surface-base text-text-main border border-surface-border rounded-xl shadow-xs p-4 flex flex-col gap-3.5">
+                    <div className="bg-surface-base text-text-main border-surface-border flex flex-col gap-3.5 rounded-xl border p-4 shadow-xs">
                         {/* Kategori Dokumen */}
                         {selected.show_category !== false && (
                             <div className="flex flex-col gap-1.5">
-                                <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                                    <Tag size={12} className="text-muted-foreground/80 shrink-0" />
-                                    <span>Kategori Dokumen</span>
-                                    {!!(selected.require_category || selected.workflow_step?.meta?.require_category) && (
-                                        <span className="text-rose-500 font-black ml-0.5" title="Wajib Diisi">*</span>
-                                    )}
+                                <div className="flex items-center justify-between gap-2 text-[10px]">
+                                    <div className="text-muted-foreground flex items-center gap-1.5 font-bold tracking-wider uppercase">
+                                        <Tag size={12} className="text-muted-foreground/80 shrink-0" />
+                                        <span>Kategori Dokumen</span>
+                                        {!!(selected.require_category || selected.workflow_step?.meta?.require_category) && (
+                                            <span className="ml-0.5 font-black text-rose-500" title="Wajib Diisi">
+                                                *
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="flex shrink-0 items-center gap-1">
+                                        <span
+                                            className="inline-flex h-4 w-4 items-center justify-center rounded border border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                                            title="Visible (Tampil)"
+                                        >
+                                            <Eye size={10} className="shrink-0" />
+                                        </span>
+                                        {canEditCategory ? (
+                                            <span
+                                                className="inline-flex h-4 w-4 items-center justify-center rounded border border-indigo-500/20 bg-indigo-500/10 text-indigo-700 dark:text-indigo-400"
+                                                title="Editable (Dapat Diedit)"
+                                            >
+                                                <Edit3 size={9} className="shrink-0" />
+                                            </span>
+                                        ) : (
+                                            <span
+                                                className="bg-surface-muted text-muted-foreground border-surface-border inline-flex h-4 w-4 items-center justify-center rounded border"
+                                                title="Read-Only (Hanya Baca)"
+                                            >
+                                                <Lock size={9} className="shrink-0" />
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
                                 {canEditCategory ? (
                                     <TreeSelect
@@ -428,30 +494,198 @@ export function DraftEditableInfoCard({
                                         size="sm"
                                     />
                                 ) : (
-                                    <span className="text-xs font-semibold text-foreground">
-                                        {categoryDisplayName}
-                                    </span>
+                                    <span className="text-foreground text-xs font-semibold">{categoryDisplayName}</span>
                                 )}
                             </div>
                         )}
 
                         {/* Alur Kerja (Workflow) */}
-                        <div className="flex flex-col gap-1.5">
-                            <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                                <GitBranch size={12} className="text-muted-foreground/80 shrink-0" />
-                                <span>Alur Kerja</span>
-                            </div>
-                            <div className="flex items-center gap-1.5 text-xs font-medium text-foreground">
-                                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 font-semibold text-xs border border-indigo-200/60 dark:border-indigo-800/40">
-                                    {selected.workflow?.name || selected.workflow_step?.workflow?.name || 'Alur Standar'}
-                                </span>
-                                {selected.workflow_step?.step && (
-                                    <span className="text-[10px] text-muted-foreground">
-                                        • Tahap {selected.workflow_step.step}: {selected.workflow_step.name || selected.workflow_step.label || 'Berjalan'}
+                        <div className="flex flex-col gap-2">
+                            <div className="text-muted-foreground flex items-center justify-between gap-1.5 text-[10px] font-bold tracking-wider uppercase">
+                                <div className="flex items-center gap-1.5">
+                                    <GitBranch size={12} className="text-muted-foreground/80 shrink-0" />
+                                    <span>Alur Kerja (Workflow Utama)</span>
+                                </div>
+                                {(selected.is_in_sub_workflow ||
+                                    (selected.origin_workflow && selected.origin_workflow_id !== selected.workflow_id)) && (
+                                    <span className="py-0.2 rounded border border-amber-500/25 bg-amber-500/10 px-1.5 text-[8.5px] font-bold text-amber-700 dark:text-amber-300">
+                                        Sub-Workflow Aktif
                                     </span>
                                 )}
                             </div>
+
+                            <div className="border-surface-border bg-surface-muted/30 flex flex-col gap-2 rounded-lg border p-2.5">
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                    <span className="inline-flex items-center gap-1.5 rounded-md border border-indigo-500/30 bg-indigo-500/15 px-2.5 py-0.5 text-xs font-bold text-indigo-700 dark:text-indigo-300">
+                                        <GitBranch size={11} className="shrink-0" />
+                                        {selected.origin_workflow?.name || selected.workflow?.name || 'Alur Standar'}
+                                    </span>
+                                    {(selected.origin_workflow?.steps || selected.workflow?.steps) && (
+                                        <span className="text-muted-foreground text-[9.5px] font-semibold">
+                                            Total: {(selected.origin_workflow?.steps || selected.workflow?.steps)?.length} Langkah
+                                        </span>
+                                    )}
+                                </div>
+
+                                {(selected.is_in_sub_workflow || selected.current_sub_workflow_id) &&
+                                    (selected.sub_workflow || selected.workflow_step?.workflow) && (
+                                        <div className="flex items-center gap-1.5 rounded border border-amber-500/25 bg-amber-500/10 p-1.5 px-2 text-[10px] text-amber-700 dark:text-amber-300">
+                                            <CornerDownRight size={12} className="shrink-0 text-amber-600" />
+                                            <span>
+                                                Sub-alur kerja berjalan:{' '}
+                                                <strong className="text-foreground">
+                                                    {selected.sub_workflow?.name || selected.workflow_step?.workflow?.name}
+                                                </strong>
+                                            </span>
+                                            {selected.branch_step_number && (
+                                                <span className="text-muted-foreground">(Cabang dari Tahap {selected.branch_step_number})</span>
+                                            )}
+                                        </div>
+                                    )}
+                            </div>
                         </div>
+
+                        {/* Tahap Saat Ini (Current Step Info) */}
+                        {(() => {
+                            const isApproved = selected.status === 'approved';
+                            const isRejected = selected.status === 'rejected';
+                            const currentStep = selected.workflow_step;
+                            const totalSteps = selected.workflow?.steps?.length || selected.approvals?.length || 0;
+                            const pendingApproval = selected.approvals?.find(
+                                (a) =>
+                                    (selected.workflow_step_id &&
+                                        a.workflow_step_id === selected.workflow_step_id &&
+                                        a.status !== 'approved' &&
+                                        a.status !== 'rejected') ||
+                                    a.status === 'pending' ||
+                                    a.status === 'waiting',
+                            );
+
+                            const stepNumber = currentStep?.step || pendingApproval?.sequence;
+                            const stepName =
+                                (currentStep as any)?.name ||
+                                currentStep?.label ||
+                                (currentStep as any)?.title ||
+                                pendingApproval?.step_name ||
+                                (stepNumber ? `Tahap ${stepNumber}` : null);
+                            const stepRole = currentStep?.role || pendingApproval?.role;
+                            const stepApprover =
+                                currentStep?.target_approvers ||
+                                pendingApproval?.target_approvers ||
+                                pendingApproval?.approver_name ||
+                                pendingApproval?.approver?.name;
+                            const stepCategory = currentStep?.step_category || pendingApproval?.step_category;
+                            const stepType = currentStep?.step_type || pendingApproval?.step_type;
+                            const meta = currentStep?.meta || {};
+                            const actions = (currentStep?.action_configs || currentStep?.actions || []) as any[];
+
+                            return (
+                                <div className="border-surface-border/60 flex flex-col gap-1.5 border-t pt-2">
+                                    <div className="text-muted-foreground flex items-center justify-between gap-1.5 text-[10px] font-bold tracking-wider uppercase">
+                                        <div className="flex items-center gap-1.5">
+                                            <Layers size={12} className="text-muted-foreground/80 shrink-0" />
+                                            <span>Tahap Saat Ini (Current Step)</span>
+                                        </div>
+                                        {stepNumber && totalSteps > 0 && (
+                                            <span className="text-primary py-0.2 bg-primary/10 border-primary/20 rounded border px-1.5 text-[9px] font-bold">
+                                                Tahap {stepNumber} dari {totalSteps}
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    <div className="border-surface-border bg-surface-muted/40 flex flex-col gap-2.5 rounded-lg border p-3">
+                                        {/* Step Title & Status */}
+                                        <div className="flex items-start justify-between gap-2">
+                                            <div className="flex min-w-0 flex-col">
+                                                <div className="flex flex-wrap items-center gap-1.5">
+                                                    {stepCategory && (
+                                                        <span className="py-0.2 rounded border border-indigo-500/20 bg-indigo-500/10 px-1.5 text-[8.5px] font-bold tracking-wider text-indigo-700 uppercase dark:text-indigo-300">
+                                                            {stepCategory}
+                                                        </span>
+                                                    )}
+                                                    {stepType && (
+                                                        <span className="py-0.2 bg-surface-muted text-muted-foreground border-surface-border rounded border px-1.5 text-[8.5px] font-semibold tracking-wider uppercase">
+                                                            Tipe: {stepType}
+                                                        </span>
+                                                    )}
+                                                    <span className="text-foreground text-xs leading-tight font-bold">
+                                                        {isApproved
+                                                            ? 'Semua Tahap Selesai (Disetujui)'
+                                                            : isRejected
+                                                              ? 'Alur Terhenti (Ditolak / Revisi)'
+                                                              : stepName || 'Tahap Persetujuan'}
+                                                    </span>
+                                                </div>
+                                                {currentStep?.description && (
+                                                    <p className="text-muted-foreground mt-1 text-[10px]">{currentStep.description}</p>
+                                                )}
+                                            </div>
+
+                                            {/* Status Badge */}
+                                            <div className="shrink-0">
+                                                {isApproved ? (
+                                                    <span className="inline-flex items-center gap-1 rounded border border-emerald-500/30 bg-emerald-500/15 px-2 py-0.5 text-[9px] font-bold text-emerald-700 uppercase dark:text-emerald-300">
+                                                        <CheckCircle2 size={10} className="shrink-0" />
+                                                        <span>Selesai</span>
+                                                    </span>
+                                                ) : isRejected ? (
+                                                    <span className="inline-flex items-center gap-1 rounded border border-rose-500/30 bg-rose-500/15 px-2 py-0.5 text-[9px] font-bold text-rose-700 uppercase dark:text-rose-300">
+                                                        <AlertCircle size={10} className="shrink-0" />
+                                                        <span>Ditolak</span>
+                                                    </span>
+                                                ) : (
+                                                    <span className="inline-flex items-center gap-1 rounded border border-amber-500/30 bg-amber-500/15 px-2 py-0.5 text-[9px] font-bold text-amber-800 uppercase shadow-2xs dark:text-amber-200">
+                                                        <span className="h-1.5 w-1.5 shrink-0 animate-ping rounded-full bg-amber-500" />
+                                                        <span>Sedang Berjalan</span>
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Detail Approver & Role */}
+                                        {!isApproved && !isRejected && (
+                                            <div className="border-surface-border/60 flex flex-col gap-1.5 border-t pt-2 text-[10px]">
+                                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                                    <span className="text-muted-foreground flex items-center gap-1 font-medium">
+                                                        <UserCheck size={12} className="text-primary shrink-0" />
+                                                        Pihak Penyetuju / PIC:
+                                                    </span>
+                                                    <span className="text-foreground font-bold">
+                                                        {stepApprover || (stepRole ? `Menunggu ${stepRole}` : 'Belum Ditentukan')}
+                                                    </span>
+                                                </div>
+
+                                                {stepRole && (
+                                                    <div className="text-muted-foreground flex items-center justify-between gap-2">
+                                                        <span>Wewenang / Role:</span>
+                                                        <span className="text-foreground bg-surface-base py-0.2 border-surface-border rounded border px-1.5 text-[9px] font-semibold uppercase">
+                                                            {stepRole}
+                                                        </span>
+                                                    </div>
+                                                )}
+
+                                                {/* Actions Available in Step */}
+                                                {actions && actions.length > 0 && (
+                                                    <div className="text-muted-foreground border-surface-border/40 flex flex-wrap items-center justify-between gap-2 border-t pt-1">
+                                                        <span>Aksi Tersedia:</span>
+                                                        <div className="flex flex-wrap items-center gap-1">
+                                                            {actions.map((act: any, idx: number) => (
+                                                                <span
+                                                                    key={idx}
+                                                                    className="py-0.2 bg-surface-base text-foreground border-surface-border inline-flex items-center rounded border px-1.5 text-[8.5px] font-bold uppercase"
+                                                                >
+                                                                    {act.label || act.alias || act.action_code || act.name}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })()}
                     </div>
                 )}
             </div>

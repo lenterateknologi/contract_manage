@@ -236,19 +236,19 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false,
 
                     {/* Timestamps: Waktu Masuk & Waktu Eksekusi */}
                     <div className="flex flex-col items-end gap-0.5 text-[9.5px]">
-                        {/* Waktu Eksekusi / Keputusan (Jika sudah diputuskan) */}
-                        {a.decided_at && (
-                            <span className="text-text-main font-semibold flex items-center gap-1" title="Waktu Eksekusi / Keputusan">
-                                <Clock size={10} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-                                <span className="text-text-soft font-normal">Selesai:</span> {formatDateTime(a.decided_at)}
-                            </span>
-                        )}
-
                         {/* Waktu Sampai / Masuk Step */}
                         {(a.step_entry_at || a.created_at) && (
                             <span className="text-text-soft flex items-center gap-1 font-medium" title="Waktu Sampai / Masuk Step">
                                 <LogIn size={10} className="text-muted-foreground shrink-0" />
                                 <span className="text-text-soft font-normal">Masuk:</span> {formatDateTime(a.step_entry_at || a.created_at)}
+                            </span>
+                        )}
+
+                        {/* Waktu Eksekusi / Keputusan (Jika sudah diputuskan) */}
+                        {a.decided_at && (
+                            <span className="text-text-main font-semibold flex items-center gap-1" title="Waktu Eksekusi / Keputusan">
+                                <Clock size={10} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                <span className="text-text-soft font-normal">Selesai:</span> {formatDateTime(a.decided_at)}
                             </span>
                         )}
                     </div>

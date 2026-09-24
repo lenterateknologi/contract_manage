@@ -19,6 +19,9 @@ import {
     CheckCircle2,
     XCircle,
     Sparkles,
+    Eye,
+    Lock,
+    Edit3,
 } from 'lucide-react';
 import { resolveVendorTaxPkp } from '@/pages/contracts/utils';
 
@@ -57,15 +60,52 @@ interface ContractInfoFormProps {
     canEditTaxToggle?: boolean;
 }
 
-const FieldLabel = ({ icon: Icon, required = false, children }: { icon?: any; required?: boolean; children: React.ReactNode }) => (
-    <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-        {Icon && <Icon size={12} className="text-muted-foreground/80 shrink-0" />}
-        <span>{children}</span>
-        {required && <span className="text-rose-500 font-black ml-0.5" title="Wajib Diisi">*</span>}
+const FieldConfigHeader = ({
+    icon: Icon,
+    label,
+    required = false,
+    canEdit = true,
+    isVisible = true,
+}: {
+    icon?: any;
+    label: string;
+    required?: boolean;
+    canEdit?: boolean;
+    isVisible?: boolean;
+}) => (
+    <div className="flex items-center justify-between gap-2 text-[10px]">
+        <div className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-muted-foreground">
+            {Icon && <Icon size={12} className="text-muted-foreground/80 shrink-0" />}
+            <span>{label}</span>
+            {required && <span className="text-rose-500 font-black ml-0.5" title="Wajib Diisi">*</span>}
+        </div>
+        <div className="flex items-center gap-1 shrink-0">
+            {isVisible && (
+                <span
+                    className="inline-flex items-center justify-center h-4 w-4 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20"
+                    title="Visible (Tampil)"
+                >
+                    <Eye size={10} className="shrink-0" />
+                </span>
+            )}
+            {canEdit ? (
+                <span
+                    className="inline-flex items-center justify-center h-4 w-4 rounded bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-500/20"
+                    title="Editable (Dapat Diedit)"
+                >
+                    <Edit3 size={9} className="shrink-0" />
+                </span>
+            ) : (
+                <span
+                    className="inline-flex items-center justify-center h-4 w-4 rounded bg-surface-muted text-muted-foreground border border-surface-border"
+                    title="Read-Only (Hanya Baca)"
+                >
+                    <Lock size={9} className="shrink-0" />
+                </span>
+            )}
+        </div>
     </div>
 );
-
-export const MetaBadge = () => null;
 
 export function ContractInfoForm({
     is_readonly = false,
@@ -121,7 +161,6 @@ export function ContractInfoForm({
 
     const p1TaxInfo = React.useMemo(() => {
         if (!firstPartyId || firstPartyId === 'internal') {
-            // Internal / User Login has no vendor PKP data -> Not PKP / Non-PKP
             return { isPkp: false, pkpStatus: 'Non-PKP' };
         }
         return resolveVendorTaxPkp(firstPartyVendor);
@@ -129,7 +168,6 @@ export function ContractInfoForm({
 
     const p2TaxInfo = React.useMemo(() => {
         if (!vendorId || vendorId === 'internal') {
-            // Internal / User Login has no vendor PKP data -> Not PKP / Non-PKP
             return { isPkp: false, pkpStatus: 'Non-PKP' };
         }
         return resolveVendorTaxPkp(secondPartyVendor);
@@ -173,7 +211,7 @@ export function ContractInfoForm({
         return selected.p2_entity || selected.vendor?.name || 'Tanpa Vendor';
     }, [vendorId, partyOptions, internalCompanyName, selected.p2_entity, selected.vendor]);
 
-    // Current active tax info based on which party is selected (taxRequired: true = P1, false = P2)
+    // Current active tax info based on which party is selected
     const activeSelectedTaxInfo = taxRequired ? p1TaxInfo : p2TaxInfo;
 
     const formattedPrice = React.useMemo(() => {
@@ -182,61 +220,37 @@ export function ContractInfoForm({
         return formatCurrency(val);
     }, [price, selected]);
 
-    const categoryDisplayName = React.useMemo(() => {
-        const targetId = typeId || selected.contract_type_id || activeType?.id;
-        let item = targetId ? types.find((t) => String(t.id) === String(targetId)) : null;
-
-        // If not found by ID, try finding by name
-        if (!item && selected.contract_type) {
-            item = types.find((t) => t.name === selected.contract_type) || null;
-        }
-
-        if (!item) {
-            return selected.contract_type || '—';
-        }
-
-        const pathNames = [item.name];
-        let current: any = item;
-
-        // Traverse up to include all ancestors
-        while (current && current.parent_id && String(current.parent_id) !== String(current.id)) {
-            const parent = types.find((t: any) => String(t.id) === String(current.parent_id));
-            if (parent && String(parent.id) !== String(current.id)) {
-                pathNames.unshift(parent.name);
-                current = parent;
-            } else {
-                break;
-            }
-        }
-
-        return pathNames.join(' - ');
-    }, [typeId, selected.contract_type_id, selected.contract_type, activeType, types]);
-
     // ── READ-ONLY PRESENTATION (WHEN is_readonly) ──
     if (is_readonly) {
         return (
-            <div className="flex flex-col">
+            <div className="flex flex-col gap-3">
                 {/* 1. Judul Kontrak */}
                 {selected.show_title !== false && (
-                    <div className="pb-3 mb-1 border-b border-border/60 flex flex-col gap-1">
-                        <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                            <span>Judul Pengajuan</span>
-                            {!!(selected.require_title || selected.workflow_step?.meta?.require_title) && (
-                                <span className="text-rose-500 font-black ml-0.5" title="Wajib Diisi">*</span>
-                            )}
-                        </div>
-                        <p className="text-xs font-semibold text-foreground leading-relaxed">
+                    <div className="flex flex-col gap-1 pb-2 border-b border-border/40">
+                        <FieldConfigHeader
+                            icon={FileText}
+                            label="Judul Pengajuan"
+                            required={!!(selected.require_title || selected.workflow_step?.meta?.require_title)}
+                            canEdit={false}
+                            isVisible={true}
+                        />
+                        <p className="text-xs font-semibold text-foreground leading-relaxed pt-0.5">
                             {title || selected.title || '—'}
                         </p>
                     </div>
                 )}
 
-                {/* 2. Key-Value List */}
-                <div className="divide-y divide-border/40 text-xs">
-                    {/* No. Dokumen F2 */}
-                    {selected.show_f2_contract_no !== false && (
-                        <div className="py-2.5 flex items-center justify-between gap-3">
-                            <FieldLabel icon={Hash} required={!!(selected.require_f2_contract_no || selected.workflow_step?.meta?.require_f2_contract_no)}>No. Dokumen</FieldLabel>
+                {/* No. Dokumen F2 */}
+                {selected.show_f2_contract_no !== false && (
+                    <div className="flex flex-col gap-1 pb-2 border-b border-border/40">
+                        <FieldConfigHeader
+                            icon={Hash}
+                            label="No. Dokumen (F2)"
+                            required={!!(selected.require_f2_contract_no || selected.workflow_step?.meta?.require_f2_contract_no)}
+                            canEdit={false}
+                            isVisible={true}
+                        />
+                        <div className="pt-0.5">
                             {selected.contract_no ? (
                                 <span className="font-mono text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
                                     {selected.contract_no}
@@ -245,96 +259,132 @@ export function ContractInfoForm({
                                 <span className="text-muted-foreground italic text-xs">Belum diterbitkan</span>
                             )}
                         </div>
-                    )}
+                    </div>
+                )}
 
-                    {/* Pihak Pertama */}
-                    <div className="py-2.5 flex items-center justify-between gap-3">
-                        <FieldLabel icon={Building2}>Pihak Pertama</FieldLabel>
-                        <span className="font-semibold text-foreground text-right truncate max-w-[220px]">
-                            {firstPartyDisplayName}
+                {/* Pihak Pertama */}
+                <div className="flex flex-col gap-1 pb-2 border-b border-border/40">
+                    <FieldConfigHeader
+                        icon={Building2}
+                        label="Pihak Pertama"
+                        canEdit={false}
+                        isVisible={true}
+                    />
+                    <span className="font-semibold text-xs text-foreground truncate pt-0.5">
+                        {firstPartyDisplayName}
+                    </span>
+                </div>
+
+                {/* Pihak Kedua */}
+                {selected.show_vendor !== false && (
+                    <div className="flex flex-col gap-1 pb-2 border-b border-border/40">
+                        <FieldConfigHeader
+                            icon={Building2}
+                            label="Pihak Kedua"
+                            required={!!(selected.require_vendor || selected.workflow_step?.meta?.require_vendor)}
+                            canEdit={false}
+                            isVisible={true}
+                        />
+                        <span className="font-semibold text-xs text-foreground truncate pt-0.5">
+                            {secondPartyDisplayName}
                         </span>
                     </div>
+                )}
 
-                    {/* Pihak Kedua */}
-                    {selected.show_vendor !== false && (
-                        <div className="py-2.5 flex items-center justify-between gap-3">
-                            <FieldLabel icon={Building2} required={!!(selected.require_vendor || selected.workflow_step?.meta?.require_vendor)}>Pihak Kedua</FieldLabel>
-                            <span className="font-semibold text-foreground text-right truncate max-w-[220px]">
-                                {secondPartyDisplayName}
+                {/* Masa Berlaku */}
+                {selected.show_period !== false && (
+                    <div className="flex flex-col gap-1 pb-2 border-b border-border/40">
+                        <FieldConfigHeader
+                            icon={Calendar}
+                            label="Masa Berlaku"
+                            required={!!(selected.require_period || selected.workflow_step?.meta?.require_period)}
+                            canEdit={false}
+                            isVisible={true}
+                        />
+                        <span className="font-medium text-xs text-foreground pt-0.5">
+                            {selected.contract_date || selected.end_date
+                                ? `${selected.contract_date ? formatDate(selected.contract_date) : '—'} s/d ${selected.end_date ? formatDate(selected.end_date) : '—'}`
+                                : '—'}
+                        </span>
+                    </div>
+                )}
+
+                {/* Nilai / Harga */}
+                {selected.show_price !== false && (
+                    <div className="flex flex-col gap-1 pb-2 border-b border-border/40">
+                        <FieldConfigHeader
+                            icon={Coins}
+                            label="Nilai / Estimasi Biaya"
+                            required={!!(selected.require_price || selected.workflow_step?.meta?.require_price)}
+                            canEdit={false}
+                            isVisible={true}
+                        />
+                        <span className="font-mono font-bold text-xs text-foreground pt-0.5">
+                            {formattedPrice || '—'}
+                        </span>
+                    </div>
+                )}
+
+                {/* Ketentuan Pajak */}
+                {selected.show_tax_toggle !== false && (
+                    <div className="flex flex-col gap-1">
+                        <FieldConfigHeader
+                            icon={Receipt}
+                            label="Penentuan Pajak"
+                            required={!!(selected.require_tax_toggle || selected.workflow_step?.meta?.require_tax_toggle)}
+                            canEdit={false}
+                            isVisible={true}
+                        />
+                        <div className="flex flex-col gap-1 pt-0.5">
+                            <span className="font-semibold text-xs text-foreground">
+                                {taxRequired
+                                    ? `Pihak I (${firstPartyDisplayName})`
+                                    : `Pihak II (${secondPartyDisplayName})`}
+                            </span>
+                            <span className={cn(
+                                "inline-flex items-center gap-1 text-[9.5px] font-semibold px-2 py-0.5 rounded border w-fit",
+                                activeSelectedTaxInfo.isPkp
+                                    ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20"
+                                    : "bg-slate-500/10 text-slate-700 dark:text-slate-400 border-slate-500/20"
+                            )}>
+                                {activeSelectedTaxInfo.isPkp ? (
+                                    <>
+                                        <CheckCircle2 size={10} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                        <span>Kena Pajak ({activeSelectedTaxInfo.pkpStatus || 'PKP'})</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <XCircle size={10} className="text-slate-500 dark:text-slate-400 shrink-0" />
+                                        <span>Bebas Pajak ({activeSelectedTaxInfo.pkpStatus || 'Non-PKP'})</span>
+                                    </>
+                                )}
                             </span>
                         </div>
-                    )}
-
-                    {/* Masa Berlaku */}
-                    {selected.show_period !== false && (
-                        <div className="py-2.5 flex items-center justify-between gap-3">
-                            <FieldLabel icon={Calendar} required={!!(selected.require_period || selected.workflow_step?.meta?.require_period)}>Masa Berlaku</FieldLabel>
-                            <span className="font-medium text-foreground text-right">
-                                {selected.contract_date || selected.end_date
-                                    ? `${selected.contract_date ? formatDate(selected.contract_date) : '—'} s/d ${selected.end_date ? formatDate(selected.end_date) : '—'}`
-                                    : '—'}
-                            </span>
-                        </div>
-                    )}
-
-                    {/* Nilai / Harga */}
-                    {selected.show_price !== false && (
-                        <div className="py-2.5 flex items-center justify-between gap-3">
-                            <FieldLabel icon={Coins} required={!!(selected.require_price || selected.workflow_step?.meta?.require_price)}>Nilai / Estimasi Biaya</FieldLabel>
-                            <span className="font-mono font-bold text-foreground text-right">
-                                {formattedPrice || '—'}
-                            </span>
-                        </div>
-                    )}
-
-                    {/* Ketentuan Pajak */}
-                    {selected.show_tax_toggle !== false && (
-                        <div className="py-2.5 flex items-center justify-between gap-3">
-                            <FieldLabel icon={Receipt} required={!!(selected.require_tax_toggle || selected.workflow_step?.meta?.require_tax_toggle)}>Penentuan Pajak</FieldLabel>
-                            <div className="flex flex-col items-end gap-1">
-                                <span className="font-semibold text-foreground text-right">
-                                    {taxRequired
-                                        ? `Pihak I (${firstPartyDisplayName})`
-                                        : `Pihak II (${secondPartyDisplayName})`}
-                                </span>
-                                <span className={cn(
-                                    "inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded border",
-                                    activeSelectedTaxInfo.isPkp
-                                        ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20"
-                                        : "bg-slate-500/10 text-slate-700 dark:text-slate-400 border-slate-500/20"
-                                )}>
-                                    {activeSelectedTaxInfo.isPkp ? (
-                                        <>
-                                            <CheckCircle2 size={10} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-                                            <span>Kena Pajak ({activeSelectedTaxInfo.pkpStatus || 'PKP'})</span>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <XCircle size={10} className="text-slate-500 dark:text-slate-400 shrink-0" />
-                                            <span>Bebas Pajak ({activeSelectedTaxInfo.pkpStatus || 'Non-PKP'})</span>
-                                        </>
-                                    )}
-                                </span>
-                            </div>
-                        </div>
-                    )}
-                </div>
+                    </div>
+                )}
             </div>
         );
     }
 
-    // ── EDITABLE FORM PRESENTATION ──
+    // ── EDITABLE FORM PRESENTATION (CLEAN SPACING WITH INLINE VISIBLE CONFIG HEADER) ──
     return (
         <div className="flex flex-col gap-3.5">
             {/* Judul Pengajuan */}
             {selected.show_title !== false && (
                 <div className="flex flex-col gap-1.5">
-                    <FieldLabel icon={FileText} required={!!(selected.require_title || selected.workflow_step?.meta?.require_title)}>Judul Pengajuan</FieldLabel>
+                    <FieldConfigHeader
+                        icon={FileText}
+                        label="Judul Pengajuan"
+                        required={!!(selected.require_title || selected.workflow_step?.meta?.require_title)}
+                        canEdit={selected.allow_title_edit !== false}
+                        isVisible={true}
+                    />
                     <Input
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                         placeholder="Masukkan judul pengajuan..."
                         size="sm"
+                        disabled={selected.allow_title_edit === false}
                     />
                 </div>
             )}
@@ -342,7 +392,13 @@ export function ContractInfoForm({
             {/* No. Dokumen F2 */}
             {selected.show_f2_contract_no !== false && (
                 <div className="flex flex-col gap-1.5">
-                    <FieldLabel icon={Hash} required={!!(selected.require_f2_contract_no || selected.workflow_step?.meta?.require_f2_contract_no)}>No. Dokumen (F2)</FieldLabel>
+                    <FieldConfigHeader
+                        icon={Hash}
+                        label="No. Dokumen (F2)"
+                        required={!!(selected.require_f2_contract_no || selected.workflow_step?.meta?.require_f2_contract_no)}
+                        canEdit={selected.allow_f2_contract_no_edit !== false}
+                        isVisible={true}
+                    />
                     {selected.allow_f2_contract_no_edit !== false ? (
                         <Input
                             value={contractNo}
@@ -360,7 +416,12 @@ export function ContractInfoForm({
 
             {/* Pihak Pertama */}
             <div className="flex flex-col gap-1.5">
-                <FieldLabel icon={Building2}>Pihak Pertama</FieldLabel>
+                <FieldConfigHeader
+                    icon={Building2}
+                    label="Pihak Pertama"
+                    canEdit={canEditVendor}
+                    isVisible={true}
+                />
                 {canEditVendor ? (
                     <SearchableSelect
                         value={firstPartyId}
@@ -380,7 +441,13 @@ export function ContractInfoForm({
             {/* Pihak Kedua */}
             {selected.show_vendor !== false && (
                 <div className="flex flex-col gap-1.5">
-                    <FieldLabel icon={Building2} required={!!(selected.require_vendor || selected.workflow_step?.meta?.require_vendor)}>Pihak Kedua</FieldLabel>
+                    <FieldConfigHeader
+                        icon={Building2}
+                        label="Pihak Kedua"
+                        required={!!(selected.require_vendor || selected.workflow_step?.meta?.require_vendor)}
+                        canEdit={canEditVendor}
+                        isVisible={true}
+                    />
                     {canEditVendor ? (
                         <SearchableSelect
                             value={vendorId}
@@ -401,7 +468,13 @@ export function ContractInfoForm({
             {/* Masa Berlaku */}
             {selected.show_period !== false && (
                 <div className="flex flex-col gap-1.5">
-                    <FieldLabel icon={Calendar} required={!!(selected.require_period || selected.workflow_step?.meta?.require_period)}>Masa Berlaku</FieldLabel>
+                    <FieldConfigHeader
+                        icon={Calendar}
+                        label="Masa Berlaku"
+                        required={!!(selected.require_period || selected.workflow_step?.meta?.require_period)}
+                        canEdit={canEditPeriod}
+                        isVisible={true}
+                    />
                     {canEditPeriod ? (
                         <div className="grid grid-cols-2 gap-2">
                             <div className="flex flex-col gap-1">
@@ -436,7 +509,13 @@ export function ContractInfoForm({
             {/* Nilai / Estimasi Biaya */}
             {selected.show_price !== false && (
                 <div className="flex flex-col gap-1.5">
-                    <FieldLabel icon={Coins} required={!!(selected.require_price || selected.workflow_step?.meta?.require_price)}>Nilai / Estimasi Biaya</FieldLabel>
+                    <FieldConfigHeader
+                        icon={Coins}
+                        label="Nilai / Estimasi Biaya"
+                        required={!!(selected.require_price || selected.workflow_step?.meta?.require_price)}
+                        canEdit={canEditPrice}
+                        isVisible={true}
+                    />
                     {canEditPrice ? (
                         <Input
                             value={formatNumber(price)}
@@ -455,10 +534,16 @@ export function ContractInfoForm({
                 </div>
             )}
 
-            {/* Pajak */}
+            {/* Ketentuan Pajak */}
             {selected.show_tax_toggle !== false && (
                 <div className="flex flex-col gap-1.5">
-                    <FieldLabel icon={Receipt} required={!!(selected.require_tax_toggle || selected.workflow_step?.meta?.require_tax_toggle)}>Penentuan Pajak</FieldLabel>
+                    <FieldConfigHeader
+                        icon={Receipt}
+                        label="Penentuan Pajak"
+                        required={!!(selected.require_tax_toggle || selected.workflow_step?.meta?.require_tax_toggle)}
+                        canEdit={canEditTaxToggle}
+                        isVisible={true}
+                    />
                     {canEditTaxToggle ? (
                         <SearchableSelect
                             value={taxRequired ? 'p1' : 'p2'}

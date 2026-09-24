@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 export interface TreeSelectItem {
     id: string | number;
     name: string;
+    code?: string | null;
     parent_id?: string | number | null;
 }
 
@@ -22,6 +23,7 @@ interface TreeSelectProps {
     inline?: boolean;
     defaultExpandAll?: boolean;
     disableParentSelection?: boolean;
+    sortBy?: 'code' | 'name' | 'none';
     size?: 'default' | 'sm';
 }
 
@@ -38,6 +40,7 @@ export function TreeSelect({
     inline = false,
     defaultExpandAll = false,
     disableParentSelection = false,
+    sortBy = 'code',
     size = 'default',
 }: TreeSelectProps) {
     const [open, setOpen] = React.useState(inline);
@@ -70,14 +73,33 @@ export function TreeSelect({
 
     const isSelected = (id: string | number) => selectedIds.includes(String(id));
 
-    // Build N-level recursive tree
+    // Build N-level recursive tree with sort by code (asc)
     const treeData = React.useMemo(() => {
+        const sortComparator = (a: any, b: any) => {
+            if (sortBy === 'code') {
+                const codeA = (a.code || a.name || '').toString().trim();
+                const codeB = (b.code || b.name || '').toString().trim();
+                return codeA.localeCompare(codeB, undefined, { numeric: true, sensitivity: 'base' });
+            }
+            if (sortBy === 'name') {
+                const nameA = (a.name || '').toString().trim();
+                const nameB = (b.name || '').toString().trim();
+                return nameA.localeCompare(nameB, undefined, { numeric: true, sensitivity: 'base' });
+            }
+            return 0;
+        };
+
         const buildNode = (parentId: string | null = null): any[] => {
             // Find items belonging to this parentId
             const children = items.filter(item => {
                 if (parentId === null) return !item.parent_id || String(item.parent_id) === String(item.id);
                 return String(item.parent_id) === parentId && String(item.parent_id) !== String(item.id);
             });
+
+            if (sortBy !== 'none') {
+                children.sort(sortComparator);
+            }
+
             return children.map(child => ({
                 ...child,
                 children: buildNode(String(child.id))
@@ -90,18 +112,25 @@ export function TreeSelect({
         if (roots.length === 0 && items.length > 0) {
             const allIds = new Set(items.map(i => String(i.id)));
             const orphans = items.filter(i => i.parent_id && !allIds.has(String(i.parent_id)));
+            if (sortBy !== 'none') {
+                orphans.sort(sortComparator);
+            }
             roots = orphans.map(child => ({
                 ...child,
                 children: buildNode(String(child.id))
             }));
             
             if (roots.length === 0) {
-                roots = items.map(i => ({...i, children: []}));
+                const fallbackItems = [...items];
+                if (sortBy !== 'none') {
+                    fallbackItems.sort(sortComparator);
+                }
+                roots = fallbackItems.map(i => ({...i, children: []}));
             }
         }
         
         return roots;
-    }, [items]);
+    }, [items, sortBy]);
 
     // Selection logic
     const handleSelect = (item: TreeSelectItem) => {
@@ -354,7 +383,14 @@ export function TreeSelect({
                                     </div>
                                 )
                             )}
-                            <span className="flex-1 truncate">{node.name}</span>
+                            <div className="flex flex-1 items-center gap-1.5 min-w-0">
+                                {node.code && (
+                                    <span className="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded bg-muted text-muted-foreground border border-border/60 shrink-0">
+                                        {node.code}
+                                    </span>
+                                )}
+                                <span className="truncate">{node.name}</span>
+                            </div>
                         </button>
 
                         {hasChildren && (

@@ -4,7 +4,8 @@ import { useDebounce } from '@/hooks/use-debounce';
 import { cn } from '@/lib/utils';
 import { Contract, ContractApproval, UserProfile } from '@/pages/contracts/types';
 import { Badge } from '@/components/ui/feedback/Badge';
-import { Download, GitCommit, Layers, Workflow, ArrowRight, ArrowDownRight, Clock, UserCheck, CheckCircle2, AlertCircle, Hourglass, User as UserIcon, Users } from 'lucide-react';
+import { Popover, PopoverButton, PopoverPanel, Portal } from '@headlessui/react';
+import { Download, GitCommit, Layers, Workflow, ArrowRight, ArrowDownRight, Clock, UserCheck, CheckCircle2, AlertCircle, Hourglass, User as UserIcon, Users, ChevronDown } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 import { ApprovalCard } from './ApprovalCard';
 import { InitiatorStepCard } from './InitiatorStepCard';
@@ -318,11 +319,45 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
         return null;
     }, [isContractApproved, isContractRejected, activePendingApproval, totalStepsCount, contract.workflow, pendingApproverList]);
 
+    // ── Workflow Steps Pipeline Overview for Popover ──
+    const workflowStepsPipeline = useMemo(() => {
+        const wf = contract.origin_workflow || contract.workflow;
+        const steps = (wf?.steps || []).slice().sort((a: any, b: any) => Number(a.step) - Number(b.step));
+        return steps.map((s: any) => {
+            const stepNum = s.step;
+            const stepName = s.name || s.label || s.title || `Tahap ${stepNum}`;
+            const stepApprover = s.target_approvers || (s.role ? `${s.role}` : 'Sesuai alur');
+            const stepCat = s.step_category;
+            
+            // Check matching approvals
+            const stepApprovals = approvals.filter((a) => (a.workflow_step_id && a.workflow_step_id === s.id) || a.sequence === stepNum);
+            const isApproved = stepApprovals.length > 0 && stepApprovals.every((a) => a.status === 'approved');
+            const isRejected = stepApprovals.some((a) => a.status === 'rejected');
+            const isCurrent = (contract.workflow_step_id && contract.workflow_step_id === s.id) || (!isApproved && !isRejected && activePendingApproval?.sequence === stepNum);
+
+            let status: 'completed' | 'active' | 'rejected' | 'waiting' = 'waiting';
+            if (isApproved) status = 'completed';
+            else if (isRejected) status = 'rejected';
+            else if (isCurrent) status = 'active';
+
+            return {
+                id: s.id,
+                step: stepNum,
+                name: stepName,
+                description: s.description,
+                approver: stepApprover,
+                category: stepCat,
+                status,
+                approvals: stepApprovals,
+            };
+        });
+    }, [contract.origin_workflow, contract.workflow, contract.workflow_step_id, approvals, activePendingApproval]);
+
     return (
         <div className="animate-in fade-in flex flex-col flex-1 min-h-0 h-full overflow-hidden duration-300 p-2.5 lg:p-3 gap-2">
             {/* Unified Clean Header Bar - Compact & Solid */}
             <div className="shrink-0 flex items-center justify-between gap-2 bg-surface-muted border border-surface-border p-1 px-2 rounded-lg">
-                {/* Left: View Mode Tabs (Lite / Pro) & Sort Toggle */}
+                {/* Left: View Mode Tabs (Lite / Pro) & Workflow Steps Popover */}
                 <div className="flex items-center gap-1.5 flex-wrap">
                     <div className="flex items-center gap-0.5 rounded border border-surface-border bg-surface-base p-0.5">
                         {tabs.map((tab) => (
@@ -342,37 +377,136 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                         ))}
                     </div>
 
-                    {/* Sort Order Toggle */}
-                    <div className="flex items-center gap-0.5 rounded border border-surface-border bg-surface-base p-0.5">
-                        <button
-                            type="button"
-                            onClick={() => setSortBy('time')}
-                            className={cn(
-                                'flex items-center gap-1 rounded px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider transition-colors cursor-pointer',
-                                sortBy === 'time'
-                                    ? 'bg-primary/15 text-primary border border-primary/30'
-                                    : 'text-text-soft hover:text-text-main',
+                    {/* Popover Timeline Vertikal Alur Kerja */}
+                    {workflowStepsPipeline.length > 0 && (
+                        <Popover className="relative inline-block">
+                            {({ open }) => (
+                                <>
+                                    <PopoverButton
+                                        className={cn(
+                                            'inline-flex items-center gap-1.5 px-2 py-0.5 rounded border text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer shadow-xs focus:outline-none select-none',
+                                            open
+                                                ? 'bg-primary text-primary-foreground border-primary'
+                                                : 'bg-surface-base border-surface-border text-foreground hover:bg-surface-muted'
+                                        )}
+                                        title="Klik untuk melihat timeline vertikal seluruh alur kerja"
+                                    >
+                                        <GitCommit size={12} className="shrink-0 text-primary" />
+                                        <span>Alur Kerja ({workflowStepsPipeline.length} Tahap)</span>
+                                        <ChevronDown size={11} className={cn('transition-transform duration-200 opacity-70', open && 'rotate-180')} />
+                                    </PopoverButton>
+
+                                    <Portal>
+                                        <PopoverPanel
+                                            anchor="bottom start"
+                                            className="z-[999999] mt-2 w-80 sm:w-96 rounded-xl border border-border bg-background p-3.5 shadow-2xl backdrop-blur-md focus:outline-none animate-in fade-in zoom-in-95 duration-150"
+                                        >
+                                            {/* Header Popover */}
+                                            <div className="flex items-center justify-between pb-2.5 border-b border-border">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+                                                        <Workflow size={15} />
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="text-xs font-bold text-foreground leading-none">
+                                                            {contract.origin_workflow?.name || contract.workflow?.name || 'Alur Kerja Utama'}
+                                                        </h4>
+                                                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                                                            Timeline Vertikal Tahapan Alur Kerja
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <span className="text-[9.5px] font-extrabold px-2 py-0.5 rounded-full bg-surface-muted text-muted-foreground border border-surface-border uppercase tracking-wider">
+                                                    {workflowStepsPipeline.length} Tahap
+                                                </span>
+                                            </div>
+
+                                            {/* Vertical Timeline List */}
+                                            <div className="mt-3 max-h-[60vh] overflow-y-auto custom-scrollbar pr-1">
+                                                <Timeline className="pl-1">
+                                                    {workflowStepsPipeline.map((stepItem, sIdx) => {
+                                                        const isStepActive = stepItem.status === 'active';
+                                                        const isStepDone = stepItem.status === 'completed';
+                                                        const isStepRejected = stepItem.status === 'rejected';
+
+                                                        return (
+                                                            <TimelineItem key={stepItem.id || sIdx} status={stepItem.status} className="pb-3">
+                                                                <TimelineIcon
+                                                                    status={stepItem.status}
+                                                                    className={cn(
+                                                                        'h-5 w-5 text-[10px] font-bold',
+                                                                        isStepActive && 'ring-2 ring-primary/30 ring-offset-1 bg-primary text-primary-foreground',
+                                                                        isStepDone && 'bg-emerald-500 text-white',
+                                                                        isStepRejected && 'bg-rose-500 text-white',
+                                                                        stepItem.status === 'waiting' && 'bg-muted text-muted-foreground'
+                                                                    )}
+                                                                >
+                                                                    {isStepDone ? '✓' : isStepRejected ? '✗' : stepItem.step}
+                                                                </TimelineIcon>
+                                                                <TimelineContent className="flex-1 min-w-0">
+                                                                    <div className={cn(
+                                                                        'rounded-lg border p-2 text-xs flex flex-col gap-1 transition-all',
+                                                                        isStepActive
+                                                                            ? 'border-primary/40 bg-primary/5 shadow-2xs'
+                                                                            : isStepDone
+                                                                            ? 'border-emerald-500/25 bg-emerald-500/5'
+                                                                            : isStepRejected
+                                                                            ? 'border-rose-500/25 bg-rose-500/5'
+                                                                            : 'border-border/60 bg-surface-muted/30 opacity-75'
+                                                                    )}>
+                                                                        <div className="flex items-center justify-between gap-1.5 flex-wrap">
+                                                                            <div className="flex items-center gap-1.5 min-w-0">
+                                                                                <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-surface-base text-foreground border border-surface-border">
+                                                                                    Tahap {stepItem.step}
+                                                                                </span>
+                                                                                {stepItem.category && (
+                                                                                    <span className="text-[8.5px] font-bold uppercase tracking-wider px-1 py-0.2 rounded bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20">
+                                                                                        {stepItem.category}
+                                                                                    </span>
+                                                                                )}
+                                                                                <span className="font-bold text-foreground text-[11px] truncate">
+                                                                                    {stepItem.name}
+                                                                                </span>
+                                                                            </div>
+                                                                            <span className={cn(
+                                                                                'text-[8.5px] font-bold px-1.5 py-0.2 rounded uppercase tracking-wider shrink-0',
+                                                                                isStepDone
+                                                                                    ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30'
+                                                                                    : isStepRejected
+                                                                                    ? 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30'
+                                                                                    : isStepActive
+                                                                                    ? 'bg-amber-500/15 text-amber-800 dark:text-amber-200 border border-amber-500/30'
+                                                                                    : 'bg-muted text-muted-foreground border border-border'
+                                                                            )}>
+                                                                                {isStepDone ? 'Disetujui' : isStepRejected ? 'Ditolak' : isStepActive ? 'Sedang Berjalan' : 'Menunggu'}
+                                                                            </span>
+                                                                        </div>
+
+                                                                        {stepItem.description && (
+                                                                            <p className="text-[10px] text-muted-foreground leading-tight">
+                                                                                {stepItem.description}
+                                                                            </p>
+                                                                        )}
+
+                                                                        <div className="flex items-center justify-between gap-2 text-[9.5px] text-muted-foreground pt-1 border-t border-border/40 mt-0.5">
+                                                                            <span className="flex items-center gap-1 font-medium truncate">
+                                                                                <UserCheck size={11} className="text-primary shrink-0" />
+                                                                                {stepItem.approver}
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+                                                                </TimelineContent>
+                                                            </TimelineItem>
+                                                        );
+                                                    })}
+                                                </Timeline>
+                                            </div>
+                                        </PopoverPanel>
+                                    </Portal>
+                                </>
                             )}
-                            title="Urutkan berdasarkan waktu eksekusi riil"
-                        >
-                            <Clock size={11} />
-                            <span>Waktu</span>
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setSortBy('step')}
-                            className={cn(
-                                'flex items-center gap-1 rounded px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider transition-colors cursor-pointer',
-                                sortBy === 'step'
-                                    ? 'bg-primary/15 text-primary border border-primary/30'
-                                    : 'text-text-soft hover:text-text-main',
-                            )}
-                            title="Urutkan berdasarkan nomor langkah alur kerja"
-                        >
-                            <Layers size={11} />
-                            <span>Alur</span>
-                        </button>
-                    </div>
+                        </Popover>
+                    )}
 
                     {currentStepInfo && !currentStepInfo.isCompleted && !currentStepInfo.isRejected && (
                         <span className="hidden sm:inline-flex items-center gap-1 text-[9.5px] font-bold uppercase tracking-wider text-amber-900 dark:text-amber-100 bg-amber-200 dark:bg-amber-950 border border-amber-400 dark:border-amber-700 px-1.5 py-0.5 rounded">

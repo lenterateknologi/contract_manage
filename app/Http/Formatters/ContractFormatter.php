@@ -236,6 +236,11 @@ class ContractFormatter
             'origin_workflow_step_id' => $c->origin_workflow_step_id,
             'is_in_sub_workflow' => (bool) ($c->is_in_sub_workflow ?? false),
             'current_sub_workflow_id' => $c->current_sub_workflow_id,
+            'sub_workflow' => ($isDetail && $c->current_sub_workflow_id) ? [
+                'id' => $c->current_sub_workflow_id,
+                'name' => Workflow::where('id', $c->current_sub_workflow_id)->value('name'),
+                'meta' => Workflow::where('id', $c->current_sub_workflow_id)->value('meta') ?? [],
+            ] : null,
             'branch_step_number' => $c->branch_step_number,
             'origin_workflow' => ($isDetail && $c->origin_workflow_id) ? [
                 'id' => $c->origin_workflow_id,

@@ -62,7 +62,7 @@ export function Modal({
             >
                 {(title || description) ? (
                     isBannerHeader ? (
-                        <div className="px-6 py-4 border-b border-primary/20 dark:border-zinc-700/80 bg-primary dark:bg-zinc-800/90 text-white dark:text-zinc-200 flex items-center justify-between rounded-t-[8px]">
+                        <div className="shrink-0 px-6 py-4 border-b border-primary/20 dark:border-zinc-700/80 bg-primary dark:bg-zinc-800/90 text-white dark:text-zinc-200 flex items-center justify-between rounded-t-[8px]">
                             <div className="flex items-center gap-3 z-10 pr-10">
                                 {headerIcon && (
                                     <div className="bg-white/20 text-white border border-white/20 dark:bg-primary/20 dark:text-primary dark:border-primary/30 flex h-9 w-9 items-center justify-center rounded-lg">
@@ -78,7 +78,7 @@ export function Modal({
                             </div>
                         </div>
                     ) : (
-                        <DialogHeader className="px-6 py-4 border-b border-primary/20 dark:border-zinc-700/80 bg-primary dark:bg-zinc-800/90 text-white dark:text-zinc-200 text-left overflow-hidden rounded-t-[8px]">
+                        <DialogHeader className="shrink-0 px-6 py-4 border-b border-primary/20 dark:border-zinc-700/80 bg-primary dark:bg-zinc-800/90 text-white dark:text-zinc-200 text-left overflow-hidden rounded-t-[8px]">
                             {title && (
                                 <DialogTitle className="text-sm font-bold text-white dark:text-zinc-100 tracking-tight">
                                     {title}
@@ -95,12 +95,12 @@ export function Modal({
                     <DialogTitle className="sr-only">Modal Dialog</DialogTitle>
                 )}
                 
-                <div className="p-5 text-text-main bg-white dark:bg-zinc-900">
+                <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-5 text-text-main bg-white dark:bg-zinc-900">
                     {children}
                 </div>
 
                 {footer && (
-                    <DialogFooter className="px-5 py-3 border-t border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-b-[8px] overflow-hidden">
+                    <DialogFooter className="shrink-0 px-5 py-3 border-t border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-b-[8px] overflow-hidden">
                         {footer}
                     </DialogFooter>
                 )}

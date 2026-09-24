@@ -27,6 +27,7 @@ const {
     User,
     UserCheck,
     Users,
+    Workflow,
 } = Icons;
 
 // Lazy load modals
@@ -44,6 +45,7 @@ const F2Tab = lazy(() => import('../show/tabs/F2Tab').then(m => ({ default: m.F2
 const MembersTab = lazy(() => import('../show/tabs/MembersTab').then(m => ({ default: m.MembersTab })));
 const ReferencesTab = lazy(() => import('../show/tabs/ReferencesTab').then(m => ({ default: m.ReferencesTab })));
 const TimelineTab = lazy(() => import('../show/tabs/TimelineTab').then(m => ({ default: m.TimelineTab })));
+const RelatedWorkflowsTab = lazy(() => import('../show/tabs/RelatedWorkflowsTab').then(m => ({ default: m.RelatedWorkflowsTab })));
 
 import LoadingLottie from '@/components/ui/feedback/LoadingLottie';
 
@@ -119,7 +121,9 @@ export const ContractDetailView = ({
 
     // History subtab
     const rawHistSub = params.get('histsubtab') || params.get('subtab') || getClientPref<string>('detail_hist_subtab', 'timeline');
-    const [historySubTab, setHistorySubTabState] = useState<'timeline' | 'audit'>((['timeline', 'audit'].includes(rawHistSub) ? rawHistSub : 'timeline') as any);
+    const [historySubTab, setHistorySubTabState] = useState<'timeline' | 'related_workflows' | 'audit'>(
+        (['timeline', 'related_workflows', 'audit'].includes(rawHistSub) ? rawHistSub : 'timeline') as any,
+    );
 
     // Ref subtab
     const rawRefSub = params.get('refsubtab') || params.get('subtab') || getClientPref<string>('detail_ref_subtab', 'parent');
@@ -159,7 +163,7 @@ export const ContractDetailView = ({
         window.history.replaceState({}, '', `${window.location.pathname}?${newParams.toString()}`);
     };
 
-    const setHistorySubTab = (sub: 'timeline' | 'audit') => {
+    const setHistorySubTab = (sub: 'timeline' | 'related_workflows' | 'audit') => {
         setHistorySubTabState(sub);
         setClientPref('detail_hist_subtab', sub);
         const newParams = new URLSearchParams(window.location.search);
@@ -570,12 +574,21 @@ export const ContractDetailView = ({
 
         // 3. Riwayat & Alur Tab
         const hasTimeline = meta.show_tab_timeline !== false;
+        const ENABLE_RELATED_WORKFLOWS_TAB = false; // Feature toggle: di-disable sementara tanpa menghapus file / logic
+
         result.push({
             id: 'history',
             label: 'Riwayat & Alur',
             icon: History,
             children: [
-                ...(hasTimeline ? [{ id: 'timeline', label: 'Alur Approval & Proses', icon: GitCommit }] : []),
+                ...(hasTimeline
+                    ? [
+                          { id: 'timeline', label: 'Alur Approval & Proses', icon: GitCommit },
+                          ...(ENABLE_RELATED_WORKFLOWS_TAB
+                              ? [{ id: 'related_workflows', label: 'Workflow Terkait', icon: Workflow }]
+                              : []),
+                      ]
+                    : []),
                 { id: 'audit', label: 'Audit Log & Activity', icon: ShieldCheck },
             ],
         });
@@ -767,6 +780,8 @@ export const ContractDetailView = ({
                 switch (historySubTab) {
                     case 'timeline':
                         return 'Alur Approval & Proses';
+                    case 'related_workflows':
+                        return 'Workflow Terkait';
                     case 'audit':
                         return 'Audit Log & Activity';
                     default:
@@ -969,7 +984,7 @@ export const ContractDetailView = ({
                                         )}
 
                                         {detailTab === 'history' && (() => {
-                                            const activeSub = ['timeline', 'audit'].includes(historySubTab) ? historySubTab : 'timeline';
+                                            const activeSub = ['timeline', 'related_workflows', 'audit'].includes(historySubTab) ? historySubTab : 'timeline';
 
                                             return (
                                                 <div className="flex-1 min-h-0 h-full flex flex-col overflow-hidden">
@@ -978,6 +993,13 @@ export const ContractDetailView = ({
                                                             contract={contract}
                                                             meId={meId}
                                                             onApprove={(note, file) => handleApprove(note, file)}
+                                                            showToast={showToast}
+                                                        />
+                                                    )}
+                                                    {activeSub === 'related_workflows' && (
+                                                        <RelatedWorkflowsTab
+                                                            contract={contract}
+                                                            meId={meId}
                                                             showToast={showToast}
                                                         />
                                                     )}

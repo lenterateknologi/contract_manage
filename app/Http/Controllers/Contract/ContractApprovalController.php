@@ -625,7 +625,6 @@ class ContractApprovalController extends Controller
 
                 $contract->update([
                     'origin_workflow_id' => $originWfId,
-                    'workflow_id' => $targetStep->workflow_id,
                     'workflow_step_id' => $targetStepId,
                     'is_in_sub_workflow' => true,
                     'branch_step_number' => $contract->workflowStep?->step ?? 1,
