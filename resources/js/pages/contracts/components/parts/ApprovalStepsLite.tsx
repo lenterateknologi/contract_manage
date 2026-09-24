@@ -114,12 +114,15 @@ export function ApprovalStepsLite({
             const stepName = a.step_name || a.workflow_step?.label || a.workflow_step?.name || a.role || `Tahap Persetujuan ${a.sequence}`;
             const stepDescription = a.step_description || a.workflow_step?.description;
 
-            const existingGroup = groups.find(
-                (g) => g.workflowId === wfId && g.batchNo === batchNo && g.sequence === a.sequence,
-            );
-
-            if (existingGroup) {
-                existingGroup.items.push(a);
+            // Only merge into previous group if adjacent item in the sorted stream belongs to the same step
+            const lastGroup = groups[groups.length - 1];
+            if (
+                lastGroup &&
+                lastGroup.workflowId === wfId &&
+                lastGroup.batchNo === batchNo &&
+                lastGroup.sequence === a.sequence
+            ) {
+                lastGroup.items.push(a);
             } else {
                 groups.push({
                     key: `${wfId}_${batchNo}_${a.sequence}_${a.id}`,

@@ -64,7 +64,11 @@ export function StepSimulatorButtons({ actions, idx, totalSteps, allWorkflows, a
                     tooltip = `Lompat ke Workflow: ${targetWfName}${targetSeq}`;
                 }
             } else if (tc.type === 'absolute') {
-                tooltip = `Lompat ke Tahap ${tc.sequence ?? 1}`;
+                const targetStep = (tc.step_id || act.next_step_id)
+                    ? allWorkflowSteps.find((s: any) => String(s.id) === String(tc.step_id || act.next_step_id))
+                    : allWorkflowSteps.find((s: any) => Number(s.step) === Number(tc.sequence));
+                const targetSeq = targetStep?.step ?? tc.sequence ?? 1;
+                tooltip = `Lompat ke Tahap ${targetSeq}`;
             } else if (tc.type === 'initial_step') {
                 tooltip = 'Kembali ke Tahap Awal (#1)';
             } else if (tc.type === 'relative') {

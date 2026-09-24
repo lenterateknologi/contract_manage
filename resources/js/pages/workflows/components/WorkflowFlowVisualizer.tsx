@@ -152,15 +152,21 @@ const resolveActionTarget = (
     } else if (tConfig?.type === 'initial_step') {
         targetStepNum = 1;
     } else if (tConfig?.type === 'absolute') {
-        if (tConfig.step_id) {
-            const matched = (allSteps || []).find((s: any) => String(s.id) === String(tConfig.step_id));
+        if (tConfig.step_id || act?.next_step_id) {
+            const searchId = String(tConfig.step_id || act.next_step_id);
+            const matched = (allSteps || []).find((s: any) => String(s.id) === searchId);
             if (matched) {
                 targetStepNum = Number(matched.step) || null;
-            } else {
-                targetStepNum = null;
             }
-        } else if (tConfig.sequence || tConfig.step) {
-            targetStepNum = Number(tConfig.sequence || tConfig.step);
+        }
+        if (targetStepNum === null && (tConfig.sequence !== undefined || tConfig.step !== undefined)) {
+            const seq = Number(tConfig.sequence ?? tConfig.step);
+            const matchedBySeq = (allSteps || []).find((s: any) => Number(s.step) === seq);
+            if (matchedBySeq) {
+                targetStepNum = Number(matchedBySeq.step) || seq;
+            } else if (seq >= 1 && seq <= allSteps.length) {
+                targetStepNum = seq;
+            }
         }
     } else if (tConfig?.type === 'relative' && tConfig.offset !== undefined) {
         targetStepNum = Math.max(1, currentStepNum + Number(tConfig.offset));
