@@ -286,15 +286,16 @@ class Workflow extends Model
         static $rootCache = null;
         if ($rootCache === null) {
             $allTypes = ContractType::all()->keyBy('id');
-            $getRoot = function ($id) use ($allTypes, &$getRoot) {
-                if (! isset($allTypes[$id])) {
+            $getRoot = function ($id, array $visited = []) use ($allTypes, &$getRoot) {
+                if (! isset($allTypes[$id]) || isset($visited[$id])) {
                     return null;
                 }
+                $visited[$id] = true;
                 $item = $allTypes[$id];
-                if (empty($item->parent_id)) {
+                if (empty($item->parent_id) || $item->parent_id === $id) {
                     return $item->name;
                 }
-                return $getRoot($item->parent_id);
+                return $getRoot($item->parent_id, $visited);
             };
 
             $rootCache = [];

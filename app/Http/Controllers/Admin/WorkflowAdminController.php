@@ -51,19 +51,20 @@ class WorkflowAdminController extends Controller
         // 1. Preload contract types for fast hierarchy and name resolution
         $allTypes = ContractType::select('id', 'name', 'code', 'parent_id')->get()->keyBy('id');
         $rootMap = [];
-        $getRoot = function ($id) use ($allTypes, &$getRoot, &$rootMap) {
+        $getRoot = function ($id, array $visited = []) use ($allTypes, &$getRoot, &$rootMap) {
             if (isset($rootMap[$id])) {
                 return $rootMap[$id];
             }
-            if (! isset($allTypes[$id])) {
+            if (! isset($allTypes[$id]) || isset($visited[$id])) {
                 return null;
             }
+            $visited[$id] = true;
             $item = $allTypes[$id];
-            if (empty($item->parent_id)) {
+            if (empty($item->parent_id) || $item->parent_id === $id) {
                 return $rootMap[$id] = $item->name;
             }
 
-            return $rootMap[$id] = $getRoot($item->parent_id);
+            return $rootMap[$id] = $getRoot($item->parent_id, $visited);
         };
         foreach ($allTypes as $id => $item) {
             $getRoot($id);
