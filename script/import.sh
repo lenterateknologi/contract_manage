@@ -1,12 +1,13 @@
 #!/bin/bash
 export PATH="/opt/homebrew/opt/postgresql@17/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
 
-# Baca file .env Laravel
+# Baca file .env Laravel jika DB_* belum di-set
 if [ -f .env ]; then
-    export $(cat .env | grep -v '^#' | xargs)
-else
-    echo "File .env tidak ditemukan!"
-    exit 1
+    [ -z "$DB_HOST" ] && DB_HOST=$(grep -E '^DB_HOST=' .env | cut -d '=' -f 2- | tr -d '"\r' | tr -d "'")
+    [ -z "$DB_PORT" ] && DB_PORT=$(grep -E '^DB_PORT=' .env | cut -d '=' -f 2- | tr -d '"\r' | tr -d "'")
+    [ -z "$DB_DATABASE" ] && DB_DATABASE=$(grep -E '^DB_DATABASE=' .env | cut -d '=' -f 2- | tr -d '"\r' | tr -d "'")
+    [ -z "$DB_USERNAME" ] && DB_USERNAME=$(grep -E '^DB_USERNAME=' .env | cut -d '=' -f 2- | tr -d '"\r' | tr -d "'")
+    [ -z "$DB_PASSWORD" ] && DB_PASSWORD=$(grep -E '^DB_PASSWORD=' .env | cut -d '=' -f 2- | tr -d '"\r' | tr -d "'")
 fi
 
 DB_HOST=${DB_HOST:-127.0.0.1}
