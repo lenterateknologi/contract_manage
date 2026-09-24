@@ -90,6 +90,15 @@ const REQUIREMENT_RESOLVERS: Record<string, RequirementResolver> = {
         targetTab: 'overview',
     }),
 
+    first_party: (c) => ({
+        id: 'first_party',
+        label: 'Pihak Pertama',
+        isFilled: !!(c.company_id || c.first_party_id || c.p1_entity || c.metadata?.first_party_id || c.metadata?.meta_p1_entity || c.initiator?.company?.name || c.initiator?.company_name),
+        type: 'field',
+        targetTab: 'overview',
+    }),
+    p1: (c) => REQUIREMENT_RESOLVERS.first_party(c, {}),
+
     vendor: (c) => ({
         id: 'vendor',
         label: 'Pihak Kedua (Vendor)',
@@ -227,6 +236,7 @@ export function resolveContractRequirements(contract: any, activeAction?: any): 
         if (stepMeta.require_f2) metaRequiredList.push('f2');
         if (stepMeta.require_agreement) metaRequiredList.push('agreement');
         if (stepMeta.require_title) metaRequiredList.push('title');
+        if (stepMeta.require_first_party) metaRequiredList.push('first_party');
         if (stepMeta.require_vendor) metaRequiredList.push('vendor');
         if (stepMeta.require_category) metaRequiredList.push('category');
         if (stepMeta.require_f2_contract_no) metaRequiredList.push('contract_no');

@@ -207,6 +207,7 @@ export interface Contract {
     display_mode?: 'interactive' | 'pdf';
     allow_info_edit?: boolean;
     allow_title_edit?: boolean;
+    allow_first_party_edit?: boolean;
     allow_vendor_edit?: boolean;
     allow_category_edit?: boolean;
     allow_f2_contract_no_edit?: boolean;
@@ -220,6 +221,7 @@ export interface Contract {
     allow_reference?: boolean;
     show_info?: boolean;
     show_title?: boolean;
+    show_first_party?: boolean;
     show_vendor?: boolean;
     show_category?: boolean;
     show_f2_contract_no?: boolean;
@@ -230,6 +232,7 @@ export interface Contract {
     require_f2?: boolean;
     require_agreement?: boolean;
     require_title?: boolean;
+    require_first_party?: boolean;
     require_vendor?: boolean;
     require_category?: boolean;
     require_f2_contract_no?: boolean;

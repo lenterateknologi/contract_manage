@@ -53,6 +53,7 @@ interface ContractInfoFormProps {
     taxRequired: boolean;
     onTaxRequiredChange: (val: boolean) => void;
     /** Per-field granular edit permissions (from workflow step meta) */
+    canEditFirstParty?: boolean;
     canEditVendor?: boolean;
     canEditCategory?: boolean;
     canEditPrice?: boolean;
@@ -134,6 +135,7 @@ export function ContractInfoForm({
     inputCls,
     taxRequired,
     onTaxRequiredChange,
+    canEditFirstParty = true,
     canEditVendor = true,
     canEditCategory = true,
     canEditPrice = true,
@@ -263,17 +265,20 @@ export function ContractInfoForm({
                 )}
 
                 {/* Pihak Pertama */}
-                <div className="flex flex-col gap-1 pb-2 border-b border-border/40">
-                    <FieldConfigHeader
-                        icon={Building2}
-                        label="Pihak Pertama"
-                        canEdit={false}
-                        isVisible={true}
-                    />
-                    <span className="font-semibold text-xs text-foreground truncate pt-0.5">
-                        {firstPartyDisplayName}
-                    </span>
-                </div>
+                {selected.show_first_party !== false && (
+                    <div className="flex flex-col gap-1 pb-2 border-b border-border/40">
+                        <FieldConfigHeader
+                            icon={Building2}
+                            label="Pihak Pertama"
+                            required={!!(selected.require_first_party || selected.workflow_step?.meta?.require_first_party)}
+                            canEdit={false}
+                            isVisible={true}
+                        />
+                        <span className="font-semibold text-xs text-foreground truncate pt-0.5">
+                            {firstPartyDisplayName}
+                        </span>
+                    </div>
+                )}
 
                 {/* Pihak Kedua */}
                 {selected.show_vendor !== false && (
@@ -415,28 +420,31 @@ export function ContractInfoForm({
             )}
 
             {/* Pihak Pertama */}
-            <div className="flex flex-col gap-1.5">
-                <FieldConfigHeader
-                    icon={Building2}
-                    label="Pihak Pertama"
-                    canEdit={canEditVendor}
-                    isVisible={true}
-                />
-                {canEditVendor ? (
-                    <SearchableSelect
-                        value={firstPartyId}
-                        onValueChange={(val) => setFirstPartyId?.(val)}
-                        options={partyOptions}
-                        placeholder="Pilih Pihak Pertama"
-                        searchPlaceholder="Cari pihak pertama..."
-                        size="sm"
+            {selected.show_first_party !== false && (
+                <div className="flex flex-col gap-1.5">
+                    <FieldConfigHeader
+                        icon={Building2}
+                        label="Pihak Pertama"
+                        required={!!(selected.require_first_party || selected.workflow_step?.meta?.require_first_party)}
+                        canEdit={canEditFirstParty}
+                        isVisible={true}
                     />
-                ) : (
-                    <span className="text-xs font-semibold text-foreground truncate">
-                        {firstPartyDisplayName}
-                    </span>
-                )}
-            </div>
+                    {canEditFirstParty ? (
+                        <SearchableSelect
+                            value={firstPartyId}
+                            onValueChange={(val) => setFirstPartyId?.(val)}
+                            options={partyOptions}
+                            placeholder="Pilih Pihak Pertama"
+                            searchPlaceholder="Cari pihak pertama..."
+                            size="sm"
+                        />
+                    ) : (
+                        <span className="text-xs font-semibold text-foreground truncate">
+                            {firstPartyDisplayName}
+                        </span>
+                    )}
+                </div>
+            )}
 
             {/* Pihak Kedua */}
             {selected.show_vendor !== false && (

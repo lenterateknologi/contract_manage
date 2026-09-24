@@ -1200,14 +1200,14 @@ export default function SortableStepItem({
                         {stepTab === 'advanced' && (() => {
                             const ALL_EDIT_KEYS = [
                                 'allow_f1_edit', 'allow_f2_edit', 'allow_agreement_edit',
-                                'allow_info_edit', 'allow_title_edit', 'allow_vendor_edit', 'allow_category_edit',
+                                'allow_info_edit', 'allow_title_edit', 'allow_first_party_edit', 'allow_vendor_edit', 'allow_category_edit',
                                 'allow_f2_contract_no_edit', 'allow_tax_toggle_edit', 'allow_price_edit', 'allow_period_edit',
                                 'allow_timeline_edit', 'allow_chat_edit', 'allow_attachment_edit', 'allow_reference',
                             ];
 
                             const ALL_SHOW_KEYS = [
                                 'show_tab_f1', 'show_tab_f2', 'show_tab_agreement',
-                                'show_info', 'show_title', 'show_vendor', 'show_category',
+                                'show_info', 'show_title', 'show_first_party', 'show_vendor', 'show_category',
                                 'show_f2_contract_no', 'show_tax_toggle', 'show_price', 'show_period',
                                 'show_tab_timeline', 'show_tab_chat', 'show_tab_members',
                                 'show_tab_attachments', 'show_tab_references', 'show_action_panel', 'show_document_detail',
@@ -1215,13 +1215,13 @@ export default function SortableStepItem({
 
                             const ALL_REQUIRE_KEYS = [
                                 'require_f1', 'require_f2', 'require_agreement',
-                                'require_title', 'require_vendor', 'require_category',
+                                'require_title', 'require_first_party', 'require_vendor', 'require_category',
                                 'require_f2_contract_no', 'require_tax_toggle', 'require_price', 'require_period',
                             ];
 
                             const DOC_REQUIRE_KEYS = ['require_f1', 'require_f2', 'require_agreement'];
                             const INFO_REQUIRE_KEYS = [
-                                'require_title', 'require_vendor', 'require_category',
+                                'require_title', 'require_first_party', 'require_vendor', 'require_category',
                                 'require_f2_contract_no', 'require_tax_toggle', 'require_price', 'require_period',
                             ];
 
@@ -1286,8 +1286,8 @@ export default function SortableStepItem({
                                                     updateLocalStep(idx, {
                                                         meta: {
                                                             ...(step.meta || {}),
-                                                            allow_info_edit: true, allow_f1_edit: true, allow_f2_edit: true, allow_agreement_edit: true, allow_attachment_edit: true, allow_reference: true, show_f2_contract_no: true, show_tax_toggle: true, show_price: true, show_period: true, show_tab_f1: true, show_tab_f2: true, show_tab_agreement: true, show_tab_attachments: true, show_tab_references: true, show_tab_timeline: true, show_tab_chat: true, allow_f2_contract_no_edit: true, allow_tax_toggle_edit: true, allow_price_edit: true, allow_period_edit: true, show_info: true, allow_timeline_edit: true, allow_chat_edit: true, show_action_panel: true, show_document_detail: true, show_tab_members: true,
-                                                            require_f1: true, require_f2: true, require_agreement: true, require_title: true, require_vendor: true, require_category: true, require_f2_contract_no: true, require_tax_toggle: true, require_price: true, require_period: true,
+                                                            allow_info_edit: true, allow_title_edit: true, allow_first_party_edit: true, allow_vendor_edit: true, allow_category_edit: true, allow_f1_edit: true, allow_f2_edit: true, allow_agreement_edit: true, allow_attachment_edit: true, allow_reference: true, show_f2_contract_no: true, show_tax_toggle: true, show_price: true, show_period: true, show_tab_f1: true, show_tab_f2: true, show_tab_agreement: true, show_tab_attachments: true, show_tab_references: true, show_tab_timeline: true, show_tab_chat: true, allow_f2_contract_no_edit: true, allow_tax_toggle_edit: true, allow_price_edit: true, allow_period_edit: true, show_info: true, show_title: true, show_first_party: true, show_vendor: true, show_category: true, allow_timeline_edit: true, allow_chat_edit: true, show_action_panel: true, show_document_detail: true, show_tab_members: true,
+                                                            require_f1: true, require_f2: true, require_agreement: true, require_title: true, require_first_party: true, require_vendor: true, require_category: true, require_f2_contract_no: true, require_tax_toggle: true, require_price: true, require_period: true,
                                                         },
                                                     });
                                                 }}
@@ -1303,8 +1303,8 @@ export default function SortableStepItem({
                                                     updateLocalStep(idx, {
                                                         meta: {
                                                             ...(step.meta || {}),
-                                                            allow_info_edit: false, allow_f1_edit: false, allow_f2_edit: false, allow_agreement_edit: false, allow_attachment_edit: false, allow_reference: false, show_f2_contract_no: false, show_tax_toggle: false, show_price: false, show_period: false, show_tab_f1: false, show_tab_f2: false, show_tab_agreement: false, show_tab_attachments: false, show_tab_references: false, show_tab_timeline: false, show_tab_chat: false, allow_f2_contract_no_edit: false, allow_tax_toggle_edit: false, allow_price_edit: false, allow_period_edit: false, show_info: false, allow_timeline_edit: false, allow_chat_edit: false, show_action_panel: false, show_document_detail: false, show_tab_members: false,
-                                                            require_f1: false, require_f2: false, require_agreement: false, require_title: false, require_vendor: false, require_category: false, require_f2_contract_no: false, require_tax_toggle: false, require_price: false, require_period: false,
+                                                            allow_info_edit: false, allow_title_edit: false, allow_first_party_edit: false, allow_vendor_edit: false, allow_category_edit: false, allow_f1_edit: false, allow_f2_edit: false, allow_agreement_edit: false, allow_attachment_edit: false, allow_reference: false, show_f2_contract_no: false, show_tax_toggle: false, show_price: false, show_period: false, show_tab_f1: false, show_tab_f2: false, show_tab_agreement: false, show_tab_attachments: false, show_tab_references: false, show_tab_timeline: false, show_tab_chat: false, allow_f2_contract_no_edit: false, allow_tax_toggle_edit: false, allow_price_edit: false, allow_period_edit: false, show_info: false, show_title: false, show_first_party: false, show_vendor: false, show_category: false, allow_timeline_edit: false, allow_chat_edit: false, show_action_panel: false, show_document_detail: false, show_tab_members: false,
+                                                            require_f1: false, require_f2: false, require_agreement: false, require_title: false, require_first_party: false, require_vendor: false, require_category: false, require_f2_contract_no: false, require_tax_toggle: false, require_price: false, require_period: false,
                                                         },
                                                     });
                                                 }}
@@ -1428,15 +1428,15 @@ export default function SortableStepItem({
                                                     </td>
                                                     <td className="px-4 py-2 text-center">
                                                         <Checkbox
-                                                            checked={isSectionChecked(['allow_info_edit', 'allow_title_edit', 'allow_vendor_edit', 'allow_category_edit', 'allow_f2_contract_no_edit', 'allow_tax_toggle_edit', 'allow_price_edit', 'allow_period_edit'])}
-                                                            onCheckedChange={() => toggleSection(['allow_info_edit', 'allow_title_edit', 'allow_vendor_edit', 'allow_category_edit', 'allow_f2_contract_no_edit', 'allow_tax_toggle_edit', 'allow_price_edit', 'allow_period_edit'])}
+                                                            checked={isSectionChecked(['allow_info_edit', 'allow_title_edit', 'allow_first_party_edit', 'allow_vendor_edit', 'allow_category_edit', 'allow_f2_contract_no_edit', 'allow_tax_toggle_edit', 'allow_price_edit', 'allow_period_edit'])}
+                                                            onCheckedChange={() => toggleSection(['allow_info_edit', 'allow_title_edit', 'allow_first_party_edit', 'allow_vendor_edit', 'allow_category_edit', 'allow_f2_contract_no_edit', 'allow_tax_toggle_edit', 'allow_price_edit', 'allow_period_edit'])}
                                                             title="Centang/Kosongkan Semua Dapat Diedit di Informasi Kontrak"
                                                         />
                                                     </td>
                                                     <td className="px-4 py-2 text-center">
                                                         <Checkbox
-                                                            checked={isSectionChecked(['show_info', 'show_title', 'show_vendor', 'show_category', 'show_f2_contract_no', 'show_tax_toggle', 'show_price', 'show_period'])}
-                                                            onCheckedChange={() => toggleSection(['show_info', 'show_title', 'show_vendor', 'show_category', 'show_f2_contract_no', 'show_tax_toggle', 'show_price', 'show_period'])}
+                                                            checked={isSectionChecked(['show_info', 'show_title', 'show_first_party', 'show_vendor', 'show_category', 'show_f2_contract_no', 'show_tax_toggle', 'show_price', 'show_period'])}
+                                                            onCheckedChange={() => toggleSection(['show_info', 'show_title', 'show_first_party', 'show_vendor', 'show_category', 'show_f2_contract_no', 'show_tax_toggle', 'show_price', 'show_period'])}
                                                             title="Centang/Kosongkan Semua Tampilkan di Informasi Kontrak"
                                                         />
                                                     </td>
@@ -1465,6 +1465,15 @@ export default function SortableStepItem({
                                                     <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.allow_title_edit !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), allow_title_edit: !!c } })} /></td>
                                                     <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.show_title !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), show_title: !!c } })} /></td>
                                                     <td className="px-4 py-2 text-center"><Checkbox checked={!!step.meta?.require_title} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), require_title: !!c } })} /></td>
+                                                </tr>
+                                                <tr className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
+                                                    <td className="px-4 py-2 font-medium text-slate-600 dark:text-zinc-400 pl-10 flex items-center gap-2">
+                                                        <Users size={13} className="text-primary/70 dark:text-primary-400/70" />
+                                                        ↳ Field Pihak Pertama
+                                                    </td>
+                                                    <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.allow_first_party_edit !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), allow_first_party_edit: !!c } })} /></td>
+                                                    <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.show_first_party !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), show_first_party: !!c } })} /></td>
+                                                    <td className="px-4 py-2 text-center"><Checkbox checked={!!step.meta?.require_first_party} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), require_first_party: !!c } })} /></td>
                                                 </tr>
                                                 <tr className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
                                                     <td className="px-4 py-2 font-medium text-slate-600 dark:text-zinc-400 pl-10 flex items-center gap-2">

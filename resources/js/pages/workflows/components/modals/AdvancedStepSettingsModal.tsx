@@ -34,15 +34,18 @@ export interface WorkflowStep {
         allow_price_edit?: boolean;
         allow_period_edit?: boolean;
         allow_title_edit?: boolean;
+        allow_first_party_edit?: boolean;
         allow_vendor_edit?: boolean;
         allow_category_edit?: boolean;
         show_title?: boolean;
+        show_first_party?: boolean;
         show_vendor?: boolean;
         show_category?: boolean;
         require_f1?: boolean;
         require_f2?: boolean;
         require_agreement?: boolean;
         require_title?: boolean;
+        require_first_party?: boolean;
         require_vendor?: boolean;
         require_category?: boolean;
         require_f2_contract_no?: boolean;
@@ -82,14 +85,14 @@ export function AdvancedStepSettingsModal({ open, onOpenChange, step, onUpdateSt
 
     const ALL_EDIT_KEYS = [
         'allow_f1_edit', 'allow_f2_edit', 'allow_agreement_edit',
-        'allow_info_edit', 'allow_title_edit', 'allow_vendor_edit', 'allow_category_edit',
+        'allow_info_edit', 'allow_title_edit', 'allow_first_party_edit', 'allow_vendor_edit', 'allow_category_edit',
         'allow_f2_contract_no_edit', 'allow_tax_toggle_edit', 'allow_price_edit', 'allow_period_edit',
         'allow_timeline_edit', 'allow_chat_edit', 'allow_attachment_edit', 'allow_reference',
     ];
 
     const ALL_SHOW_KEYS = [
         'show_tab_f1', 'show_tab_f2', 'show_tab_agreement',
-        'show_info', 'show_title', 'show_vendor', 'show_category',
+        'show_info', 'show_title', 'show_first_party', 'show_vendor', 'show_category',
         'show_f2_contract_no', 'show_tax_toggle', 'show_price', 'show_period',
         'show_tab_timeline', 'show_tab_chat', 'show_tab_members',
         'show_tab_attachments', 'show_tab_references', 'show_action_panel', 'show_document_detail',
@@ -121,6 +124,10 @@ export function AdvancedStepSettingsModal({ open, onOpenChange, step, onUpdateSt
             meta: {
                 ...(step.meta || {}),
                 allow_info_edit: checked,
+                allow_title_edit: checked,
+                allow_first_party_edit: checked,
+                allow_vendor_edit: checked,
+                allow_category_edit: checked,
                 allow_f1_edit: checked,
                 allow_f2_edit: checked,
                 allow_agreement_edit: checked,
@@ -142,6 +149,10 @@ export function AdvancedStepSettingsModal({ open, onOpenChange, step, onUpdateSt
                 show_price: checked,
                 show_period: checked,
                 show_info: checked,
+                show_title: checked,
+                show_first_party: checked,
+                show_vendor: checked,
+                show_category: checked,
                 allow_timeline_edit: checked,
                 allow_chat_edit: checked,
                 show_action_panel: checked,
@@ -236,15 +247,15 @@ export function AdvancedStepSettingsModal({ open, onOpenChange, step, onUpdateSt
                                     </td>
                                     <td className="px-4 py-2 text-center">
                                         <Checkbox
-                                            checked={isSectionChecked(['allow_info_edit', 'allow_title_edit', 'allow_vendor_edit', 'allow_category_edit', 'allow_f2_contract_no_edit', 'allow_tax_toggle_edit', 'allow_price_edit', 'allow_period_edit'])}
-                                            onCheckedChange={() => toggleSection(['allow_info_edit', 'allow_title_edit', 'allow_vendor_edit', 'allow_category_edit', 'allow_f2_contract_no_edit', 'allow_tax_toggle_edit', 'allow_price_edit', 'allow_period_edit'])}
+                                            checked={isSectionChecked(['allow_info_edit', 'allow_title_edit', 'allow_first_party_edit', 'allow_vendor_edit', 'allow_category_edit', 'allow_f2_contract_no_edit', 'allow_tax_toggle_edit', 'allow_price_edit', 'allow_period_edit'])}
+                                            onCheckedChange={() => toggleSection(['allow_info_edit', 'allow_title_edit', 'allow_first_party_edit', 'allow_vendor_edit', 'allow_category_edit', 'allow_f2_contract_no_edit', 'allow_tax_toggle_edit', 'allow_price_edit', 'allow_period_edit'])}
                                             title="Centang/Kosongkan Semua Dapat Diedit di Informasi Kontrak"
                                         />
                                     </td>
                                     <td className="px-4 py-2 text-center">
                                         <Checkbox
-                                            checked={isSectionChecked(['show_info', 'show_title', 'show_vendor', 'show_category', 'show_f2_contract_no', 'show_tax_toggle', 'show_price', 'show_period'])}
-                                            onCheckedChange={() => toggleSection(['show_info', 'show_title', 'show_vendor', 'show_category', 'show_f2_contract_no', 'show_tax_toggle', 'show_price', 'show_period'])}
+                                            checked={isSectionChecked(['show_info', 'show_title', 'show_first_party', 'show_vendor', 'show_category', 'show_f2_contract_no', 'show_tax_toggle', 'show_price', 'show_period'])}
+                                            onCheckedChange={() => toggleSection(['show_info', 'show_title', 'show_first_party', 'show_vendor', 'show_category', 'show_f2_contract_no', 'show_tax_toggle', 'show_price', 'show_period'])}
                                             title="Centang/Kosongkan Semua Tampilkan di Informasi Kontrak"
                                         />
                                     </td>
@@ -260,7 +271,12 @@ export function AdvancedStepSettingsModal({ open, onOpenChange, step, onUpdateSt
                                     <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.show_title !== false} onCheckedChange={(c) => handleMetaChange('show_title', !!c)} /></td>
                                 </tr>
                                 <tr className="hover:bg-slate-100/60 dark:hover:bg-zinc-800/50 transition-colors">
-                                    <td className="px-4 py-2 text-xs font-normal text-slate-600 dark:text-zinc-400 pl-10">↳ Field Pihak Kedua </td>
+                                    <td className="px-4 py-2 text-xs font-normal text-slate-600 dark:text-zinc-400 pl-10">↳ Field Pihak Pertama</td>
+                                    <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.allow_first_party_edit !== false} onCheckedChange={(c) => handleMetaChange('allow_first_party_edit', !!c)} /></td>
+                                    <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.show_first_party !== false} onCheckedChange={(c) => handleMetaChange('show_first_party', !!c)} /></td>
+                                </tr>
+                                <tr className="hover:bg-slate-100/60 dark:hover:bg-zinc-800/50 transition-colors">
+                                    <td className="px-4 py-2 text-xs font-normal text-slate-600 dark:text-zinc-400 pl-10">↳ Field Pihak Kedua</td>
                                     <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.allow_vendor_edit !== false} onCheckedChange={(c) => handleMetaChange('allow_vendor_edit', !!c)} /></td>
                                     <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.show_vendor !== false} onCheckedChange={(c) => handleMetaChange('show_vendor', !!c)} /></td>
                                 </tr>
