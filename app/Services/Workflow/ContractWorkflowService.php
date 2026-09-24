@@ -676,9 +676,12 @@ class ContractWorkflowService
                         $hasFilters = false;
 
                         if (! empty($legacyRoles)) {
-                            $query->where(function ($q) use ($legacyRoles) {
-                                $q->whereHas('roleRelation', fn ($rq) => $rq->whereIn('name', $legacyRoles))
-                                    ->orWhereIn('role_id', $legacyRoles);
+                            $validRoleUuids = array_values(array_filter($legacyRoles, fn ($r) => is_string($r) && \Illuminate\Support\Str::isUuid($r)));
+                            $query->where(function ($q) use ($legacyRoles, $validRoleUuids) {
+                                $q->whereHas('roleRelation', fn ($rq) => $rq->whereIn('name', $legacyRoles));
+                                if (! empty($validRoleUuids)) {
+                                    $q->orWhereIn('role_id', $validRoleUuids);
+                                }
                             });
                             $hasFilters = true;
                         }
@@ -689,11 +692,14 @@ class ContractWorkflowService
                             $query->where('division_id', $initDeptId);
                             $hasFilters = true;
                         } elseif (! empty($targetDeptIds)) {
-                            $query->where(function ($q) use ($targetDeptIds) {
-                                $q->whereIn('division_id', $targetDeptIds)
-                                    ->orWhereIn('department_id', $targetDeptIds);
-                            });
-                            $hasFilters = true;
+                            $validDeptUuids = array_values(array_filter($targetDeptIds, fn ($d) => is_string($d) && \Illuminate\Support\Str::isUuid($d)));
+                            if (! empty($validDeptUuids)) {
+                                $query->where(function ($q) use ($validDeptUuids) {
+                                    $q->whereIn('division_id', $validDeptUuids)
+                                        ->orWhereIn('department_id', $validDeptUuids);
+                                });
+                                $hasFilters = true;
+                            }
                         }
 
                         if ($filterCompanyGroup || $filterRegion) {
