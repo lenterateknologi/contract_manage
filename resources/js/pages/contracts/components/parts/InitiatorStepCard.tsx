@@ -1,8 +1,6 @@
-import { cn, formatDateTime } from '@/lib/utils';
-import { UserProfile } from '@/pages/contracts/types';
-import { Check, Clock, Send } from 'lucide-react';
 import { UserAvatarIcon } from '@/components/profile/UserAvatar';
-import { Badge } from '@/components/ui/feedback/Badge';
+import { formatDateTime } from '@/lib/utils';
+import { UserProfile } from '@/pages/contracts/types';
 
 interface InitiatorStepCardProps {
     isOnly: boolean;
@@ -13,27 +11,15 @@ interface InitiatorStepCardProps {
 
 export function InitiatorStepCard({ creator, submittedAt }: InitiatorStepCardProps) {
     return (
-        <div className="flex items-center justify-between gap-2 w-full py-0.5">
-            <div className="flex items-center gap-2 min-w-0">
-                <UserAvatarIcon user={creator} size="sm" className="h-6 w-6 ring-1 ring-surface-base shrink-0 text-[10px]" />
-                <div className="flex flex-col min-w-0">
-                    <div className="flex items-center gap-1 min-w-0">
-                        <span className="text-text-main truncate text-[11px] font-bold leading-tight">
-                            {creator?.name || 'Inisiator'}
-                        </span>
-                        <Check size={11} className="shrink-0 text-emerald-500" strokeWidth={2.5} />
-                    </div>
-                    <div className="mt-0.5 flex items-center">
-                        <Badge variant="outline" className="px-1.5 py-0 font-bold uppercase text-emerald-700 dark:text-emerald-300 border-emerald-500/25 bg-emerald-500/10 text-[8px] tracking-wider rounded-xs">
-                            Diajukan (Pengajuan Awal)
-                        </Badge>
-                    </div>
+        <div className="flex w-full items-center justify-between gap-2 py-0.5">
+            <div className="flex min-w-0 items-center gap-2">
+                <UserAvatarIcon user={creator} size="sm" className="ring-surface-base h-6 w-6 shrink-0 text-[10px] ring-1" />
+                <div className="flex min-w-0 items-center gap-1">
+                    <span className="text-text-main truncate text-[11px] leading-tight font-bold">{creator?.name || 'Inisiator'}</span>
                 </div>
             </div>
             {submittedAt && (
-                <span className="text-muted-foreground shrink-0 font-mono text-[9px] tabular-nums uppercase">
-                    {formatDateTime(submittedAt)}
-                </span>
+                <span className="text-muted-foreground shrink-0 font-mono text-[9px] uppercase tabular-nums">{formatDateTime(submittedAt)}</span>
             )}
         </div>
     );

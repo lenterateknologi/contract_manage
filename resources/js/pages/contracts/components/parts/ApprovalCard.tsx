@@ -69,12 +69,15 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false,
         }
         : undefined;
 
+    // Check if step or approval has configured actions
+    const hasActions = Boolean(a.action_code || a.action_alias || (stepActions && stepActions.length > 0));
+
     return (
         <div
             style={cardCustomStyle}
             className={cn(
                 'group relative flex flex-col w-full transition-all duration-200 py-1 px-1.5 rounded-lg border border-transparent',
-                isCardPending ? 'bg-amber-500/5 border-amber-500/25 shadow-2xs' : '',
+                (isCardPending && hasActions) ? 'bg-amber-500/5 border-amber-500/25 shadow-2xs' : '',
                 (isApproved && !isEffectivelyRejected && !cardCustomStyle) ? 'bg-emerald-500/5 border-emerald-500/20' : '',
                 ((isRejected || isEffectivelyRejected) && !cardCustomStyle) ? 'bg-rose-500/5 border-rose-500/20' : '',
                 isLite ? 'gap-1' : 'gap-1.5',
@@ -96,7 +99,7 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false,
                                         size="sm"
                                         className={cn(
                                             "h-6 w-6 ring-1 shrink-0 text-[10px]",
-                                            isCardPending ? "ring-amber-500/50" : "ring-surface-base"
+                                            (isCardPending && hasActions) ? "ring-amber-500/50" : "ring-surface-base"
                                         )}
                                     />
                                 );
@@ -104,9 +107,9 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false,
                             return (
                                 <div className={cn(
                                     "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border shadow-2xs",
-                                    isCardPending ? "border-amber-500/40 bg-amber-500/15 text-amber-600 dark:text-amber-400 ring-2 ring-amber-500/20" : "border-border bg-muted text-muted-foreground ring-1 ring-surface-base"
+                                    (isCardPending && hasActions) ? "border-amber-500/40 bg-amber-500/15 text-amber-600 dark:text-amber-400 ring-2 ring-amber-500/20" : "border-border bg-muted text-muted-foreground ring-1 ring-surface-base"
                                 )}>
-                                    {isCardPending ? <Clock size={12} strokeWidth={2.5} className="animate-pulse" /> : <Lock size={11} strokeWidth={2} />}
+                                    {(isCardPending && hasActions) ? <Clock size={12} strokeWidth={2.5} className="animate-pulse" /> : <Lock size={11} strokeWidth={2} />}
                                 </div>
                             );
                         })()}
@@ -119,8 +122,6 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false,
                                 <span className={cn("text-text-main truncate font-bold leading-tight", isLite ? "text-[11px]" : "text-[11px]")}>
                                     {a.approver.name}
                                 </span>
-                                {isApproved && !isEffectivelyRejected && <Check size={11} className="shrink-0 text-emerald-500" strokeWidth={2.5} />}
-                                {(isRejected || isEffectivelyRejected) && <X size={11} className="shrink-0 text-rose-500" strokeWidth={2.5} />}
                             </div>
                             <div className="flex items-center gap-1.5 text-[9.5px] text-text-soft flex-wrap">
                                 {a.batch_no && a.batch_no > 1 && (
@@ -134,11 +135,8 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false,
                                     </Badge>
                                 )}
                                 {!isLite && a.approver.email && <span className="truncate opacity-75">{a.approver.email}</span>}
-                                {a.role && (
-                                    <Badge variant="outline" className={cn(
-                                        "px-1.5 py-0 font-semibold uppercase text-muted-foreground border-border bg-muted/50 rounded-xs",
-                                        isLite ? "text-[8px]" : "text-[8.5px]"
-                                    )}>
+                                {!isLite && a.role && (
+                                    <Badge variant="outline" className="px-1.5 py-0 font-semibold uppercase text-muted-foreground border-border bg-muted/50 rounded-xs text-[8.5px]">
                                         {a.role}
                                     </Badge>
                                 )}
@@ -218,7 +216,7 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false,
                         <ActionBadge actionCode="approve" alias="Setujui" targetStatus={targetStatusCode} size="xs" isApproved={true} />
                     ) : (isRejected || isEffectivelyRejected) ? (
                         <ActionBadge actionCode="reject" alias="Tolak" targetStatus={targetStatusCode || 'rejected'} size="xs" isRejected={true} />
-                    ) : isCardPending ? (
+                    ) : (isCardPending && hasActions) ? (
                         <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 border border-amber-500/40 px-2 py-0.5 text-[9px] font-bold tracking-wider uppercase text-amber-700 dark:text-amber-300 shadow-2xs">
                             <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping shrink-0" />
                             <span>Pending</span>
@@ -234,24 +232,15 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false,
                         <StatusBadge status={targetStatusCode} size="sm" />
                     ) : null}
 
-                    {/* Timestamps: Waktu Masuk & Waktu Eksekusi */}
-                    <div className="flex flex-col items-end gap-0.5 text-[9.5px]">
-                        {/* Waktu Sampai / Masuk Step */}
-                        {(a.step_entry_at || a.created_at) && (
-                            <span className="text-text-soft flex items-center gap-1 font-medium" title="Waktu Sampai / Masuk Step">
-                                <LogIn size={10} className="text-muted-foreground shrink-0" />
-                                <span className="text-text-soft font-normal">Masuk:</span> {formatDateTime(a.step_entry_at || a.created_at)}
-                            </span>
-                        )}
-
-                        {/* Waktu Eksekusi / Keputusan (Jika sudah diputuskan) */}
-                        {a.decided_at && (
+                    {/* Timestamps: Waktu Eksekusi (Jika sudah diputuskan) */}
+                    {a.decided_at && (
+                        <div className="flex flex-col items-end gap-0.5 text-[9.5px]">
                             <span className="text-text-main font-semibold flex items-center gap-1" title="Waktu Eksekusi / Keputusan">
                                 <Clock size={10} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
                                 <span className="text-text-soft font-normal">Selesai:</span> {formatDateTime(a.decided_at)}
                             </span>
-                        )}
-                    </div>
+                        </div>
+                    )}
                 </div>
             </div>
 

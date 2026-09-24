@@ -1,11 +1,11 @@
 import { Button } from '@/components/ui/buttons/Button';
 import { SearchInput } from '@/components/ui/inputs/SearchInput';
 import { useDebounce } from '@/hooks/use-debounce';
-import { cn } from '@/lib/utils';
+import { cn, formatDateTime } from '@/lib/utils';
 import { Contract, ContractApproval, UserProfile } from '@/pages/contracts/types';
 import { Badge } from '@/components/ui/feedback/Badge';
 import { Popover, PopoverButton, PopoverPanel, Portal } from '@headlessui/react';
-import { Download, GitCommit, Layers, Workflow, ArrowRight, ArrowDownRight, Clock, UserCheck, CheckCircle2, AlertCircle, Hourglass, User as UserIcon, Users, ChevronDown } from 'lucide-react';
+import { Download, GitCommit, Layers, Workflow, ArrowRight, ArrowDownRight, Clock, UserCheck, CheckCircle2, AlertCircle, Hourglass, User as UserIcon, Users, ChevronDown, LogIn } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 import { ApprovalCard } from './ApprovalCard';
 import { InitiatorStepCard } from './InitiatorStepCard';
@@ -13,6 +13,7 @@ import { ProjectedStepCard } from './ProjectedStepCard';
 import { UserAvatarIcon } from '@/components/profile/UserAvatar';
 
 import { Timeline, TimelineItem, TimelineIcon, TimelineContent } from '../ui/timeline';
+import { ApprovalStepsLite } from './ApprovalStepsLite';
 
 interface Props {
     contract: Contract;
@@ -569,12 +570,18 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                                 <span className="bg-surface-muted text-foreground border border-surface-border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded">
                                     Ditolak ✗
                                 </span>
-                            ) : (
-                                <span className="inline-flex items-center gap-1 rounded bg-surface-muted text-foreground border border-surface-border px-2 py-0.5 text-[9px] font-bold tracking-wider uppercase">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                                    <span>Pending</span>
-                                </span>
-                            )}
+                            ) : (() => {
+                                const activeStepObj = contract.workflow?.steps?.find((s: any) => s.step === activePendingApproval?.sequence || s.id === activePendingApproval?.workflow_step_id) || activePendingApproval?.workflow_step;
+                                const activeStepActions: any[] = (activeStepObj as any)?.action_configs || (activeStepObj as any)?.actions || [];
+                                const hasActiveActions = activeStepActions.length > 0 || Boolean(activePendingApproval?.action_code || activePendingApproval?.action_alias);
+                                if (!hasActiveActions) return null;
+                                return (
+                                    <span className="inline-flex items-center gap-1 rounded bg-surface-muted text-foreground border border-surface-border px-2 py-0.5 text-[9px] font-bold tracking-wider uppercase">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                                        <span>Pending</span>
+                                    </span>
+                                );
+                            })()}
                         </div>
                     </div>
 
@@ -623,9 +630,22 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
 
             {/* Scrollable Timeline Area */}
             <div className="flex-1 min-h-0 overflow-y-auto space-y-2.5 custom-scrollbar pr-1 pb-4">
-
-            <div className="relative">
-                <Timeline>
+                {viewTab === 'lite' ? (
+                    <ApprovalStepsLite
+                        contract={contract}
+                        approvals={approvals}
+                        creator={creator}
+                        submittedAt={submittedAt}
+                        meId={meId}
+                        onApprove={onApprove}
+                        search={debouncedSearch}
+                        activePendingApproval={activePendingApproval}
+                        expandedGroups={expandedGroups}
+                        setExpandedGroups={setExpandedGroups}
+                    />
+                ) : (
+                    <div className="relative">
+                        <Timeline>
                     {!search && !approvals.some((a) => a.sequence === 1) && (
                         <TimelineItem status="completed">
                             <TimelineIcon status="completed">
@@ -933,6 +953,18 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                                                                  </div>
                                                              );
                                                          })()}
+
+                                                         {/* Waktu Masuk Step setara Label Step */}
+                                                         {(() => {
+                                                             const stepEntryAt = group.items.find((it: any) => it.step_entry_at || it.created_at)?.step_entry_at || group.items.find((it: any) => it.created_at)?.created_at;
+                                                             if (!stepEntryAt) return null;
+                                                             return (
+                                                                 <span className="text-text-soft flex items-center gap-1 font-mono text-[9px] tabular-nums uppercase shrink-0" title="Waktu Masuk Tahap">
+                                                                     <LogIn size={9.5} className="text-muted-foreground shrink-0" />
+                                                                     <span className="text-text-soft font-normal">Masuk:</span> {formatDateTime(stepEntryAt)}
+                                                                 </span>
+                                                             );
+                                                         })()}
                                                     </div>
 
                                                     <div className="mt-0.5 space-y-1.5">
@@ -1043,6 +1075,7 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                     })}
                 </Timeline>
                 </div>
+                )}
             </div>
         </div>
     );

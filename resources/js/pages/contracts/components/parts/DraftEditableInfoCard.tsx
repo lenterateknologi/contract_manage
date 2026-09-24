@@ -499,12 +499,12 @@ export function DraftEditableInfoCard({
                             </div>
                         )}
 
-                        {/* Alur Kerja (Workflow) */}
-                        <div className="flex flex-col gap-2">
-                            <div className="text-muted-foreground flex items-center justify-between gap-1.5 text-[10px] font-bold tracking-wider uppercase">
+                        {/* Alur Kerja (Workflow Information) */}
+                        <div className="flex flex-col gap-1.5 pt-0.5">
+                            <div className="flex items-center justify-between gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                                 <div className="flex items-center gap-1.5">
                                     <GitBranch size={12} className="text-muted-foreground/80 shrink-0" />
-                                    <span>Alur Kerja (Workflow Utama)</span>
+                                    <span>Informasi Alur Kerja</span>
                                 </div>
                                 {(selected.is_in_sub_workflow ||
                                     (selected.origin_workflow && selected.origin_workflow_id !== selected.workflow_id)) && (
@@ -514,34 +514,37 @@ export function DraftEditableInfoCard({
                                 )}
                             </div>
 
-                            <div className="border-surface-border bg-surface-muted/30 flex flex-col gap-2 rounded-lg border p-2.5">
-                                <div className="flex flex-wrap items-center justify-between gap-2">
-                                    <span className="inline-flex items-center gap-1.5 rounded-md border border-indigo-500/30 bg-indigo-500/15 px-2.5 py-0.5 text-xs font-bold text-indigo-700 dark:text-indigo-300">
-                                        <GitBranch size={11} className="shrink-0" />
+                            <div className="grid grid-cols-1 gap-1 text-[11px]">
+                                {/* 1. Workflow Utama */}
+                                <div className="flex items-center justify-between gap-2 py-0.5 border-b border-surface-border/40">
+                                    <span className="text-muted-foreground text-[10px] font-medium">Workflow Utama:</span>
+                                    <span className="text-text-main font-bold truncate max-w-[200px]" title={selected.origin_workflow?.name || selected.workflow?.name}>
                                         {selected.origin_workflow?.name || selected.workflow?.name || 'Alur Standar'}
                                     </span>
-                                    {(selected.origin_workflow?.steps || selected.workflow?.steps) && (
-                                        <span className="text-muted-foreground text-[9.5px] font-semibold">
-                                            Total: {(selected.origin_workflow?.steps || selected.workflow?.steps)?.length} Langkah
-                                        </span>
-                                    )}
                                 </div>
 
-                                {(selected.is_in_sub_workflow || selected.current_sub_workflow_id) &&
-                                    (selected.sub_workflow || selected.workflow_step?.workflow) && (
-                                        <div className="flex items-center gap-1.5 rounded border border-amber-500/25 bg-amber-500/10 p-1.5 px-2 text-[10px] text-amber-700 dark:text-amber-300">
-                                            <CornerDownRight size={12} className="shrink-0 text-amber-600" />
-                                            <span>
-                                                Sub-alur kerja berjalan:{' '}
-                                                <strong className="text-foreground">
-                                                    {selected.sub_workflow?.name || selected.workflow_step?.workflow?.name}
-                                                </strong>
+                                {/* 2. Workflow Saat Ini */}
+                                <div className="flex items-center justify-between gap-2 py-0.5 border-b border-surface-border/40">
+                                    <span className="text-muted-foreground text-[10px] font-medium">Workflow Saat Ini:</span>
+                                    <div className="flex items-center gap-1 min-w-0">
+                                        <span className="text-text-main font-bold truncate max-w-[180px]" title={selected.workflow?.name || selected.sub_workflow?.name || selected.origin_workflow?.name}>
+                                            {selected.workflow?.name || selected.sub_workflow?.name || selected.origin_workflow?.name || 'Alur Standar'}
+                                        </span>
+                                        {(selected.is_in_sub_workflow || (selected.origin_workflow && selected.origin_workflow_id !== selected.workflow_id)) && (
+                                            <span className="text-[8px] font-bold px-1 py-0.2 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300 shrink-0">
+                                                Sub
                                             </span>
-                                            {selected.branch_step_number && (
-                                                <span className="text-muted-foreground">(Cabang dari Tahap {selected.branch_step_number})</span>
-                                            )}
-                                        </div>
-                                    )}
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* 3. Origin Workflow */}
+                                <div className="flex items-center justify-between gap-2 py-0.5">
+                                    <span className="text-muted-foreground text-[10px] font-medium">Origin Workflow:</span>
+                                    <span className="text-text-main font-semibold truncate max-w-[200px]" title={selected.origin_workflow?.name || '-'}>
+                                        {selected.origin_workflow?.name || selected.workflow?.name || '-'}
+                                    </span>
+                                </div>
                             </div>
                         </div>
 
@@ -581,84 +584,52 @@ export function DraftEditableInfoCard({
 
                             return (
                                 <div className="border-surface-border/60 flex flex-col gap-1.5 border-t pt-2">
-                                    <div className="text-muted-foreground flex items-center justify-between gap-1.5 text-[10px] font-bold tracking-wider uppercase">
+                                    <div className="flex items-center justify-between gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                                         <div className="flex items-center gap-1.5">
                                             <Layers size={12} className="text-muted-foreground/80 shrink-0" />
                                             <span>Tahap Saat Ini (Current Step)</span>
                                         </div>
                                         {stepNumber && totalSteps > 0 && (
-                                            <span className="text-primary py-0.2 bg-primary/10 border-primary/20 rounded border px-1.5 text-[9px] font-bold">
-                                                Tahap {stepNumber} dari {totalSteps}
+                                            <span className="text-primary font-bold text-[9.5px]">
+                                                Tahap {stepNumber}/{totalSteps}
                                             </span>
                                         )}
                                     </div>
 
-                                    <div className="border-surface-border bg-surface-muted/40 flex flex-col gap-2.5 rounded-lg border p-3">
-                                        {/* Step Title & Status */}
-                                        <div className="flex items-start justify-between gap-2">
-                                            <div className="flex min-w-0 flex-col">
-                                                <div className="flex flex-wrap items-center gap-1.5">
-                                                    {stepCategory && (
-                                                        <span className="py-0.2 rounded border border-indigo-500/20 bg-indigo-500/10 px-1.5 text-[8.5px] font-bold tracking-wider text-indigo-700 uppercase dark:text-indigo-300">
-                                                            {stepCategory}
-                                                        </span>
-                                                    )}
-                                                    {stepType && (
-                                                        <span className="py-0.2 bg-surface-muted text-muted-foreground border-surface-border rounded border px-1.5 text-[8.5px] font-semibold tracking-wider uppercase">
-                                                            Tipe: {stepType}
-                                                        </span>
-                                                    )}
-                                                    <span className="text-foreground text-xs leading-tight font-bold">
-                                                        {isApproved
-                                                            ? 'Semua Tahap Selesai (Disetujui)'
-                                                            : isRejected
-                                                              ? 'Alur Terhenti (Ditolak / Revisi)'
-                                                              : stepName || 'Tahap Persetujuan'}
-                                                    </span>
-                                                </div>
-                                                {currentStep?.description && (
-                                                    <p className="text-muted-foreground mt-1 text-[10px]">{currentStep.description}</p>
-                                                )}
-                                            </div>
-
-                                            {/* Status Badge */}
-                                            <div className="shrink-0">
-                                                {isApproved ? (
-                                                    <span className="inline-flex items-center gap-1 rounded border border-emerald-500/30 bg-emerald-500/15 px-2 py-0.5 text-[9px] font-bold text-emerald-700 uppercase dark:text-emerald-300">
-                                                        <CheckCircle2 size={10} className="shrink-0" />
-                                                        <span>Selesai</span>
-                                                    </span>
-                                                ) : isRejected ? (
-                                                    <span className="inline-flex items-center gap-1 rounded border border-rose-500/30 bg-rose-500/15 px-2 py-0.5 text-[9px] font-bold text-rose-700 uppercase dark:text-rose-300">
-                                                        <AlertCircle size={10} className="shrink-0" />
-                                                        <span>Ditolak</span>
-                                                    </span>
-                                                ) : (
-                                                    <span className="inline-flex items-center gap-1 rounded border border-amber-500/30 bg-amber-500/15 px-2 py-0.5 text-[9px] font-bold text-amber-800 uppercase shadow-2xs dark:text-amber-200">
-                                                        <span className="h-1.5 w-1.5 shrink-0 animate-ping rounded-full bg-amber-500" />
-                                                        <span>Sedang Berjalan</span>
+                                    <div className="grid grid-cols-1 gap-1 text-[11px]">
+                                        {/* Step Name & Status */}
+                                        <div className="flex items-center justify-between gap-2 py-0.5 border-b border-surface-border/40">
+                                            <span className="text-muted-foreground text-[10px] font-medium">Nama Tahap:</span>
+                                            <div className="flex items-center gap-1.5 min-w-0">
+                                                {stepCategory && (
+                                                    <span className="py-0.2 rounded border border-indigo-500/20 bg-indigo-500/10 px-1 text-[8px] font-bold tracking-wider text-indigo-700 uppercase dark:text-indigo-300">
+                                                        {stepCategory}
                                                     </span>
                                                 )}
+                                                <span className="text-foreground text-xs font-bold truncate">
+                                                    {isApproved
+                                                        ? 'Semua Tahap Selesai (Disetujui)'
+                                                        : isRejected
+                                                          ? 'Alur Terhenti (Ditolak / Revisi)'
+                                                          : stepName || 'Tahap Persetujuan'}
+                                                </span>
                                             </div>
                                         </div>
 
-                                        {/* Detail Approver & Role */}
+                                        {/* Approver / PIC */}
                                         {!isApproved && !isRejected && (
-                                            <div className="border-surface-border/60 flex flex-col gap-1.5 border-t pt-2 text-[10px]">
-                                                <div className="flex flex-wrap items-center justify-between gap-2">
-                                                    <span className="text-muted-foreground flex items-center gap-1 font-medium">
-                                                        <UserCheck size={12} className="text-primary shrink-0" />
-                                                        Pihak Penyetuju / PIC:
-                                                    </span>
-                                                    <span className="text-foreground font-bold">
+                                            <>
+                                                <div className="flex items-center justify-between gap-2 py-0.5 border-b border-surface-border/40">
+                                                    <span className="text-muted-foreground text-[10px] font-medium">Approver / PIC:</span>
+                                                    <span className="text-foreground font-bold truncate max-w-[200px]">
                                                         {stepApprover || (stepRole ? `Menunggu ${stepRole}` : 'Belum Ditentukan')}
                                                     </span>
                                                 </div>
 
                                                 {stepRole && (
-                                                    <div className="text-muted-foreground flex items-center justify-between gap-2">
-                                                        <span>Wewenang / Role:</span>
-                                                        <span className="text-foreground bg-surface-base py-0.2 border-surface-border rounded border px-1.5 text-[9px] font-semibold uppercase">
+                                                    <div className="flex items-center justify-between gap-2 py-0.5 border-b border-surface-border/40">
+                                                        <span className="text-muted-foreground text-[10px] font-medium">Wewenang / Role:</span>
+                                                        <span className="text-foreground font-semibold text-[10px] uppercase">
                                                             {stepRole}
                                                         </span>
                                                     </div>
@@ -666,13 +637,13 @@ export function DraftEditableInfoCard({
 
                                                 {/* Actions Available in Step */}
                                                 {actions && actions.length > 0 && (
-                                                    <div className="text-muted-foreground border-surface-border/40 flex flex-wrap items-center justify-between gap-2 border-t pt-1">
-                                                        <span>Aksi Tersedia:</span>
+                                                    <div className="flex items-center justify-between gap-2 py-0.5">
+                                                        <span className="text-muted-foreground text-[10px] font-medium">Aksi Tersedia:</span>
                                                         <div className="flex flex-wrap items-center gap-1">
                                                             {actions.map((act: any, idx: number) => (
                                                                 <span
                                                                     key={idx}
-                                                                    className="py-0.2 bg-surface-base text-foreground border-surface-border inline-flex items-center rounded border px-1.5 text-[8.5px] font-bold uppercase"
+                                                                    className="py-0.2 bg-surface-muted text-foreground border-surface-border inline-flex items-center rounded border px-1.5 text-[8px] font-bold uppercase"
                                                                 >
                                                                     {act.label || act.alias || act.action_code || act.name}
                                                                 </span>
@@ -680,7 +651,7 @@ export function DraftEditableInfoCard({
                                                         </div>
                                                     </div>
                                                 )}
-                                            </div>
+                                            </>
                                         )}
                                     </div>
                                 </div>
