@@ -21,7 +21,7 @@ export default function ForgotPassword({ status }: Readonly<{ status?: string }>
     return (
         <AuthSplitLayout
             title="Lupa Kata Sandi"
-            description="Masukkan email untuk tautan atur ulang."
+            description="Masukkan email atau username terdaftar Anda untuk tautan atur ulang."
             image="https://images.unsplash.com/photo-1512314889357-e157c22f938d?auto=format&fit=crop&q=80&w=1200"
             isSuccess={wasSuccessful}
         >
@@ -39,14 +39,14 @@ export default function ForgotPassword({ status }: Readonly<{ status?: string }>
                 <div className="grid gap-5">
                     <FormInput
                         id="email"
-                        label="Alamat Email"
-                        type="email"
+                        label="Email atau Username"
+                        type="text"
                         name="email"
-                        autoComplete="email"
+                        autoComplete="username"
                         value={data.email}
                         autoFocus
                         onChange={(e) => setData('email', e.target.value)}
-                        placeholder="email@example.com"
+                        placeholder="Email atau username Anda"
                         error={errors.email}
                         disabled={processing}
                         className="rounded-xl"

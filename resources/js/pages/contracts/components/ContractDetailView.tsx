@@ -905,7 +905,8 @@ export const ContractDetailView = ({
                                 )}
                                 <div className="flex flex-1 flex-col min-h-0 h-full overflow-hidden">
                                     <Suspense fallback={<TabSkeleton />}>
-                                        {detailTab === 'documents' && (() => {
+                                        {/* Documents Tab View (F1, F2, Agreement kept mounted to preserve unsaved form inputs) */}
+                                        {(() => {
                                             const meta = contract.workflow_step?.meta || {};
                                             const hasF1 = meta.show_tab_f1 !== false && ((contract as any).f1_mode || 'upload') !== 'none';
                                             const hasF2 = meta.show_tab_f2 !== false && ((contract as any).f2_mode || 'upload') !== 'none';
@@ -920,47 +921,54 @@ export const ContractDetailView = ({
                                             const activeSub = docSubTabs.some(t => t.id === docSubTab) ? docSubTab : (docSubTabs[0]?.id || 'f1');
 
                                             return (
-                                                <div className="flex flex-col flex-1 min-h-0 h-full overflow-hidden">
-                                                    <div className="flex-1 min-h-0 h-full flex flex-col overflow-hidden">
-                                                        {activeSub === 'f1' && (
-                                                            <F1Tab
-                                                                contract={contract}
-                                                                formTemplates={formTemplates}
-                                                                vendors={vendors}
-                                                                meUser={meUser}
-                                                                onUpdate={handleContractUpdate}
-                                                                onFormDirty={(dirty) => setHasFormChanges(dirty)}
-                                                                onFormSave={(fn) => {
-                                                                    saveFormRef.current = fn;
-                                                                }}
-                                                            />
+                                                <div className={cn("flex-col flex-1 min-h-0 h-full overflow-hidden", detailTab === 'documents' ? "flex" : "hidden")}>
+                                                    <div className="flex-1 min-h-0 h-full flex flex-col overflow-hidden relative">
+                                                        {hasF1 && (
+                                                            <div className={cn("flex-1 min-h-0 h-full flex flex-col overflow-hidden", activeSub === 'f1' ? "flex" : "hidden")}>
+                                                                <F1Tab
+                                                                    contract={contract}
+                                                                    formTemplates={formTemplates}
+                                                                    vendors={vendors}
+                                                                    meUser={meUser}
+                                                                    onUpdate={handleContractUpdate}
+                                                                    onFormDirty={(dirty) => setHasFormChanges(dirty)}
+                                                                    onFormSave={(fn) => {
+                                                                        saveFormRef.current = fn;
+                                                                    }}
+                                                                />
+                                                            </div>
                                                         )}
-                                                        {activeSub === 'f2' && (
-                                                            <F2Tab
-                                                                contract={contract}
-                                                                formTemplates={formTemplates}
-                                                                vendors={vendors}
-                                                                meUser={meUser}
-                                                                onUpdate={handleContractUpdate}
-                                                                onFormDirty={(dirty) => setHasFormChanges(dirty)}
-                                                                onFormSave={(fn) => {
-                                                                    saveFormRef.current = fn;
-                                                                }}
-                                                            />
+                                                        {hasF2 && (
+                                                            <div className={cn("flex-1 min-h-0 h-full flex flex-col overflow-hidden", activeSub === 'f2' ? "flex" : "hidden")}>
+                                                                <F2Tab
+                                                                    contract={contract}
+                                                                    formTemplates={formTemplates}
+                                                                    vendors={vendors}
+                                                                    meUser={meUser}
+                                                                    onUpdate={handleContractUpdate}
+                                                                    onFormDirty={(dirty) => setHasFormChanges(dirty)}
+                                                                    onFormSave={(fn) => {
+                                                                        saveFormRef.current = fn;
+                                                                    }}
+                                                                />
+                                                            </div>
                                                         )}
-                                                        {activeSub === 'agreement' && (
-                                                            <AgreementTab
-                                                                contract={contract}
-                                                                formTemplates={formTemplates}
-                                                                vendors={vendors}
-                                                                meUser={meUser}
-                                                                onUpdate={handleContractUpdate}
-                                                            />
+                                                        {hasAgreement && (
+                                                            <div className={cn("flex-1 min-h-0 h-full flex flex-col overflow-hidden", activeSub === 'agreement' ? "flex" : "hidden")}>
+                                                                <AgreementTab
+                                                                    contract={contract}
+                                                                    formTemplates={formTemplates}
+                                                                    vendors={vendors}
+                                                                    meUser={meUser}
+                                                                    onUpdate={handleContractUpdate}
+                                                                />
+                                                            </div>
                                                         )}
                                                     </div>
                                                 </div>
                                             );
                                         })()}
+
                                         {detailTab === 'parties' && (
                                             <div className="flex-1 min-h-0 h-full flex flex-col overflow-hidden">
                                                 {(() => {

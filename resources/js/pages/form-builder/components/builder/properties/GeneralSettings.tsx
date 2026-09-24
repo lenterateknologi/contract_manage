@@ -47,6 +47,37 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ selectedField,
                                 <option value="meta_p2_signer">Penandatangan / Wakil Pihak II / Penjual (meta_p2_signer)</option>
                                 <option value="meta_p2_signer_position">Jabatan Penandatangan Pihak II / Penjual (meta_p2_signer_position)</option>
                                 <option value="meta_p2_alamat">Alamat Pihak II / Penjual / Supplier (meta_p2_alamat)</option>
+                                <option value="meta_p2_kode">Kode / No. Registrasi Pihak II (meta_p2_kode)</option>
+                                <option value="meta_p2_bentuk_badan_usaha">Bentuk Badan Usaha Pihak II (meta_p2_bentuk_badan_usaha)</option>
+                                <option value="meta_p2_kota">Kota Pihak II (meta_p2_kota)</option>
+                                <option value="meta_p2_provinsi">Provinsi Pihak II (meta_p2_provinsi)</option>
+                                <option value="meta_p2_kodepos">Kode Pos Pihak II (meta_p2_kodepos)</option>
+                                <option value="meta_p2_email">Email Perusahaan Pihak II (meta_p2_email)</option>
+                                <option value="meta_p2_phone">Telepon Perusahaan Pihak II (meta_p2_phone)</option>
+                                <option value="meta_p2_pic_email">Email PIC Pihak II (meta_p2_pic_email)</option>
+                                <option value="meta_p2_pic_phone">No. HP PIC Pihak II (meta_p2_pic_phone)</option>
+                            </optgroup>
+                            <optgroup label="Legalitas Pihak II / Vendor">
+                                <option value="meta_p2_nib">Nomor Induk Berusaha / NIB (meta_p2_nib)</option>
+                                <option value="meta_p2_nib_expired">Tgl Kadaluarsa NIB (meta_p2_nib_expired)</option>
+                                <option value="meta_p2_siup">Nomor SIUP (meta_p2_siup)</option>
+                                <option value="meta_p2_siup_expired">Tgl Kadaluarsa SIUP (meta_p2_siup_expired)</option>
+                                <option value="meta_p2_tdp">Nomor TDP (meta_p2_tdp)</option>
+                                <option value="meta_p2_tdp_expired">Tgl Kadaluarsa TDP (meta_p2_tdp_expired)</option>
+                                <option value="meta_p2_izin_usaha">Izin Usaha / Business Permit (meta_p2_izin_usaha)</option>
+                                <option value="meta_p2_akta_pendirian">Akta Pendirian (meta_p2_akta_pendirian)</option>
+                                <option value="meta_p2_sk_menkumham">SK Menkumham (meta_p2_sk_menkumham)</option>
+                            </optgroup>
+                            <optgroup label="Perpajakan & Bank Pihak II">
+                                <option value="meta_p2_npwp">Nomor NPWP (meta_p2_npwp)</option>
+                                <option value="meta_p2_npwp_status">Status NPWP (meta_p2_npwp_status)</option>
+                                <option value="meta_p2_pkp_status">Status PKP (meta_p2_pkp_status)</option>
+                                <option value="meta_p2_pkp_no">Nomor PKP (meta_p2_pkp_no)</option>
+                                <option value="meta_p2_ppn_tarif">Tarif PPN (meta_p2_ppn_tarif)</option>
+                                <option value="meta_p2_pp23_no">Nomor PP23 (meta_p2_pp23_no)</option>
+                                <option value="meta_p2_bank_name">Nama Bank (meta_p2_bank_name)</option>
+                                <option value="meta_p2_bank_account_no">No. Rekening Bank (meta_p2_bank_account_no)</option>
+                                <option value="meta_p2_bank_account_name">Nama Pemilik Rekening Bank (meta_p2_bank_account_name)</option>
                             </optgroup>
                             <optgroup label="Detail Kontrak">
                                 <option value="meta_harga">Harga Barang / Nilai Transaksi (meta_harga)</option>

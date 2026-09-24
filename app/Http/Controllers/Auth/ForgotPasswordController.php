@@ -31,14 +31,27 @@ class ForgotPasswordController extends Controller
     public function sendResetLink(Request $request)
     {
         $request->validate([
-            'email' => 'required|email',
+            'email' => 'required|string',
+        ], [
+            'email.required' => 'Email atau username wajib diisi.',
         ]);
 
-        $user = User::where('email', $request->email)->first();
+        $identifier = trim($request->input('email'));
+        $isEmail = filter_var($identifier, FILTER_VALIDATE_EMAIL);
+
+        $user = $isEmail
+            ? User::where('email', $identifier)->first()
+            : User::where('username', $identifier)->orWhere('nik', $identifier)->first();
 
         if (! $user) {
             return back()->withErrors([
-                'email' => 'No account found with this email address.',
+                'email' => 'Akun dengan email atau username tersebut tidak ditemukan.',
+            ]);
+        }
+
+        if (empty($user->email) || ! filter_var($user->email, FILTER_VALIDATE_EMAIL)) {
+            return back()->withErrors([
+                'email' => 'Akun ditemukan tetapi belum memiliki alamat email yang valid. Silakan hubungi administrator.',
             ]);
         }
 
@@ -56,11 +69,15 @@ class ForgotPasswordController extends Controller
         $resetUrl = route('password.reset', ['token' => $token]);
 
         if (config('notifications.email.enabled', true)) {
-            Mail::to($user->email)
-                ->queue(new ForgotPasswordResetMail($user, $resetUrl, $expireAt));
+            try {
+                Mail::to($user->email)
+                    ->send(new ForgotPasswordResetMail($user, $resetUrl, $expireAt));
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('Failed sending forgot password reset email: '.$e->getMessage());
+            }
         }
 
-        return back()->with('status', 'Password reset link has been queued for delivery to your email address.');
+        return back()->with('status', 'Tautan atur ulang kata sandi telah dikirim ke email terdaftar Anda ('.$user->email.').');
     }
 
     /**

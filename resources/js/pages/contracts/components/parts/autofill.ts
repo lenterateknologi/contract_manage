@@ -51,6 +51,35 @@ export const AUTOFILL_KEY_DEFINITIONS: Record<string, { label: string; group: st
 
     meta_pic: { label: 'PIC', group: 'Tanda Tangan & Persetujuan' },
     meta_tax_required: { label: 'Status Pajak', group: 'Tanda Tangan & Persetujuan' },
+
+    // Data Pihak II / Vendor Lengkap (Legalitas, Pajak, Bank, Kontak)
+    meta_p2_nib: { label: 'Nomor Induk Berusaha (NIB) Pihak II', group: 'Legalitas & Perizinan Pihak II' },
+    meta_p2_nib_expired: { label: 'Tgl Kadaluarsa NIB Pihak II', group: 'Legalitas & Perizinan Pihak II' },
+    meta_p2_siup: { label: 'Nomor SIUP Pihak II', group: 'Legalitas & Perizinan Pihak II' },
+    meta_p2_siup_expired: { label: 'Tgl Kadaluarsa SIUP Pihak II', group: 'Legalitas & Perizinan Pihak II' },
+    meta_p2_tdp: { label: 'Nomor TDP Pihak II', group: 'Legalitas & Perizinan Pihak II' },
+    meta_p2_tdp_expired: { label: 'Tgl Kadaluarsa TDP Pihak II', group: 'Legalitas & Perizinan Pihak II' },
+    meta_p2_izin_usaha: { label: 'Izin Usaha (Business Permit) Pihak II', group: 'Legalitas & Perizinan Pihak II' },
+    meta_p2_akta_pendirian: { label: 'Akta Pendirian Pihak II', group: 'Legalitas & Perizinan Pihak II' },
+    meta_p2_sk_menkumham: { label: 'SK Menkumham Pihak II', group: 'Legalitas & Perizinan Pihak II' },
+    meta_p2_npwp: { label: 'Nomor NPWP Pihak II', group: 'Perpajakan Pihak II' },
+    meta_p2_npwp_status: { label: 'Status NPWP Pihak II', group: 'Perpajakan Pihak II' },
+    meta_p2_pkp_status: { label: 'Status PKP Pihak II', group: 'Perpajakan Pihak II' },
+    meta_p2_pkp_no: { label: 'Nomor PKP Pihak II', group: 'Perpajakan Pihak II' },
+    meta_p2_ppn_tarif: { label: 'Tarif PPN Pihak II', group: 'Perpajakan Pihak II' },
+    meta_p2_pp23_no: { label: 'Nomor PP23 Pihak II', group: 'Perpajakan Pihak II' },
+    meta_p2_bank_name: { label: 'Nama Bank Pihak II', group: 'Perbankan Pihak II' },
+    meta_p2_bank_account_no: { label: 'Nomor Rekening Bank Pihak II', group: 'Perbankan Pihak II' },
+    meta_p2_bank_account_name: { label: 'Nama Pemilik Rekening Bank Pihak II', group: 'Perbankan Pihak II' },
+    meta_p2_email: { label: 'Email Perusahaan Pihak II', group: 'Alamat & Kontak Resmi' },
+    meta_p2_phone: { label: 'Telepon Perusahaan Pihak II', group: 'Alamat & Kontak Resmi' },
+    meta_p2_pic_email: { label: 'Email PIC / Penandatangan Pihak II', group: 'Alamat & Kontak Resmi' },
+    meta_p2_pic_phone: { label: 'No. HP / Telepon PIC Pihak II', group: 'Alamat & Kontak Resmi' },
+    meta_p2_kode: { label: 'Kode / No. Registrasi Pihak II', group: 'Para Pihak' },
+    meta_p2_bentuk_badan_usaha: { label: 'Bentuk Badan Usaha Pihak II', group: 'Para Pihak' },
+    meta_p2_kota: { label: 'Kota / Domisili Pihak II', group: 'Alamat & Kontak Resmi' },
+    meta_p2_provinsi: { label: 'Provinsi Pihak II', group: 'Alamat & Kontak Resmi' },
+    meta_p2_kodepos: { label: 'Kode Pos Pihak II', group: 'Alamat & Kontak Resmi' },
 };
 
 export const getAutofillValue = (field: any, contract: Contract, docType?: 'f1' | 'f2' | 'contract', users: any[] = []) => {
@@ -157,6 +186,53 @@ export const getAutofillValue = (field: any, contract: Contract, docType?: 'f1' 
         meta_p2_signer: () => contract.p2_signer ?? vendor?.pic_name ?? vendor?.pic ?? vendor?.detail?.pic ?? '',
         meta_p2_signer_position: () => contract.p2_signer_position ?? vendor?.pic_position ?? vendor?.detail?.pic_position ?? vendor?.detail?.jobTitle?.[0] ?? '',
         meta_p2_alamat: () => cleanSingleLineText(contract.p2_address ?? vendor?.address ?? vendor?.detail?.address ?? vendor?.detail?.mailingAddress),
+
+        // Vendor / Pihak II Legality Auto-Resolvers
+        meta_p2_nib: () => vendor?.detail?.legality?.nib ?? vendor?.nib ?? '',
+        meta_p2_nib_expired: () => vendor?.detail?.legality?.nibexpiredDate ?? vendor?.detail?.legality?.nib_expired_date ?? '',
+        meta_p2_siup: () => vendor?.detail?.legality?.siup ?? '',
+        meta_p2_siup_expired: () => vendor?.detail?.legality?.siupexpiredDate ?? vendor?.detail?.legality?.siup_expired_date ?? '',
+        meta_p2_tdp: () => vendor?.detail?.legality?.tdp ?? '',
+        meta_p2_tdp_expired: () => vendor?.detail?.legality?.tdpexpiredDate ?? vendor?.detail?.legality?.tdp_expired_date ?? '',
+        meta_p2_izin_usaha: () => vendor?.detail?.legality?.businessPermit ?? vendor?.detail?.legality?.businessLicence ?? '',
+        meta_p2_akta_pendirian: () => vendor?.detail?.legality?.memorandumOfAssociation ?? '',
+        meta_p2_sk_menkumham: () => vendor?.detail?.legality?.decissionLetterMenkumham ?? '',
+
+        // Vendor / Pihak II Tax Auto-Resolvers
+        meta_p2_npwp: () => vendor?.detail?.tax?.npwp ?? '',
+        meta_p2_npwp_status: () => vendor?.detail?.tax?.typeNpwp ?? '',
+        meta_p2_pkp_status: () => vendor?.detail?.tax?.typePkp ?? (vendor?.is_pkp ? 'PKP' : 'NON PKP'),
+        meta_p2_pkp_no: () => vendor?.detail?.tax?.pkp ?? '',
+        meta_p2_ppn_tarif: () => (vendor?.detail?.tax?.ppn !== null && vendor?.detail?.tax?.ppn !== undefined) ? `${vendor.detail.tax.ppn}%` : '',
+        meta_p2_pp23_no: () => vendor?.detail?.tax?.pp23number ?? '',
+
+        // Vendor / Pihak II Bank Auto-Resolvers
+        meta_p2_bank_name: () => {
+            const bankList = Array.isArray(vendor?.detail?.bank) ? vendor.detail.bank : [];
+            const mainBank = bankList.find((b: any) => b.status === 'Main' || b.isMain) || bankList[0] || {};
+            return mainBank.bankName ?? mainBank.bank_name ?? '';
+        },
+        meta_p2_bank_account_no: () => {
+            const bankList = Array.isArray(vendor?.detail?.bank) ? vendor.detail.bank : [];
+            const mainBank = bankList.find((b: any) => b.status === 'Main' || b.isMain) || bankList[0] || {};
+            return mainBank.accountNumber ?? mainBank.account_number ?? '';
+        },
+        meta_p2_bank_account_name: () => {
+            const bankList = Array.isArray(vendor?.detail?.bank) ? vendor.detail.bank : [];
+            const mainBank = bankList.find((b: any) => b.status === 'Main' || b.isMain) || bankList[0] || {};
+            return mainBank.accountName ?? mainBank.account_name ?? '';
+        },
+
+        // Vendor / Pihak II Contact Auto-Resolvers
+        meta_p2_email: () => vendor?.detail?.companyEmail ?? vendor?.detail?.email ?? '',
+        meta_p2_phone: () => vendor?.detail?.companyPhone ?? vendor?.detail?.phone ?? '',
+        meta_p2_pic_email: () => vendor?.detail?.picemail ?? vendor?.detail?.pic_email ?? '',
+        meta_p2_pic_phone: () => vendor?.detail?.picphone ?? vendor?.detail?.pic_phone ?? '',
+        meta_p2_kode: () => vendor?.code ?? vendor?.vendor_code ?? vendor?.detail?.registrationNumber ?? '',
+        meta_p2_bentuk_badan_usaha: () => vendor?.detail?.businessTypeName ?? vendor?.detail?.vendorType ?? '',
+        meta_p2_kota: () => vendor?.detail?.city ?? '',
+        meta_p2_provinsi: () => vendor?.detail?.province ?? vendor?.detail?.region ?? '',
+        meta_p2_kodepos: () => vendor?.detail?.postalCode ?? '',
         meta_lokasi: () => (contract as any).location ?? '',
         meta_nilai_transaksi: () => contract.metadata?.meta_harga ?? (contract as any).amount ?? '',
         meta_harga: () => contract.metadata?.meta_harga ?? (contract as any).amount ?? '',

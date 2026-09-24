@@ -431,6 +431,11 @@ class ContractFormController extends Controller
             /** @var Vendor $v */
             $v = $contract->vendor;
             $detail = $v->vendor_detail ?? [];
+            $legality = $detail['legality'] ?? [];
+            $tax = $detail['tax'] ?? [];
+            $bankList = is_array($detail['bank'] ?? null) ? $detail['bank'] : [];
+            $mainBank = collect($bankList)->first(fn ($b) => ($b['status'] ?? null) === 'Main' || ($b['isMain'] ?? false)) ?: ($bankList[0] ?? []);
+
             if (empty($formData['meta_p2_entity'])) {
                 $formData['meta_p2_entity'] = $v->vendor_name ?? ($detail['company_name'] ?? '');
             }
@@ -438,10 +443,99 @@ class ContractFormController extends Controller
                 $formData['meta_p2_signer'] = $detail['pic'] ?? ($detail['pic_name'] ?? '');
             }
             if (empty($formData['meta_p2_signer_position'])) {
-                $formData['meta_p2_signer_position'] = $detail['pic_position'] ?? ($detail['position'] ?? '');
+                $formData['meta_p2_signer_position'] = $detail['pic_position'] ?? ($detail['position'] ?? ($detail['jobTitle'][0] ?? ''));
             }
             if (empty($formData['meta_p2_alamat'])) {
-                $formData['meta_p2_alamat'] = $detail['address'] ?? '';
+                $formData['meta_p2_alamat'] = $detail['address'] ?? ($detail['mailingAddress'] ?? '');
+            }
+
+            // Vendor Legality
+            if (empty($formData['meta_p2_nib'])) {
+                $formData['meta_p2_nib'] = $legality['nib'] ?? '';
+            }
+            if (empty($formData['meta_p2_nib_expired'])) {
+                $formData['meta_p2_nib_expired'] = $legality['nibexpiredDate'] ?? ($legality['nib_expired_date'] ?? '');
+            }
+            if (empty($formData['meta_p2_siup'])) {
+                $formData['meta_p2_siup'] = $legality['siup'] ?? '';
+            }
+            if (empty($formData['meta_p2_siup_expired'])) {
+                $formData['meta_p2_siup_expired'] = $legality['siupexpiredDate'] ?? ($legality['siup_expired_date'] ?? '');
+            }
+            if (empty($formData['meta_p2_tdp'])) {
+                $formData['meta_p2_tdp'] = $legality['tdp'] ?? '';
+            }
+            if (empty($formData['meta_p2_tdp_expired'])) {
+                $formData['meta_p2_tdp_expired'] = $legality['tdpexpiredDate'] ?? ($legality['tdp_expired_date'] ?? '');
+            }
+            if (empty($formData['meta_p2_izin_usaha'])) {
+                $formData['meta_p2_izin_usaha'] = $legality['businessPermit'] ?? ($legality['businessLicence'] ?? '');
+            }
+            if (empty($formData['meta_p2_akta_pendirian'])) {
+                $formData['meta_p2_akta_pendirian'] = $legality['memorandumOfAssociation'] ?? '';
+            }
+            if (empty($formData['meta_p2_sk_menkumham'])) {
+                $formData['meta_p2_sk_menkumham'] = $legality['decissionLetterMenkumham'] ?? '';
+            }
+
+            // Vendor Tax
+            if (empty($formData['meta_p2_npwp'])) {
+                $formData['meta_p2_npwp'] = $tax['npwp'] ?? '';
+            }
+            if (empty($formData['meta_p2_npwp_status'])) {
+                $formData['meta_p2_npwp_status'] = $tax['typeNpwp'] ?? '';
+            }
+            if (empty($formData['meta_p2_pkp_status'])) {
+                $formData['meta_p2_pkp_status'] = $tax['typePkp'] ?? ($v->is_pkp ? 'PKP' : 'NON PKP');
+            }
+            if (empty($formData['meta_p2_pkp_no'])) {
+                $formData['meta_p2_pkp_no'] = $tax['pkp'] ?? '';
+            }
+            if (empty($formData['meta_p2_ppn_tarif'])) {
+                $formData['meta_p2_ppn_tarif'] = isset($tax['ppn']) && $tax['ppn'] !== null ? "{$tax['ppn']}%" : '';
+            }
+            if (empty($formData['meta_p2_pp23_no'])) {
+                $formData['meta_p2_pp23_no'] = $tax['pp23number'] ?? '';
+            }
+
+            // Vendor Bank
+            if (empty($formData['meta_p2_bank_name'])) {
+                $formData['meta_p2_bank_name'] = $mainBank['bankName'] ?? ($mainBank['bank_name'] ?? '');
+            }
+            if (empty($formData['meta_p2_bank_account_no'])) {
+                $formData['meta_p2_bank_account_no'] = $mainBank['accountNumber'] ?? ($mainBank['account_number'] ?? '');
+            }
+            if (empty($formData['meta_p2_bank_account_name'])) {
+                $formData['meta_p2_bank_account_name'] = $mainBank['accountName'] ?? ($mainBank['account_name'] ?? '');
+            }
+
+            // Vendor Contact & Meta
+            if (empty($formData['meta_p2_email'])) {
+                $formData['meta_p2_email'] = $detail['companyEmail'] ?? ($detail['email'] ?? '');
+            }
+            if (empty($formData['meta_p2_phone'])) {
+                $formData['meta_p2_phone'] = $detail['companyPhone'] ?? ($detail['phone'] ?? '');
+            }
+            if (empty($formData['meta_p2_pic_email'])) {
+                $formData['meta_p2_pic_email'] = $detail['picemail'] ?? ($detail['pic_email'] ?? '');
+            }
+            if (empty($formData['meta_p2_pic_phone'])) {
+                $formData['meta_p2_pic_phone'] = $detail['picphone'] ?? ($detail['pic_phone'] ?? '');
+            }
+            if (empty($formData['meta_p2_kode'])) {
+                $formData['meta_p2_kode'] = $v->vendor_code ?? ($detail['registrationNumber'] ?? '');
+            }
+            if (empty($formData['meta_p2_bentuk_badan_usaha'])) {
+                $formData['meta_p2_bentuk_badan_usaha'] = $detail['businessTypeName'] ?? ($detail['vendorType'] ?? '');
+            }
+            if (empty($formData['meta_p2_kota'])) {
+                $formData['meta_p2_kota'] = $detail['city'] ?? '';
+            }
+            if (empty($formData['meta_p2_provinsi'])) {
+                $formData['meta_p2_provinsi'] = $detail['province'] ?? ($detail['region'] ?? '');
+            }
+            if (empty($formData['meta_p2_kodepos'])) {
+                $formData['meta_p2_kodepos'] = $detail['postalCode'] ?? '';
             }
         }
 
