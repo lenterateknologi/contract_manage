@@ -252,7 +252,12 @@ class ContractOptionsQuery
 
                         // Traverse up to include all ancestors so the tree can render
                         $parent = $current;
+                        $visited = [$parent->id => true];
                         while ($parent && $parent->parent_id && isset($typesById[$parent->parent_id])) {
+                            if (isset($visited[$parent->parent_id])) {
+                                break;
+                            }
+                            $visited[$parent->parent_id] = true;
                             $includedIds[$parent->parent_id] = true;
                             $parent = $typesById->get($parent->parent_id);
                         }
