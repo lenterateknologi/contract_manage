@@ -115,16 +115,19 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
 
         return result.sort((a, b) => {
             if (sortBy === 'time') {
-                const aTime = a.decided_at ? new Date(a.decided_at).getTime() : a.created_at ? new Date(a.created_at).getTime() : 0;
-                const bTime = b.decided_at ? new Date(b.decided_at).getTime() : b.created_at ? new Date(b.created_at).getTime() : 0;
+                const aExecTime = a.decided_at ? new Date(a.decided_at).getTime() : 0;
+                const bExecTime = b.decided_at ? new Date(b.decided_at).getTime() : 0;
                 
-                // If one has no timestamp (aTime === 0) and the other has one, put the untimed item at the very bottom
-                if (aTime === 0 && bTime !== 0) return 1;
-                if (bTime === 0 && aTime !== 0) return -1;
+                // If one has no timestamp (aExecTime === 0) and the other has one, put the untimed item at the very bottom
+                if (aExecTime === 0 && bExecTime !== 0) return 1;
+                if (bExecTime === 0 && aExecTime !== 0) return -1;
 
-                if (aTime !== bTime && aTime !== 0 && bTime !== 0) {
-                    return aTime - bTime;
+                if (aExecTime !== bExecTime && aExecTime !== 0 && bExecTime !== 0) {
+                    return aExecTime - bExecTime;
                 }
+            }
+            if (a.sequence !== b.sequence) {
+                return (a.sequence || 0) - (b.sequence || 0);
             }
             if (a.sort_order !== undefined && b.sort_order !== undefined && a.sort_order !== b.sort_order) {
                 return (a.sort_order || 0) - (b.sort_order || 0);

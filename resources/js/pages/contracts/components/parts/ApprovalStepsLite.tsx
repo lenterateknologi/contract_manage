@@ -66,20 +66,22 @@ export function ApprovalStepsLite({
         }
 
         return result.sort((a, b) => {
-            const aTime = a.decided_at ? new Date(a.decided_at).getTime() : a.created_at ? new Date(a.created_at).getTime() : 0;
-            const bTime = b.decided_at ? new Date(b.decided_at).getTime() : b.created_at ? new Date(b.created_at).getTime() : 0;
+            const aExecTime = a.decided_at ? new Date(a.decided_at).getTime() : 0;
+            const bExecTime = b.decided_at ? new Date(b.decided_at).getTime() : 0;
 
-            if (aTime === 0 && bTime !== 0) return 1;
-            if (bTime === 0 && aTime !== 0) return -1;
-            if (aTime !== bTime && aTime !== 0 && bTime !== 0) {
-                return aTime - bTime;
+            // Items without execution time (un-executed / pending) always go to the very bottom
+            if (aExecTime === 0 && bExecTime !== 0) return 1;
+            if (bExecTime === 0 && aExecTime !== 0) return -1;
+            if (aExecTime !== bExecTime && aExecTime !== 0 && bExecTime !== 0) {
+                return aExecTime - bExecTime;
             }
 
+            // For unexecuted items or items executed at the exact same timestamp, fallback to sequence / sort_order
+            if (a.sequence !== b.sequence) {
+                return (a.sequence || 0) - (b.sequence || 0);
+            }
             if (a.sort_order !== undefined && b.sort_order !== undefined && a.sort_order !== b.sort_order) {
                 return (a.sort_order || 0) - (b.sort_order || 0);
-            }
-            if (a.created_at && b.created_at) {
-                return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
             }
             return a.id.localeCompare(b.id);
         });
