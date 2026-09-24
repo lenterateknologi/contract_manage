@@ -21,6 +21,7 @@
 /public/build
 /public/hot
 /public/storage
+/.puppeteer_cache
 /storage/*.key
 /storage/pail
 /vendor

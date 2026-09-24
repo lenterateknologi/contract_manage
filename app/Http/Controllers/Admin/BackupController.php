@@ -86,7 +86,20 @@ class BackupController extends Controller
             return back()->withErrors(['error' => "Skrip export tidak ditemukan di {$scriptPath}"]);
         }
 
-        $result = Process::path(base_path())->run("bash script/{$scriptName}");
+        $defaultConn = config('database.default');
+        $dbConfig = config("database.connections.{$defaultConn}", []);
+
+        $env = [
+            'DB_HOST' => (string) ($dbConfig['host'] ?? '127.0.0.1'),
+            'DB_PORT' => (string) ($dbConfig['port'] ?? 5432),
+            'DB_DATABASE' => (string) ($dbConfig['database'] ?? 'contract_manage'),
+            'DB_USERNAME' => (string) ($dbConfig['username'] ?? 'postgres'),
+            'DB_PASSWORD' => (string) ($dbConfig['password'] ?? ''),
+        ];
+
+        $result = Process::path(base_path())
+            ->env($env)
+            ->run("bash script/{$scriptName}");
 
         if ($result->successful()) {
             return back()->with('success', "Proses ekspor data [{$type}] berhasil dijalankan.");
@@ -140,7 +153,20 @@ class BackupController extends Controller
             return back()->withErrors(['error' => 'File backup tidak ditemukan atau tidak valid.']);
         }
 
-        $result = Process::path(base_path())->run("bash script/import.sh database_dumps/{$filename}");
+        $defaultConn = config('database.default');
+        $dbConfig = config("database.connections.{$defaultConn}", []);
+
+        $env = [
+            'DB_HOST' => (string) ($dbConfig['host'] ?? '127.0.0.1'),
+            'DB_PORT' => (string) ($dbConfig['port'] ?? 5432),
+            'DB_DATABASE' => (string) ($dbConfig['database'] ?? 'contract_manage'),
+            'DB_USERNAME' => (string) ($dbConfig['username'] ?? 'postgres'),
+            'DB_PASSWORD' => (string) ($dbConfig['password'] ?? ''),
+        ];
+
+        $result = Process::path(base_path())
+            ->env($env)
+            ->run("bash script/import.sh database_dumps/{$filename}");
 
         if ($result->successful()) {
             return back()->with('success', "Proses restore database menggunakan file '{$filename}' sukses.");
