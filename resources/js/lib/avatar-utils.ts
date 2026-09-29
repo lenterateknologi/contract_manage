@@ -70,7 +70,11 @@ export interface UserAvatarData {
  */
 export function getUserAvatarData(user?: any): UserAvatarData {
     const name = user?.name || user?.username || 'Unknown';
-    const avatarUrl = user?.avatar_url || user?.avatar || user?.photo || user?.profile_photo_url || undefined;
+    let rawAvatar = user?.avatar_url || user?.avatar || user?.image_src || user?.photo || user?.profile_photo_url || undefined;
+    if (rawAvatar && typeof rawAvatar === 'string' && !rawAvatar.startsWith('http') && !rawAvatar.startsWith('/') && !rawAvatar.startsWith('data:')) {
+        rawAvatar = `/storage/${rawAvatar}`;
+    }
+    const avatarUrl = rawAvatar;
     const initials = user?.initials || getInitials(name);
     const colorClass = getAvatarColor(name);
     const role = user?.role || user?.role_name || user?.position || undefined;

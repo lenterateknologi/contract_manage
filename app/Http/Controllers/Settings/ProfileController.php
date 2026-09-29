@@ -100,6 +100,9 @@ class ProfileController extends Controller
             'region' => $user->company?->region?->name,
             'role' => $user->role,
             'initials' => $user->initials,
+            'image_src' => $user->image_src,
+            'avatar' => $user->avatar,
+            'avatar_url' => $user->avatar_url,
             'division_id' => $user->division_id,
             'department_id' => $user->division_id,
             'created_at' => $user->created_at->isoFormat('D MMMM YYYY'),
@@ -111,15 +114,42 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $user = $request->user();
+        $validated = $request->validated();
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        if ($request->hasFile('photo')) {
+            // Delete old photo if stored in storage
+            if ($user->image_src && !str_starts_with($user->image_src, 'http') && \Illuminate\Support\Facades\Storage::disk('public')->exists($user->image_src)) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($user->image_src);
+            }
+
+            $path = $request->file('photo')->store('avatars', 'public');
+            $user->image_src = $path;
         }
 
-        $request->user()->save();
+        $userColumns = ['name', 'email', 'username', 'phone_number'];
+        $updatableData = [];
+        foreach ($userColumns as $col) {
+            if (array_key_exists($col, $validated)) {
+                $updatableData[$col] = $validated[$col];
+            }
+        }
+        // Handle alias phone -> phone_number
+        if (isset($validated['phone']) && !isset($validated['phone_number'])) {
+            $updatableData['phone_number'] = $validated['phone'];
+        }
 
-        return to_route('profile.edit');
+        $user->fill($updatableData);
+
+        if ($user->isDirty('email')) {
+            $user->email_verified_at = null;
+        }
+
+        $user->save();
+
+        return to_route('profile.edit')
+            ->with('status', 'profile-updated')
+            ->with('success', 'Profil berhasil disimpan');
     }
 
     /**

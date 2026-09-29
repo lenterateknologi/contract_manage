@@ -11,6 +11,7 @@ use App\Models\ContractType;
 use App\Models\DashboardType;
 use App\Models\Department;
 use App\Models\Division;
+use App\Models\OrganizationGroup;
 use App\Models\SubmissionType;
 use App\Models\User;
 use App\Models\Vendor;
@@ -440,6 +441,7 @@ class ContractDashboardQuery
         $usersByGroupQuery = DB::table('m_users as u')
             ->leftJoin('m_company_groups as cg', 'u.company_group_id', '=', 'cg.id')
             ->select(
+                'cg.id as group_id',
                 DB::raw("COALESCE(cg.name, 'Tanpa Group') as name"),
                 DB::raw('count(u.id) as user_count')
             )
@@ -451,6 +453,7 @@ class ContractDashboardQuery
             ->leftJoin('m_companies as c', 'u.company_id', '=', 'c.id')
             ->leftJoin('m_company_groups as cg', 'u.company_group_id', '=', 'cg.id')
             ->select(
+                'c.id as company_id',
                 DB::raw("COALESCE(c.name, 'Tanpa Perusahaan') as company_name"),
                 DB::raw("COALESCE(cg.name, '-') as group_name"),
                 DB::raw('count(u.id) as user_count')
@@ -464,17 +467,52 @@ class ContractDashboardQuery
             $usersByCompanyQuery->whereIn('u.company_group_id', $companyGroupIds);
         }
 
+        // Breakdown master data per Organization Group (m_organization_groups)
+        $orgGroupQuery = DB::table('m_organization_groups as og')
+            ->leftJoin('m_departments as d', function ($join) {
+                $join->on('og.idorg_group', '=', 'd.idorg_group')->where('d.is_used', true);
+            })
+            ->leftJoin('m_users as u', function ($join) {
+                $join->on('u.department_id', '=', 'd.id')->where('u.is_used', true)->whereNull('u.deleted_at');
+            })
+            ->where('og.is_used', true)
+            ->select(
+                'og.id',
+                'og.name',
+                'og.code',
+                'og.idorg_group',
+                DB::raw('COUNT(DISTINCT d.id) as departments'),
+                DB::raw('COUNT(DISTINCT u.id) as users'),
+                DB::raw('COUNT(DISTINCT u.company_id) as companies'),
+                DB::raw('COUNT(DISTINCT u.division_id) as divisions')
+            )
+            ->groupBy('og.id', 'og.name', 'og.code', 'og.idorg_group');
+
+        if (! empty($companyGroupIds)) {
+            $orgGroupQuery->where(function ($q) use ($companyGroupIds) {
+                $q->whereIn('u.company_group_id', $companyGroupIds)
+                    ->orWhereNull('u.company_group_id');
+            });
+        }
+
+        $groupBreakdown = $orgGroupQuery
+            ->orderByDesc(DB::raw('COUNT(DISTINCT u.id)'))
+            ->orderBy('og.name')
+            ->get();
+
         $usersByGroup = $usersByGroupQuery->orderByDesc('user_count')->get();
         $usersByCompany = $usersByCompanyQuery->orderByDesc('user_count')->get();
 
         return [
             'users' => $userQuery->count(),
             'companyGroups' => $groupQuery->count(),
+            'organizationGroups' => OrganizationGroup::where('is_used', true)->count(),
             'companies' => $companyQuery->count(),
             'departments' => $deptQuery->count(),
             'divisions' => $divQuery->count(),
             'vendors' => Vendor::count(),
             'organizationTree' => $this->getOrganizationTree($companyGroupIds),
+            'groupBreakdown' => $groupBreakdown,
             'usersByGroup' => $usersByGroup,
             'usersByCompany' => $usersByCompany,
         ];

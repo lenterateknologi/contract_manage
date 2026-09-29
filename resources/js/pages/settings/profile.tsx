@@ -1,4 +1,4 @@
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import {
     Activity,
     ArrowUpRight,
@@ -28,7 +28,7 @@ import {
     Verified,
     Zap,
 } from 'lucide-react';
-import { FormEventHandler, useMemo, useState } from 'react';
+import { FormEventHandler, useMemo, useRef, useState } from 'react';
 
 import { Avatar } from '@/pages/contracts/components/ui/ui';
 import AppearanceToggleTab from '@/layouts/app/components/AppearanceTabs';
@@ -39,6 +39,7 @@ import { Label } from '@/components/ui/forms/Label';
 import { StatusBadge } from '@/components/ui/feedback/StatusBadge';
 import DeleteUser from '@/components/profile/DeleteUser';
 import SettingsLayout from '@/layouts/settings/layout';
+import { useToast } from '@/components/ui/feedback/Toast';
 import { cn } from '@/lib/utils';
 
 import { UserProfile as BaseUserProfile } from '@/pages/contracts/types';
@@ -81,15 +82,20 @@ interface UserProfile extends BaseUserProfile {
 interface ProfileProps {
     department?: string;
     recentContracts: RecentContract[];
+    user?: UserProfile;
 }
 
 type TabId = 'general' | 'security' | 'activity' | 'appearance';
 
-export default function Profile({ department, recentContracts = [] }: ProfileProps) {
+export default function Profile({ department, recentContracts = [], user: propUser }: ProfileProps) {
     const { auth } = usePage<any>().props;
-    const user = auth.user as UserProfile;
+    const user = (propUser || auth.user) as UserProfile;
+    const { showToast } = useToast();
 
     const [activeTab, setActiveTab] = useState<TabId>('general');
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [isUploadingPhoto, setIsUploadingPhoto] = useState<boolean>(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const joinedDate = useMemo(() => {
         if (!user.created_at) return '—';
@@ -106,7 +112,18 @@ export default function Profile({ department, recentContracts = [] }: ProfilePro
         }
     }, [user.created_at]);
 
-    const profileForm = useForm({
+    const profileForm = useForm<{
+        name: string;
+        email: string;
+        username: string;
+        phone: string;
+        position: string;
+        company: string;
+        location: string;
+        group: string;
+        region: string;
+        bio: string;
+    }>({
         name: user.name,
         email: user.email,
         username: user.username || '',
@@ -125,16 +142,72 @@ export default function Profile({ department, recentContracts = [] }: ProfilePro
         password_confirmation: '',
     });
 
+    const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const objectUrl = URL.createObjectURL(file);
+        setPreviewUrl(objectUrl);
+        setIsUploadingPhoto(true);
+
+        const formData = new FormData();
+        formData.append('photo', file);
+        formData.append('name', profileForm.data.name || user.name);
+        formData.append('email', profileForm.data.email || user.email);
+        if (profileForm.data.username) formData.append('username', profileForm.data.username);
+        if (profileForm.data.phone) formData.append('phone', profileForm.data.phone);
+        if (profileForm.data.position) formData.append('position', profileForm.data.position);
+        if (profileForm.data.company) formData.append('company', profileForm.data.company);
+        if (profileForm.data.location) formData.append('location', profileForm.data.location);
+        if (profileForm.data.group) formData.append('group', profileForm.data.group);
+        if (profileForm.data.region) formData.append('region', profileForm.data.region);
+        if (profileForm.data.bio) formData.append('bio', profileForm.data.bio);
+
+        router.post(route('profile.update'), formData, {
+            preserveScroll: true,
+            forceFormData: true,
+            onSuccess: () => {
+                showToast('Foto profil berhasil diperbarui', 'success');
+                setTimeout(() => setPreviewUrl(null), 1000);
+            },
+            onError: (errors) => {
+                const firstError = Object.values(errors)[0] as string;
+                showToast(firstError || 'Gagal mengunggah foto profil', 'danger');
+                setPreviewUrl(null);
+            },
+            onFinish: () => {
+                setIsUploadingPhoto(false);
+            },
+        });
+    };
+
     const submitProfile: FormEventHandler = (e) => {
         e.preventDefault();
-        profileForm.patch(route('profile.update'), { preserveScroll: true });
+        profileForm.post(route('profile.update'), {
+            preserveScroll: true,
+            forceFormData: true,
+            onSuccess: () => {
+                showToast('Profil berhasil disimpan', 'success');
+            },
+            onError: (errors) => {
+                const firstError = Object.values(errors)[0] as string;
+                showToast(firstError || 'Gagal menyimpan profil', 'danger');
+            },
+        });
     };
 
     const submitPassword: FormEventHandler = (e) => {
         e.preventDefault();
-        passwordForm.put(route('user.password.update'), {
+        passwordForm.put(route('password.update'), {
             preserveScroll: true,
-            onSuccess: () => passwordForm.reset(),
+            onSuccess: () => {
+                showToast('Password berhasil diubah', 'success');
+                passwordForm.reset();
+            },
+            onError: (errors) => {
+                const firstError = Object.values(errors)[0] as string;
+                showToast(firstError || 'Gagal mengubah password', 'danger');
+            },
         });
     };
 
@@ -163,13 +236,47 @@ export default function Profile({ department, recentContracts = [] }: ProfilePro
                             {/* User info row */}
                             <div className="flex items-start justify-between gap-6 mb-8">
                                 <div className="flex items-center gap-5">
-                                    {/* Avatar */}
-                                    <div className="relative shrink-0">
-                                        <div className="dark:border-surface-border h-16 w-16 overflow-hidden rounded-full border border-gray-200 shadow-sm">
-                                            <Avatar user={user} size="xl" className="h-full w-full object-cover" />
+                                    {/* Avatar with Direct Upload */}
+                                    <div className="relative shrink-0 group">
+                                        <input
+                                            type="file"
+                                            ref={fileInputRef}
+                                            onChange={handlePhotoChange}
+                                            accept="image/png,image/jpeg,image/jpg,image/webp,image/gif"
+                                            className="hidden"
+                                            disabled={isUploadingPhoto}
+                                        />
+                                        <div
+                                            onClick={() => !isUploadingPhoto && fileInputRef.current?.click()}
+                                            className={cn(
+                                                "dark:border-surface-border h-16 w-16 overflow-hidden rounded-full border border-gray-200 shadow-sm relative",
+                                                isUploadingPhoto ? "cursor-wait opacity-80" : "cursor-pointer"
+                                            )}
+                                        >
+                                            {previewUrl ? (
+                                                <img src={previewUrl} alt="Preview" className="h-full w-full object-cover" />
+                                            ) : (
+                                                <Avatar user={user} size="xl" className="h-full w-full object-cover" />
+                                            )}
+
+                                            {isUploadingPhoto ? (
+                                                <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white">
+                                                    <Loader2 size={20} className="animate-spin" />
+                                                </div>
+                                            ) : (
+                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+                                                    <Camera size={18} />
+                                                </div>
+                                            )}
                                         </div>
-                                        <button className="bg-primary absolute -right-1 -bottom-1 flex h-6 w-6 items-center justify-center rounded-full text-white shadow-sm">
-                                            <Camera size={12} />
+                                        <button
+                                            type="button"
+                                            onClick={() => !isUploadingPhoto && fileInputRef.current?.click()}
+                                            disabled={isUploadingPhoto}
+                                            className="bg-primary hover:bg-primary/90 transition-colors absolute -right-1 -bottom-1 flex h-6 w-6 items-center justify-center rounded-full text-white shadow-sm cursor-pointer disabled:opacity-50"
+                                            title="Ubah Foto Profil Langsung"
+                                        >
+                                            {isUploadingPhoto ? <Loader2 size={11} className="animate-spin" /> : <Camera size={12} />}
                                         </button>
                                     </div>
 

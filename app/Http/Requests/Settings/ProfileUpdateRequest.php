@@ -42,6 +42,7 @@ class ProfileUpdateRequest extends FormRequest
             'group' => ['nullable', 'string', 'max:255'],
             'region' => ['nullable', 'string', 'max:255'],
             'bio' => ['nullable', 'string', 'max:1000'],
+            'photo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp,gif', 'max:5120'],
         ];
     }
 }

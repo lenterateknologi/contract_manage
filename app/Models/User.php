@@ -95,6 +95,8 @@ class User extends Authenticatable
 
     protected $appends = [
         'initials',
+        'avatar',
+        'avatar_url',
         'role',
         'role_name',
         'can_create_on_behalf',
@@ -638,9 +640,32 @@ class User extends Authenticatable
         return Authority::checkUserAllowedOnBehalf($this);
     }
 
+    public function getAvatarUrlAttribute(): ?string
+    {
+        $src = $this->attributes['image_src'] ?? null;
+        if (empty($src)) {
+            return null;
+        }
+
+        if (str_starts_with($src, 'http://') || str_starts_with($src, 'https://') || str_starts_with($src, 'data:')) {
+            return $src;
+        }
+
+        if (str_starts_with($src, '/')) {
+            return $src;
+        }
+
+        return \Illuminate\Support\Facades\Storage::disk('public')->url($src);
+    }
+
+    public function getAvatarAttribute(): ?string
+    {
+        return $this->getAvatarUrlAttribute();
+    }
+
     public function getInitialsAttribute(): string
     {
-        $name = $this->name ?? '';
+        $name = $this->attributes['name'] ?? '';
         $words = explode(' ', trim($name));
         if (count($words) >= 2) {
             return strtoupper(substr($words[0], 0, 1).substr($words[1], 0, 1));
@@ -657,9 +682,10 @@ class User extends Authenticatable
             return $this->contractFilterSettingsCache;
         }
 
+        $dashboardTypeId = $this->attributes['dashboard_type_id'] ?? null;
         $dashboardType = null;
-        if (! empty($this->dashboard_type_id)) {
-            $dashboardType = DashboardType::find($this->dashboard_type_id);
+        if (! empty($dashboardTypeId)) {
+            $dashboardType = DashboardType::find($dashboardTypeId);
         }
 
         if (! $dashboardType) {
