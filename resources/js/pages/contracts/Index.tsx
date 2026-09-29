@@ -677,14 +677,10 @@ function ContractPage({
     }, [initialSelected]);
 
     const updateContract = useCallback(
-        (c: Contract, silent = false) => {
-            if (!silent) {
-                // Always reload to sync Inertia props, but preserve state/scroll for smoothness
-                router.reload({ preserveScroll: true, preserveState: true } as Parameters<typeof router.reload>[0]);
-            }
-            if (selected?.id === c.id) setSelected(c);
+        (c: Contract) => {
+            setSelected(c);
         },
-        [selected?.id],
+        [],
     );
 
     const openDetail = useCallback((c: Contract) => {

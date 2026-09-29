@@ -1,5 +1,5 @@
 import { Icons } from '@/components/ui';
-import { cn } from '@/lib/utils';
+import { cn, parseApiErrorMessage } from '@/lib/utils';
 import { ContractActionSection } from '@/pages/contracts/components/parts/ContractActionSection';
 import { ContractDetailHeader } from '@/pages/contracts/components/parts/ContractDetailHeader';
 import {
@@ -282,7 +282,7 @@ export const ContractDetailView = ({
             if (!silent) showToast('Informasi pengajuan diperbarui.', 'success');
             return c;
         } catch (error) {
-            if (!silent) showToast('Gagal memperbarui pengajuan.', 'danger');
+            if (!silent) showToast(parseApiErrorMessage(error, 'Gagal memperbarui pengajuan.'), 'danger');
             throw error;
         } finally {
             if (!silent) setProcessing(false);
@@ -312,8 +312,8 @@ export const ContractDetailView = ({
                 showToast('Pengajuan ditolak.', 'info');
                 setActiveActionCode(undefined);
                 setActiveStepAction(null);
-            } catch {
-                showToast('Gagal reject.', 'danger');
+            } catch (error) {
+                showToast(parseApiErrorMessage(error, 'Gagal memproses penolakan.'), 'danger');
             }
             return;
         }
@@ -344,7 +344,7 @@ export const ContractDetailView = ({
             setActiveActionCode(undefined);
             setActiveStepAction(null);
         } catch (error: any) {
-            showToast(error.response?.data?.message || 'Gagal memproses persetujuan.', 'danger');
+            showToast(parseApiErrorMessage(error, 'Gagal memproses persetujuan.'), 'danger');
         }
     };
 
@@ -558,11 +558,12 @@ export const ContractDetailView = ({
         const meta = contract.workflow_step?.meta || {};
         const result: DetailSidebarTabItem[] = [];
 
-        // Check required fields for this step/action
-        const reqResult = resolveContractRequirements(contract);
-        const reqReviewF1 = reqResult.items.some((it) => it.id === 'review_f1' || it.id === 'f1');
-        const reqReviewF2 = reqResult.items.some((it) => it.id === 'review_f2' || it.id === 'f2');
-        const reqReviewAgreement = reqResult.items.some((it) => it.id === 'review_agreement' || it.id === 'agreement');
+        // Check required fields for this step/action only if user is current actor
+        const isCurrentActor = contract?.is_current_actor ?? contract?.can_approve ?? false;
+        const reqResult = isCurrentActor ? resolveContractRequirements(contract) : { items: [], hasRequirements: false, allFilled: true, totalCount: 0, filledCount: 0 };
+        const reqReviewF1 = isCurrentActor && reqResult.items.some((it) => it.id === 'review_f1' || it.id === 'f1');
+        const reqReviewF2 = isCurrentActor && reqResult.items.some((it) => it.id === 'review_f2' || it.id === 'f2');
+        const reqReviewAgreement = isCurrentActor && reqResult.items.some((it) => it.id === 'review_agreement' || it.id === 'agreement');
 
         // 1. Dokumen Tab (with subtabs f1, f2, agreement)
         const hasF1 = meta.show_tab_f1 !== false && ((contract as any).f1_mode || 'upload') !== 'none';

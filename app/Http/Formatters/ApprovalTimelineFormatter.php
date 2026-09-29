@@ -20,6 +20,14 @@ class ApprovalTimelineFormatter
 
         $workflowService = app(ContractWorkflowService::class);
 
+        $attachmentNameByPath = [];
+        if ($c->relationLoaded('attachments')) {
+            $attachmentNameByPath = $c->attachments->pluck('file_name', 'file_path')->filter()->toArray();
+        } else {
+            $attachmentNameByPath = $c->attachments()->pluck('file_name', 'file_path')->filter()->toArray();
+        }
+        $resolveAttachmentName = fn (?string $path) => $path ? ($attachmentNameByPath[$path] ?? basename($path)) : null;
+
         // 1. Build chronological execution chunks based on real approval timestamps
         $executedApprovals = $c->approvals->sort(function ($a, $b) use ($c) {
             if ($a->created_at && $b->created_at && $a->created_at->ne($b->created_at)) {
@@ -360,7 +368,7 @@ class ApprovalTimelineFormatter
                         'action_alias' => $a->action_alias,
                         'comment' => $a->comment,
                         'attachment_path' => $a->attachment_path,
-                        'attachment_name' => $a->attachment_path ? basename($a->attachment_path) : null,
+                        'attachment_name' => $resolveAttachmentName($a->attachment_path),
                         'file_size' => $a->attachment_path && Storage::disk('local')->exists($a->attachment_path)
                             ? Storage::disk('local')->size($a->attachment_path)
                             : null,
@@ -430,7 +438,7 @@ class ApprovalTimelineFormatter
                                     'action_alias' => $a->action_alias,
                                     'comment' => $a->comment,
                                     'attachment_path' => $a->attachment_path,
-                                    'attachment_name' => $a->attachment_path ? basename($a->attachment_path) : null,
+                                    'attachment_name' => $resolveAttachmentName($a->attachment_path),
                                     'file_size' => $a->attachment_path && Storage::disk('local')->exists($a->attachment_path)
                                         ? Storage::disk('local')->size($a->attachment_path)
                                         : null,
@@ -597,7 +605,7 @@ class ApprovalTimelineFormatter
                                     'action_alias' => $a->action_alias,
                                     'comment' => $a->comment,
                                     'attachment_path' => $a->attachment_path,
-                                    'attachment_name' => $a->attachment_path ? basename($a->attachment_path) : null,
+                                    'attachment_name' => $resolveAttachmentName($a->attachment_path),
                                     'file_size' => $a->attachment_path && Storage::disk('local')->exists($a->attachment_path)
                                         ? Storage::disk('local')->size($a->attachment_path)
                                         : null,

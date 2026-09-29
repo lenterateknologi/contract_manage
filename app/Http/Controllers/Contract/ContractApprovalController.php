@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Contract;
 use App\Http\Actions\Contract\ApproveContractAction;
 use App\Http\Actions\Contract\GetContractAvailableActionsAction;
 use App\Http\Actions\Contract\GetContractRequirementsAction;
-use App\Http\Actions\Contract\RejectContractAction;
 use App\Http\Controllers\Controller;
 use App\Http\Formatters\ContractFormatter;
 use App\Http\Queries\Contract\ContractDetailQuery;
@@ -33,7 +32,6 @@ class ContractApprovalController extends Controller
     public function __construct(
         protected ContractWorkflowService $workflowService,
         protected ApproveContractAction $approveAction,
-        protected RejectContractAction $rejectAction,
         protected GetContractRequirementsAction $getContractRequirementsAction,
         protected GetContractAvailableActionsAction $getContractAvailableActionsAction,
         protected ContractDetailQuery $contractDetailQuery,
@@ -129,7 +127,7 @@ class ContractApprovalController extends Controller
             $path = $file->store("contracts/{$contract->id}/assignments", 'local');
             $contract->attachments()->create([
                 'label' => $file->getClientOriginalName(),
-                'category' => 'Lampiran',
+                'category' => 'Penugasan PIC',
                 'file_name' => $file->getClientOriginalName(),
                 'file_path' => $path,
                 'file_type' => $file->getClientOriginalExtension() ?: 'file',
@@ -156,7 +154,6 @@ class ContractApprovalController extends Controller
             ]);
         }
 
-        $desc = 'PIC ditugaskan ke: '.($pic ? $pic->name : $picId).($note ? " (Catatan: {$note})" : '');
         $desc = 'PIC ditugaskan ke: '.($pic ? $pic->name : $picId).($note ? " (Catatan: {$note})" : '');
         ContractHistory::create([
             'contract_id' => $contract->id,
@@ -273,7 +270,7 @@ class ContractApprovalController extends Controller
             }
             $contract->attachments()->create([
                 'label' => $file->getClientOriginalName(),
-                'category' => 'Lampiran',
+                'category' => 'Approval Action',
                 'file_name' => $file->getClientOriginalName(),
                 'file_path' => $path,
                 'file_type' => $file->getClientOriginalExtension() ?: 'file',
@@ -343,7 +340,7 @@ class ContractApprovalController extends Controller
             }
             $contract->attachments()->create([
                 'label' => $file->getClientOriginalName(),
-                'category' => 'Lampiran',
+                'category' => 'Penolakan Kontrak',
                 'file_name' => $file->getClientOriginalName(),
                 'file_path' => $path,
                 'file_type' => $file->getClientOriginalExtension() ?: 'file',
@@ -351,7 +348,17 @@ class ContractApprovalController extends Controller
             ]);
         }
 
-        $contract = $this->rejectAction->execute($contract, $approval, $request->reason, $attachmentPath);
+        $contract = $this->workflowService->approveContract(
+            $contract,
+            $approval,
+            $request->reason,
+            $attachmentPath,
+            null,
+            null,
+            $request->input('action_code') ?: 'reject',
+            null,
+            $request->input('action_id')
+        );
 
         return $this->successResponse(ContractFormatter::formatContract($contract->fresh()), 'Penolakan / revisi berhasil diproses');
     }
@@ -587,7 +594,7 @@ class ContractApprovalController extends Controller
                 }
                 $contract->attachments()->create([
                     'label' => $file->getClientOriginalName(),
-                    'category' => 'Lampiran',
+                    'category' => 'Persetujuan Tambahan',
                     'file_name' => $file->getClientOriginalName(),
                     'file_path' => $path,
                     'file_type' => $file->getClientOriginalExtension() ?: 'file',

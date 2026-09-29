@@ -93,6 +93,12 @@ class ContractFormatter
                     }
                     return $c->approvals->where('workflow_step_id', $c->workflow_step_id)->where('status', 'pending')->where('user_id', Auth::id())->isNotEmpty();
                 })(),
+                'is_current_actor' => (function () use ($c) {
+                    if (! $c->relationLoaded('approvals')) {
+                        return false;
+                    }
+                    return $c->approvals->where('workflow_step_id', $c->workflow_step_id)->where('status', 'pending')->where('user_id', Auth::id())->isNotEmpty();
+                })(),
                 'pending_approval_id' => $c->relationLoaded('approvals')
                     ? $c->approvals->where('workflow_step_id', $c->workflow_step_id)->where('status', 'pending')->where('user_id', Auth::id())->first()?->id
                     : null,
@@ -419,6 +425,36 @@ class ContractFormatter
 
                     if (! $hasPendingOrWaiting && $isDetail) {
                         app(ContractWorkflowService::class)->createApprovalForStep($c, $c->workflowStep);
+                        $c->unsetRelation('approvals');
+                        $c->load(['approvals.approver', 'approvals.workflowStep']);
+                    }
+                }
+
+                return $c->approvals->where('workflow_step_id', $c->workflow_step_id)->where('status', 'pending')->where('user_id', Auth::id())->filter(function ($a) use ($c) {
+                    if ($a->sub_step !== null) {
+                        return true;
+                    }
+                    $hasUnapprovedSubSteps = $c->approvals
+                        ->where('workflow_step_id', $a->workflow_step_id)
+                        ->whereNotNull('sub_step')
+                        ->contains(fn ($sub) => $sub->status !== 'approved');
+
+                    return ! $hasUnapprovedSubSteps;
+                })->isNotEmpty();
+            })(),
+            'is_current_actor' => (function () use ($c, $isDetail) {
+                if (! $c->relationLoaded('approvals')) {
+                    return false;
+                }
+
+                if ($c->status === 'in_review' && $c->workflow_step_id && $c->workflowStep) {
+                    $hasPendingOrWaiting = $c->approvals
+                        ->where('workflow_step_id', $c->workflow_step_id)
+                        ->whereIn('status', ['pending', 'waiting'])
+                        ->isNotEmpty();
+
+                    if (! $hasPendingOrWaiting && $isDetail) {
+                        app(\App\Services\Workflow\ContractWorkflowService::class)->createApprovalForStep($c, $c->workflowStep);
                         $c->unsetRelation('approvals');
                         $c->load(['approvals.approver', 'approvals.workflowStep']);
                     }

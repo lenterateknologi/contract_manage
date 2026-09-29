@@ -24,7 +24,8 @@ class AttachmentFileAction
             $approval = $contract->approvals()->find($atId) ?? \App\Models\Approval::withTrashed()->where('contract_id', $contract->id)->find($atId);
             if ($approval && $approval->attachment_path) {
                 $filePath = $approval->attachment_path;
-                $fileName = $approval->attachment_name ?: basename($approval->attachment_path);
+                $matchedAt = $contract->attachments()->where('file_path', $approval->attachment_path)->first();
+                $fileName = $matchedAt?->file_name ?: basename($approval->attachment_path);
             } else {
                 /** @var \App\Models\ContractMessage|null $message */
                 $message = $contract->messages()->find($atId);

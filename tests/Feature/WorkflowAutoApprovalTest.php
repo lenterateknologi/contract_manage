@@ -16,8 +16,8 @@ beforeEach(function () {
     $this->withoutMiddleware();
     // Set up a basic contract type
     $this->type = ContractType::create([
-        'code' => 'TEST-AUTO-APPROVE',
-        'name' => 'Testing Auto Approve',
+        'code' => 'TEST-WORKFLOW',
+        'name' => 'Testing Workflow',
         'is_active' => true,
     ]);
 
@@ -27,8 +27,8 @@ beforeEach(function () {
 
     // Set up a simple 2-step workflow
     $this->workflow = Workflow::create([
-        'name' => 'Auto Approve Test Workflow',
-        'description' => 'Test workflow for auto-approval',
+        'name' => 'Workflow Steps Test',
+        'description' => 'Test workflow for manual step transitions and adhoc approvers',
         'contract_type_id' => $this->type->id,
         'initiator_type' => 'all',
         'is_active' => true,
@@ -43,12 +43,11 @@ beforeEach(function () {
         'step_category' => 'drafting',
     ]);
 
-    // Step 2: Same Creator (Auto-approve scenario if we didn't have the rule)
-    // For this test, we'll manually assign the creator to Step 2 to test auto-approve for Step > 1
+    // Step 2: Review Phase
     $this->step2 = WorkflowStep::create([
         'workflow_id' => $this->workflow->id,
         'step' => 2,
-        'description' => 'Self Review Phase',
+        'description' => 'Review Phase',
         'approver_type' => 'user',
     ]);
     $this->step2->approverAuthorities()->create([
@@ -94,7 +93,7 @@ test('it does not auto-approve step 1 even if the user is the initiator', functi
 
     $contract = $contract->fresh();
 
-    // EXPECTATION: Step 1 should remain PENDING because of our fix in handleAutoApproval
+    // EXPECTATION: Step 1 should remain PENDING until explicitly approved/submitted
     expect($contract->workflow_step_id)->toBe($this->step1->id);
     expect($contract->status)->toBe('draft');
 
@@ -106,10 +105,10 @@ test('it does not auto-approve step 1 even if the user is the initiator', functi
     expect($approval->status)->toBe('pending');
 });
 
-test('it still auto-approves step 2 if the approver is the same as the step 1 actor (the creator)', function () {
+test('it does not auto-approve step 2 even if the approver is the same as the step 1 actor', function () {
     // 1. Create contract
     $contract = Contract::create([
-        'title' => 'Test Step 2 Auto Approve',
+        'title' => 'Test Step 2 No Auto Approve',
         'form_no' => 'CTR-AUTO-002',
         'contract_type_id' => $this->type->id,
         'created_by' => $this->creator->id,
@@ -132,19 +131,15 @@ test('it still auto-approves step 2 if the approver is the same as the step 1 ac
 
     $contract = $contract->fresh();
 
-    // EXPECTATION: Since Step 2 approver is ALSO $this->creator,
-    // it should auto-approve Step 2 and finish the workflow.
+    // EXPECTATION: Step 2 should NOT auto-approve, remaining at step 2 with pending approval
+    expect($contract->workflow_step_id)->toBe($this->step2->id);
 
-    expect($contract->workflow_step_id)->toBeNull();
-    expect($contract->status)->toBe('approved');
-
-    // Verify Step 2 approval was auto-approved
+    // Verify Step 2 approval remains pending
     $this->assertDatabaseHas('t_approvals', [
         'contract_id' => $contract->id,
         'workflow_step_id' => $this->step2->id,
         'user_id' => $this->creator->id,
-        'status' => 'approved',
-        'comment' => 'Sistem: Persetujuan Otomatis (Sama dengan penyetujui/inisiator sebelumnya)',
+        'status' => 'pending',
     ]);
 });
 

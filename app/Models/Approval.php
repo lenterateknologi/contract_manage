@@ -145,6 +145,15 @@ class Approval extends Model
         $this->update($data);
     }
 
+    public function getAttachmentNameAttribute(): ?string
+    {
+        if (! $this->attachment_path) {
+            return null;
+        }
+
+        return basename($this->attachment_path);
+    }
+
     protected static function booted()
     {
         static::saved(function ($approval) {

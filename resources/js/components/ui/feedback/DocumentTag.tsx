@@ -1,8 +1,7 @@
-import React from 'react';
 import { Badge } from '@/components/ui/feedback/Badge';
 import { ChipIcon, type ChipIconSize } from '@/components/ui/feedback/ChipIcon';
-import { FileImage, FileSpreadsheet, FileText, FileArchive, Paperclip, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { FileArchive, FileImage, FileSpreadsheet, FileText, type LucideIcon } from 'lucide-react';
 
 export interface FileTypeConfig {
     icon: LucideIcon;

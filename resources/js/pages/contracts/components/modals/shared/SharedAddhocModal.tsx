@@ -4,6 +4,7 @@ import { StatusBadge } from '@/components/ui/feedback/StatusBadge';
 import { SearchableMultiSelect } from '@/components/ui/selection/SearchableMultiSelect';
 import { contractApi } from '@/pages/contracts/utils';
 import { matchUserAgainstWorkflowPool } from '@/pages/workflows/workflow-filter';
+import { parseApiErrorMessage } from '@/lib/utils';
 import { CheckCircle2, Loader2, UserPlus, Users, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -261,7 +262,7 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
             showToast('Persetujuan tambahan berhasil dikaitkan.', 'success');
             onClose();
         } catch (error: any) {
-            const msg = error.response?.data?.message || 'Gagal menambahkan persetujuan tambahan.';
+            const msg = parseApiErrorMessage(error, 'Gagal menambahkan persetujuan tambahan.');
             showToast(msg, 'danger');
         } finally {
             setLoading(false);

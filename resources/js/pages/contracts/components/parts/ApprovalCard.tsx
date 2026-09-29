@@ -4,8 +4,9 @@ import { Badge } from '@/components/ui/feedback/Badge';
 import { formatFileSize } from '@/lib/formatters';
 import { cn, formatDateTime } from '@/lib/utils';
 import { Contract, ContractApproval } from '@/pages/contracts/types';
-import { Check, CheckCircle2, ChevronDown, Clock, Download, Lock, LogIn, X } from 'lucide-react';
+import { Check, CheckCircle2, ChevronDown, Clock, Download, Eye, Lock, LogIn, X } from 'lucide-react';
 import { useState } from 'react';
+import DocumentPreviewModal from '@/pages/contracts/components/modals/DocumentPreviewModal';
 import { StatusBadge } from '../ui/ui';
 
 interface ApprovalCardProps {
@@ -21,6 +22,7 @@ interface ApprovalCardProps {
 
 export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false, contract, showDetails = false, isLite = false, isSubStep = false, isPending = false }: ApprovalCardProps) {
     const [isApproverListExpanded, setIsApproverListExpanded] = useState(false);
+    const [previewOpen, setPreviewOpen] = useState(false);
     const isApproved = a.status === 'approved';
     const isRejected = a.status === 'rejected';
     const isSkipped = (a.status as string) === 'SKIPPED';
@@ -244,8 +246,8 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false,
                 </div>
             </div>
 
-            {/* Syarat Dokumen Wajib untuk Step Card Ini (Hanya di mode detail / full dan BUKAN untuk sub-step) */}
-            {showDetails && !hasSubStep && (() => {
+            {/* Syarat Dokumen Wajib untuk Step Card Ini (Hanya di mode detail / full dan BUKAN untuk sub-step dan HANYA untuk current actor) */}
+            {showDetails && !hasSubStep && (contract?.is_current_actor ?? contract?.can_approve) && (() => {
                 let stepMeta = a.workflow_step?.meta;
                 let actions = a.workflow_step?.action_configs || [];
 
@@ -481,43 +483,83 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false,
             )}
 
             {/* Action Attachment */}
-            {a.attachment_path && contract && (
-                <div className="mt-0.5 w-full pl-0.5">
-                    <div className={cn(
-                        "flex items-center justify-between gap-2 rounded-md border border-primary/20 bg-primary/5 px-2.5 py-1.5 transition-colors",
-                        isLite ? "text-[9.5px]" : "text-[10.5px]"
-                    )}>
-                        <div className="flex items-center gap-2 min-w-0">
-                            <FileChipIcon fileName={a.attachment_name || a.attachment_path || ''} size="xs" />
-                            <div className="flex flex-col min-w-0">
-                                <span className="font-semibold text-primary truncate max-w-[200px] sm:max-w-[300px] flex items-center gap-1.5">
-                                    <span className="truncate">{a.attachment_name || 'Lampiran Aksi'}</span>
-                                    {a.file_size ? (
-                                        <span className="text-[9px] text-muted-foreground/80 font-normal shrink-0">
-                                            ({formatFileSize(a.file_size)})
-                                        </span>
-                                    ) : null}
-                                </span>
-                                <span className="text-[8.5px] text-muted-foreground uppercase font-bold">
-                                    Lampiran {a.action_alias || a.action_code || (isApproved ? 'Persetujuan' : isRejected ? 'Penolakan' : 'Aksi')}
-                                </span>
+            {a.attachment_path && contract && (() => {
+                const fileName = a.attachment_name || a.attachment_path || '';
+                const isPdf = /\.pdf$/i.test(fileName);
+                const isImage = /\.(jpe?g|png|gif|webp|svg)$/i.test(fileName);
+                const canPreview = isPdf || isImage;
+                const previewUrl = isPdf
+                    ? `/api/contracts/${contract.id}/attachment-pdf/${a.id}`
+                    : `/api/contracts/${contract.id}/attachment/${a.id}`;
+
+                return (
+                    <div className="mt-0.5 w-full pl-0.5">
+                        <div className={cn(
+                            "flex items-center justify-between gap-2 rounded-md border border-primary/20 bg-primary/5 px-2.5 py-1.5 transition-colors",
+                            isLite ? "text-[9.5px]" : "text-[10.5px]"
+                        )}>
+                            <div
+                                onClick={() => canPreview && setPreviewOpen(true)}
+                                className={cn(
+                                    "flex items-center gap-2 min-w-0 group/attach",
+                                    canPreview && "cursor-pointer"
+                                )}
+                                title={canPreview ? "Klik untuk pratinjau lampiran" : undefined}
+                            >
+                                <FileChipIcon fileName={fileName} size="xs" />
+                                <div className="flex flex-col min-w-0">
+                                    <span className={cn(
+                                        "font-semibold text-primary truncate max-w-[180px] sm:max-w-[280px] flex items-center gap-1.5",
+                                        canPreview && "group-hover/attach:underline"
+                                    )}>
+                                        <span className="truncate">{a.attachment_name || 'Lampiran Aksi'}</span>
+                                        {a.file_size ? (
+                                            <span className="text-[9px] text-muted-foreground/80 font-normal shrink-0">
+                                                ({formatFileSize(a.file_size)})
+                                            </span>
+                                        ) : null}
+                                    </span>
+                                    <span className="text-[8.5px] text-muted-foreground uppercase font-bold">
+                                        Lampiran {a.action_alias || a.action_code || (isApproved ? 'Persetujuan' : isRejected ? 'Penolakan' : 'Aksi')}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-1.5 shrink-0">
+                                {canPreview && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setPreviewOpen(true)}
+                                        className="flex items-center gap-1 rounded bg-primary/10 hover:bg-primary/20 text-primary px-2 py-0.5 font-bold uppercase text-[8.5px] transition-all cursor-pointer"
+                                        title="Lihat Pratinjau"
+                                    >
+                                        <Eye size={10} />
+                                        <span>Lihat</span>
+                                    </button>
+                                )}
+                                <a
+                                    href={`/api/contracts/${contract.id}/attachment/${a.id}?download=1`}
+                                    download
+                                    className="flex items-center gap-1 rounded bg-primary/10 hover:bg-primary/20 text-primary px-2 py-0.5 font-bold uppercase text-[8.5px] transition-all cursor-pointer"
+                                    title="Unduh Lampiran"
+                                >
+                                    <Download size={10} />
+                                    <span>Unduh</span>
+                                </a>
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-1.5 shrink-0">
-                            <a
-                                href={`/api/contracts/${contract.id}/attachment/${a.id}?download=1`}
-                                download
-                                className="flex items-center gap-1 rounded bg-primary/10 hover:bg-primary/20 text-primary px-2 py-0.5 font-bold uppercase text-[8.5px] transition-all cursor-pointer"
-                                title="Unduh Lampiran"
-                            >
-                                <Download size={10} />
-                                <span>Unduh</span>
-                            </a>
-                        </div>
+                        {canPreview && previewOpen && (
+                            <DocumentPreviewModal
+                                isOpen={previewOpen}
+                                onClose={() => setPreviewOpen(false)}
+                                url={previewUrl}
+                                fileName={a.attachment_name || 'Lampiran Aksi'}
+                            />
+                        )}
                     </div>
-                </div>
-            )}
+                );
+            })()}
         </div>
     );
 }

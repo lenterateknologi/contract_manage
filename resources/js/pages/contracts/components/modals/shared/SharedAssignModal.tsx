@@ -1,15 +1,13 @@
-import { getFileIcon } from '@/components/ui';
 import { Button } from '@/components/ui/buttons/Button';
 import { Modal } from '@/components/ui/dialogs/Modal';
 import { FormTextarea } from '@/components/ui/inputs/FormTextarea';
 import { CompactSwitch } from '@/components/ui/selection/CompactSwitch';
 import { SearchableMultiSelect } from '@/components/ui/selection/SearchableMultiSelect';
-import { formatFileSize } from '@/lib/formatters';
-import { cn } from '@/lib/utils';
 import { contractApi } from '@/pages/contracts/utils';
 import { matchUserAgainstWorkflowPool } from '@/pages/workflows/workflow-filter';
-import { CheckCircle2, Loader2, Paperclip, Plus, UserCheck, Users, X } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { parseApiErrorMessage } from '@/lib/utils';
+import { CheckCircle2, Loader2, UserCheck, Users, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface Props {
     open: boolean;
@@ -26,22 +24,11 @@ interface Props {
 export function SharedAssignModal({ open, onClose, contract, onUpdate, showToast, actionCode, actionAlias, actionId, users: initialUsers }: Props) {
     const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
     const [note, setNote] = useState('');
-    const [attachments, setAttachments] = useState<File[]>([]);
     const [isSequential, setIsSequential] = useState(false);
     const [loading, setLoading] = useState(false);
     const [users, setUsers] = useState<any[]>(initialUsers || []);
     const [fetchingUsers, setFetchingUsers] = useState(false);
     const [selectedTargetStepId, setSelectedTargetStepId] = useState<string | null>(null);
-    const [isDragging, setIsDragging] = useState(false);
-    const fileInputRef = useRef<HTMLInputElement>(null);
-
-    const handleFileDrop = (e: React.DragEvent) => {
-        e.preventDefault();
-        setIsDragging(false);
-        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-            setAttachments((prev) => [...prev, ...Array.from(e.dataTransfer.files)]);
-        }
-    };
 
     // Dynamic role name based on alias or default
     const ROLE_NAME = actionAlias || 'Personil';
@@ -64,7 +51,6 @@ export function SharedAssignModal({ open, onClose, contract, onUpdate, showToast
 
             setSelectedTargetStepId(targetStepId ? String(targetStepId) : null);
             setNote('');
-            setAttachments([]);
             setIsSequential(false);
         } else {
             setSelectedUserIds([]);
@@ -188,7 +174,7 @@ export function SharedAssignModal({ open, onClose, contract, onUpdate, showToast
                 contract.id,
                 selectedUserIds[0],
                 note || undefined,
-                attachments.length > 0 ? (attachments.length === 1 ? attachments[0] : attachments) : undefined,
+                undefined,
                 actionCode,
                 actionId,
             );
@@ -197,7 +183,7 @@ export function SharedAssignModal({ open, onClose, contract, onUpdate, showToast
             showToast(`Penugasan ${ROLE_NAME} berhasil diperbarui.`, 'success');
             onClose();
         } catch (error: any) {
-            const msg = error.response?.data?.message || 'Gagal memperbarui penugasan.';
+            const msg = parseApiErrorMessage(error, 'Gagal memperbarui penugasan.');
             showToast(msg, 'danger');
         } finally {
             setLoading(false);
@@ -360,112 +346,6 @@ export function SharedAssignModal({ open, onClose, contract, onUpdate, showToast
                     rows={3}
                     placeholder={`Tambahkan instruksi khusus untuk ${ROLE_NAME}...`}
                 />
-
-                <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                        <label className="text-text-desc text-[11px] font-bold uppercase">Lampiran Berkas Pendukung (Opsional)</label>
-                        {attachments.length > 0 && (
-                            <span className="text-primary text-[10px] font-bold">{attachments.length} Berkas Baru Dipilih</span>
-                        )}
-                    </div>
-
-                    <div className="mt-1 space-y-2">
-                        {attachments.length === 0 ? (
-                            <div
-                                role="button"
-                                tabIndex={0}
-                                onClick={() => fileInputRef.current?.click()}
-                                onDragOver={(e) => {
-                                    e.preventDefault();
-                                    setIsDragging(true);
-                                }}
-                                onDragLeave={(e) => {
-                                    e.preventDefault();
-                                    setIsDragging(false);
-                                }}
-                                onDrop={handleFileDrop}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter' || e.key === ' ') {
-                                        e.preventDefault();
-                                        fileInputRef.current?.click();
-                                    }
-                                }}
-                                className={cn(
-                                    'border-surface-border text-text-desc hover:border-primary hover:text-primary hover:bg-surface-muted flex h-auto w-full cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border-2 border-dashed py-5 transition-all',
-                                    isDragging && 'border-primary bg-primary/10 scale-[0.99]',
-                                )}
-                            >
-                                <div className="flex items-center gap-2">
-                                    <Paperclip size={16} className="opacity-60" />
-                                    <span className="text-xs font-bold tracking-wide uppercase">Pilih / Drag & Drop Berkas</span>
-                                </div>
-                                <span className="text-muted-foreground text-[10px] font-normal">
-                                    Mendukung format PDF, Gambar, Dokumen, dan Spreadsheet
-                                </span>
-                            </div>
-                        ) : (
-                            <div className="space-y-1.5">
-                                {attachments.map((file, idx) => (
-                                    <div
-                                        key={idx}
-                                        className="border-surface-border bg-surface-muted/70 flex items-center justify-between rounded-lg border px-3 py-2"
-                                    >
-                                        <div className="flex min-w-0 items-center gap-2.5 overflow-hidden">
-                                            {getFileIcon(file.name)}
-                                            <div className="flex min-w-0 flex-col">
-                                                <span className="text-text-main truncate text-xs font-bold">{file.name}</span>
-                                                <span className="text-text-desc text-[10px] font-medium">{formatFileSize(file.size)}</span>
-                                            </div>
-                                        </div>
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => setAttachments((prev) => prev.filter((_, i) => i !== idx))}
-                                            className="text-text-desc hover:text-danger hover:bg-danger/10 h-7 w-7 shrink-0"
-                                        >
-                                            <X size={14} />
-                                        </Button>
-                                    </div>
-                                ))}
-
-                                <div
-                                    role="button"
-                                    tabIndex={0}
-                                    onClick={() => fileInputRef.current?.click()}
-                                    onDragOver={(e) => {
-                                        e.preventDefault();
-                                        setIsDragging(true);
-                                    }}
-                                    onDragLeave={(e) => {
-                                        e.preventDefault();
-                                        setIsDragging(false);
-                                    }}
-                                    onDrop={handleFileDrop}
-                                    className={cn(
-                                        'border-primary/40 text-primary hover:bg-primary/5 mt-1 flex h-8 w-full cursor-pointer items-center justify-center gap-1.5 rounded-md border border-dashed text-xs font-semibold transition-all',
-                                        isDragging && 'bg-primary/15 border-primary',
-                                    )}
-                                >
-                                    <Plus size={14} />
-                                    <span>Tambah Berkas Lainnya</span>
-                                </div>
-                            </div>
-                        )}
-                        <input
-                            type="file"
-                            ref={fileInputRef}
-                            multiple
-                            className="hidden"
-                            onChange={(e) => {
-                                if (e.target.files && e.target.files.length > 0) {
-                                    setAttachments((prev) => [...prev, ...Array.from(e.target.files!)]);
-                                }
-                                e.target.value = '';
-                            }}
-                        />
-                    </div>
-                </div>
             </div>
         </Modal>
     );

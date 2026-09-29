@@ -61,10 +61,18 @@ export default function ContractAuditTrail({ contract }: Props) {
     const fetchHistories = async (currentFilters = { ...filters, search: debouncedSearch }) => {
         setLoading(true);
         try {
-            const data = await contractApi.auditTrail.list(contract.id, currentFilters);
-            setHistories(data);
+            const data: any = await contractApi.auditTrail.list(contract.id, currentFilters);
+            const list = Array.isArray(data)
+                ? data
+                : Array.isArray(data?.data)
+                  ? data.data
+                  : Array.isArray(data?.histories)
+                    ? data.histories
+                    : [];
+            setHistories(list);
         } catch (err) {
             console.error('Failed to fetch audit trail', err);
+            setHistories([]);
         } finally {
             setLoading(false);
         }
@@ -216,65 +224,68 @@ export default function ContractAuditTrail({ contract }: Props) {
                         <LoadingLottie width={80} height={80} />
                         <span className="text-[9px] font-bold text-black/40 uppercase dark:text-white/40">Memuat Riwayat...</span>
                     </div>
-                ) : (
-                    <div className="relative pl-2.5">
-                        {histories.length > 1 && (
-                            <div className="absolute top-2 bottom-2 left-[21px] w-px bg-border/60" />
-                        )}
-                        <div className="flex flex-col gap-2.5">
-                            {histories.map((h) => {
-                                const config = getActionConfig(h);
+                ) : (() => {
+                    const safeHistories = Array.isArray(histories) ? histories : [];
+                    return (
+                        <div className="relative pl-2.5">
+                            {safeHistories.length > 1 && (
+                                <div className="absolute top-2 bottom-2 left-[21px] w-px bg-border/60" />
+                            )}
+                            <div className="flex flex-col gap-2.5">
+                                {safeHistories.map((h) => {
+                                    const config = getActionConfig(h);
 
-                                return (
-                                    <div key={h.id} className="relative flex gap-3 group items-start">
-                                        <div
-                                            className="relative z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full shadow-xs ring-1 ring-black/10 dark:ring-white/10 mt-0.5 text-white"
-                                            style={{ backgroundColor: config.color }}
-                                        >
-                                            <div className="scale-90">{config.icon}</div>
-                                        </div>
-                                        <div className="flex min-w-0 flex-1 flex-col pb-2 border-b border-border/30 last:border-b-0 last:pb-0">
-                                            <div className="flex items-baseline justify-between gap-3 flex-wrap">
-                                                <div className="flex flex-wrap items-center gap-1.5 overflow-hidden">
-                                                    <span className="shrink-0 truncate text-[11px] font-semibold tracking-tight text-text-main">
-                                                        {h.actor?.name || 'System'}
-                                                    </span>
-                                                    <Badge
-                                                        variant="outline"
-                                                        className="px-1.5 py-0 text-[8px] font-bold uppercase tracking-wider rounded-sm shrink-0 border"
-                                                        style={{
-                                                            backgroundColor: `${config.color}15`,
-                                                            borderColor: `${config.color}40`,
-                                                            color: config.color,
-                                                        }}
-                                                    >
-                                                        {config.label}
-                                                    </Badge>
-                                                    {/* Activity description */}
-                                                    <span className="text-[11px] leading-relaxed text-text-main font-medium">
-                                                        "{h.description}"
-                                                    </span>
-                                                </div>
-                                                <div className="font-mono text-[9px] whitespace-nowrap text-muted-foreground uppercase tabular-nums shrink-0">
-                                                    {formatDateTime(h.created_at)}
+                                    return (
+                                        <div key={h.id} className="relative flex gap-3 group items-start">
+                                            <div
+                                                className="relative z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full shadow-xs ring-1 ring-black/10 dark:ring-white/10 mt-0.5 text-white"
+                                                style={{ backgroundColor: config.color }}
+                                            >
+                                                <div className="scale-90">{config.icon}</div>
+                                            </div>
+                                            <div className="flex min-w-0 flex-1 flex-col pb-2 border-b border-border/30 last:border-b-0 last:pb-0">
+                                                <div className="flex items-baseline justify-between gap-3 flex-wrap">
+                                                    <div className="flex flex-wrap items-center gap-1.5 overflow-hidden">
+                                                        <span className="shrink-0 truncate text-[11px] font-semibold tracking-tight text-text-main">
+                                                            {h.actor?.name || 'System'}
+                                                        </span>
+                                                        <Badge
+                                                            variant="outline"
+                                                            className="px-1.5 py-0 text-[8px] font-bold uppercase tracking-wider rounded-sm shrink-0 border"
+                                                            style={{
+                                                                backgroundColor: `${config.color}15`,
+                                                                borderColor: `${config.color}40`,
+                                                                color: config.color,
+                                                            }}
+                                                        >
+                                                            {config.label}
+                                                        </Badge>
+                                                        {/* Activity description */}
+                                                        <span className="text-[11px] leading-relaxed text-text-main font-medium">
+                                                            "{h.description}"
+                                                        </span>
+                                                    </div>
+                                                    <div className="font-mono text-[9px] whitespace-nowrap text-muted-foreground uppercase tabular-nums shrink-0">
+                                                        {formatDateTime(h.created_at)}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                );
-                            })}
+                                    );
+                                })}
 
-                            {histories.length === 0 && (
-                                <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-black/10 bg-black/[0.02] py-16 dark:border-white/10 dark:bg-white/[0.02]">
-                                    <Search className="mb-3 h-6 w-6 text-black/10 dark:text-white/10" />
-                                    <h4 className="text-[10px] font-bold tracking-[0.3em] text-black/20 uppercase dark:text-white/20">
-                                        Tidak ada riwayat aktivitas
-                                    </h4>
-                                </div>
-                            )}
+                                {safeHistories.length === 0 && (
+                                    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-black/10 bg-black/[0.02] py-16 dark:border-white/10 dark:bg-white/[0.02]">
+                                        <Search className="mb-3 h-6 w-6 text-black/10 dark:text-white/10" />
+                                        <h4 className="text-[10px] font-bold tracking-[0.3em] text-black/20 uppercase dark:text-white/20">
+                                            Tidak ada riwayat aktivitas
+                                        </h4>
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                    </div>
-                )}
+                    );
+                })()}
             </div>
             </div>
         </div>

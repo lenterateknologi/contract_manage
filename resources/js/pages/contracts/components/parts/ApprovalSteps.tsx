@@ -833,7 +833,7 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                                                              )}
                                                          </div>
 
-                                                         {viewTab === 'pro' && (() => {
+                                                         {viewTab === 'pro' && (contract?.is_current_actor ?? contract?.can_approve) && (() => {
                                                             let actions = mainItem?.workflow_step?.action_configs || [];
 
                                                             if (matchedStep) {

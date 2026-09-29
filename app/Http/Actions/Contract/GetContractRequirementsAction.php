@@ -303,12 +303,18 @@ class GetContractRequirementsAction
         $allFulfilled = $totalCount === 0 || $fulfilledCount === $totalCount;
         $progress = $totalCount > 0 ? (int) round(($fulfilledCount / $totalCount) * 100) : 100;
 
+        $isCurrentActor = (bool) $contract->approvals()
+            ->where('user_id', $user->id)
+            ->where('status', 'pending')
+            ->exists();
+
         return response()->json([
             'success' => true,
             'message' => 'Contract requirements retrieved successfully',
             'data' => [
                 'has_access' => true,
                 'can_view_requirements' => true,
+                'is_current_actor' => $isCurrentActor,
                 'contract_id' => $contract->id,
                 'contract_title' => $contract->title,
                 'contract_status' => $contract->status,
@@ -321,10 +327,7 @@ class GetContractRequirementsAction
                     'step' => $effectiveStep->step,
                     'name' => $effectiveStep->name,
                     'approver_type' => $effectiveStep->approver_type,
-                    'is_current_actor' => (bool) $contract->approvals()
-                        ->where('user_id', $user->id)
-                        ->where('status', 'pending')
-                        ->exists(),
+                    'is_current_actor' => $isCurrentActor,
                 ] : null,
                 'summary' => [
                     'total_requirements' => $totalCount,

@@ -447,6 +447,7 @@ export interface Contract {
         }>;
     } | null;
     can_approve?: boolean;
+    is_current_actor?: boolean;
     pending_approval_id?: string;
     assigned_pic?: UserProfile | null;
     assigned_by?: UserProfile | null;

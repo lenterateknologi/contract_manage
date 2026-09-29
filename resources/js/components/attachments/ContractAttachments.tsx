@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/buttons/Button';
 import { SearchInput } from '@/components/ui/inputs/SearchInput';
 import LoadingLottie from '@/components/ui/feedback/LoadingLottie';
 import { contractApi } from '@/pages/contracts/utils';
-import { cn } from '@/lib/utils';
+import { cn, parseApiErrorMessage } from '@/lib/utils';
 import { formatFileSize } from '@/lib/formatters';
 import { renderAsync } from 'docx-preview';
 import { ChipIcon, AppIcon, Icons, FileChipIcon, getAttachmentBadge } from '@/components/ui';
@@ -179,11 +179,12 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
         };
     });
 
-    const existingFileNames = new Set((contract.attachments || []).map((a: any) => a.file_name));
+    const existingFilePaths = new Set((contract.attachments || []).map((a: any) => a.file_path).filter(Boolean));
+    const existingFileNames = new Set((contract.attachments || []).map((a: any) => a.file_name).filter(Boolean));
 
     // Extract attachments from legacy approval actions (Approvals / Rejections / Adhoc actions)
     const approvalAttachments = (contract.approvals || [])
-        .filter((appr: any) => Boolean(appr.attachment_path))
+        .filter((appr: any) => Boolean(appr.attachment_path) && !existingFilePaths.has(appr.attachment_path))
         .map((appr: any) => {
             const fileName = appr.attachment_name || (appr.attachment_path ? appr.attachment_path.split('/').pop() : 'Lampiran Aksi');
             return {
@@ -193,6 +194,7 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
                 file_name: fileName,
                 file_size: appr.file_size,
                 file_type: fileName.split('.').pop() || 'file',
+                file_path: appr.attachment_path,
                 is_vendor_doc: false,
                 is_approval_doc: true,
                 is_chat_doc: false,
@@ -207,6 +209,7 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
     // Extract attachments from discussion/chat messages
     const chatAttachments = (contract.messages || [])
         .filter((m: any) => Boolean(m.attachment_path || m.attachment_name || m.attachment_url))
+        .filter((m: any) => !m.attachment_path || !existingFilePaths.has(m.attachment_path))
         .map((m: any) => {
             const fileName = m.attachment_name || (m.attachment_path ? m.attachment_path.split('/').pop() : 'Lampiran Diskusi');
             return {
@@ -225,7 +228,8 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
                 created_at: m.created_at,
                 uploader: m.user,
             };
-        });
+        })
+        .filter((chatDoc: any) => !existingFileNames.has(chatDoc.file_name));
 
     const allItems = [...vendorDocuments, ...contractAttachments, ...approvalAttachments, ...chatAttachments];
 
@@ -266,7 +270,7 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
                 'success',
             );
         } catch (err: any) {
-            const msg = err.response?.data?.message || 'Gagal mengunggah lampiran.';
+            const msg = parseApiErrorMessage(err, 'Gagal mengunggah lampiran.');
             showToast(msg, 'danger');
         } finally {
             setUploading(null);
@@ -284,8 +288,8 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
             const updated = await contractApi.deleteAttachment(contract.id, confirmDelete.id);
             onUpdated(updated);
             showToast(`Berhasil menghapus ${confirmDelete.label}`, 'success');
-        } catch {
-            showToast(`Gagal menghapus ${confirmDelete.label}`, 'danger');
+        } catch (err) {
+            showToast(parseApiErrorMessage(err, `Gagal menghapus ${confirmDelete.label}`), 'danger');
         } finally {
             setConfirmDelete(null);
         }
@@ -471,16 +475,19 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
                     {filteredItems.map((at) => {
                         const isUp = uploading === at.label;
                         const hasFile = (at as any).has_file ?? (Boolean(at.file_name) && at.file_name !== 'Belum diunggah');
+                        const isPreviewable = hasFile && /\.(pdf|jpe?g|png|gif|webp|svg|docx)$/i.test(at.file_name || '');
 
                         return (
                             <div
                                 key={at.id + at.label}
-                                onClick={() => hasFile && setPreviewAt(at)}
+                                onClick={() => isPreviewable && setPreviewAt(at)}
                                 className={cn(
                                     'flex items-center justify-between gap-3 px-3 py-3 transition-colors rounded-lg group',
-                                    hasFile
+                                    isPreviewable
                                         ? 'hover:bg-muted/40 cursor-pointer'
-                                        : 'bg-muted/10 opacity-50 cursor-not-allowed',
+                                        : hasFile
+                                            ? 'hover:bg-muted/20'
+                                            : 'bg-muted/10 opacity-50 cursor-not-allowed',
                                 )}
                             >
                                 <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -511,18 +518,20 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
                                 <div className="flex items-center gap-1.5 shrink-0">
                                     {hasFile && (
                                         <>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setPreviewAt(at);
-                                                }}
-                                                className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md"
-                                                title="Lihat Pratinjau"
-                                            >
-                                                <Eye size={14} />
-                                            </Button>
+                                            {isPreviewable && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setPreviewAt(at);
+                                                    }}
+                                                    className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md"
+                                                    title="Lihat Pratinjau"
+                                                >
+                                                    <Eye size={14} />
+                                                </Button>
+                                            )}
 
                                             <a
                                                 href={
