@@ -1,15 +1,6 @@
-import { Icons } from '@/components/ui';
 import { Button } from '@/components/ui/buttons/Button';
-import { ConfirmationModal } from '@/components/ui/dialogs/ConfirmationModal';
-import { ContractCardSkeleton, ContractTableSkeleton } from '@/components/ui/feedback/ContractSkeleton';
-import { DashboardSkeleton } from '@/components/ui/feedback/DashboardSkeleton';
-import LoadingLottie from '@/components/ui/feedback/LoadingLottie';
-import { StatusBadge } from '@/components/ui/feedback/StatusBadge';
 import { ToastProvider, useToast } from '@/components/ui/feedback/Toast';
-import { FloatingPanel } from '@/components/ui/navigation/FloatingPanel';
-import { LayoutToggle, LayoutType } from '@/components/ui/navigation/LayoutToggle';
-import { MasterPageLayout } from '@/components/ui/navigation/MasterPageLayout';
-import { PageTable } from '@/components/ui/navigation/PageTable';
+import { Icons } from '@/components/ui/icons';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -25,14 +16,10 @@ import { useDebounce } from '@/hooks/use-debounce';
 import { usePermissions } from '@/hooks/use-permissions';
 import { getClientPref, setClientPref } from '@/lib/clientStorage';
 import { cn, formatDate } from '@/lib/utils';
-import { ProfileView } from '@/pages/contracts/components/parts/ProfileView';
-import { Contract, ContractType, PaginatedData } from '@/pages/contracts/types';
-import { DashboardMetrics, DashboardTab } from '@/pages/dashboard/components/DashboardMetrics';
+import { Contract, ContractType, PaginatedData, UserFilterSettings, UserProfile } from '@/pages/contracts/types';
 import { usePov } from '@/stores/usePovStore';
 import { Head, router, usePage } from '@inertiajs/react';
-import { Building2 } from 'lucide-react';
 import { lazy, memo, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
-import { PageFilter } from './components/PageFilter';
 
 const {
     Archive,
@@ -66,13 +53,21 @@ const {
 // Lazy loaded views and modals for fast initial page render
 const ContractDetailView = lazy(() => import('./components/ContractDetailView'));
 const CreateContractModal = lazy(() => import('@/pages/contracts/components/modals/CreateContractModal'));
-const EditContractModal = lazy(() => import('@/pages/contracts/components/modals/EditContractModal').then(m => ({ default: m.EditContractModal })));
+const EditContractModal = lazy(() => import('@/pages/contracts/components/modals/EditContractModal').then((m) => ({ default: m.EditContractModal })));
 const PreviewModal = lazy(() => import('@/pages/contracts/components/modals/PreviewModal'));
 const SendApprovalModal = lazy(() => import('@/pages/contracts/components/modals/SendApprovalModal'));
 
-
 type View = 'dashboard' | 'contracts' | 'pending' | 'audit' | 'f1' | 'f2' | 'profile' | 'mine' | 'expiry' | 'archived' | 'in_progress';
 
+import { ConfirmationModal, ContractCardSkeleton, ContractTableSkeleton, StatusBadge } from '@/components/ui';
+import { DashboardSkeleton } from '@/components/ui/feedback/DashboardSkeleton';
+import LoadingLottie from '@/components/ui/feedback/LoadingLottie';
+import { FloatingPanel } from '@/components/ui/navigation/FloatingPanel';
+import { LayoutToggle, type LayoutType } from '@/components/ui/navigation/LayoutToggle';
+import { MasterPageLayout } from '@/components/ui/navigation/MasterPageLayout';
+import { PageTable } from '@/components/ui/navigation/PageTable';
+import { Building2 } from 'lucide-react';
+import { DashboardMetrics, DashboardTab } from '../dashboard/components/DashboardMetrics';
 import {
     ContractNoAndTitleCell,
     ExpiryBadge,
@@ -82,6 +77,8 @@ import {
     renderStatusAndStep,
     renderVendor,
 } from './components/ContractTableCells';
+import { PageFilter } from './components/PageFilter';
+import { ProfileView } from './components/parts/ProfileView';
 import { contractApi } from './utils';
 
 const SLACountdown = memo(({ deadline, status }: Readonly<{ deadline: string | null; status: string }>) => {
@@ -153,126 +150,117 @@ CreatedAtCell.displayName = 'CreatedAtCell';
 
 const renderCreatedAt = (c: Contract) => <CreatedAtCell c={c} />;
 
-const BulkActions = memo(({
-    selectedRows,
-    canBulkApprove,
-    handleBulkApprove,
-    canBulkDelete,
-    handleBulkDelete,
-}: Readonly<{
-    selectedRows: Contract[];
-    canBulkApprove: boolean;
-    handleBulkApprove: (rows: Contract[]) => void;
-    canBulkDelete: boolean;
-    handleBulkDelete: (rows: Contract[]) => void;
-}>) => (
-    <div className="flex items-center gap-2">
-        {canBulkApprove && (
-            <Button variant="outline" size="sm" onClick={() => handleBulkApprove(selectedRows)}>
-                <Check className="mr-1.5 h-3 w-3" /> Approve
-            </Button>
-        )}
-        {canBulkDelete && (
-            <Button variant="outline" size="sm" onClick={() => handleBulkDelete(selectedRows)}>
-                <Trash2 className="mr-1.5 h-3 w-3" /> Hapus
-            </Button>
-        )}
-    </div>
-));
+const BulkActions = memo(
+    ({
+        selectedRows,
+        canBulkApprove,
+        handleBulkApprove,
+        canBulkDelete,
+        handleBulkDelete,
+    }: Readonly<{
+        selectedRows: Contract[];
+        canBulkApprove: boolean;
+        handleBulkApprove: (rows: Contract[]) => void;
+        canBulkDelete: boolean;
+        handleBulkDelete: (rows: Contract[]) => void;
+    }>) => (
+        <div className="flex items-center gap-2">
+            {canBulkApprove && (
+                <Button variant="outline" size="sm" onClick={() => handleBulkApprove(selectedRows)}>
+                    <Check className="mr-1.5 h-3 w-3" /> Approve
+                </Button>
+            )}
+            {canBulkDelete && (
+                <Button variant="outline" size="sm" onClick={() => handleBulkDelete(selectedRows)}>
+                    <Trash2 className="mr-1.5 h-3 w-3" /> Hapus
+                </Button>
+            )}
+        </div>
+    ),
+);
 
 BulkActions.displayName = 'BulkActions';
 
-const RowActions = memo(({
-    c,
-    openDetail,
-    setSelected,
-    setEditOpen,
-    setDeleteOpen,
-}: Readonly<{
-    c: Contract;
-    openDetail: (c: Contract) => void;
-    setSelected: (c: Contract) => void;
-    setEditOpen: (open: boolean) => void;
-    setDeleteOpen: (open: boolean) => void;
-}>) => (
-    <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="group">
-                <MoreVertical size={14} className="text-sidebar-foreground/40 group-hover:text-sidebar-primary" />
-            </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent
-            align="end"
-            className="border-sidebar-border dark:bg-sidebar-accent/90 w-52 rounded-xl bg-white p-1.5 shadow-2xl backdrop-blur-md"
-        >
-            <DropdownMenuItem
-                onClick={() => openDetail(c)}
-                className="flex cursor-pointer items-center gap-2 rounded-lg text-[11px] font-semibold tracking-tight text-slate-600 uppercase"
+const RowActions = memo(
+    ({
+        c,
+        openDetail,
+        setSelected,
+        setEditOpen,
+        setDeleteOpen,
+    }: Readonly<{
+        c: Contract;
+        openDetail: (c: Contract) => void;
+        setSelected: (c: Contract) => void;
+        setEditOpen: (open: boolean) => void;
+        setDeleteOpen: (open: boolean) => void;
+    }>) => (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="group">
+                    <MoreVertical size={14} className="text-sidebar-foreground/40 group-hover:text-sidebar-primary" />
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+                align="end"
+                className="border-sidebar-border dark:bg-sidebar-accent/90 w-52 rounded-xl bg-white p-1.5 shadow-2xl backdrop-blur-md"
             >
-                <Eye size={14} /> Lihat Detail
-            </DropdownMenuItem>
-            <DropdownMenuItem
-                onClick={() => {
-                    setSelected(c);
-                    setEditOpen(true);
-                }}
-                className="flex cursor-pointer items-center gap-2 rounded-lg text-[11px] font-semibold tracking-tight text-slate-600 uppercase"
-            >
-                <FileEdit size={14} /> Perbarui
-            </DropdownMenuItem>
-            <div className="my-1 h-px bg-slate-50" />
-            <DropdownMenuItem
-                onClick={() => {
-                    setSelected(c);
-                    setDeleteOpen(true);
-                }}
-                className="flex cursor-pointer items-center gap-2 rounded-lg text-[11px] font-semibold tracking-tight text-rose-600 uppercase focus:bg-rose-50 focus:text-rose-600"
-            >
-                <Trash2 size={14} /> Hapus Data
-            </DropdownMenuItem>
-        </DropdownMenuContent>
-    </DropdownMenu>
-));
+                <DropdownMenuItem
+                    onClick={() => openDetail(c)}
+                    className="flex cursor-pointer items-center gap-2 rounded-lg text-[11px] font-semibold tracking-tight text-slate-600 uppercase"
+                >
+                    <Eye size={14} /> Lihat Detail
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                    onClick={() => {
+                        setSelected(c);
+                        setEditOpen(true);
+                    }}
+                    className="flex cursor-pointer items-center gap-2 rounded-lg text-[11px] font-semibold tracking-tight text-slate-600 uppercase"
+                >
+                    <FileEdit size={14} /> Perbarui
+                </DropdownMenuItem>
+                <div className="my-1 h-px bg-slate-50" />
+                <DropdownMenuItem
+                    onClick={() => {
+                        setSelected(c);
+                        setDeleteOpen(true);
+                    }}
+                    className="flex cursor-pointer items-center gap-2 rounded-lg text-[11px] font-semibold tracking-tight text-rose-600 uppercase focus:bg-rose-50 focus:text-rose-600"
+                >
+                    <Trash2 size={14} /> Hapus Data
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
+    ),
+);
 
 RowActions.displayName = 'RowActions';
 
-// ─── Multi Select Filter Dropdown (Divisi / Departemen) ─────────────────────
+export interface DashboardConfig {
+    show_overview?: boolean;
+    show_overview_contract?: boolean;
+    show_overview_non_contract?: boolean;
+    show_overview_nda?: boolean;
+    show_workload?: boolean;
+    show_master_data?: boolean;
+    has_setting?: boolean;
+    [key: string]: unknown;
+}
 
-
-
-function ContractPage({
-    contracts: contractsPaged,
-    meId,
-    meUser,
-    initialSelected,
-    types,
-    submissionTypes = [],
-    currentView,
-    metrics,
-    filters,
-    formTemplates = [],
-    users = [],
-    vendors = [],
-    departments = [],
-    companyGroups = [],
-    companies = [],
-    regions = [],
-    divisions = [],
-    mineCounts,
-    parentCategoryCounts,
-    pendingCounts,
-    expiryCategoryCounts,
-    userFilterSettings = {},
-}: Readonly<{
+interface IndexProps {
     contracts: PaginatedData<Contract>;
     meId: string;
-    meUser: any;
+    meUser?: UserProfile | null;
     initialSelected?: Contract | null;
     types: ContractType[];
-    submissionTypes: any[];
+    submissionTypes: Array<{ id: string; name: string }>;
     currentView: View;
-    metrics: any;
-    userFilterSettings?: any;
+    metrics?: {
+        dashboardConfig?: DashboardConfig;
+        [key: string]: unknown;
+    } | null;
+    userFilterSettings?: UserFilterSettings | null;
     mineCounts?: {
         all: number;
         kontrak: number;
@@ -305,6 +293,10 @@ function ContractPage({
         contract_type_id?: string;
         submission_type_id?: string;
         per_page?: number;
+        sortBy?: string;
+        sort_by?: string;
+        sortDir?: 'asc' | 'desc' | string;
+        sort_dir?: 'asc' | 'desc' | string;
         mine_tab?: string;
         parent_tab?: string;
         pending_tab?: string;
@@ -313,49 +305,85 @@ function ContractPage({
         department_id?: string;
         created_from?: string;
         created_to?: string;
-        company_group_id?: any;
-        region_id?: any;
-        company_id?: any;
-        division_id?: any;
-        company_group_ids?: any;
-        region_ids?: any;
-        company_ids?: any;
-        department_ids?: any;
+        company_group_id?: string | number | string[];
+        region_id?: string | number | string[];
+        company_id?: string | number | string[];
+        division_id?: string | number | string[];
+        company_group_ids?: string[] | string;
+        region_ids?: string[] | string;
+        company_ids?: string[] | string;
+        department_ids?: string[] | string;
     };
-    formTemplates?: any[];
-    users?: any[];
-    vendors?: any[];
-    departments?: any[];
-    roles?: any[];
-    companyGroups?: any[];
-    companies?: any[];
-    regions?: any[];
-    locations?: any[];
-    divisions?: any[];
-    organizationTree?: any[];
-}>) {
+    formTemplates?: Array<{ id: string; name: string }>;
+    users?: UserProfile[];
+    vendors?: Array<{ id: string; name: string }>;
+    departments?: Array<{ id: string; name: string }>;
+    roles?: Array<{ id: string; name: string }>;
+    companyGroups?: Array<{ id: string; name: string }>;
+    companies?: Array<{ id: string; name: string }>;
+    regions?: Array<{ id: string; name: string }>;
+    locations?: Array<{ id: string; name: string }>;
+    divisions?: Array<{ id: string; name: string }>;
+    organizationTree?: Array<Record<string, unknown>>;
+}
+
+function ContractPage({
+    contracts: contractsPaged = { data: [], links: [], current_page: 1, last_page: 1, total: 0, from: 0, to: 0, per_page: 15 },
+    meId = '',
+    meUser,
+    initialSelected,
+    types = [],
+    submissionTypes = [],
+    currentView = 'dashboard',
+    metrics,
+    filters = {},
+    formTemplates = [],
+    users = [],
+    vendors = [],
+    departments = [],
+    companyGroups = [],
+    companies = [],
+    regions = [],
+    divisions = [],
+    mineCounts,
+    parentCategoryCounts,
+    pendingCounts,
+    expiryCategoryCounts,
+    userFilterSettings = {},
+}: Readonly<IndexProps>) {
     const { showToast } = useToast();
-    const { masterContractStatuses } = usePage<any>().props;
+    const { masterContractStatuses } = usePage<{ masterContractStatuses?: Array<{ label?: string; code: string }> }>().props;
     const { canUpdate } = usePermissions('CONTRACTS');
     const pov = usePov();
     const [view, setView] = useState<View>(currentView);
-    const [dashboardTab, setDashboardTab] = useState<'overview' | 'overview_contract' | 'overview_non_contract' | 'overview_nda' | 'workload' | 'master_data'>(() => {
+    const [dashboardTab, setDashboardTab] = useState<
+        'overview' | 'overview_contract' | 'overview_non_contract' | 'overview_nda' | 'workload' | 'master_data'
+    >(() => {
         if (typeof window !== 'undefined') {
             const urlParams = new URLSearchParams(window.location.search);
             const tabParam = urlParams.get('dashboard_tab') || urlParams.get('tab');
-            const validTabs = ['overview', 'overview_contract', 'overview_non_contract', 'overview_nda', 'workload', 'master_data'];
-            if (tabParam && validTabs.includes(tabParam)) {
-                return tabParam as any;
+            const validTabs: ('overview' | 'overview_contract' | 'overview_non_contract' | 'overview_nda' | 'workload' | 'master_data')[] = [
+                'overview',
+                'overview_contract',
+                'overview_non_contract',
+                'overview_nda',
+                'workload',
+                'master_data',
+            ];
+            if (tabParam && (validTabs as string[]).includes(tabParam)) {
+                return tabParam as 'overview' | 'overview_contract' | 'overview_non_contract' | 'overview_nda' | 'workload' | 'master_data';
             }
             const saved = getClientPref<string>('dashboard_active_tab', '');
-            if (saved && validTabs.includes(saved)) {
-                return saved as any;
+            if (saved && (validTabs as string[]).includes(saved)) {
+                return saved as 'overview' | 'overview_contract' | 'overview_non_contract' | 'overview_nda' | 'workload' | 'master_data';
             }
         }
         return 'overview_contract';
     });
 
-    const handleDashboardTabChange = (newTab: 'overview' | 'overview_contract' | 'overview_non_contract' | 'overview_nda' | 'workload' | 'master_data') => {
+    const handleDashboardTabChange = (
+        newTab: 'overview' | 'overview_contract' | 'overview_non_contract' | 'overview_nda' | 'workload' | 'master_data',
+    ) => {
         setDashboardTab(newTab);
         setClientPref('dashboard_active_tab', newTab);
     };
@@ -404,26 +432,29 @@ function ContractPage({
     const [selected, setSelected] = useState<Contract | null>(initialSelected ?? null);
     const viewTitleMap: Record<string, string> = {
         dashboard: 'Dashboard Kontrak',
-        contracts: filters?.parent_tab === 'kontrak'
-            ? 'Semua Pengajuan - Kontrak'
-            : filters?.parent_tab === 'non_kontrak'
-                ? 'Semua Pengajuan - Non Kontrak'
-                : filters?.parent_tab === 'nda'
+        contracts:
+            filters?.parent_tab === 'kontrak'
+                ? 'Semua Pengajuan - Kontrak'
+                : filters?.parent_tab === 'non_kontrak'
+                  ? 'Semua Pengajuan - Non Kontrak'
+                  : filters?.parent_tab === 'nda'
                     ? 'Semua Pengajuan - NDA'
                     : 'Semua Pengajuan',
-        mine: filters?.mine_tab === 'kontrak'
-            ? 'Pengajuan Saya - Kontrak'
-            : filters?.mine_tab === 'non_kontrak'
-                ? 'Pengajuan Saya - Non Kontrak'
-                : filters?.mine_tab === 'nda'
+        mine:
+            filters?.mine_tab === 'kontrak'
+                ? 'Pengajuan Saya - Kontrak'
+                : filters?.mine_tab === 'non_kontrak'
+                  ? 'Pengajuan Saya - Non Kontrak'
+                  : filters?.mine_tab === 'nda'
                     ? 'Pengajuan Saya - NDA'
                     : 'Pengajuan Saya',
         pending: filters?.pending_tab === 'history' ? 'Persetujuan Saya - Riwayat Persetujuan' : 'Persetujuan Saya - Perlu Persetujuan',
-        expiry: filters?.expiry_tab === 'kontrak'
-            ? 'Masa Berlaku - Kontrak'
-            : filters?.expiry_tab === 'non_kontrak'
-                ? 'Masa Berlaku - Non Kontrak'
-                : filters?.expiry_tab === 'nda'
+        expiry:
+            filters?.expiry_tab === 'kontrak'
+                ? 'Masa Berlaku - Kontrak'
+                : filters?.expiry_tab === 'non_kontrak'
+                  ? 'Masa Berlaku - Non Kontrak'
+                  : filters?.expiry_tab === 'nda'
                     ? 'Masa Berlaku - NDA'
                     : 'Masa Berlaku Kontrak',
         archived: 'Arsip Dokumen',
@@ -436,12 +467,16 @@ function ContractPage({
         dashboard: 'Statistik dan ringkasan aktivitas kontrak.',
         contracts: 'Daftar seluruh arsip dokumen pengajuan dalam sistem.',
         mine: 'Daftar dokumen pengajuan yang Anda buat.',
-        pending: filters?.pending_tab === 'history' ? 'Riwayat dokumen pengajuan yang pernah Anda proses.' : 'Dokumen pengajuan yang menunggu persetujuan Anda.',
-        expiry: filters?.expiry_tab === 'kontrak'
-            ? 'Daftar dokumen kontrak yang akan atau telah berakhir masa berlakunya.'
-            : filters?.expiry_tab === 'non_kontrak'
-                ? 'Daftar dokumen non kontrak yang akan atau telah berakhir masa berlakunya.'
-                : filters?.expiry_tab === 'nda'
+        pending:
+            filters?.pending_tab === 'history'
+                ? 'Riwayat dokumen pengajuan yang pernah Anda proses.'
+                : 'Dokumen pengajuan yang menunggu persetujuan Anda.',
+        expiry:
+            filters?.expiry_tab === 'kontrak'
+                ? 'Daftar dokumen kontrak yang akan atau telah berakhir masa berlakunya.'
+                : filters?.expiry_tab === 'non_kontrak'
+                  ? 'Daftar dokumen non kontrak yang akan atau telah berakhir masa berlakunya.'
+                  : filters?.expiry_tab === 'nda'
                     ? 'Daftar dokumen NDA yang akan atau telah berakhir masa berlakunya.'
                     : 'Kontrak yang akan atau telah berakhir.',
         archived: 'Daftar seluruh dokumen kontrak yang diarsipkan.',
@@ -450,7 +485,7 @@ function ContractPage({
         f2: 'Daftar kontrak dengan dokumen F2.',
         profile: 'Informasi akun dan pengaturan profil.',
     };
-    const viewIconMap: Record<string, any> = {
+    const viewIconMap: Record<string, React.ComponentType<{ className?: string; size?: number | string; strokeWidth?: number }>> = {
         dashboard: LayoutGrid,
         contracts: FileText,
         mine: FileEdit,
@@ -466,7 +501,7 @@ function ContractPage({
     const debouncedSearch = useDebounce(search, 500);
 
     const handleFilterChange = useCallback(
-        (newFilters: any) => {
+        (newFilters: Record<string, unknown>) => {
             const merged = { ...filters, ...newFilters };
             const cleaned = Object.fromEntries(
                 Object.entries(merged)
@@ -477,12 +512,12 @@ function ContractPage({
                         return [k, v];
                     })
                     .filter(([k, v]) => {
-                        if ((['company_group_id', 'region_id', 'company_id', 'division_id', 'department_id'] as string[]).includes(k as string)) {
+                        if ((['company_group_id', 'region_id', 'company_id', 'division_id', 'department_id'] as string[]).includes(k)) {
                             return v !== undefined && v !== null;
                         }
                         return v !== undefined && v !== null && v !== '' && (Array.isArray(v) ? v.length > 0 : true);
-                    })
-            ) as any;
+                    }),
+            ) as Record<string, string | number | string[]>;
             router.get(globalThis.location.pathname, cleaned, {
                 preserveState: true,
                 preserveScroll: true,
@@ -538,17 +573,9 @@ function ContractPage({
     const activeFilterCount = useMemo(() => {
         let count = 0;
         if (filters) {
-            const arrayKeys = [
-                'company_group_id',
-                'region_id',
-                'company_id',
-                'division_id',
-                'department_id',
-                'contract_type_id',
-                'status',
-            ];
+            const arrayKeys = ['company_group_id', 'region_id', 'company_id', 'division_id', 'department_id', 'contract_type_id', 'status'];
             arrayKeys.forEach((k) => {
-                const v = (filters as any)[k];
+                const v = (filters as Record<string, unknown>)[k];
                 if (Array.isArray(v)) {
                     count += v.filter((item) => item !== '' && item !== null && item !== undefined).length;
                 } else if (v !== '' && v !== null && v !== undefined) {
@@ -563,67 +590,72 @@ function ContractPage({
     }, [filters]);
 
     interface DBContractType extends ContractType {
-        parent_id?: string | null;
+        parent_id?: string | number | null;
         level?: number;
     }
 
-    const isDescendantOrSelf = useCallback((targetId: string | string[] | undefined, parentId: string): boolean => {
-        if (!targetId) return false;
-        if (Array.isArray(targetId)) {
-            return targetId.some(id => isDescendantOrSelf(id, parentId));
-        }
-        if (targetId === parentId) return true;
-        const target = types.find(t => t.id === targetId) as DBContractType | undefined;
-        if (target && target.parent_id) {
-            return isDescendantOrSelf(target.parent_id, parentId);
-        }
-        return false;
-    }, [types]);
-
-
-    const renderDropdownItems = useCallback((parentId: string | null) => {
-        const children = (types as DBContractType[]).filter(t => t.parent_id === parentId);
-        if (children.length === 0) return null;
-
-        return children.map(child => {
-            const hasChildren = (types as DBContractType[]).some(t => t.parent_id === child.id);
-            if (hasChildren) {
-                return (
-                    <DropdownMenuSub key={child.id}>
-                        <DropdownMenuSubTrigger className="cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 text-xs px-3 py-2 flex items-center justify-between">
-                            {child.name}
-                        </DropdownMenuSubTrigger>
-                        <DropdownMenuSubContent className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-1 shadow-lg rounded-md min-w-[180px]">
-                            <DropdownMenuItem
-                                onClick={() => handleFilterChange({ contract_type_id: child.id, page: 1 })}
-                                className="cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 text-xs px-3 py-2 font-semibold text-primary"
-                            >
-                                Semua {child.name}
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator className="my-1 border-t border-slate-100 dark:border-slate-800" />
-                            {renderDropdownItems(child.id)}
-                        </DropdownMenuSubContent>
-                    </DropdownMenuSub>
-                );
+    const isDescendantOrSelf = useCallback(
+        (targetId: string | number | (string | number)[] | undefined, parentId: string | number): boolean => {
+            if (!targetId) return false;
+            if (Array.isArray(targetId)) {
+                return targetId.some((id) => isDescendantOrSelf(id, parentId));
             }
+            if (String(targetId) === String(parentId)) return true;
+            const target = types.find((t) => String(t.id) === String(targetId)) as DBContractType | undefined;
+            if (target && target.parent_id) {
+                return isDescendantOrSelf(target.parent_id, parentId);
+            }
+            return false;
+        },
+        [types],
+    );
 
-            return (
-                <DropdownMenuItem
-                    key={child.id}
-                    onClick={() => handleFilterChange({ contract_type_id: child.id, page: 1 })}
-                    className="cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 text-xs px-3 py-2"
-                >
-                    {child.name}
-                </DropdownMenuItem>
-            );
-        });
-    }, [types, handleFilterChange]);
+    const renderDropdownItems = useCallback(
+        (parentId: string | number | null) => {
+            const children = (types as DBContractType[]).filter((t) => (parentId === null ? !t.parent_id : String(t.parent_id) === String(parentId)));
+            if (children.length === 0) return null;
+
+            return children.map((child) => {
+                const hasChildren = (types as DBContractType[]).some((t) => String(t.parent_id) === String(child.id));
+                if (hasChildren) {
+                    return (
+                        <DropdownMenuSub key={String(child.id)}>
+                            <DropdownMenuSubTrigger className="flex cursor-pointer items-center justify-between px-3 py-2 text-xs hover:bg-slate-100 dark:hover:bg-slate-800">
+                                {child.name}
+                            </DropdownMenuSubTrigger>
+                            <DropdownMenuSubContent className="min-w-[180px] rounded-md border border-slate-200 bg-white p-1 shadow-lg dark:border-slate-800 dark:bg-slate-900">
+                                <DropdownMenuItem
+                                    onClick={() => handleFilterChange({ contract_type_id: String(child.id), page: 1 })}
+                                    className="text-primary cursor-pointer px-3 py-2 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800"
+                                >
+                                    Semua {child.name}
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator className="my-1 border-t border-slate-100 dark:border-slate-800" />
+                                {renderDropdownItems(child.id)}
+                            </DropdownMenuSubContent>
+                        </DropdownMenuSub>
+                    );
+                }
+
+                return (
+                    <DropdownMenuItem
+                        key={String(child.id)}
+                        onClick={() => handleFilterChange({ contract_type_id: String(child.id), page: 1 })}
+                        className="cursor-pointer px-3 py-2 text-xs hover:bg-slate-100 dark:hover:bg-slate-800"
+                    >
+                        {child.name}
+                    </DropdownMenuItem>
+                );
+            });
+        },
+        [types, handleFilterChange],
+    );
 
     useEffect(() => {
-        const removeStartListener = router.on('start', (event: any) => {
+        const removeStartListener = router.on('start', (event) => {
             const visit = event?.detail?.visit;
             // Ignore deferred/partial visits so the existing table remains interactive with zero shimmer flicker
-            if (visit?.only?.length || visit?.headers?.['X-Inertia-Partial-Component']) {
+            if (visit?.only?.length || (visit?.headers as Record<string, string> | undefined)?.['X-Inertia-Partial-Component']) {
                 return;
             }
             setProcessing(true);
@@ -648,7 +680,7 @@ function ContractPage({
         (c: Contract, silent = false) => {
             if (!silent) {
                 // Always reload to sync Inertia props, but preserve state/scroll for smoothness
-                router.reload({ preserveScroll: true, preserveState: true } as any);
+                router.reload({ preserveScroll: true, preserveState: true } as Parameters<typeof router.reload>[0]);
             }
             if (selected?.id === c.id) setSelected(c);
         },
@@ -657,7 +689,7 @@ function ContractPage({
 
     const openDetail = useCallback((c: Contract) => {
         setSelected(c);
-        const targetId = (c as any).short_id || c.id;
+        const targetId = (c as unknown as { short_id?: string }).short_id || c.id;
         router.get(route('contracts.show', targetId), {}, { preserveState: true, preserveScroll: true });
     }, []);
 
@@ -727,14 +759,19 @@ function ContractPage({
     }, [meUser, pov.activeFilterPov]);
 
     const filterCategories = useMemo(() => {
-        const list: any[] = [];
+        const list: Array<{
+            label: string;
+            key: string;
+            type: string;
+            options?: Array<{ label: string; value: string | number }>;
+        }> = [];
 
         if (canChangeCompanyGroup && companyGroups && companyGroups.length > 0) {
             list.push({
                 label: 'Grup Perusahaan',
                 key: 'company_group_id',
                 type: 'searchable',
-                options: companyGroups.map((g: any) => ({
+                options: companyGroups.map((g) => ({
                     label: g.name,
                     value: g.id,
                 })),
@@ -746,7 +783,7 @@ function ContractPage({
                 label: 'Regional',
                 key: 'region_id',
                 type: 'searchable',
-                options: regions.map((r: any) => ({
+                options: regions.map((r) => ({
                     label: r.name,
                     value: r.id,
                 })),
@@ -758,7 +795,7 @@ function ContractPage({
                 label: 'Perusahaan',
                 key: 'company_id',
                 type: 'searchable',
-                options: companies.map((c: any) => ({
+                options: companies.map((c) => ({
                     label: c.name,
                     value: c.id,
                 })),
@@ -770,7 +807,7 @@ function ContractPage({
                 label: 'Divisi',
                 key: 'division_id',
                 type: 'searchable',
-                options: divisions.map((d: any) => ({
+                options: divisions.map((d) => ({
                     label: d.name,
                     value: d.id,
                 })),
@@ -782,7 +819,7 @@ function ContractPage({
                 label: 'Departemen',
                 key: 'department_id',
                 type: 'searchable',
-                options: departments.map((d: any) => ({
+                options: departments.map((d) => ({
                     label: d.name,
                     value: d.id,
                 })),
@@ -794,7 +831,7 @@ function ContractPage({
                 label: 'Kategori Kontrak',
                 key: 'contract_type_id',
                 type: 'searchable',
-                options: types.map((t: any) => ({
+                options: types.map((t) => ({
                     label: t.name,
                     value: t.id,
                 })),
@@ -805,7 +842,7 @@ function ContractPage({
             label: 'Status Pengajuan',
             key: 'status',
             type: 'multiselect',
-            options: (masterContractStatuses || []).map((s: any) => ({
+            options: (masterContractStatuses || []).map((s) => ({
                 label: s.label || s.code,
                 value: s.code,
             })),
@@ -818,10 +855,22 @@ function ContractPage({
         });
 
         return list;
-    }, [companyGroups, regions, companies, divisions, departments, types, masterContractStatuses]);
+    }, [
+        canChangeCompany,
+        canChangeCompanyGroup,
+        canChangeDepartment,
+        canChangeDivision,
+        canChangeRegion,
+        companyGroups,
+        regions,
+        companies,
+        divisions,
+        departments,
+        types,
+        masterContractStatuses,
+    ]);
 
-
-    const handleCreate = async (data: any) => {
+    const handleCreate = async (data: Parameters<typeof contractApi.create>[0]) => {
         setProcessing(true);
         try {
             const newContract = await contractApi.create(data);
@@ -839,7 +888,7 @@ function ContractPage({
         }
     };
 
-    const handleUpdateFromList = async (data: any) => {
+    const handleUpdateFromList = async (data: Parameters<typeof contractApi.update>[1]) => {
         if (!selected) return;
         setProcessing(true);
         try {
@@ -870,7 +919,7 @@ function ContractPage({
         }
     };
 
-    const handleSendSubmit = async (data: any) => {
+    const handleSendSubmit = async (data: Parameters<typeof contractApi.send>[1]) => {
         if (!selected) return;
         setProcessing(true);
         try {
@@ -895,35 +944,39 @@ function ContractPage({
     const { canBulkApprove, canBulkDelete } = usePermissions(currentModuleKey);
     const hasAnyBulkAction = Boolean(canBulkApprove || canBulkDelete);
 
-    const handleBulkApprove = useCallback(async (rows: Contract[]) => {
-        if (!confirm(`Setujui ${rows.length} kontrak terpilih?`)) return;
-        setProcessing(true);
-        try {
-            await Promise.all(rows.map((r) => contractApi.approve(r.id, 'Bulk Approval')));
-            showToast('Bulk approval berhasil.', 'success');
-            router.reload();
-        } catch {
-            showToast('Gagal melakukan bulk approval.', 'danger');
-        } finally {
-            setProcessing(false);
-        }
-    }, [showToast]);
+    const handleBulkApprove = useCallback(
+        async (rows: Contract[]) => {
+            if (!confirm(`Setujui ${rows.length} kontrak terpilih?`)) return;
+            setProcessing(true);
+            try {
+                await Promise.all(rows.map((r) => contractApi.approve(r.id, 'Bulk Approval')));
+                showToast('Bulk approval berhasil.', 'success');
+                router.reload();
+            } catch {
+                showToast('Gagal melakukan bulk approval.', 'danger');
+            } finally {
+                setProcessing(false);
+            }
+        },
+        [showToast],
+    );
 
-    const handleBulkDelete = useCallback(async (rows: Contract[]) => {
-        if (!confirm(`Hapus ${rows.length} kontrak terpilih?`)) return;
-        setProcessing(true);
-        try {
-            await Promise.all(rows.map((r) => contractApi.delete(r.id)));
-            showToast('Bulk delete berhasil.', 'success');
-            router.reload();
-        } catch {
-            showToast('Gagal melakukan bulk delete.', 'danger');
-        } finally {
-            setProcessing(false);
-        }
-    }, [showToast]);
-
-
+    const handleBulkDelete = useCallback(
+        async (rows: Contract[]) => {
+            if (!confirm(`Hapus ${rows.length} kontrak terpilih?`)) return;
+            setProcessing(true);
+            try {
+                await Promise.all(rows.map((r) => contractApi.delete(r.id)));
+                showToast('Bulk delete berhasil.', 'success');
+                router.reload();
+            } catch {
+                showToast('Gagal melakukan bulk delete.', 'danger');
+            } finally {
+                setProcessing(false);
+            }
+        },
+        [showToast],
+    );
 
     const renderBulkActions = useCallback(
         (selectedRows: Contract[]) => {
@@ -1039,7 +1092,7 @@ function ContractPage({
                             href={`/contracts/${c.id}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-text-muted hover:text-primary hover:bg-primary/10 border border-transparent hover:border-primary/20 transition-all cursor-pointer"
+                            className="text-text-muted hover:text-primary hover:bg-primary/10 hover:border-primary/20 inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg border border-transparent transition-all"
                             title="Buka di Tab Baru"
                         >
                             <ExternalLink size={14} />
@@ -1052,7 +1105,7 @@ function ContractPage({
     );
 
     const renderCategoryTabs = () => {
-        let tabs: { key: string; label: string; count: number; icon?: any; isActive: boolean }[] = [];
+        let tabs: { key: string; label: string; count: number; icon?: React.ComponentType<{ className?: string; size?: number | string }> | React.ReactNode; isActive: boolean }[] = [];
         const activeView = (currentView || view) as string;
 
         // Ambil filter types dan categories dari user setting (dashboard profile)
@@ -1066,9 +1119,9 @@ function ContractPage({
 
             const matchedCats = new Set<string>();
             const findRootCode = (typeId: string): string | null => {
-                let current = types.find((t: any) => String(t.id) === String(typeId));
+                let current = types.find((t) => String(t.id) === String(typeId));
                 while (current && current.parent_id) {
-                    const parent = types.find((t: any) => String(t.id) === String(current.parent_id));
+                    const parent = types.find((t) => String(t.id) === String(current?.parent_id));
                     if (!parent) break;
                     current = parent;
                 }
@@ -1098,24 +1151,51 @@ function ContractPage({
         const buildFilteredTabs = (
             counts: { all?: number; kontrak?: number; non_kontrak?: number; nda?: number } | undefined,
             activeKey: string,
-            isHistoryPending: boolean = false
+            isHistoryPending: boolean = false,
         ) => {
             if (isHistoryPending) {
                 return [
-                    { key: 'pending', label: 'Perlu Persetujuan', count: pendingCounts?.pending ?? 0, icon: Clock, isActive: activeKey === 'pending' },
-                    { key: 'history', label: 'Riwayat Persetujuan', count: pendingCounts?.history ?? 0, icon: History, isActive: activeKey === 'history' },
+                    {
+                        key: 'pending',
+                        label: 'Perlu Persetujuan',
+                        count: pendingCounts?.pending ?? 0,
+                        icon: Clock,
+                        isActive: activeKey === 'pending',
+                    },
+                    {
+                        key: 'history',
+                        label: 'Riwayat Persetujuan',
+                        count: pendingCounts?.history ?? 0,
+                        icon: History,
+                        isActive: activeKey === 'history',
+                    },
                 ];
             }
 
             const candidateTabs = [
-                { key: 'kontrak', categoryKey: 'contract', label: 'Kontrak', count: counts?.kontrak ?? 0, icon: FileText, isActive: activeKey === 'kontrak' },
-                { key: 'non_kontrak', categoryKey: 'non_contract', label: 'Non Kontrak', count: counts?.non_kontrak ?? 0, icon: FileCheck, isActive: activeKey === 'non_kontrak' },
+                {
+                    key: 'kontrak',
+                    categoryKey: 'contract',
+                    label: 'Kontrak',
+                    count: counts?.kontrak ?? 0,
+                    icon: FileText,
+                    isActive: activeKey === 'kontrak',
+                },
+                {
+                    key: 'non_kontrak',
+                    categoryKey: 'non_contract',
+                    label: 'Non Kontrak',
+                    count: counts?.non_kontrak ?? 0,
+                    icon: FileCheck,
+                    isActive: activeKey === 'non_kontrak',
+                },
                 { key: 'nda', categoryKey: 'nda', label: 'NDA', count: counts?.nda ?? 0, icon: Zap, isActive: activeKey === 'nda' },
             ];
 
-            const filteredCandidates = effectiveAllowedCategories.length > 0
-                ? candidateTabs.filter((t) => effectiveAllowedCategories.includes(t.categoryKey) || effectiveAllowedCategories.includes(t.key))
-                : candidateTabs;
+            const filteredCandidates =
+                effectiveAllowedCategories.length > 0
+                    ? candidateTabs.filter((t) => effectiveAllowedCategories.includes(t.categoryKey) || effectiveAllowedCategories.includes(t.key))
+                    : candidateTabs;
 
             // Jika hanya 1 kategori yang diizinkan, langsung tampilkan tab kategori tersebut saja
             if (filteredCandidates.length === 1) {
@@ -1123,10 +1203,7 @@ function ContractPage({
             }
 
             // Jika ada lebih dari 1 kategori atau tanpa pembatasan, sertakan tab 'Semua'
-            return [
-                { key: '', label: 'Semua', count: counts?.all ?? 0, icon: LayoutGrid, isActive: !activeKey },
-                ...filteredCandidates,
-            ];
+            return [{ key: '', label: 'Semua', count: counts?.all ?? 0, icon: LayoutGrid, isActive: !activeKey }, ...filteredCandidates];
         };
 
         if (activeView === 'contracts' || activeView === 'admin.contracts' || activeView === 'admin/contracts') {
@@ -1158,7 +1235,7 @@ function ContractPage({
         };
 
         return (
-            <div className="flex items-center gap-1.5 px-4 h-12 border-b border-surface-border bg-card shrink-0 overflow-x-auto custom-scrollbar">
+            <div className="border-surface-border bg-card custom-scrollbar flex h-12 shrink-0 items-center gap-1.5 overflow-x-auto border-b px-4">
                 {tabs.map((tab) => {
                     const TabIcon = tab.icon;
                     return (
@@ -1167,9 +1244,9 @@ function ContractPage({
                             type="button"
                             onClick={() => onTabClick(tab.key)}
                             className={cn(
-                                'group relative flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-all duration-150 cursor-pointer shrink-0 select-none',
+                                'group relative flex shrink-0 cursor-pointer items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-all duration-150 select-none',
                                 tab.isActive
-                                    ? 'bg-primary text-primary-foreground shadow-xs font-bold'
+                                    ? 'bg-primary text-primary-foreground font-bold shadow-xs'
                                     : 'text-muted-foreground hover:text-foreground hover:bg-muted/70',
                             )}
                         >
@@ -1185,9 +1262,9 @@ function ContractPage({
                             <span>{tab.label}</span>
                             <span
                                 className={cn(
-                                    'text-[10px] font-bold px-2 py-0.5 rounded-full tabular-nums shrink-0 transition-colors',
+                                    'shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold tabular-nums transition-colors',
                                     tab.isActive
-                                        ? 'bg-white text-primary dark:bg-black dark:text-white'
+                                        ? 'text-primary bg-white dark:bg-black dark:text-white'
                                         : 'bg-muted text-muted-foreground group-hover:text-foreground',
                                 )}
                             >
@@ -1203,12 +1280,12 @@ function ContractPage({
     return (
         <>
             <Head title={view} />
-            <div className="flex min-h-0 flex-1 flex-col w-full h-full bg-slate-100/60 dark:bg-zinc-950 overflow-hidden">
+            <div className="flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden bg-slate-100/60 dark:bg-zinc-950">
                 {selected ? (
-                    <div className="animate-in fade-in slide-in-from-bottom-3 flex w-full flex-1 min-h-0 flex-col duration-300 ease-in-out h-full overflow-hidden">
+                    <div className="animate-in fade-in slide-in-from-bottom-3 flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden duration-300 ease-in-out">
                         <Suspense
                             fallback={
-                                <div className="flex flex-1 items-center justify-center min-h-[400px] w-full p-6">
+                                <div className="flex min-h-[400px] w-full flex-1 items-center justify-center p-6">
                                     <LoadingLottie width={140} height={140} />
                                 </div>
                             }
@@ -1236,146 +1313,201 @@ function ContractPage({
                     </div>
                 ) : (
                     <MasterPageLayout>
-                        <FloatingPanel className="flex-1 min-w-0 flex flex-col">
+                        <FloatingPanel className="flex min-w-0 flex-1 flex-col">
                             <PageTable
                                 standalone={false}
                                 title={viewTitleMap[view] || 'Manajemen Kontrak'}
                                 subtitle={viewDescMap[view] || 'Daftar seluruh kontrak dalam sistem.'}
                                 icon={viewIconMap[view] || FileText}
-                                {...(view === 'dashboard' ? {
-                                    actions: (() => {
-                                        const config = effectiveDashboardConfig;
-                                        const showOverview = config ? !!config.show_overview : false;
-                                        const showOverviewContract = config ? !!config.show_overview_contract : false;
-                                        const showOverviewNonContract = config ? !!config.show_overview_non_contract : false;
-                                        const showOverviewNda = config ? !!config.show_overview_nda : false;
-                                        const showWorkload = config ? !!config.show_workload : false;
-                                        const showMasterData = config ? !!config.show_master_data : false;
+                                {...(view === 'dashboard'
+                                    ? {
+                                          actions: (() => {
+                                              const config = effectiveDashboardConfig;
+                                              const showOverview = config ? !!config.show_overview : false;
+                                              const showOverviewContract = config ? !!config.show_overview_contract : false;
+                                              const showOverviewNonContract = config ? !!config.show_overview_non_contract : false;
+                                              const showOverviewNda = config ? !!config.show_overview_nda : false;
+                                              const showWorkload = config ? !!config.show_workload : false;
+                                              const showMasterData = config ? !!config.show_master_data : false;
 
-                                        if (!showOverview && !showOverviewContract && !showOverviewNonContract && !showOverviewNda && !showWorkload && !showMasterData) return null;
+                                              if (
+                                                  !showOverview &&
+                                                  !showOverviewContract &&
+                                                  !showOverviewNonContract &&
+                                                  !showOverviewNda &&
+                                                  !showWorkload &&
+                                                  !showMasterData
+                                              )
+                                                  return null;
 
-                                        return (
-                                            <div className="flex items-center gap-2 overflow-x-auto custom-scrollbar pb-0.5">
-                                                {showOverview && (
-                                                    <DashboardTab
-                                                        active={dashboardTab === 'overview'}
-                                                        onClick={() => handleDashboardTabChange('overview')}
-                                                        label="Ringkasan"
-                                                        icon={LayoutDashboard}
-                                                    />
-                                                )}
-                                                {showOverviewContract && (
-                                                    <DashboardTab
-                                                        active={dashboardTab === 'overview_contract'}
-                                                        onClick={() => handleDashboardTabChange('overview_contract')}
-                                                        label="Ringkasan Kontrak"
-                                                        icon={FileText}
-                                                    />
-                                                )}
-                                                {showOverviewNonContract && (
-                                                    <DashboardTab
-                                                        active={dashboardTab === 'overview_non_contract'}
-                                                        onClick={() => handleDashboardTabChange('overview_non_contract')}
-                                                        label="Ringkasan Non Kontrak"
-                                                        icon={FileType}
-                                                    />
-                                                )}
-                                                {showOverviewNda && (
-                                                    <DashboardTab
-                                                        active={dashboardTab === 'overview_nda'}
-                                                        onClick={() => handleDashboardTabChange('overview_nda')}
-                                                        label="Ringkasan NDA"
-                                                        icon={FileCheck}
-                                                    />
-                                                )}
-                                                {showWorkload && (
-                                                    <DashboardTab
-                                                        active={dashboardTab === 'workload'}
-                                                        onClick={() => handleDashboardTabChange('workload')}
-                                                        label="Beban Kerja"
-                                                        icon={Briefcase}
-                                                    />
-                                                )}
-                                                {showMasterData && (
-                                                    <DashboardTab
-                                                        active={dashboardTab === 'master_data'}
-                                                        onClick={() => handleDashboardTabChange('master_data')}
-                                                        label="Master Data"
-                                                        icon={Layers}
-                                                    />
-                                                )}
-                                            </div>
-                                        );
-                                    })()
-                                } : (view !== 'profile' ? {
-                                    searchValue: search,
-                                    onSearchChange: setSearch,
-                                    searchPlaceholder: "Cari kontrak...",
-                                    actions: (
-                                        <>
-                                            <LayoutToggle value={layout as LayoutType} onChange={handleLayoutChange} />
-                                            <Button
-                                                variant={isFilterExpanded || activeFilterCount > 0 ? 'primary' : 'white'}
-                                                fontSize="11px"
-                                                className={cn(
-                                                    'h-9 px-3 gap-1.5 rounded-xl border shadow-none font-semibold transition-all cursor-pointer',
-                                                    isFilterExpanded
-                                                        ? 'bg-primary text-primary-foreground border-primary'
-                                                        : activeFilterCount > 0
-                                                            ? 'border-primary text-primary bg-primary/5 hover:bg-primary/10'
-                                                            : 'border-border text-foreground hover:bg-surface-muted',
-                                                )}
-                                                onClick={toggleFilterExpanded}
-                                                title={isFilterExpanded ? 'Sembunyikan Filter' : 'Buka Filter'}
-                                            >
-                                                <Filter size={14} className={isFilterExpanded ? 'text-primary-foreground' : activeFilterCount > 0 ? 'text-primary' : 'text-text-desc'} />
-                                                <span>Filter</span>
-                                                {activeFilterCount > 0 && (
-                                                    <span
+                                              return (
+                                                  <div className="custom-scrollbar flex items-center gap-2 overflow-x-auto pb-0.5">
+                                                      {showOverview && (
+                                                          <DashboardTab
+                                                              active={dashboardTab === 'overview'}
+                                                              onClick={() => handleDashboardTabChange('overview')}
+                                                              label="Ringkasan"
+                                                              icon={LayoutDashboard}
+                                                          />
+                                                      )}
+                                                      {showOverviewContract && (
+                                                          <DashboardTab
+                                                              active={dashboardTab === 'overview_contract'}
+                                                              onClick={() => handleDashboardTabChange('overview_contract')}
+                                                              label="Ringkasan Kontrak"
+                                                              icon={FileText}
+                                                          />
+                                                      )}
+                                                      {showOverviewNonContract && (
+                                                          <DashboardTab
+                                                              active={dashboardTab === 'overview_non_contract'}
+                                                              onClick={() => handleDashboardTabChange('overview_non_contract')}
+                                                              label="Ringkasan Non Kontrak"
+                                                              icon={FileType}
+                                                          />
+                                                      )}
+                                                      {showOverviewNda && (
+                                                          <DashboardTab
+                                                              active={dashboardTab === 'overview_nda'}
+                                                              onClick={() => handleDashboardTabChange('overview_nda')}
+                                                              label="Ringkasan NDA"
+                                                              icon={FileCheck}
+                                                          />
+                                                      )}
+                                                      {showWorkload && (
+                                                          <DashboardTab
+                                                              active={dashboardTab === 'workload'}
+                                                              onClick={() => handleDashboardTabChange('workload')}
+                                                              label="Beban Kerja"
+                                                              icon={Briefcase}
+                                                          />
+                                                      )}
+                                                      {showMasterData && (
+                                                          <DashboardTab
+                                                              active={dashboardTab === 'master_data'}
+                                                              onClick={() => handleDashboardTabChange('master_data')}
+                                                              label="Master Data"
+                                                              icon={Layers}
+                                                          />
+                                                      )}
+                                                  </div>
+                                              );
+                                          })(),
+                                      }
+                                    : view !== 'profile'
+                                      ? {
+                                            searchValue: search,
+                                            onSearchChange: setSearch,
+                                            searchPlaceholder: 'Cari kontrak...',
+                                            actions: (
+                                                <>
+                                                    <LayoutToggle value={layout as LayoutType} onChange={handleLayoutChange} />
+                                                    <Button
+                                                        variant={isFilterExpanded || activeFilterCount > 0 ? 'primary' : 'white'}
+                                                        fontSize="11px"
                                                         className={cn(
-                                                            'flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[9px] font-black',
-                                                            isFilterExpanded ? 'bg-white text-primary' : 'bg-primary text-white',
+                                                            'h-9 cursor-pointer gap-1.5 rounded-xl border px-3 font-semibold shadow-none transition-all',
+                                                            isFilterExpanded
+                                                                ? 'bg-primary text-primary-foreground border-primary'
+                                                                : activeFilterCount > 0
+                                                                  ? 'border-primary text-primary bg-primary/5 hover:bg-primary/10'
+                                                                  : 'border-border text-foreground hover:bg-surface-muted',
                                                         )}
+                                                        onClick={toggleFilterExpanded}
+                                                        title={isFilterExpanded ? 'Sembunyikan Filter' : 'Buka Filter'}
                                                     >
-                                                        {activeFilterCount}
-                                                    </span>
-                                                )}
-                                                <ChevronDown
-                                                    size={13}
-                                                    className={cn('transition-transform duration-200 opacity-70', isFilterExpanded && 'rotate-180')}
-                                                />
-                                            </Button>
-                                            <Button variant="primary" fontSize="11px" className="shadow-none" onClick={() => setCreateOpen(true)}>
-                                                <FilePlus size={16} strokeWidth={2.2} /> Buat Pengajuan
-                                            </Button>
-                                        </>
-                                    )
-                                } : {}))}
-                                pagination={view !== 'profile' && view !== 'dashboard' ? {
-                                    currentPage: contractsPaged.current_page,
-                                    lastPage: contractsPaged.last_page,
-                                    total: contractsPaged.total,
-                                    from: contractsPaged.from,
-                                    to: contractsPaged.to,
-                                    perPage: contractsPaged.per_page,
-                                    onPageChange: (page: number) =>
-                                        router.get(globalThis.location.pathname, { ...filters, page }, {
-                                            preserveState: true,
-                                            preserveScroll: true,
-                                            only: ['contracts', 'filters', 'parentCategoryCounts', 'mineCounts', 'pendingCounts', 'expiryCategoryCounts'],
-                                        }),
-                                    onPerPageChange: (perPage: number) =>
-                                        router.get(globalThis.location.pathname, { ...filters, page: 1, per_page: perPage }, {
-                                            preserveState: true,
-                                            preserveScroll: true,
-                                            only: ['contracts', 'filters', 'parentCategoryCounts', 'mineCounts', 'pendingCounts', 'expiryCategoryCounts'],
-                                        }),
-                                } : undefined}
+                                                        <Filter
+                                                            size={14}
+                                                            className={
+                                                                isFilterExpanded
+                                                                    ? 'text-primary-foreground'
+                                                                    : activeFilterCount > 0
+                                                                      ? 'text-primary'
+                                                                      : 'text-text-desc'
+                                                            }
+                                                        />
+                                                        <span>Filter</span>
+                                                        {activeFilterCount > 0 && (
+                                                            <span
+                                                                className={cn(
+                                                                    'flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[9px] font-black',
+                                                                    isFilterExpanded ? 'text-primary bg-white' : 'bg-primary text-white',
+                                                                )}
+                                                            >
+                                                                {activeFilterCount}
+                                                            </span>
+                                                        )}
+                                                        <ChevronDown
+                                                            size={13}
+                                                            className={cn(
+                                                                'opacity-70 transition-transform duration-200',
+                                                                isFilterExpanded && 'rotate-180',
+                                                            )}
+                                                        />
+                                                    </Button>
+                                                    <Button
+                                                        variant="primary"
+                                                        fontSize="11px"
+                                                        className="shadow-none"
+                                                        onClick={() => setCreateOpen(true)}
+                                                    >
+                                                        <FilePlus size={16} strokeWidth={2.2} /> Buat Pengajuan
+                                                    </Button>
+                                                </>
+                                            ),
+                                        }
+                                      : {})}
+                                pagination={
+                                    view !== 'profile' && view !== 'dashboard'
+                                        ? {
+                                              currentPage: contractsPaged.current_page,
+                                              lastPage: contractsPaged.last_page,
+                                              total: contractsPaged.total,
+                                              from: contractsPaged.from,
+                                              to: contractsPaged.to,
+                                              perPage: contractsPaged.per_page,
+                                              onPageChange: (page: number) =>
+                                                  router.get(
+                                                      globalThis.location.pathname,
+                                                      { ...filters, page },
+                                                      {
+                                                          preserveState: true,
+                                                          preserveScroll: true,
+                                                          only: [
+                                                              'contracts',
+                                                              'filters',
+                                                              'parentCategoryCounts',
+                                                              'mineCounts',
+                                                              'pendingCounts',
+                                                              'expiryCategoryCounts',
+                                                          ],
+                                                      },
+                                                  ),
+                                              onPerPageChange: (perPage: number) =>
+                                                  router.get(
+                                                      globalThis.location.pathname,
+                                                      { ...filters, page: 1, per_page: perPage },
+                                                      {
+                                                          preserveState: true,
+                                                          preserveScroll: true,
+                                                          only: [
+                                                              'contracts',
+                                                              'filters',
+                                                              'parentCategoryCounts',
+                                                              'mineCounts',
+                                                              'pendingCounts',
+                                                              'expiryCategoryCounts',
+                                                          ],
+                                                      },
+                                                  ),
+                                          }
+                                        : undefined
+                                }
                                 showFooter={view !== 'dashboard'}
                             >
-                                <div className="flex-1 min-h-0 h-full overflow-hidden flex flex-col">
+                                <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
                                     {view === 'dashboard' && (
-                                        <div className="flex-1 min-h-0 h-full overflow-y-auto custom-scrollbar p-5">
+                                        <div className="custom-scrollbar h-full min-h-0 flex-1 overflow-y-auto p-5">
                                             {metrics ? (
                                                 <DashboardMetrics
                                                     metrics={{ ...metrics, dashboardConfig: effectiveDashboardConfig }}
@@ -1390,7 +1522,7 @@ function ContractPage({
                                     )}
                                     {view === 'profile' && <ProfileView meUser={meUser} showToast={showToast} />}
                                     {view !== 'profile' && view !== 'dashboard' && (
-                                        <div className="bg-surface-base/20 border-surface-border flex min-h-0 flex-1 flex-col gap-0 overflow-hidden h-full">
+                                        <div className="bg-surface-base/20 border-surface-border flex h-full min-h-0 flex-1 flex-col gap-0 overflow-hidden">
                                             {renderCategoryTabs()}
                                             {isFilterExpanded && (
                                                 <PageFilter
@@ -1436,50 +1568,65 @@ function ContractPage({
                                                             {contractsPaged.data.map((c) => {
                                                                 const type = types?.find((t) => t.id === c.contract_type_id);
                                                                 const typeName = type?.name || c.contract_type || '';
-                                                                const cleanTypeName = typeName ? typeName.replace('Perjanjian ', '').replace('Addendum / ', '') : '';
-                                                                const progressPercent = c.progress?.total > 0 ? Math.round((c.progress.done / c.progress.total) * 100) : 0;
-                                                                const currentStepName = c.workflow_step?.description || c.workflow_step?.role || (c.status === 'draft' ? 'Pengajuan Draft' : null);
+                                                                const cleanTypeName = typeName
+                                                                    ? typeName.replace('Perjanjian ', '').replace('Addendum / ', '')
+                                                                    : '';
+                                                                const progressPercent =
+                                                                    c.progress?.total > 0
+                                                                        ? Math.round((c.progress.done / c.progress.total) * 100)
+                                                                        : 0;
+                                                                const currentStepName =
+                                                                    c.workflow_step?.description ||
+                                                                    c.workflow_step?.role ||
+                                                                    (c.status === 'draft' ? 'Pengajuan Draft' : null);
 
                                                                 return (
                                                                     <div
                                                                         key={c.id}
                                                                         onClick={() => openDetail(c)}
-                                                                        className="group relative flex flex-col justify-between rounded-xl border border-border/70 bg-card hover:border-primary/50 hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden text-left"
+                                                                        className="group border-border/70 bg-card hover:border-primary/50 relative flex cursor-pointer flex-col justify-between overflow-hidden rounded-xl border text-left transition-all duration-200 hover:shadow-md"
                                                                     >
                                                                         {/* Top Section: Header & Numbers */}
-                                                                        <div className="p-4 pb-3 space-y-2.5">
+                                                                        <div className="space-y-2.5 p-4 pb-3">
                                                                             {/* Top Row: Form/Contract No + Status Badge */}
                                                                             <div className="flex items-center justify-between gap-2">
-                                                                                <div className="flex items-center gap-1.5 min-w-0">
-                                                                                    <span className="font-mono text-[11px] font-bold text-foreground bg-muted/60 px-2 py-0.5 rounded border border-border/50 truncate">
+                                                                                <div className="flex min-w-0 items-center gap-1.5">
+                                                                                    <span className="text-foreground bg-muted/60 border-border/50 truncate rounded border px-2 py-0.5 font-mono text-[11px] font-bold">
                                                                                         {c.form_no || c.contract_no || 'DRAFT'}
                                                                                     </span>
                                                                                     {!!c.current_version && c.current_version > 0 && (
-                                                                                        <span className="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-bold font-mono bg-primary/10 text-primary border border-primary/20">
+                                                                                        <span className="bg-primary/10 text-primary border-primary/20 shrink-0 rounded border px-1.5 py-0.5 font-mono text-[9px] font-bold">
                                                                                             v{c.current_version}
                                                                                         </span>
                                                                                     )}
                                                                                 </div>
                                                                                 <div className="shrink-0">
-                                                                                    <StatusBadge status={c.status} statusInfo={(c as any).status_info} size="sm" />
+                                                                                    <StatusBadge
+                                                                                        status={c.status}
+                                                                                        statusInfo={c.status_info}
+                                                                                        size="sm"
+                                                                                    />
                                                                                 </div>
                                                                             </div>
 
                                                                             {/* Title & Type */}
                                                                             <div className="space-y-1">
                                                                                 <h3
-                                                                                    className="text-[13px] font-bold text-foreground group-hover:text-primary transition-colors line-clamp-2 leading-snug"
+                                                                                    className="text-foreground group-hover:text-primary line-clamp-2 text-[13px] leading-snug font-bold transition-colors"
                                                                                     title={c.title}
                                                                                 >
                                                                                     {c.title}
                                                                                 </h3>
                                                                                 {cleanTypeName && (
-                                                                                    <div className="flex items-center gap-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
-                                                                                        <span className="inline-block px-1.5 py-0.5 rounded bg-surface-muted border border-border/60 text-text-desc">
+                                                                                    <div className="text-muted-foreground flex items-center gap-1.5 text-[10px] font-semibold tracking-wide uppercase">
+                                                                                        <span className="bg-surface-muted border-border/60 text-text-desc inline-block rounded border px-1.5 py-0.5">
                                                                                             {cleanTypeName}
                                                                                         </span>
                                                                                         {c.contract_no && c.contract_no !== c.form_no && (
-                                                                                            <span className="font-mono text-muted-foreground truncate" title={`No. Kontrak: ${c.contract_no}`}>
+                                                                                            <span
+                                                                                                className="text-muted-foreground truncate font-mono"
+                                                                                                title={`No. Kontrak: ${c.contract_no}`}
+                                                                                            >
                                                                                                 • {c.contract_no}
                                                                                             </span>
                                                                                         )}
@@ -1488,36 +1635,55 @@ function ContractPage({
                                                                             </div>
 
                                                                             {/* Vendor / Pihak Kedua */}
-                                                                            <div className="flex items-center gap-2 text-xs py-1.5 px-2.5 rounded-lg bg-muted/30 border border-border/40 text-foreground">
+                                                                            <div className="bg-muted/30 border-border/40 text-foreground flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs">
                                                                                 <Building2 size={13} className="text-primary shrink-0" />
-                                                                                <span className="font-medium truncate text-[11px]" title={c.vendor?.name || 'Pihak Kedua'}>
+                                                                                <span
+                                                                                    className="truncate text-[11px] font-medium"
+                                                                                    title={c.vendor?.name || 'Pihak Kedua'}
+                                                                                >
                                                                                     {c.vendor?.name || 'Pihak Kedua Tidak Terdaftar'}
                                                                                 </span>
                                                                             </div>
 
                                                                             {/* People: Inisiator & PIC */}
-                                                                            <div className="grid grid-cols-2 gap-2 pt-1.5 border-t border-border/40 text-[11px]">
+                                                                            <div className="border-border/40 grid grid-cols-2 gap-2 border-t pt-1.5 text-[11px]">
                                                                                 {/* Inisiator */}
-                                                                                <div className="flex flex-col min-w-0">
-                                                                                    <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">Pengaju</span>
-                                                                                    <span className="font-semibold text-foreground truncate text-[11px]" title={c.initiator?.name}>
+                                                                                <div className="flex min-w-0 flex-col">
+                                                                                    <span className="text-muted-foreground text-[9px] font-semibold tracking-wider uppercase">
+                                                                                        Pengaju
+                                                                                    </span>
+                                                                                    <span
+                                                                                        className="text-foreground truncate text-[11px] font-semibold"
+                                                                                        title={c.initiator?.name}
+                                                                                    >
                                                                                         {c.initiator?.name || '—'}
                                                                                     </span>
                                                                                     {c.initiator?.department_name && (
-                                                                                        <span className="text-[9.5px] text-muted-foreground truncate" title={c.initiator.department_name}>
+                                                                                        <span
+                                                                                            className="text-muted-foreground truncate text-[9.5px]"
+                                                                                            title={c.initiator.department_name}
+                                                                                        >
                                                                                             {c.initiator.department_name}
                                                                                         </span>
                                                                                     )}
                                                                                 </div>
 
                                                                                 {/* PIC */}
-                                                                                <div className="flex flex-col min-w-0">
-                                                                                    <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">PIC</span>
-                                                                                    <span className="font-semibold text-foreground truncate text-[11px]" title={c.assigned_pic?.name || 'Belum Ada'}>
+                                                                                <div className="flex min-w-0 flex-col">
+                                                                                    <span className="text-muted-foreground text-[9px] font-semibold tracking-wider uppercase">
+                                                                                        PIC
+                                                                                    </span>
+                                                                                    <span
+                                                                                        className="text-foreground truncate text-[11px] font-semibold"
+                                                                                        title={c.assigned_pic?.name || 'Belum Ada'}
+                                                                                    >
                                                                                         {c.assigned_pic?.name || 'Belum Ada'}
                                                                                     </span>
                                                                                     {c.assigned_pic?.department_name && (
-                                                                                        <span className="text-[9.5px] text-muted-foreground truncate" title={c.assigned_pic.department_name}>
+                                                                                        <span
+                                                                                            className="text-muted-foreground truncate text-[9.5px]"
+                                                                                            title={c.assigned_pic.department_name}
+                                                                                        >
                                                                                             {c.assigned_pic.department_name}
                                                                                         </span>
                                                                                     )}
@@ -1526,16 +1692,32 @@ function ContractPage({
 
                                                                             {/* Periode Kontrak / Expiry (if applicable) */}
                                                                             {(c.start_date || c.end_date) && (
-                                                                                <div className="flex items-center justify-between gap-1 text-[10.5px] text-muted-foreground pt-1 border-t border-border/40">
+                                                                                <div className="text-muted-foreground border-border/40 flex items-center justify-between gap-1 border-t pt-1 text-[10.5px]">
                                                                                     <div className="flex items-center gap-1.5 truncate">
-                                                                                        <Calendar size={11} className="shrink-0 text-muted-foreground/70" />
+                                                                                        <Calendar
+                                                                                            size={11}
+                                                                                            className="text-muted-foreground/70 shrink-0"
+                                                                                        />
                                                                                         <span className="truncate">
-                                                                                            {c.start_date ? formatDate(c.start_date, { day: 'numeric', month: 'short', year: '2-digit' }) : '—'} s/d{' '}
-                                                                                            {c.end_date ? formatDate(c.end_date, { day: 'numeric', month: 'short', year: '2-digit' }) : '—'}
+                                                                                            {c.start_date
+                                                                                                ? formatDate(c.start_date, {
+                                                                                                      day: 'numeric',
+                                                                                                      month: 'short',
+                                                                                                      year: '2-digit',
+                                                                                                  })
+                                                                                                : '—'}{' '}
+                                                                                            s/d{' '}
+                                                                                            {c.end_date
+                                                                                                ? formatDate(c.end_date, {
+                                                                                                      day: 'numeric',
+                                                                                                      month: 'short',
+                                                                                                      year: '2-digit',
+                                                                                                  })
+                                                                                                : '—'}
                                                                                         </span>
                                                                                     </div>
                                                                                     {c.end_date && (
-                                                                                        <div className="shrink-0 scale-90 origin-right">
+                                                                                        <div className="shrink-0 origin-right scale-90">
                                                                                             <ExpiryBadge endDate={c.end_date} />
                                                                                         </div>
                                                                                     )}
@@ -1544,24 +1726,31 @@ function ContractPage({
                                                                         </div>
 
                                                                         {/* Bottom Section: Workflow Progress & SLA Bar */}
-                                                                        <div className="p-3 bg-muted/20 border-t border-border/50 flex items-center justify-between gap-2 text-xs">
+                                                                        <div className="bg-muted/20 border-border/50 flex items-center justify-between gap-2 border-t p-3 text-xs">
                                                                             {/* Workflow Step & Progress Track */}
-                                                                            <div className="flex flex-col gap-1 min-w-0 max-w-[65%]">
+                                                                            <div className="flex max-w-[65%] min-w-0 flex-col gap-1">
                                                                                 <div className="flex items-center gap-1.5">
-                                                                                    <span className="text-[10px] font-bold text-foreground truncate" title={currentStepName || `Tahap ${c.progress?.done || 0}/${c.progress?.total || 0}`}>
-                                                                                        {currentStepName || `Tahap ${c.progress?.done || 0}/${c.progress?.total || 0}`}
+                                                                                    <span
+                                                                                        className="text-foreground truncate text-[10px] font-bold"
+                                                                                        title={
+                                                                                            currentStepName ||
+                                                                                            `Tahap ${c.progress?.done || 0}/${c.progress?.total || 0}`
+                                                                                        }
+                                                                                    >
+                                                                                        {currentStepName ||
+                                                                                            `Tahap ${c.progress?.done || 0}/${c.progress?.total || 0}`}
                                                                                     </span>
                                                                                     {c.progress?.total > 0 && (
-                                                                                        <span className="text-[9.5px] font-bold text-primary font-mono shrink-0">
+                                                                                        <span className="text-primary shrink-0 font-mono text-[9.5px] font-bold">
                                                                                             ({c.progress.done}/{c.progress.total})
                                                                                         </span>
                                                                                     )}
                                                                                 </div>
                                                                                 {/* Mini Progress Bar */}
                                                                                 {c.progress?.total > 0 && (
-                                                                                    <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                                                                                    <div className="bg-muted h-1.5 w-full overflow-hidden rounded-full">
                                                                                         <div
-                                                                                            className="h-full bg-primary rounded-full transition-all duration-300"
+                                                                                            className="bg-primary h-full rounded-full transition-all duration-300"
                                                                                             style={{ width: `${progressPercent}%` }}
                                                                                         />
                                                                                     </div>
@@ -1569,7 +1758,7 @@ function ContractPage({
                                                                             </div>
 
                                                                             {/* SLA Countdown */}
-                                                                            <div className="shrink-0 flex items-center gap-1">
+                                                                            <div className="flex shrink-0 items-center gap-1">
                                                                                 <SLACountdown deadline={c.sla_deadline ?? null} status={c.status} />
                                                                             </div>
                                                                         </div>
@@ -1631,7 +1820,13 @@ function ContractPage({
                 processing={processing}
             />
             <Suspense fallback={null}>
-                <PreviewModal open={previewOpen} onClose={() => setPreviewOpen(false)} title={previewTitle} url={previewUrl} hasFile={previewHasFile} />
+                <PreviewModal
+                    open={previewOpen}
+                    onClose={() => setPreviewOpen(false)}
+                    title={previewTitle}
+                    url={previewUrl}
+                    hasFile={previewHasFile}
+                />
             </Suspense>
             {timelinePdfPreviewUrl && (
                 <div className="bg-surface-base/90 animate-in fade-in zoom-in-95 fixed inset-0 z-[100] flex flex-col backdrop-blur-xl duration-300">
@@ -1672,7 +1867,7 @@ function ContractPage({
 
 export default function ContractsIndex({
     currentView = 'dashboard',
-    contracts: initialContractsPaged = { data: [], links: [], current_page: 1, last_page: 1, total: 0, from: 0, to: 0, per_page: 15 } as any,
+    contracts: initialContractsPaged = { data: [], links: [], current_page: 1, last_page: 1, total: 0, from: 0, to: 0, per_page: 15 },
     types: initialTypes = [],
     submissionTypes: initialSubmissionTypes = [],
     formTemplates: initialFormTemplates = [],
@@ -1685,35 +1880,17 @@ export default function ContractsIndex({
     roles = [],
     companyGroups = [],
     regions = [],
+    locations = [],
+    divisions = [],
     companies = [],
     organizationTree = [],
     mineCounts,
     parentCategoryCounts,
     pendingCounts,
     expiryCategoryCounts,
-}: Readonly<{
-    currentView?: View;
-    contracts?: PaginatedData<Contract>;
-    types?: ContractType[];
-    submissionTypes?: any[];
-    formTemplates?: any[];
-    metrics?: any;
-    initialSelected?: Contract | null;
-    filters?: any;
-    users?: any[];
-    vendors?: any[];
-    departments?: any[];
-    roles?: any[];
-    companyGroups?: any[];
-    regions?: any[];
-    companies?: any[];
-    organizationTree?: any[];
-    mineCounts?: any;
-    parentCategoryCounts?: any;
-    pendingCounts?: any;
-    expiryCategoryCounts?: any;
-}>) {
-    const { auth } = usePage<{ auth: { user: any } }>().props;
+    userFilterSettings = {},
+}: Readonly<Partial<IndexProps>>) {
+    const { auth } = usePage<{ auth: { user: UserProfile | null } }>().props;
     const meId = auth?.user?.id ?? '';
     const meUser = auth?.user ?? null;
 
@@ -1738,12 +1915,15 @@ export default function ContractsIndex({
                     roles={roles}
                     companyGroups={companyGroups}
                     regions={regions}
+                    locations={locations}
+                    divisions={divisions}
                     companies={companies}
                     organizationTree={organizationTree}
                     mineCounts={mineCounts}
                     parentCategoryCounts={parentCategoryCounts}
                     pendingCounts={pendingCounts}
                     expiryCategoryCounts={expiryCategoryCounts}
+                    userFilterSettings={userFilterSettings}
                 />
             </ToastProvider>
         </>

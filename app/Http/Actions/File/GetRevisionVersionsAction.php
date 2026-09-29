@@ -4,12 +4,15 @@ namespace App\Http\Actions\File;
 
 use App\Models\Contract;
 use App\Models\ContractVersion;
+use App\Traits\ApiResponse;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class GetRevisionVersionsAction
 {
+    use ApiResponse;
+
     public function execute(Contract $contract, Request $request): JsonResponse
     {
         $type = $request->query('type', 'f1');
@@ -33,6 +36,6 @@ class GetRevisionVersionsAction
             'is_final' => $v->is_final,
         ]);
 
-        return response()->json($versions);
+        return $this->successResponse($versions, 'Revision versions retrieved successfully');
     }
 }

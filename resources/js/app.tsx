@@ -12,13 +12,13 @@ declare global {
 
 const appName = import.meta.env.VITE_APP_NAME || 'corixa';
 
-import AppLayout from './layouts/app-layout';
-
 createInertiaApp({
-    title: (title) => (title ? `${title} - ${appName}` : (import.meta.env.VITE_APP_META_TITLE || appName)),
+    title: (title) => (title ? `${title} - ${appName}` : import.meta.env.VITE_APP_META_TITLE || appName),
     resolve: async (name) => {
         const page = (await resolvePageComponent(`./pages/${name}.tsx`, import.meta.glob('./pages/**/*.tsx'))) as any;
         if (page.default.layout === undefined && !name.startsWith('auth/') && !name.startsWith('errors/') && name !== 'Error' && name !== 'welcome') {
+            // ponytail: dynamic import prevents loading full app sidebar and dashboard components on guest/auth pages
+            const AppLayout = (await import('./layouts/app-layout')).default;
             page.default.layout = (page: React.ReactNode) => <AppLayout children={page} />;
         }
         return page;

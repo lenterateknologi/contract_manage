@@ -3,7 +3,7 @@ import { SearchInput } from '@/components/ui/inputs/SearchInput';
 import { useDebounce } from '@/hooks/use-debounce';
 import { cn, formatDateLong } from '@/lib/utils';
 import { Contract } from '@/pages/contracts/types';
-import axios from 'axios';
+import { contractsApi } from '@/api';
 import { ExternalLink, Link as LinkIcon, Loader2, Plus, Search, Trash2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -35,10 +35,9 @@ export function ContractReferenceCard({ selected, canUpdate, onUpdate, processin
     const performSearch = async (val: string) => {
         setIsSearching(true);
         try {
-            const res = await axios.get('/api/contracts', {
-                params: { search: val, per_page: 5, view: 'all' },
-            });
-            setResults(res.data.data.filter((c: any) => c.id !== selected.id));
+            const res: any = await contractsApi.list({ search: val, per_page: 5, view: 'all' });
+            const list = Array.isArray(res) ? res : (res?.data ?? []);
+            setResults(list.filter((c: any) => c.id !== selected.id));
         } catch (error) {
             console.error('Failed to search contracts', error);
         } finally {

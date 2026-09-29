@@ -39,7 +39,7 @@ class ContractFormatter
                 'approvals.approver.department', 'approvals.workflowStep.workflow.steps',
                 'workflowStep.actions', 'workflowStep.workflow.steps', 'histories.actor.department',
                 'contractType', 'submissionType', 'vendor', 'parent', 'workflow.steps', 'workflow.contractType',
-                'versions.uploader', 'messages.user', 'attachments.uploader', 'formSubmissions.submittedBy',
+                'versions.uploader', 'attachments.uploader', 'formSubmissions.submittedBy',
                 'assignedPic.department', 'assignedPic.company', 'assignedPic.division', 'assignedPic.location', 'assignedPic.supervisor.department', 'assignedPic.reportingTo.department',
                 'assignedBy.department', 'assignedBy.company', 'assignedBy.location', 'statusDetail', 'purchaseOrders.creator', 'docReviews.user',
             ]);
@@ -49,6 +49,56 @@ class ContractFormatter
         $effectiveStep = $c->workflowStep ?: ($c->workflow && $c->workflow->relationLoaded('steps') ? $c->workflow->steps->first() : null);
         $progress = $c->progressData($isDetail);
         $shortId = ShortIdService::encode($c->id);
+
+        if (! $isDetail) {
+            return [
+                'id' => $c->id,
+                'short_id' => $shortId,
+                'short_url' => ShortIdService::isEnabled() ? url("/contracts/{$shortId}") : url("/contracts/{$c->id}"),
+                'form_no' => $c->form_no,
+                'contract_no' => $c->contract_no,
+                'title' => $c->title,
+                'description' => $c->description,
+                'contract_date' => $c->contract_date,
+                'end_date' => $c->end_date,
+                'contract_type' => $c->contractType->name ?? '—',
+                'contract_type_id' => $c->contract_type_id,
+                'submission_type' => $c->submissionType->name ?? '—',
+                'submission_type_id' => $c->submission_type_id,
+                'transaction_type' => $c->transaction_type,
+                'vendor' => $c->vendor ? [
+                    'id' => $c->vendor->id,
+                    'code' => $c->vendor->vendor_code,
+                    'name' => $c->vendor->vendor_name,
+                ] : null,
+                'status' => $c->status,
+                'status_info' => $c->relationLoaded('statusDetail') && $c->statusDetail ? [
+                    'code' => data_get($c->statusDetail, 'code'),
+                    'label' => data_get($c->statusDetail, 'label'),
+                    'color' => data_get($c->statusDetail, 'color'),
+                    'bg_color' => data_get($c->statusDetail, 'bg_color'),
+                    'icon' => data_get($c->statusDetail, 'icon'),
+                ] : null,
+                'creator' => self::formatUser($c->creator),
+                'initiator' => self::formatUser($c->initiator),
+                'assigned_pic' => self::formatUser($c->assignedPic),
+                'progress' => $progress,
+                'created_at' => $c->created_at->translatedFormat('j M Y, H:i'),
+                'created_at_formatted' => $c->created_at->translatedFormat('j M Y, H:i'),
+                'updated_at' => $c->updated_at->toIso8601String(),
+                'updated_at_formatted' => $c->updated_at->translatedFormat('j M Y, H:i'),
+                'can_approve' => (function () use ($c) {
+                    if (! $c->relationLoaded('approvals')) {
+                        return false;
+                    }
+                    return $c->approvals->where('workflow_step_id', $c->workflow_step_id)->where('status', 'pending')->where('user_id', Auth::id())->isNotEmpty();
+                })(),
+                'pending_approval_id' => $c->relationLoaded('approvals')
+                    ? $c->approvals->where('workflow_step_id', $c->workflow_step_id)->where('status', 'pending')->where('user_id', Auth::id())->first()?->id
+                    : null,
+                'unread_count' => (int) ($c->unread_count ?? 0),
+            ];
+        }
 
         $actionReqFields = [];
         if ($effectiveStep && $isDetail) {
@@ -115,49 +165,56 @@ class ContractFormatter
                 ] : null;
             })(),
             'metadata' => $c->metadata ?? [],
-            'display_mode' => data_get($c->workflow?->meta, 'display_mode', 'pdf'),
-            'f1_mode' => self::getEffectiveMode($c, 'f1', ($c->contractType?->getInheritedInputMechanism('f1_input_mechanism') === 'manual') ? 'interactive' : 'upload'),
-            'f1_form_template_id' => $c->contractType?->getInheritedTemplateId('f1_form_template_id'),
-            'f2_mode' => self::getEffectiveMode($c, 'f2', ($c->contractType?->getInheritedInputMechanism('f2_input_mechanism') === 'manual') ? 'interactive' : 'upload'),
-            'f2_form_template_id' => $c->contractType?->getInheritedTemplateId('f2_form_template_id'),
-            'contract_mode' => self::getEffectiveMode($c, 'contract', ($c->contractType?->getInheritedInputMechanism('contract_input_mechanism') === 'manual') ? 'interactive' : 'upload'),
-            'contract_form_template_id' => $c->contractType?->getInheritedTemplateId('contract_form_template_id'),
-            'allow_info_edit' => (bool) data_get($effectiveStep?->meta, 'allow_info_edit', true),
-            'allow_title_edit' => (bool) data_get($effectiveStep?->meta, 'allow_title_edit', true),
-            'allow_first_party_edit' => (bool) data_get($effectiveStep?->meta, 'allow_first_party_edit', true),
-            'allow_vendor_edit' => (bool) data_get($effectiveStep?->meta, 'allow_vendor_edit', true),
-            'allow_category_edit' => (bool) data_get($effectiveStep?->meta, 'allow_category_edit', true),
-            'allow_f2_contract_no_edit' => (bool) data_get($effectiveStep?->meta, 'allow_f2_contract_no_edit', true),
-            'allow_tax_toggle_edit' => (bool) data_get($effectiveStep?->meta, 'allow_tax_toggle_edit', true),
-            'allow_price_edit' => (bool) data_get($effectiveStep?->meta, 'allow_price_edit', true),
-            'allow_period_edit' => (bool) data_get($effectiveStep?->meta, 'allow_period_edit', true),
-            'allow_f1_edit' => (bool) data_get($effectiveStep?->meta, 'allow_f1_edit', true),
-            'allow_f2_edit' => (bool) data_get($effectiveStep?->meta, 'allow_f2_edit', true),
-            'allow_agreement_edit' => (bool) data_get($effectiveStep?->meta, 'allow_agreement_edit', true),
-            'allow_attachment_edit' => (bool) data_get($effectiveStep?->meta, 'allow_attachment_edit', true),
-            'allow_reference' => (bool) data_get($effectiveStep?->meta, 'allow_reference', true),
-            'show_info' => (bool) data_get($effectiveStep?->meta, 'show_info', true),
-            'show_title' => (bool) data_get($effectiveStep?->meta, 'show_title', true),
-            'show_first_party' => (bool) data_get($effectiveStep?->meta, 'show_first_party', true),
-            'show_vendor' => (bool) data_get($effectiveStep?->meta, 'show_vendor', true),
-            'show_category' => (bool) data_get($effectiveStep?->meta, 'show_category', true),
-            'show_f2_contract_no' => (bool) data_get($effectiveStep?->meta, 'show_f2_contract_no', true),
-            'show_tax_toggle' => (bool) data_get($effectiveStep?->meta, 'show_tax_toggle', true),
-            'show_price' => (bool) data_get($effectiveStep?->meta, 'show_price', true),
-            'show_period' => (bool) data_get($effectiveStep?->meta, 'show_period', true),
-            'require_f1' => (bool) (data_get($effectiveStep?->meta, 'require_f1', false) || in_array('f1', $actionReqFields)),
-            'require_f2' => (bool) (data_get($effectiveStep?->meta, 'require_f2', false) || in_array('f2', $actionReqFields)),
-            'require_agreement' => (bool) (data_get($effectiveStep?->meta, 'require_agreement', false) || in_array('agreement', $actionReqFields)),
-            'require_title' => (bool) (data_get($effectiveStep?->meta, 'require_title', false) || in_array('title', $actionReqFields)),
-            'require_first_party' => (bool) (data_get($effectiveStep?->meta, 'require_first_party', false) || in_array('first_party', $actionReqFields) || in_array('p1', $actionReqFields)),
-            'require_vendor' => (bool) (data_get($effectiveStep?->meta, 'require_vendor', false) || in_array('vendor', $actionReqFields)),
-            'require_category' => (bool) (data_get($effectiveStep?->meta, 'require_category', false) || in_array('category', $actionReqFields)),
-            'require_f2_contract_no' => (bool) (data_get($effectiveStep?->meta, 'require_f2_contract_no', false) || in_array('contract_no', $actionReqFields) || in_array('f2_contract_no', $actionReqFields)),
-            'require_tax_toggle' => (bool) (data_get($effectiveStep?->meta, 'require_tax_toggle', false) || in_array('tax_toggle', $actionReqFields) || in_array('tax', $actionReqFields)),
-            'require_price' => (bool) (data_get($effectiveStep?->meta, 'require_price', false) || in_array('price', $actionReqFields)),
-            'require_period' => (bool) (data_get($effectiveStep?->meta, 'require_period', false) || in_array('period', $actionReqFields)),
-
-
+            'meta' => $c->metadata ?? [],
+            'allow' => [
+                'info_edit' => (bool) data_get($effectiveStep?->meta, 'allow_info_edit', true),
+                'title_edit' => (bool) data_get($effectiveStep?->meta, 'allow_title_edit', true),
+                'first_party_edit' => (bool) data_get($effectiveStep?->meta, 'allow_first_party_edit', true),
+                'vendor_edit' => (bool) data_get($effectiveStep?->meta, 'allow_vendor_edit', true),
+                'category_edit' => (bool) data_get($effectiveStep?->meta, 'allow_category_edit', true),
+                'f2_contract_no_edit' => (bool) data_get($effectiveStep?->meta, 'allow_f2_contract_no_edit', true),
+                'tax_toggle_edit' => (bool) data_get($effectiveStep?->meta, 'allow_tax_toggle_edit', true),
+                'price_edit' => (bool) data_get($effectiveStep?->meta, 'allow_price_edit', true),
+                'period_edit' => (bool) data_get($effectiveStep?->meta, 'allow_period_edit', true),
+                'f1_edit' => (bool) data_get($effectiveStep?->meta, 'allow_f1_edit', true),
+                'f2_edit' => (bool) data_get($effectiveStep?->meta, 'allow_f2_edit', true),
+                'agreement_edit' => (bool) data_get($effectiveStep?->meta, 'allow_agreement_edit', true),
+                'attachment_edit' => (bool) data_get($effectiveStep?->meta, 'allow_attachment_edit', true),
+                'reference' => (bool) data_get($effectiveStep?->meta, 'allow_reference', true),
+            ],
+            'show' => [
+                'info' => (bool) data_get($effectiveStep?->meta, 'show_info', true),
+                'title' => (bool) data_get($effectiveStep?->meta, 'show_title', true),
+                'first_party' => (bool) data_get($effectiveStep?->meta, 'show_first_party', true),
+                'vendor' => (bool) data_get($effectiveStep?->meta, 'show_vendor', true),
+                'category' => (bool) data_get($effectiveStep?->meta, 'show_category', true),
+                'f2_contract_no' => (bool) data_get($effectiveStep?->meta, 'show_f2_contract_no', true),
+                'tax_toggle' => (bool) data_get($effectiveStep?->meta, 'show_tax_toggle', true),
+                'price' => (bool) data_get($effectiveStep?->meta, 'show_price', true),
+                'period' => (bool) data_get($effectiveStep?->meta, 'show_period', true),
+            ],
+            'required' => [
+                'f1' => (bool) (data_get($effectiveStep?->meta, 'require_f1', false) || in_array('f1', $actionReqFields)),
+                'f2' => (bool) (data_get($effectiveStep?->meta, 'require_f2', false) || in_array('f2', $actionReqFields)),
+                'agreement' => (bool) (data_get($effectiveStep?->meta, 'require_agreement', false) || in_array('agreement', $actionReqFields)),
+                'title' => (bool) (data_get($effectiveStep?->meta, 'require_title', false) || in_array('title', $actionReqFields)),
+                'first_party' => (bool) (data_get($effectiveStep?->meta, 'require_first_party', false) || in_array('first_party', $actionReqFields) || in_array('p1', $actionReqFields)),
+                'vendor' => (bool) (data_get($effectiveStep?->meta, 'require_vendor', false) || in_array('vendor', $actionReqFields)),
+                'category' => (bool) (data_get($effectiveStep?->meta, 'require_category', false) || in_array('category', $actionReqFields)),
+                'f2_contract_no' => (bool) (data_get($effectiveStep?->meta, 'require_f2_contract_no', false) || in_array('contract_no', $actionReqFields) || in_array('f2_contract_no', $actionReqFields)),
+                'tax_toggle' => (bool) (data_get($effectiveStep?->meta, 'require_tax_toggle', false) || in_array('tax_toggle', $actionReqFields) || in_array('tax', $actionReqFields)),
+                'price' => (bool) (data_get($effectiveStep?->meta, 'require_price', false) || in_array('price', $actionReqFields)),
+                'period' => (bool) (data_get($effectiveStep?->meta, 'require_period', false) || in_array('period', $actionReqFields)),
+            ],
+            'modes' => [
+                'display' => data_get($c->workflow?->meta, 'display_mode', 'pdf'),
+                'f1' => self::getEffectiveMode($c, 'f1', ($c->contractType?->getInheritedInputMechanism('f1_input_mechanism') === 'manual') ? 'interactive' : 'upload'),
+                'f1_form_template_id' => $c->contractType?->getInheritedTemplateId('f1_form_template_id'),
+                'f2' => self::getEffectiveMode($c, 'f2', ($c->contractType?->getInheritedInputMechanism('f2_input_mechanism') === 'manual') ? 'interactive' : 'upload'),
+                'f2_form_template_id' => $c->contractType?->getInheritedTemplateId('f2_form_template_id'),
+                'contract' => self::getEffectiveMode($c, 'contract', ($c->contractType?->getInheritedInputMechanism('contract_input_mechanism') === 'manual') ? 'interactive' : 'upload'),
+                'contract_form_template_id' => $c->contractType?->getInheritedTemplateId('contract_form_template_id'),
+            ],
             'f1_file' => $c->relationLoaded('versions') ? $c->versions->where('document_type', 'f1')->first()?->file_name : null,
             'f2_file' => $c->relationLoaded('versions') ? $c->versions->where('document_type', 'f2')->first()?->file_name : null,
             'agreement_file' => $c->relationLoaded('versions') ? ($c->versions->where('document_type', 'agreement')->first()?->file_name ?: ($c->versions->where('document_type', 'contract')->first()?->file_name)) : null,
@@ -172,7 +229,6 @@ class ContractFormatter
             'submitted_at_formatted' => $c->submitted_at ? $c->submitted_at->translatedFormat('j M Y, H:i') : ($c->created_at ? $c->created_at->translatedFormat('j M Y, H:i') : null),
             'creator' => self::formatUser($c->creator),
             'initiator' => self::formatUser($c->initiator),
-            'assigned_pic_id' => $c->assigned_pic_id ?? ($c->metadata['assigned_pic_id'] ?? null),
             'assigned_pic' => self::formatUser($c->assignedPic),
             'assigned_at' => $c->assigned_at ? $c->assigned_at->toIso8601String() : ($c->metadata['assigned_at'] ?? null),
             'assigned_at_formatted' => $c->assigned_at ? $c->assigned_at->translatedFormat('j M Y, H:i') : (! empty($c->metadata['assigned_at']) ? Carbon::parse($c->metadata['assigned_at'])->translatedFormat('j M Y, H:i') : null),
@@ -327,10 +383,6 @@ class ContractFormatter
                 'created_at' => $h->created_at->format('Y-m-d H:i'),
                 'actor' => self::formatUser($h->actor),
             ])->sortByDesc('created_at')->values() : [],
-            'messages' => $isDetail ? (function () use ($c) {
-                $chatService = app(ChatService::class);
-                return $chatService->formatMessages($c->messages, Auth::id());
-            })() : [],
             'attachments' => $isDetail ? $c->attachments->map(fn ($at) => [
                 'id' => $at->id,
                 'label' => $at->label,

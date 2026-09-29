@@ -34,7 +34,7 @@ class GetAuditTrailAction
         $allStatuses = ContractStatus::all()->keyBy('code');
         $allStepActions = $contract->workflow?->steps?->flatMap->actions ?? collect();
 
-        return response()->json($query->get()->map(function ($h) use ($allStatuses, $allStepActions) {
+        $mapFn = function ($h) use ($allStatuses, $allStepActions) {
             $desc = $h->description ?? '';
             $action = $h->action ?? '';
 
@@ -112,7 +112,23 @@ class GetAuditTrailAction
                 'bg_color' => $bgColor,
                 'icon' => $icon ?: 'FileText',
             ];
-        }));
+        };
+
+        if ($request->has('page') || $request->has('per_page')) {
+            $perPage = $request->integer('per_page', 10);
+            $paginated = $query->paginate($perPage);
+            $paginated->getCollection()->transform($mapFn);
+
+            return response()->json([
+                'status' => 'success',
+                'data' => $paginated,
+            ]);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $query->get()->map($mapFn),
+        ]);
     }
 }
 

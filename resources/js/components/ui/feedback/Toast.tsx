@@ -1,12 +1,22 @@
 import { usePage } from '@inertiajs/react';
+import { AlertTriangle, CheckCircle2, Info, XCircle } from 'lucide-react';
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { CheckCircle2, XCircle, Info } from 'lucide-react';
 
 // ─── Toast Types ──────────────────────────────────────────────────────
+export type ToastType = 'success' | 'danger' | 'info' | 'error' | 'warning';
+
+export interface ToastOptions {
+    title?: string;
+    message: string;
+    type?: ToastType | string;
+}
+
+export type ToastInput = string | ToastOptions;
+
 interface ToastMsg {
     id: number;
     msg: string;
-    type: 'success' | 'danger' | 'info' | 'error';
+    type: ToastType;
 }
 
 interface ProgressToast {
@@ -16,7 +26,7 @@ interface ProgressToast {
 }
 
 interface ToastCtx {
-    showToast: (msg: string, type?: ToastMsg['type']) => void;
+    showToast: (msg: ToastInput, type?: ToastType) => void;
     showProgress: (id: string, msg: string, progress: number) => void;
     hideProgress: (id: string) => void;
 }
@@ -35,8 +45,18 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     const [progressToasts, setProgressToasts] = useState<ProgressToast[]>([]);
     const timerRef = useRef<any>(null);
 
-    const showToast = useCallback((msg: string, type: ToastMsg['type'] = 'info') => {
-        setToast({ id: Date.now(), msg, type });
+    const showToast = useCallback((msg: ToastInput, type: ToastType = 'info') => {
+        let text = '';
+        let finalType: ToastType = type;
+        if (typeof msg === 'object' && msg !== null) {
+            text = msg.message || msg.title || '';
+            if (msg.type && ['success', 'danger', 'info', 'error', 'warning'].includes(msg.type)) {
+                finalType = msg.type as ToastType;
+            }
+        } else {
+            text = String(msg);
+        }
+        setToast({ id: Date.now(), msg: text, type: finalType });
         if (timerRef.current) window.clearTimeout(timerRef.current);
         timerRef.current = window.setTimeout(() => setToast(null), 4000);
     }, []);
@@ -48,7 +68,6 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         if (flash?.error) showToast(flash.error, 'danger');
         if (flash?.danger) showToast(flash.danger, 'danger');
         if (flash?.info) showToast(flash.info, 'info');
-        if (flash?.error) showToast(flash.error, 'error');
     }, [props.flash, showToast]);
 
     const showProgress = useCallback((id: string, msg: string, progress: number) => {
@@ -72,18 +91,28 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         [],
     );
 
-    const iconMap = {
+    const iconMap: Record<ToastType, React.ReactNode> = {
         success: <CheckCircle2 className="h-5 w-5 text-emerald-600" />,
         danger: <XCircle className="h-5 w-5 text-rose-600" />,
         info: <Info className="h-5 w-5 text-blue-600" />,
         error: <XCircle className="h-5 w-5 text-rose-600" />,
+        warning: <AlertTriangle className="h-5 w-5 text-amber-600" />,
     };
 
-    const borderMap = {
+    const borderMap: Record<ToastType, string> = {
         success: 'border-l-emerald-500',
         danger: 'border-l-rose-500',
         info: 'border-l-blue-500',
         error: 'border-l-rose-500',
+        warning: 'border-l-amber-500',
+    };
+
+    const typeLabelMap: Record<ToastType, string> = {
+        success: 'Sukses',
+        danger: 'Error',
+        info: 'Info',
+        error: 'Error',
+        warning: 'Peringatan',
     };
 
     return (
@@ -94,12 +123,12 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             {toast && (
                 <div
                     key={toast.id}
-                    className={`animate-in slide-in-from-bottom-5 fade-in zoom-in-95 fixed bottom-6 right-6 z-[1000] flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-4 pr-8 shadow-xl shadow-slate-200/50 border-l-4 ${borderMap[toast.type]} duration-500 ease-out`}
+                    className={`animate-in slide-in-from-bottom-5 fade-in zoom-in-95 fixed bottom-6 right-6 z-[1000] flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-4 pr-8 shadow-xl shadow-slate-200/50 border-l-4 ${borderMap[toast.type] || borderMap.info} duration-500 ease-out`}
                 >
-                    {iconMap[toast.type]}
+                    {iconMap[toast.type] || iconMap.info}
                     <div className="flex flex-col">
                         <span className="text-[11px] font-bold text-slate-800 uppercase tracking-wider">
-                            {toast.type === 'success' ? 'Sukses' : toast.type === 'danger' ? 'Error' : 'Info'}
+                            {typeLabelMap[toast.type] || 'Info'}
                         </span>
                         <span className="text-[12px] text-slate-600">{toast.msg}</span>
                     </div>

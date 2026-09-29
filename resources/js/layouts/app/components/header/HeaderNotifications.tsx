@@ -1,26 +1,8 @@
 import { Button } from '@/components/ui/buttons/Button';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/selection/DropdownMenu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/selection/DropdownMenu';
 import { Link, usePage } from '@inertiajs/react';
-import axios from 'axios';
-import {
-    AtSign,
-    Bell,
-    CheckCircle2,
-    BellRing,
-    Clock,
-    FileCheck,
-    FileText,
-    MessageSquare,
-    RefreshCw,
-    UserCheck,
-    XCircle,
-} from 'lucide-react';
+import { notificationsApi, discussionsApi } from '@/api';
+import { AtSign, Bell, BellRing, CheckCircle2, Clock, FileCheck, FileText, MessageSquare, RefreshCw, UserCheck, XCircle } from 'lucide-react';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 
 interface NotificationItem {
@@ -116,19 +98,20 @@ export const HeaderNotifications = memo(function HeaderNotifications() {
 
     const fetchNotifications = useCallback(async () => {
         try {
-            const { data } = await axios.get<NotificationItem[]>('/api/services/notifications');
-            setNotifications(data);
+            const res: any = await notificationsApi.list();
+            const items: NotificationItem[] = Array.isArray(res) ? res : (res?.data ?? res?.items ?? []);
+            setNotifications(items);
 
             // Trigger desktop push notification for newly arrived unread items
             if (!isInitialLoadRef.current && pushPermission === 'granted') {
-                const newItems = data.filter((n) => !knownIdsRef.current.has(n.id) && !readIds.includes(n.id));
+                const newItems = items.filter((n) => !knownIdsRef.current.has(n.id) && !readIds.includes(n.id));
                 newItems.slice(0, 3).forEach((item) => {
                     showDesktopNotification(item);
                 });
             }
 
             // Record known IDs
-            data.forEach((n) => knownIdsRef.current.add(n.id));
+            items.forEach((n) => knownIdsRef.current.add(n.id));
             isInitialLoadRef.current = false;
         } catch (err) {
             console.error('Failed to fetch notifications', err);
@@ -185,8 +168,8 @@ export const HeaderNotifications = memo(function HeaderNotifications() {
     };
 
     const handleNotificationClick = (item: NotificationItem) => {
-        if (item.type === 'new_message') {
-            axios.post(`/api/contracts/${item.contract_id}/messages/read`).catch(console.error);
+        if (item.type === 'new_message' && item.contract_id) {
+            discussionsApi.messages.markRead(item.contract_id).catch(console.error);
         }
         if (!readIds.includes(item.id)) {
             const newReadIds = [...readIds, item.id];
@@ -196,7 +179,7 @@ export const HeaderNotifications = memo(function HeaderNotifications() {
 
     const markAllRead = async () => {
         try {
-            await axios.post('/api/services/notifications/mark-read');
+            await notificationsApi.markAllRead();
             const currentIds = notifications.map((n) => n.id);
             const newReadIds = Array.from(new Set([...readIds, ...currentIds]));
             saveReadIds(newReadIds);
@@ -258,7 +241,7 @@ export const HeaderNotifications = memo(function HeaderNotifications() {
                 };
             default:
                 return {
-                    icon: <RefreshCw className="h-4 w-4 text-primary" />,
+                    icon: <RefreshCw className="text-primary h-4 w-4" />,
                     bg: 'bg-primary/10 border-primary/20 text-primary',
                     badgeBg: 'bg-primary/10 text-primary border-primary/20',
                     label: item.badge || 'Update',
@@ -288,11 +271,11 @@ export const HeaderNotifications = memo(function HeaderNotifications() {
                 <Button
                     variant="ghost"
                     size="icon"
-                    className="text-white/80 hover:text-white hover:bg-white/15 group relative h-8 w-8 rounded-lg transition-all cursor-pointer"
+                    className="group relative h-8 w-8 cursor-pointer rounded-lg text-white/80 transition-all hover:bg-white/15 hover:text-white"
                 >
-                    <Bell className="size-4.5 transition-transform group-hover:rotate-12 text-white/80 group-hover:text-white" />
+                    <Bell className="size-4.5 text-white/80 transition-transform group-hover:rotate-12 group-hover:text-white" />
                     {unreadNotifications.length > 0 && (
-                        <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white shadow-xs ring-2 ring-primary leading-none">
+                        <span className="ring-primary absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] leading-none font-bold text-white shadow-xs ring-2">
                             {unreadNotifications.length > 99 ? '99+' : unreadNotifications.length}
                         </span>
                     )}
@@ -300,24 +283,22 @@ export const HeaderNotifications = memo(function HeaderNotifications() {
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
-                className="w-[380px] sm:w-[440px] p-0 border border-border/80 shadow-2xl rounded-2xl z-[99999] overflow-hidden bg-card"
+                className="border-border/80 bg-card z-[99999] w-[380px] overflow-hidden rounded-2xl border p-0 shadow-2xl sm:w-[440px]"
                 side="right"
                 align="end"
                 sideOffset={14}
             >
                 {/* Header with quick stats and filter tabs */}
-                <div className="p-3.5 bg-muted/40 border-b border-border/60">
-                    <div className="flex items-center justify-between mb-2.5">
+                <div className="bg-muted/40 border-border/60 border-b p-3.5">
+                    <div className="mb-2.5 flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                            <span className="text-xs font-semibold uppercase tracking-wider text-foreground">
-                                Notifikasi
-                            </span>
+                            <span className="text-foreground text-xs font-semibold tracking-wider uppercase">Notifikasi</span>
                             {unreadNotifications.length > 0 ? (
-                                <span className="bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full leading-none">
+                                <span className="rounded-full border border-red-500/30 bg-red-500/15 px-2 py-0.5 text-[10px] leading-none font-bold text-red-600 dark:text-red-400">
                                     {unreadNotifications.length} Baru
                                 </span>
                             ) : (
-                                <span className="bg-muted text-muted-foreground text-[10px] font-medium px-2 py-0.5 rounded-full leading-none">
+                                <span className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-[10px] leading-none font-medium">
                                     {notifications.length} Total
                                 </span>
                             )}
@@ -325,7 +306,7 @@ export const HeaderNotifications = memo(function HeaderNotifications() {
                         {unreadNotifications.length > 0 && (
                             <button
                                 onClick={markAllRead}
-                                className="text-[11px] font-medium text-primary hover:text-primary/80 transition-colors cursor-pointer"
+                                className="text-primary hover:text-primary/80 cursor-pointer text-[11px] font-medium transition-colors"
                             >
                                 Tandai dibaca
                             </button>
@@ -337,7 +318,7 @@ export const HeaderNotifications = memo(function HeaderNotifications() {
                         <button
                             type="button"
                             onClick={() => setFilter('all')}
-                            className={`text-[11px] px-2.5 py-1 rounded-lg font-medium transition-all cursor-pointer ${
+                            className={`cursor-pointer rounded-lg px-2.5 py-1 text-[11px] font-medium transition-all ${
                                 filter === 'all'
                                     ? 'bg-primary text-primary-foreground shadow-xs'
                                     : 'bg-background hover:bg-muted text-muted-foreground'
@@ -348,7 +329,7 @@ export const HeaderNotifications = memo(function HeaderNotifications() {
                         <button
                             type="button"
                             onClick={() => setFilter('unread')}
-                            className={`text-[11px] px-2.5 py-1 rounded-lg font-medium transition-all cursor-pointer ${
+                            className={`cursor-pointer rounded-lg px-2.5 py-1 text-[11px] font-medium transition-all ${
                                 filter === 'unread'
                                     ? 'bg-primary text-primary-foreground shadow-xs'
                                     : 'bg-background hover:bg-muted text-muted-foreground'
@@ -360,39 +341,37 @@ export const HeaderNotifications = memo(function HeaderNotifications() {
                             <button
                                 type="button"
                                 onClick={() => setFilter('approvals')}
-                                className={`text-[11px] px-2.5 py-1 rounded-lg font-medium transition-all cursor-pointer flex items-center gap-1 ${
+                                className={`flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-medium transition-all ${
                                     filter === 'approvals'
                                         ? 'bg-amber-600 text-white shadow-xs'
-                                        : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/30'
+                                        : 'border border-amber-500/30 bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 dark:text-amber-400'
                                 }`}
                             >
                                 <span>Persetujuan</span>
-                                <span className="text-[9px] bg-white/20 px-1 py-0.2 rounded-full font-bold">
-                                    {pendingApprovalCount}
-                                </span>
+                                <span className="py-0.2 rounded-full bg-white/20 px-1 text-[9px] font-bold">{pendingApprovalCount}</span>
                             </button>
                         )}
                     </div>
 
                     {/* Push Notification Opt-in Banner */}
                     {pushPermission === 'default' && (
-                        <div className="mt-2.5 flex items-center justify-between rounded-lg bg-indigo-50/80 dark:bg-indigo-950/40 border border-indigo-200/80 dark:border-indigo-800/60 px-2.5 py-1.5 text-[11px]">
-                            <div className="flex items-center gap-1.5 text-indigo-900 dark:text-indigo-200 font-medium">
-                                <BellRing className="size-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                        <div className="mt-2.5 flex items-center justify-between rounded-lg border border-indigo-200/80 bg-indigo-50/80 px-2.5 py-1.5 text-[11px] dark:border-indigo-800/60 dark:bg-indigo-950/40">
+                            <div className="flex items-center gap-1.5 font-medium text-indigo-900 dark:text-indigo-200">
+                                <BellRing className="size-3.5 shrink-0 text-indigo-600 dark:text-indigo-400" />
                                 <span>Aktifkan notifikasi desktop</span>
                             </div>
                             <Button
                                 size="sm"
                                 variant="outline"
                                 onClick={requestPushPermission}
-                                className="h-6 px-2 text-[10px] font-semibold bg-indigo-600 text-white hover:bg-indigo-700 hover:text-white border-0 cursor-pointer"
+                                className="h-6 cursor-pointer border-0 bg-indigo-600 px-2 text-[10px] font-semibold text-white hover:bg-indigo-700 hover:text-white"
                             >
                                 Izinkan
                             </Button>
                         </div>
                     )}
                     {pushPermission === 'granted' && (
-                        <div className="mt-2 flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+                        <div className="mt-2 flex items-center gap-1 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
                             <CheckCircle2 className="size-3 shrink-0" />
                             <span>Push notifikasi browser aktif</span>
                         </div>
@@ -400,17 +379,17 @@ export const HeaderNotifications = memo(function HeaderNotifications() {
                 </div>
 
                 {/* Notifications List */}
-                <div className="max-h-[88vh] max-h-[880px] min-h-[480px] overflow-y-auto divide-y divide-border/40">
+                <div className="divide-border/40 max-h-[88vh] max-h-[880px] min-h-[480px] divide-y overflow-y-auto">
                     {loading ? (
-                        <div className="px-4 py-12 text-center text-xs text-muted-foreground flex flex-col items-center justify-center gap-2">
-                            <RefreshCw className="h-4 w-4 animate-spin text-primary" />
+                        <div className="text-muted-foreground flex flex-col items-center justify-center gap-2 px-4 py-12 text-center text-xs">
+                            <RefreshCw className="text-primary h-4 w-4 animate-spin" />
                             <span>Memuat notifikasi...</span>
                         </div>
                     ) : filteredNotifications.length === 0 ? (
                         <div className="px-4 py-12 text-center">
-                            <FileText className="h-8 w-8 text-muted-foreground/40 mx-auto mb-2" />
-                            <p className="text-xs font-medium text-foreground">Tidak ada notifikasi</p>
-                            <p className="text-[11px] text-muted-foreground mt-0.5">
+                            <FileText className="text-muted-foreground/40 mx-auto mb-2 h-8 w-8" />
+                            <p className="text-foreground text-xs font-medium">Tidak ada notifikasi</p>
+                            <p className="text-muted-foreground mt-0.5 text-[11px]">
                                 {filter === 'unread'
                                     ? 'Semua notifikasi telah Anda baca'
                                     : filter === 'approvals'
@@ -428,16 +407,12 @@ export const HeaderNotifications = memo(function HeaderNotifications() {
                                     key={item.id}
                                     href={getLink(item)}
                                     onClick={() => handleNotificationClick(item)}
-                                    className={`group flex items-start gap-3 p-3.5 transition-all relative ${
-                                        isUnread
-                                            ? 'bg-primary/5 hover:bg-primary/10'
-                                            : 'hover:bg-muted/50 bg-background'
+                                    className={`group relative flex items-start gap-3 p-3.5 transition-all ${
+                                        isUnread ? 'bg-primary/5 hover:bg-primary/10' : 'hover:bg-muted/50 bg-background'
                                     }`}
                                 >
                                     {/* Unread Left Border Indicator */}
-                                    {isUnread && (
-                                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-r" />
-                                    )}
+                                    {isUnread && <div className="bg-primary absolute top-0 bottom-0 left-0 w-1 rounded-r" />}
 
                                     {/* Icon Avatar */}
                                     <div
@@ -447,16 +422,16 @@ export const HeaderNotifications = memo(function HeaderNotifications() {
                                     </div>
 
                                     {/* Content */}
-                                    <div className="flex-1 min-w-0">
+                                    <div className="min-w-0 flex-1">
                                         {/* Top row: Badge & Time */}
-                                        <div className="flex items-center justify-between gap-2 mb-1">
+                                        <div className="mb-1 flex items-center justify-between gap-2">
                                             <span
-                                                className={`text-[9px] font-semibold px-2 py-0.5 rounded-md border uppercase tracking-wider ${config.badgeBg}`}
+                                                className={`rounded-md border px-2 py-0.5 text-[9px] font-semibold tracking-wider uppercase ${config.badgeBg}`}
                                             >
                                                 {config.label}
                                             </span>
                                             <span
-                                                className="text-[10px] text-muted-foreground flex items-center gap-1 shrink-0 font-medium tabular-nums"
+                                                className="text-muted-foreground flex shrink-0 items-center gap-1 text-[10px] font-medium tabular-nums"
                                                 title={item.created_at_exact}
                                             >
                                                 <Clock className="h-2.5 w-2.5 opacity-60" />
@@ -465,24 +440,24 @@ export const HeaderNotifications = memo(function HeaderNotifications() {
                                         </div>
 
                                         {/* Contract Title (Bold & Distinct) */}
-                                        <h4 className="text-[12px] font-semibold text-foreground truncate group-hover:text-primary transition-colors">
+                                        <h4 className="text-foreground group-hover:text-primary truncate text-[12px] font-semibold transition-colors">
                                             {item.contract_title}
                                         </h4>
 
                                         {/* Action Summary / Message Description */}
-                                        <p className="text-[11px] text-muted-foreground line-clamp-2 mt-0.5 leading-snug">
-                                            {item.description}
-                                        </p>
+                                        <p className="text-muted-foreground mt-0.5 line-clamp-2 text-[11px] leading-snug">{item.description}</p>
 
                                         {/* Footer Actor / Sub-info */}
                                         {item.actor_name && (
-                                            <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-muted-foreground/80 font-medium">
-                                                <span className="h-1.5 w-1.5 rounded-full bg-border" />
-                                                <span>Oleh: <strong className="text-foreground/80 font-medium">{item.actor_name}</strong></span>
+                                            <div className="text-muted-foreground/80 mt-1.5 flex items-center gap-1.5 text-[10px] font-medium">
+                                                <span className="bg-border h-1.5 w-1.5 rounded-full" />
+                                                <span>
+                                                    Oleh: <strong className="text-foreground/80 font-medium">{item.actor_name}</strong>
+                                                </span>
                                                 {item.contract_no && (
                                                     <>
                                                         <span className="text-border">•</span>
-                                                        <span className="font-mono text-[9px] text-muted-foreground">{item.contract_no}</span>
+                                                        <span className="text-muted-foreground font-mono text-[9px]">{item.contract_no}</span>
                                                     </>
                                                 )}
                                             </div>
@@ -495,10 +470,10 @@ export const HeaderNotifications = memo(function HeaderNotifications() {
                 </div>
 
                 {/* Footer Quick Action */}
-                <div className="p-2.5 bg-muted/20 border-t border-border/60 text-center">
+                <div className="bg-muted/20 border-border/60 border-t p-2.5 text-center">
                     <Link
                         href="/contracts"
-                        className="text-[11px] font-medium text-primary hover:underline inline-flex items-center justify-center gap-1"
+                        className="text-primary inline-flex items-center justify-center gap-1 text-[11px] font-medium hover:underline"
                     >
                         <span>Buka Daftar Kontrak</span>
                         <span aria-hidden="true">→</span>

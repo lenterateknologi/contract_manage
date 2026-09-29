@@ -1,7 +1,7 @@
 import * as React from 'react';
-import { PageHeader } from './PageHeader';
-import { PageFooter } from './PageFooter';
 import { PageFilter } from './PageFilter';
+import { PageFooter } from './PageFooter';
+import { PageHeader } from './PageHeader';
 
 interface PageTableProps {
     // Header props
@@ -28,8 +28,8 @@ interface PageTableProps {
         currentPage: number;
         lastPage: number;
         total: number;
-        from?: number;
-        to?: number;
+        from?: number | null;
+        to?: number | null;
         onPageChange: (page: number) => void;
         perPage?: number;
         onPerPageChange?: (perPage: number) => void;
@@ -68,17 +68,6 @@ export function PageTable({
     showFooter = true,
     standalone = true,
 }: PageTableProps) {
-    const hasActiveFilters = React.useMemo(() => {
-        if (!filters || filters.length === 0) return false;
-        return filters.some(f => {
-            const val = activeFilters[f.key];
-            const fromVal = activeFilters[`${f.key}_from`];
-            const toVal = activeFilters[`${f.key}_to`];
-            if (fromVal || toVal) return true;
-            if (Array.isArray(val)) return val.some(v => v !== '' && v !== null);
-            return val !== undefined && val !== '' && val !== null;
-        });
-    }, [activeFilters, filters]);
 
     const [internalFilterExpanded, setInternalFilterExpanded] = React.useState(false);
 

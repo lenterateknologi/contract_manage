@@ -258,11 +258,30 @@ class ContractFileController extends Controller
         return $action->execute($contract, $request);
     }
 
-    public function getAgreementVersions(string $id, GetAgreementVersionsAction $action): JsonResponse
+    public function getAttachments(Request $request, string $id): JsonResponse
     {
         $contract = $this->contractDetailQuery->find($id);
 
-        return $action->execute($contract);
+        $query = $contract->attachments()->with('uploader:id,name,role_id,email')->latest();
+
+        if ($request->has('page') || $request->has('per_page')) {
+            $perPage = $request->integer('per_page', 10);
+            $attachments = $query->paginate($perPage);
+        } else {
+            $attachments = $query->get();
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $attachments,
+        ]);
+    }
+
+    public function getAgreementVersions(Request $request, string $id, GetAgreementVersionsAction $action): JsonResponse
+    {
+        $contract = $this->contractDetailQuery->find($id);
+
+        return $action->execute($contract, $request);
     }
 
     public function compareAgreementVersions(Request $request, string $id, CompareVersionsAction $action): Response

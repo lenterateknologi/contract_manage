@@ -47,15 +47,7 @@ class MasterDataAdminController extends Controller
     /**
      * Display the index view with statistics.
      */
-    #[OA\Get(
-        path: '/api/admin/master-data-sync',
-        summary: 'Get master data sync dashboard with entity counts',
-        tags: ['Admin - Master Data Sync'],
-        security: [['bearerAuth' => []]],
-        responses: [
-            new OA\Response(response: 200, description: 'Dashboard with entity counts'),
-        ],
-    )]
+   
     public function index()
     {
         return Inertia::render('admin/Index', [
@@ -88,28 +80,7 @@ class MasterDataAdminController extends Controller
         ]);
     }
 
-    /**
-     * Export all master data to JSON format.
-     */
-    #[OA\Get(
-        path: '/api/admin/master-data-sync/export',
-        summary: 'Export selected master data entities to JSON',
-        tags: ['Admin - Master Data Sync'],
-        security: [['bearerAuth' => []]],
-        parameters: [
-            new OA\Parameter(
-                name: 'entities',
-                in: 'query',
-                required: false,
-                description: 'Comma-separated list of entities to export (e.g. company_groups,regions,workflows). Exports all if omitted.',
-                schema: new OA\Schema(type: 'string'),
-            ),
-        ],
-        responses: [
-            new OA\Response(response: 200, description: 'JSON file download with master data'),
-            new OA\Response(response: 500, description: 'Export failed'),
-        ],
-    )]
+    
     public function export(Request $request)
     {
         try {

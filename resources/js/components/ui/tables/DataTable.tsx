@@ -25,7 +25,7 @@ export interface Column<T> {
 /**
  * Unified Table Props satisfying all modules
  */
-export interface DataTableProps<T> {
+export interface DataTableProps<T extends { id?: any } = Record<string, unknown>> {
     title?: string;
     columns: Column<T>[];
     data: T[];
@@ -76,7 +76,7 @@ export interface DataTableProps<T> {
  * Primary structural reference: TableContract style
  * Premium aesthetics, lightened typography, centralized logic.
  */
-export function DataTable<T extends Record<string, unknown>>({
+export function DataTable<T extends { id?: any } = Record<string, unknown>>({
     columns,
     data = [],
     loading = false,

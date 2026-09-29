@@ -11,6 +11,7 @@ use App\Models\FormSubmission;
 use App\Models\FormSubmissionHistory;
 use App\Models\FormTemplate;
 use App\Models\Vendor;
+use App\Traits\ApiResponse;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -21,6 +22,8 @@ use Inertia\Inertia;
 
 class ContractFormController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(
         protected ContractDetailQuery $contractDetailQuery
     ) {}
@@ -315,10 +318,10 @@ class ContractFormController extends Controller
             'actor_id' => Auth::id(),
         ]);
 
-        return response()->json(ContractFormatter::formatContract($contract->fresh()));
+        return $this->successResponse(ContractFormatter::formatContract($contract->fresh()), 'Form berhasil disimpan');
     }
 
-    public function getFormSubmission(string $id, string $type): JsonResponse
+    public function getFormSubmission(Request $request, string $id, string $type): JsonResponse
     {
         $contract = $this->contractDetailQuery->find($id);
 
@@ -330,16 +333,31 @@ class ContractFormController extends Controller
         $prefillData = null;
 
         if ($submission) {
-            /** @var Collection<int, FormSubmissionHistory> $versionsCollection */
-            $versionsCollection = $submission->versions()->with('createdBy')->get();
-            $versions = $versionsCollection->map(fn ($v) => [
-                'id' => $v->id,
-                'version_no' => $v->version_no,
-                'form_data' => $v->form_data,
-                'change_summary' => $v->change_summary,
-                'created_by' => ContractFormatter::formatUser($v->createdBy),
-                'created_at' => $v->created_at->format('Y-m-d H:i'),
-            ]);
+            $query = $submission->versions()->with('createdBy:id,name,role_id,email')->orderByDesc('version_no');
+
+            if ($request->has('page') || $request->has('per_page')) {
+                $perPage = $request->integer('per_page', 10);
+                $paginated = $query->paginate($perPage);
+                $versions = $paginated->through(fn ($v) => [
+                    'id' => $v->id,
+                    'version_no' => $v->version_no,
+                    'form_data' => $v->form_data,
+                    'change_summary' => $v->change_summary,
+                    'created_by' => ContractFormatter::formatUser($v->createdBy),
+                    'created_at' => $v->created_at->format('Y-m-d H:i'),
+                ]);
+            } else {
+                /** @var Collection<int, FormSubmissionHistory> $versionsCollection */
+                $versionsCollection = $query->get();
+                $versions = $versionsCollection->map(fn ($v) => [
+                    'id' => $v->id,
+                    'version_no' => $v->version_no,
+                    'form_data' => $v->form_data,
+                    'change_summary' => $v->change_summary,
+                    'created_by' => ContractFormatter::formatUser($v->createdBy),
+                    'created_at' => $v->created_at->format('Y-m-d H:i'),
+                ]);
+            }
         }
 
         // For F1 & F2: ALWAYS generate prefill_data
@@ -357,7 +375,7 @@ class ContractFormController extends Controller
             $prefillData = $this->applyInheritance($f1Data, $contract);
         }
 
-        return response()->json([
+        return $this->successResponse([
             'submission' => $submission ? [
                 'id' => $submission->id,
                 'document_type' => $submission->document_type,
@@ -367,7 +385,7 @@ class ContractFormController extends Controller
             ] : null,
             'versions' => $versions,
             'prefill_data' => $prefillData,
-        ]);
+        ], 'Form submission retrieved successfully');
     }
 
     private function applyInheritance(array $f1Data, Contract $contract, array $existingData = []): array

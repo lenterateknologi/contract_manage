@@ -6,6 +6,7 @@ use App\Http\Formatters\ContractFormatter;
 use App\Models\Contract;
 use App\Models\ContractHistory;
 use App\Models\ContractVersion;
+use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -14,6 +15,8 @@ use Illuminate\Support\Facades\Storage;
 
 class UploadAgreementAction
 {
+    use ApiResponse;
+
     public function __construct(protected ContractFormatter $formatter) {}
 
     public function execute(Contract $contract, Request $request): JsonResponse
@@ -82,6 +85,6 @@ class UploadAgreementAction
 
         $contract->load(['creator', 'versions.uploader', 'approvals.approver', 'histories.actor', 'messages.user', 'attachments.uploader']);
 
-        return response()->json($this->formatter->formatContract($contract));
+        return $this->successResponse($this->formatter->formatContract($contract), "Agreement v{$versionNo} berhasil diupload", 201);
     }
 }

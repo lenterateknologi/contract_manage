@@ -25,7 +25,7 @@ const {
     Eye,
 } = Icons;
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import axios from 'axios';
+import { apiClient } from '@/api/client';
 import type { Contract, ContractAttachment } from '@/pages/contracts/types';
 
 interface Props {
@@ -76,7 +76,7 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
                         ? contractApi.vendorDocumentPdfPreviewUrl(contract.id, previewAt.id, previewAt.file_name)
                         : contractApi.attachmentDownloadUrl(contract.id, previewAt.id);
 
-                    const res = await axios.get(url, {
+                    const res = await apiClient.get(url, {
                         responseType: 'blob',
                     });
 

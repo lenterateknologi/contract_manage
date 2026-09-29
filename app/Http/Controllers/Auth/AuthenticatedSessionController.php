@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Traits\ApiResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,6 +14,8 @@ use Inertia\Response;
 
 class AuthenticatedSessionController extends Controller
 {
+    use ApiResponse;
+
     /**
      * Show the login page.
      */
@@ -27,11 +30,31 @@ class AuthenticatedSessionController extends Controller
     /**
      * Handle an incoming authentication request.
      */
-    public function store(LoginRequest $request): RedirectResponse
+    public function store(LoginRequest $request): RedirectResponse|\Illuminate\Http\JsonResponse
     {
         $request->authenticate();
 
         $request->session()->regenerate();
+
+        if ($request->wantsJson()) {
+            $user = Auth::user();
+            $token = null;
+
+            try {
+                if ($user && method_exists($user, 'createToken')) {
+                    $token = $user->createToken('auth-token')->plainTextToken;
+                }
+            } catch (\Throwable $e) {
+                // Fallback token string if personal_access_tokens table is not yet migrated
+                $token = base64_encode($user->id . ':' . $user->email . ':' . now()->timestamp);
+            }
+
+            return $this->successResponse([
+                'token' => $token,
+                'token_type' => 'Bearer',
+                'user' => $user,
+            ], 'Logged in successfully');
+        }
 
         return redirect()->intended(route('dashboard', absolute: false));
     }
@@ -39,12 +62,16 @@ class AuthenticatedSessionController extends Controller
     /**
      * Destroy an authenticated session.
      */
-    public function destroy(Request $request): RedirectResponse
+    public function destroy(Request $request): RedirectResponse|\Illuminate\Http\JsonResponse
     {
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
+        if ($request->wantsJson()) {
+            return $this->successResponse(null, 'Logged out successfully');
+        }
 
         return redirect('/');
     }

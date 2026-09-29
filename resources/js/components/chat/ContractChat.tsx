@@ -3,9 +3,9 @@ import { cn } from '@/lib/utils';
 import DocumentPreviewModal from '@/pages/contracts/components/modals/DocumentPreviewModal';
 import { Contract, ContractMessage } from '@/pages/contracts/types';
 import { contractApi } from '@/pages/contracts/utils';
-import axios from 'axios';
+import { discussionsApi } from '@/api';
 import { ArrowDown, MessageSquare, RefreshCw, Search, X } from 'lucide-react';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ChatEditor } from './components/ChatEditor';
 import { MessageBubble } from './components/MessageBubble';
 
@@ -35,31 +35,29 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
     const editorRef = useRef<HTMLDivElement>(null);
     const endRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const [messages, setMessages] = useState<ContractMessage[]>(contract.messages ?? []);
+    const [messages, setMessages] = useState<ContractMessage[]>([]);
+    const [loadingMessages, setLoadingMessages] = useState<boolean>(true);
     const isFirstRender = useRef(true);
 
-    useEffect(() => {
-        setMessages(contract.messages ?? []);
-        isFirstRender.current = true;
+    const fetchMessages = useCallback(async () => {
+        if (!contract.id) return;
+        try {
+            setLoadingMessages(true);
+            const res: any = await contractApi.discussions.detail(contract.id);
+            const fetched = Array.isArray(res) ? res : res?.messages ?? [];
+            setMessages(fetched);
+        } catch {
+            const fallback: any = await contractApi.messages.list(contract.id).catch(() => []);
+            setMessages(Array.isArray(fallback) ? fallback : fallback?.messages ?? []);
+        } finally {
+            setLoadingMessages(false);
+        }
     }, [contract.id]);
 
     useEffect(() => {
-        if (contract.id) {
-            contractApi.messages
-                .list(contract.id)
-                .then((newMsgs) => {
-                    if (Array.isArray(newMsgs)) {
-                        setMessages((prev: ContractMessage[]) => {
-                            if (JSON.stringify(prev) === JSON.stringify(newMsgs)) {
-                                return prev;
-                            }
-                            return newMsgs;
-                        });
-                    }
-                })
-                .catch(() => null);
-        }
-    }, [contract.id]);
+        fetchMessages();
+        isFirstRender.current = true;
+    }, [fetchMessages]);
 
     useEffect(() => {
         contractApi.getUsers().then(setAllUsers).catch(console.error);
@@ -484,26 +482,20 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                 for (let i = 0; i < filesToSend.length; i++) {
                     const file = filesToSend[i];
                     const msgText = i === 0 ? sentContent : '';
-                    const fd = new FormData();
-                    if (msgText) fd.append('message', msgText);
-                    fd.append('attachment', file);
 
-                    const res = await axios.post(`/api/contracts/${contract.id}/messages`, fd, {
-                        headers: { 'Content-Type': 'multipart/form-data' },
-                    });
+                    const res = await discussionsApi.messages.send(contract.id, msgText, file);
+                    const msgData = (res as any)?.data || res;
 
                     if (i === 0) {
-                        setMessages((prev) => prev.map((m) => (m.id === tempId ? res.data : m)));
+                        setMessages((prev) => prev.map((m) => (m.id === tempId ? msgData : m)));
                     } else {
-                        setMessages((prev) => [...prev, res.data]);
+                        setMessages((prev) => [...prev, msgData]);
                     }
                 }
             } else {
-                const fd = new FormData();
-                fd.append('message', sentContent);
-
-                const res = await axios.post(`/api/contracts/${contract.id}/messages`, fd);
-                setMessages((prev) => prev.map((m) => (m.id === tempId ? res.data : m)));
+                const res = await discussionsApi.messages.send(contract.id, sentContent);
+                const msgData = (res as any)?.data || res;
+                setMessages((prev) => prev.map((m) => (m.id === tempId ? msgData : m)));
             }
 
             const updatedContract = await contractApi.get(contract.id).catch(() => null);
@@ -628,52 +620,62 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                 </div>
             </div>
 
-            {/* Messages Scroll Area */}
+            {/* Messages Scroll Area with Bottom Alignment & Top Headroom */}
             <div
                 ref={scrollContainerRef}
                 onScroll={handleScroll}
-                className="flex-1 overflow-y-auto p-4 flex flex-col select-text"
+                className="flex-1 overflow-y-auto px-4 pb-3 select-text"
             >
-                {msgs.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full py-16 text-center text-muted-foreground gap-3">
-                        <div className="p-4 rounded-full bg-muted/60 text-muted-foreground">
-                            <MessageSquare size={28} />
+                <div className="min-h-full flex flex-col justify-end pt-8">
+                    {/* Top spacer (headroom) to ensure top message reaction & action bar are never cut off */}
+                    <div className="h-6 shrink-0" aria-hidden="true" />
+
+                    {loadingMessages && msgs.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground gap-3">
+                            <RefreshCw size={24} className="animate-spin text-primary" />
+                            <span className="text-xs font-medium">Memuat percakapan diskusi...</span>
                         </div>
-                        <div className="flex flex-col gap-1 max-w-sm">
-                            <span className="text-xs font-bold text-foreground">Belum ada diskusi untuk dokumen ini</span>
-                            <span className="text-[11px] leading-relaxed">
-                                Mulai percakapan untuk berkoordinasi dengan inisiator, pemeriksa, atau reviewer terkait pengajuan ini.
-                            </span>
-                        </div>
-                    </div>
-                ) : (
-                    msgs.map((m, index) => {
-                        const isMe = String(m.user_id) === String(meId);
-                        const prevMsg = index > 0 ? msgs[index - 1] : null;
-                        const nextMsg = index < msgs.length - 1 ? msgs[index + 1] : null;
-
-                        const isSameSenderAsPrev = prevMsg !== null && String(prevMsg.user_id) === String(m.user_id);
-                        const isSameSenderAsNext = nextMsg !== null && String(nextMsg.user_id) === String(m.user_id);
-
-                        const isFirstInGroup = !isSameSenderAsPrev;
-                        const isLastInGroup = !isSameSenderAsNext;
-
-                        return (
-                            <div id={`chat-msg-${m.id}`} key={m.id}>
-                                <MessageBubble
-                                    msg={m}
-                                    isMe={isMe}
-                                    highlight={search}
-                                    knownUsers={allKnownUsers && allKnownUsers.length > 0 ? allKnownUsers : involvedParticipants}
-                                    onPreview={(url, name) => setPreviewTarget({ url, name })}
-                                    isFirstInGroup={isFirstInGroup}
-                                    isLastInGroup={isLastInGroup}
-                                />
+                    ) : msgs.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground gap-3">
+                            <div className="p-4 rounded-full bg-muted/60 text-muted-foreground">
+                                <MessageSquare size={28} />
                             </div>
-                        );
-                    })
-                )}
-                <div ref={endRef} />
+                            <div className="flex flex-col gap-1 max-w-sm">
+                                <span className="text-xs font-bold text-foreground">Belum ada diskusi untuk dokumen ini</span>
+                                <span className="text-[11px] leading-relaxed">
+                                    Mulai percakapan untuk berkoordinasi dengan inisiator, pemeriksa, atau reviewer terkait pengajuan ini.
+                                </span>
+                            </div>
+                        </div>
+                    ) : (
+                        msgs.map((m, index) => {
+                            const isMe = String(m.user_id) === String(meId);
+                            const prevMsg = index > 0 ? msgs[index - 1] : null;
+                            const nextMsg = index < msgs.length - 1 ? msgs[index + 1] : null;
+
+                            const isSameSenderAsPrev = prevMsg !== null && String(prevMsg.user_id) === String(m.user_id);
+                            const isSameSenderAsNext = nextMsg !== null && String(nextMsg.user_id) === String(m.user_id);
+
+                            const isFirstInGroup = !isSameSenderAsPrev;
+                            const isLastInGroup = !isSameSenderAsNext;
+
+                            return (
+                                <div id={`chat-msg-${m.id}`} key={m.id}>
+                                    <MessageBubble
+                                        msg={m}
+                                        isMe={isMe}
+                                        highlight={search}
+                                        knownUsers={allKnownUsers && allKnownUsers.length > 0 ? allKnownUsers : involvedParticipants}
+                                        onPreview={(url, name) => setPreviewTarget({ url, name })}
+                                        isFirstInGroup={isFirstInGroup}
+                                        isLastInGroup={isLastInGroup}
+                                    />
+                                </div>
+                            );
+                        })
+                    )}
+                    <div ref={endRef} />
+                </div>
             </div>
 
             {/* Quick Scroll Down Floating Button */}

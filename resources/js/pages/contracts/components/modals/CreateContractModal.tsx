@@ -1,16 +1,15 @@
 import { Button } from '@/components/ui/buttons/Button';
+import { Modal } from '@/components/ui/dialogs/Modal';
 import { FormInput } from '@/components/ui/inputs/FormInput';
-import { FormTextarea } from '@/components/ui/inputs/FormTextarea';
 import { PortalSelect } from '@/components/ui/selection/PortalSelect';
 import { TreeSelect } from '@/components/ui/selection/TreeSelect';
-import { Modal } from '@/components/ui/dialogs/Modal';
-import { contractApi, resolveVendorTaxPkp } from '@/pages/contracts/utils';
+import { contractApi } from '@/pages/contracts/utils';
+import { validateContractForm } from '@/pages/contracts/validations/contractValidation';
+import { usePov } from '@/stores/usePovStore';
+import { type SharedData } from '@/types';
 import { usePage } from '@inertiajs/react';
 import { AlertCircle, Check, FilePlus2, Loader2, ShieldCheck } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
-import { validateContractForm } from '@/pages/contracts/validations/contractValidation';
-import { type SharedData } from '@/types';
-import { usePov } from '@/stores/usePovStore';
+import { useEffect, useState } from 'react';
 
 interface Props {
     open: boolean;
@@ -22,7 +21,7 @@ interface Props {
     vendors?: any[];
 }
 
-export default function CreateContractModal({ open, onClose, onSubmit, types = [], submissionTypes = [], users = [], vendors = [] }: Props) {
+export default function CreateContractModal({ open, onClose, onSubmit, types = [], users = [], vendors = [] }: Props) {
     const { auth, povOptions } = usePage<SharedData>().props;
     const pov = usePov(povOptions);
     const [title, setTitle] = useState('');
@@ -40,29 +39,15 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
     const [fetchingWorkflows, setFetchingWorkflows] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
-    const selectedVendor = useMemo(() => vendors.find((v) => String(v.id) === String(vendorId)), [vendors, vendorId]);
-    const vendorTaxInfo = useMemo(() => resolveVendorTaxPkp(selectedVendor), [selectedVendor]);
-
-    const handleVendorSelect = (vId: string) => {
-        setVendorId(vId);
-        if (vId) {
-            const v = vendors.find((item) => String(item.id) === String(vId));
-            if (v) {
-                const { isPkp } = resolveVendorTaxPkp(v);
-                setTaxRequired(isPkp);
-            }
-        }
-    };
-
     const initiatorOptions = [
         { value: String(auth?.user?.id), label: `Diri Sendiri (${auth?.user?.name})` },
         ...(Array.isArray(users)
             ? users
-                .filter((u) => u.id !== auth?.user?.id)
-                .map((u) => ({
-                    value: String(u.id),
-                    label: `${u.name} — ${u.role} (${u.department_name || 'No Dept'})`,
-                }))
+                  .filter((u) => u.id !== auth?.user?.id)
+                  .map((u) => ({
+                      value: String(u.id),
+                      label: `${u.name} — ${u.role} (${u.department_name || 'No Dept'})`,
+                  }))
             : []),
     ];
 
@@ -89,11 +74,12 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
             const selectableWorkflows = (data || []).filter((w: any) => !!w.is_selectable);
             setWorkflows(selectableWorkflows);
 
-            if (selectableWorkflows.length === 1) {
-                setWorkflowId(selectableWorkflows[0].id);
-            } else if (selectableWorkflows.length > 1) {
-                const defaultWf = selectableWorkflows.find((w: any) => w.is_default);
-                if (defaultWf) setWorkflowId(defaultWf.id);
+            const eligibleWorkflows = selectableWorkflows.filter((w: any) => w.is_eligible !== false);
+            if (eligibleWorkflows.length > 0) {
+                const defaultWf = eligibleWorkflows.find((w: any) => w.is_default) || eligibleWorkflows[0];
+                setWorkflowId(String(defaultWf.id));
+            } else {
+                setWorkflowId('');
             }
         } catch (err) {
             console.error('Failed to fetch workflows', err);
@@ -103,10 +89,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
     };
 
     const handleSubmit = async () => {
-        const validationErrors = validateContractForm(
-            { title, contract_type_id: typeId, workflow_id: workflowId },
-            workflows.length > 0
-        );
+        const validationErrors = validateContractForm({ title, contract_type_id: typeId, workflow_id: workflowId }, workflows.length > 0);
 
         if (Object.keys(validationErrors).length > 0) {
             setErrors(validationErrors);
@@ -163,30 +146,31 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
             headerIcon={<FilePlus2 size={18} />}
             title="Buat Kontrak Baru"
             description="Isi formulir berikut untuk memulai pengajuan kontrak"
-            maxWidth="2xl"
+            maxWidth="3xl"
+            className="min-h-[620px] max-h-[85vh] flex flex-col"
             footer={
                 <div className="flex w-full justify-end gap-2.5">
                     <Button
                         variant="ghost"
                         onClick={onClose}
                         disabled={loading}
-                        className="h-9 text-xs bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-700 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-900/50 border border-rose-200 dark:border-rose-800/50 font-semibold"
+                        className="h-9 border border-rose-200 bg-rose-50 text-xs font-semibold text-rose-600 hover:bg-rose-100 hover:text-rose-700 dark:border-rose-800/50 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-900/50"
                     >
                         Batal
                     </Button>
-                    <Button onClick={handleSubmit} disabled={loading || !isFormValid} className="min-w-[120px] h-9 text-xs font-bold">
+                    <Button onClick={handleSubmit} disabled={loading || !isFormValid} className="h-9 min-w-[120px] text-xs font-bold">
                         {loading ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Check size={15} className="mr-1.5" />}
                         Buat Kontrak
                     </Button>
                 </div>
             }
         >
-            <div className="space-y-3.5 pt-1">
+            <div className="space-y-4 pt-1.5 pb-6">
                 {(() => {
                     const canSelectInitiator = Boolean(
                         pov.isSimulatingNav
                             ? (pov.activeNavPov?.can_create_on_behalf ?? pov.activeNavPov?.roleName === 'Super Admin')
-                            : (auth?.user?.can_create_on_behalf || auth?.user?.is_admin || auth?.user?.role === 'Super Admin')
+                            : auth?.user?.can_create_on_behalf || auth?.user?.is_admin || auth?.user?.role === 'Super Admin',
                     );
 
                     if (!canSelectInitiator) return null;
@@ -202,7 +186,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                                 options={initiatorOptions}
                                 placeholder="Pilih Initiator"
                             />
-                            <p className="text-text-soft text-[11px] leading-relaxed font-normal mt-1">
+                            <p className="text-text-soft mt-1 text-[11px] leading-relaxed font-normal">
                                 Workflow akan disesuaikan dengan departemen dan otoritas initiator yang dipilih.
                             </p>
                         </div>
@@ -210,7 +194,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                 })()}
 
                 <div className="space-y-1">
-                    <label className="text-slate-700 dark:text-zinc-200 text-[10.5px] font-extrabold uppercase">
+                    <label className="text-[10.5px] font-extrabold text-slate-700 uppercase dark:text-zinc-200">
                         Klasifikasi & Jenis Dokumen <span className="text-rose-500">*</span>
                     </label>
                     <TreeSelect
@@ -245,19 +229,20 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                 </div>
 
                 <div className="animate-in fade-in slide-in-from-top-2 space-y-1">
-                    <label className="text-slate-700 dark:text-zinc-200 text-[10.5px] font-extrabold uppercase">
+                    <label className="text-[10.5px] font-extrabold text-slate-700 uppercase dark:text-zinc-200">
                         Pilih Alur Kerja <span className="text-rose-500">*</span>
                     </label>
                     <PortalSelect
                         value={workflowId}
                         onValueChange={(val) => setWorkflowId(val)}
-                        options={workflows.map((w) => ({ value: String(w.id), label: w.name }))}
+                        options={workflows.map((w: any) => ({
+                            value: String(w.id),
+                            label: w.name,
+                            disabled: w.is_eligible === false,
+                        }))}
                         placeholder={!typeId ? 'Pilih jenis dokumen dulu...' : fetchingWorkflows ? 'Memuat...' : 'Pilih Alur Kerja'}
                         disabled={!typeId || fetchingWorkflows}
                     />
-                    <p className="text-text-soft text-[11px] leading-relaxed font-normal mt-1">
-                        Alur kerja persetujuan sesuai tipe kontrak yang dipilih.
-                    </p>
                     {errors.workflow_id && <div className="mt-0.5 text-[10px] font-medium text-rose-500">{errors.workflow_id}</div>}
                 </div>
 

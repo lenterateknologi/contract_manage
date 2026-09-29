@@ -1,30 +1,31 @@
-import { FormSection, ManagementForm } from '@/pages/admin/components/ManagementForm';
+import { Icons } from '@/components/ui';
 import { Button } from '@/components/ui/buttons/Button';
-import { Checkbox } from '@/components/ui/selection/Checkbox';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from '@/components/ui/dialogs/Dialog';
+import { Modal } from '@/components/ui/dialogs/Modal';
 import { useToast } from '@/components/ui/feedback/Toast';
-import { SearchableMultiSelect } from '@/components/ui/selection/SearchableMultiSelect';
-import { TreeSelect } from '@/components/ui/selection/TreeSelect';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/selection/Select';
 import { FormInput } from '@/components/ui/inputs/FormInput';
 import { FormTextarea } from '@/components/ui/inputs/FormTextarea';
+import { Checkbox } from '@/components/ui/selection/Checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/selection/Select';
 import { cn } from '@/lib/utils';
+import { FormSection, ManagementForm } from '@/pages/admin/components/ManagementForm';
 import { closestCenter, DndContext, DragEndEvent, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { Head, router, useForm } from '@inertiajs/react';
-import { AppIcon, Icons } from '@/components/ui';
+import { workflowsApi } from '@/api';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import AuthorityTableManager from './components/AuthorityTableManager';
+import ContractTypeTableManager from './components/ContractTypeTableManager';
 
 const {
     Activity,
     ArrowDown,
-    ArrowRightLeft,
     ArrowUp,
     Bookmark,
     Check,
     CheckCircle2,
     CheckSquare2,
-    ChevronDown,
-    ChevronUp,
     ChevronsDown,
     ChevronsUp,
     Edit3,
@@ -33,38 +34,27 @@ const {
     Layers,
     LayoutTemplate,
     MinusSquare,
-    Network,
     Pencil,
     PlusCircle,
     Search,
-    Shield,
     Sliders,
     Square,
     Trash2,
     UserCheck,
     UserPlus,
     Users,
-    X,
 } = Icons;
 const UsersIcon = Users;
-import React, { useCallback, useEffect, useState, useMemo } from 'react';
-import AuthorityTableManager from './components/AuthorityTableManager';
-import ContractTypeTableManager from './components/ContractTypeTableManager';
-import { Modal } from '@/components/ui/dialogs/Modal';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialogs/Dialog';
 
-import SortableStepItem from './components/SortableStepItem';
-import { DraggablePresetCard } from './components/DraggablePresetCard';
-import { MASTER_ACTIONS, APPROVER_TYPE_STYLES, getActionTheme, BUILTIN_STEP_TEMPLATES } from './constants';
-import { WorkflowFlowVisualizer } from './components/WorkflowFlowVisualizer';
-import { GroupedStepSections } from './components/GroupedStepSections';
 import { CustomActionsManager } from './components/CustomActionsManager';
+import SortableStepItem from './components/SortableStepItem';
+import { WorkflowFlowVisualizer } from './components/WorkflowFlowVisualizer';
+import { BUILTIN_STEP_TEMPLATES, MASTER_ACTIONS } from './constants';
 
 // --- Sortable Step Item (Compact) ---
 
 // --- Main Workflow Editor Page ---
 export default function WorkflowEditor({
-    auth,
     workflow,
     contractTypes,
     departments,
@@ -79,8 +69,6 @@ export default function WorkflowEditor({
     locations = [],
     allWorkflows = [],
     masterWorkflows = [],
-    workflowTypes = [],
-    formTemplates = [],
     stepPresets = [],
 }: any) {
     const { showToast } = useToast();
@@ -130,7 +118,7 @@ export default function WorkflowEditor({
                 t.name.toLowerCase().includes(q) ||
                 t.description.toLowerCase().includes(q) ||
                 t.category.toLowerCase().includes(q) ||
-                t.step_data.description.toLowerCase().includes(q)
+                t.step_data.description.toLowerCase().includes(q),
         );
     }, [templateSearch]);
 
@@ -161,7 +149,15 @@ export default function WorkflowEditor({
     const [mainTab, setMainTab] = useState<'settings' | 'categories' | 'authorities' | 'steps' | 'visualizer' | 'custom_actions'>(() => {
         if (typeof window !== 'undefined') {
             const tab = new URLSearchParams(window.location.search).get('tab');
-            if (tab === 'settings' || tab === 'categories' || tab === 'authorities' || tab === 'steps' || tab === 'visualizer' || tab === 'custom_actions') return tab;
+            if (
+                tab === 'settings' ||
+                tab === 'categories' ||
+                tab === 'authorities' ||
+                tab === 'steps' ||
+                tab === 'visualizer' ||
+                tab === 'custom_actions'
+            )
+                return tab;
         }
         return 'settings';
     });
@@ -196,34 +192,36 @@ export default function WorkflowEditor({
         legal_roles: workflow?.legal_roles || [],
         legal_departments: workflow?.legal_departments || [],
         legal_users: workflow?.legal_users || [],
-        steps: (workflow?.steps || []).map((s: any) => {
-            const hasRoles = s.role && s.role.length > 0;
-            const hasDepts = s.department_ids && s.department_ids.length > 0;
-            const hasUsers = s.user_ids && s.user_ids.length > 0;
-            const config = s.approver_config || {};
+        steps:
+            (workflow?.steps || []).map((s: any) => {
+                const hasRoles = s.role && s.role.length > 0;
+                const hasDepts = s.department_ids && s.department_ids.length > 0;
+                const hasUsers = s.user_ids && s.user_ids.length > 0;
+                const config = s.approver_config || {};
 
-            return {
-                ...s,
-                approver_authorities: s.approver_authorities || [],
-                approver_config: {
-                    custom: config.custom || [],
-                    roles: config.roles && config.roles.length > 0 ? config.roles : (s.approver_type === 'role' && hasRoles ? s.role : []),
-                    departments: config.departments && config.departments.length > 0 ? config.departments : (s.approver_type === 'role' && hasDepts ? s.department_ids : []),
-                    users: config.users && config.users.length > 0 ? config.users : (s.approver_type === 'user' && hasUsers ? s.user_ids : []),
-                    is_default: config.is_default !== undefined ? config.is_default : false,
-                }
-            };
-        }) || [],
+                return {
+                    ...s,
+                    approver_authorities: s.approver_authorities || [],
+                    approver_config: {
+                        custom: config.custom || [],
+                        roles: config.roles && config.roles.length > 0 ? config.roles : s.approver_type === 'role' && hasRoles ? s.role : [],
+                        departments:
+                            config.departments && config.departments.length > 0
+                                ? config.departments
+                                : s.approver_type === 'role' && hasDepts
+                                  ? s.department_ids
+                                  : [],
+                        users: config.users && config.users.length > 0 ? config.users : s.approver_type === 'user' && hasUsers ? s.user_ids : [],
+                        is_default: config.is_default !== undefined ? config.is_default : false,
+                    },
+                };
+            }) || [],
         department_id: workflow?.department_id || null,
         company_group_ids: (workflow?.company_group_ids || []).map((i: any) =>
-            typeof i === 'object' ? i : { value: String(i), is_initiator: false }
+            typeof i === 'object' ? i : { value: String(i), is_initiator: false },
         ),
-        region_ids: (workflow?.region_ids || []).map((i: any) =>
-            typeof i === 'object' ? i : { value: String(i), is_initiator: false }
-        ),
-        company_ids: (workflow?.company_ids || []).map((i: any) =>
-            typeof i === 'object' ? i : { value: String(i), is_initiator: false }
-        ),
+        region_ids: (workflow?.region_ids || []).map((i: any) => (typeof i === 'object' ? i : { value: String(i), is_initiator: false })),
+        company_ids: (workflow?.company_ids || []).map((i: any) => (typeof i === 'object' ? i : { value: String(i), is_initiator: false })),
         initiator_authorities: workflow?.initiator_authorities || [],
         meta: workflow?.meta || {},
     });
@@ -337,7 +335,9 @@ export default function WorkflowEditor({
             if (u.is_used === false || u.is_used === 0 || String(u.is_used) === '0' || String(u.is_used) === 'false') {
                 return false;
             }
-            return Boolean(u.is_used === true || u.is_used === 1 || String(u.is_used) === '1' || String(u.is_used) === 'true' || u.is_used !== undefined);
+            return Boolean(
+                u.is_used === true || u.is_used === 1 || String(u.is_used) === '1' || String(u.is_used) === 'true' || u.is_used !== undefined,
+            );
         });
     }, [users]);
 
@@ -360,13 +360,16 @@ export default function WorkflowEditor({
     }, [activeSimActorUsers, simActorSearch]);
 
     // Context simulasi yang diteruskan ke SortableStepItem & AuthorityTableManager
-    const simulationContext = useMemo(() => ({
-        initiatorId: simInitiatorId || undefined,
-        picId: simPicId || undefined,
-        creatorId: simCreatorId || undefined,
-        adhocId: simAdhocIds[0] || undefined,
-        adhocIds: simAdhocIds.length > 0 ? simAdhocIds : undefined,
-    }), [simInitiatorId, simPicId, simCreatorId, simAdhocIds]);
+    const simulationContext = useMemo(
+        () => ({
+            initiatorId: simInitiatorId || undefined,
+            picId: simPicId || undefined,
+            creatorId: simCreatorId || undefined,
+            adhocId: simAdhocIds[0] || undefined,
+            adhocIds: simAdhocIds.length > 0 ? simAdhocIds : undefined,
+        }),
+        [simInitiatorId, simPicId, simCreatorId, simAdhocIds],
+    );
 
     // Lookup user objects untuk simulasi terpilih
     const selectedSimInitiator = useMemo(() => {
@@ -413,7 +416,10 @@ export default function WorkflowEditor({
         const filtered = form.data.steps.filter((s: any) => !selectedStepIds.has(s.id));
         const normalized = filtered.map((item: any, index: number) => {
             const updatedActions = (item.actions || []).map((act: any) => {
-                if (act.transition_config?.type === 'absolute' && (selectedStepIds.has(act.transition_config?.step_id) || selectedStepIds.has(act.next_step_id))) {
+                if (
+                    act.transition_config?.type === 'absolute' &&
+                    (selectedStepIds.has(act.transition_config?.step_id) || selectedStepIds.has(act.next_step_id))
+                ) {
                     return {
                         ...act,
                         transition_config: {
@@ -436,32 +442,35 @@ export default function WorkflowEditor({
         clearSelection();
     };
 
-    const bulkMoveSelected = useCallback((direction: 'up' | 'down') => {
-        if (selectedStepIds.size === 0) return;
-        const steps = [...form.data.steps];
-        if (direction === 'up') {
-            for (let i = 1; i < steps.length; i++) {
-                if (selectedStepIds.has(steps[i].id) && !selectedStepIds.has(steps[i - 1].id)) {
-                    const temp = steps[i];
-                    steps[i] = steps[i - 1];
-                    steps[i - 1] = temp;
+    const bulkMoveSelected = useCallback(
+        (direction: 'up' | 'down') => {
+            if (selectedStepIds.size === 0) return;
+            const steps = [...form.data.steps];
+            if (direction === 'up') {
+                for (let i = 1; i < steps.length; i++) {
+                    if (selectedStepIds.has(steps[i].id) && !selectedStepIds.has(steps[i - 1].id)) {
+                        const temp = steps[i];
+                        steps[i] = steps[i - 1];
+                        steps[i - 1] = temp;
+                    }
+                }
+            } else {
+                for (let i = steps.length - 2; i >= 0; i--) {
+                    if (selectedStepIds.has(steps[i].id) && !selectedStepIds.has(steps[i + 1].id)) {
+                        const temp = steps[i];
+                        steps[i] = steps[i + 1];
+                        steps[i + 1] = temp;
+                    }
                 }
             }
-        } else {
-            for (let i = steps.length - 2; i >= 0; i--) {
-                if (selectedStepIds.has(steps[i].id) && !selectedStepIds.has(steps[i + 1].id)) {
-                    const temp = steps[i];
-                    steps[i] = steps[i + 1];
-                    steps[i + 1] = temp;
-                }
-            }
-        }
-        const normalized = steps.map((item: any, index: number) => ({
-            ...item,
-            step: index + 1,
-        }));
-        form.setData('steps', normalized);
-    }, [selectedStepIds, form]);
+            const normalized = steps.map((item: any, index: number) => ({
+                ...item,
+                step: index + 1,
+            }));
+            form.setData('steps', normalized);
+        },
+        [selectedStepIds, form],
+    );
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -482,8 +491,6 @@ export default function WorkflowEditor({
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [selectedStepIds, bulkMoveSelected]);
-
-
 
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
@@ -553,45 +560,63 @@ export default function WorkflowEditor({
         ]);
     };
 
-    const handleSubmit = (e?: React.FormEvent) => {
+    const [isSaving, setIsSaving] = useState<boolean>(false);
+
+    const handleSubmit = async (e?: React.FormEvent) => {
         if (e) e.preventDefault();
-        if (form.processing) return;
+        if (isSaving || form.processing) return;
 
-        const options = {
-            preserveScroll: true,
-            preserveState: true,
-            onSuccess: () => showToast('Konfigurasi alur berhasil disimpan', 'success'),
-            onError: (err: any) => showToast(err.error || 'Gagal menyimpan alur', 'danger'),
-        };
-
-        if (workflow) form.put(route('admin.workflows.update', workflow.id), options);
-        else form.post(route('admin.workflows.store'), options);
+        setIsSaving(true);
+        try {
+            if (workflow) {
+                const res: any = await workflowsApi.update(workflow.id, form.data);
+                if (res) {
+                    showToast(res?.message || 'Konfigurasi alur berhasil disimpan', 'success');
+                }
+            } else {
+                const res: any = await workflowsApi.create(form.data);
+                if (res) {
+                    showToast(res?.message || 'Workflow baru berhasil dibuat', 'success');
+                    const newId = res?.data?.id || res?.id;
+                    if (newId) {
+                        router.visit(route('admin.workflows.edit', newId));
+                    } else {
+                        router.visit(route('admin.workflows'));
+                    }
+                }
+            }
+        } catch (err: any) {
+            const msg = err.response?.data?.message || err.response?.data?.error || 'Gagal menyimpan alur';
+            showToast(msg, 'danger');
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     return (
         <>
             <Head title={workflow ? 'Edit Workflow' : 'Registrasi Workflow Baru'} />
 
-            <div className="flex flex-col h-svh max-h-svh overflow-hidden bg-background w-full p-0 m-0">
-                <div className="flex flex-col flex-1 min-h-0 w-full rounded-none border-0 bg-background shadow-none overflow-hidden">
+            <div className="bg-background m-0 flex h-svh max-h-svh w-full flex-col overflow-hidden p-0">
+                <div className="bg-background flex min-h-0 w-full flex-1 flex-col overflow-hidden rounded-none border-0 shadow-none">
                     <ManagementForm
                         title={workflow ? `Konfigurasi tahapan untuk ${form.data.name}` : 'Konfigurasi Tahapan Workflow Baru'}
                         onClose={() => router.visit(route('admin.workflows'))}
                         onSave={handleSubmit}
-                        processing={form.processing}
+                        processing={isSaving || form.processing}
                         isDirty={form.isDirty}
                         isEdit={!!workflow}
                         flat={true}
                         tabs={
-                            <div className="flex bg-slate-100/90 dark:bg-zinc-800/90 p-1 rounded-xl border border-slate-200/80 dark:border-zinc-700/80">
+                            <div className="flex rounded-xl border border-slate-200/80 bg-slate-100/90 p-1 dark:border-zinc-700/80 dark:bg-zinc-800/90">
                                 <button
                                     type="button"
                                     onClick={() => handleTabChange('settings')}
                                     className={cn(
-                                        'px-4 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer select-none',
+                                        'cursor-pointer rounded-lg px-4 py-1.5 text-xs font-bold transition-all select-none',
                                         mainTab === 'settings'
-                                            ? 'bg-primary text-white font-bold shadow-xs'
-                                            : 'text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200 font-medium',
+                                            ? 'bg-primary font-bold text-white shadow-xs'
+                                            : 'font-medium text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200',
                                     )}
                                 >
                                     Pengaturan Workflow
@@ -600,19 +625,21 @@ export default function WorkflowEditor({
                                     type="button"
                                     onClick={() => handleTabChange('categories')}
                                     className={cn(
-                                        'flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer select-none',
+                                        'flex cursor-pointer items-center gap-1.5 rounded-lg px-4 py-1.5 text-xs font-bold transition-all select-none',
                                         mainTab === 'categories'
-                                            ? 'bg-primary text-white font-bold shadow-xs'
-                                            : 'text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200 font-medium',
+                                            ? 'bg-primary font-bold text-white shadow-xs'
+                                            : 'font-medium text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200',
                                     )}
                                 >
                                     Kategori Kontrak
-                                    <span className={cn(
-                                        'rounded-full px-1.5 py-0.2 text-[10px] transition-colors',
-                                        mainTab === 'categories'
-                                            ? 'bg-white/20 text-white font-bold'
-                                            : 'bg-slate-200/50 dark:bg-zinc-800/50 text-slate-600 dark:text-zinc-400 font-medium'
-                                    )}>
+                                    <span
+                                        className={cn(
+                                            'py-0.2 rounded-full px-1.5 text-[10px] transition-colors',
+                                            mainTab === 'categories'
+                                                ? 'bg-white/20 font-bold text-white'
+                                                : 'bg-slate-200/50 font-medium text-slate-600 dark:bg-zinc-800/50 dark:text-zinc-400',
+                                        )}
+                                    >
                                         {(form.data.contract_type_ids || []).length}
                                     </span>
                                 </button>
@@ -620,19 +647,21 @@ export default function WorkflowEditor({
                                     type="button"
                                     onClick={() => handleTabChange('authorities')}
                                     className={cn(
-                                        'flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer select-none',
+                                        'flex cursor-pointer items-center gap-1.5 rounded-lg px-4 py-1.5 text-xs font-bold transition-all select-none',
                                         mainTab === 'authorities'
-                                            ? 'bg-primary text-white font-bold shadow-xs'
-                                            : 'text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200 font-medium',
+                                            ? 'bg-primary font-bold text-white shadow-xs'
+                                            : 'font-medium text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200',
                                     )}
                                 >
                                     Otoritas Inisiator
-                                    <span className={cn(
-                                        'rounded-full px-1.5 py-0.2 text-[10px] transition-colors',
-                                        mainTab === 'authorities'
-                                            ? 'bg-white/20 text-white font-bold'
-                                            : 'bg-slate-200/50 dark:bg-zinc-800/50 text-slate-600 dark:text-zinc-400 font-medium'
-                                    )}>
+                                    <span
+                                        className={cn(
+                                            'py-0.2 rounded-full px-1.5 text-[10px] transition-colors',
+                                            mainTab === 'authorities'
+                                                ? 'bg-white/20 font-bold text-white'
+                                                : 'bg-slate-200/50 font-medium text-slate-600 dark:bg-zinc-800/50 dark:text-zinc-400',
+                                        )}
+                                    >
                                         {(form.data.initiator_authorities || []).length}
                                     </span>
                                 </button>
@@ -640,19 +669,21 @@ export default function WorkflowEditor({
                                     type="button"
                                     onClick={() => handleTabChange('steps')}
                                     className={cn(
-                                        'flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer select-none',
+                                        'flex cursor-pointer items-center gap-1.5 rounded-lg px-4 py-1.5 text-xs font-bold transition-all select-none',
                                         mainTab === 'steps'
-                                            ? 'bg-primary text-white font-bold shadow-xs'
-                                            : 'text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200 font-medium',
+                                            ? 'bg-primary font-bold text-white shadow-xs'
+                                            : 'font-medium text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200',
                                     )}
                                 >
                                     Tahapan Workflow
-                                    <span className={cn(
-                                        'rounded-full px-1.5 py-0.2 text-[10px] transition-colors',
-                                        mainTab === 'steps'
-                                            ? 'bg-white/20 text-white font-bold'
-                                            : 'bg-slate-200/50 dark:bg-zinc-800/50 text-slate-600 dark:text-zinc-400 font-medium'
-                                    )}>
+                                    <span
+                                        className={cn(
+                                            'py-0.2 rounded-full px-1.5 text-[10px] transition-colors',
+                                            mainTab === 'steps'
+                                                ? 'bg-white/20 font-bold text-white'
+                                                : 'bg-slate-200/50 font-medium text-slate-600 dark:bg-zinc-800/50 dark:text-zinc-400',
+                                        )}
+                                    >
                                         {form.data.steps.length}
                                     </span>
                                 </button>
@@ -660,10 +691,10 @@ export default function WorkflowEditor({
                                     type="button"
                                     onClick={() => handleTabChange('visualizer')}
                                     className={cn(
-                                        'flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer select-none',
+                                        'flex cursor-pointer items-center gap-1.5 rounded-lg px-4 py-1.5 text-xs font-bold transition-all select-none',
                                         mainTab === 'visualizer'
-                                            ? 'bg-primary text-white font-bold shadow-xs'
-                                            : 'text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200 font-medium',
+                                            ? 'bg-primary font-bold text-white shadow-xs'
+                                            : 'font-medium text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200',
                                     )}
                                 >
                                     <Activity size={13} />
@@ -673,20 +704,22 @@ export default function WorkflowEditor({
                                     type="button"
                                     onClick={() => handleTabChange('custom_actions')}
                                     className={cn(
-                                        'flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer select-none',
+                                        'flex cursor-pointer items-center gap-1.5 rounded-lg px-4 py-1.5 text-xs font-bold transition-all select-none',
                                         mainTab === 'custom_actions'
-                                            ? 'bg-primary text-white font-bold shadow-xs'
-                                            : 'text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200 font-medium',
+                                            ? 'bg-primary font-bold text-white shadow-xs'
+                                            : 'font-medium text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200',
                                     )}
                                 >
                                     <Sliders size={13} />
                                     Aksi Kustom / Default
-                                    <span className={cn(
-                                        'rounded-full px-1.5 py-0.2 text-[10px] transition-colors',
-                                        mainTab === 'custom_actions'
-                                            ? 'bg-white/20 text-white font-bold'
-                                            : 'bg-slate-200/50 dark:bg-zinc-800/50 text-slate-600 dark:text-zinc-400 font-medium'
-                                    )}>
+                                    <span
+                                        className={cn(
+                                            'py-0.2 rounded-full px-1.5 text-[10px] transition-colors',
+                                            mainTab === 'custom_actions'
+                                                ? 'bg-white/20 font-bold text-white'
+                                                : 'bg-slate-200/50 font-medium text-slate-600 dark:bg-zinc-800/50 dark:text-zinc-400',
+                                        )}
+                                    >
                                         {(form.data.meta?.custom_actions || []).length}
                                     </span>
                                 </button>
@@ -698,14 +731,13 @@ export default function WorkflowEditor({
                                     type="button"
                                     onClick={addLocalStep}
                                     variant="ghost"
-                                    className="border-primary/20 hover:bg-primary/5 h-9 rounded-lg border px-4 text-xs font-bold transition-all active:scale-95 cursor-pointer"
+                                    className="border-primary/20 hover:bg-primary/5 h-9 cursor-pointer rounded-lg border px-4 text-xs font-bold transition-all active:scale-95"
                                 >
                                     <PlusCircle size={14} className="mr-1.5" /> Tambah Tahap
                                 </Button>
                             </div>
                         }
                     >
-
                         <div>
                             {mainTab === 'settings' && (
                                 <FormSection className="space-y-6 p-3">
@@ -713,38 +745,38 @@ export default function WorkflowEditor({
                                     <div className="space-y-4">
                                         <div className="flex items-center gap-2 border-b border-slate-100 pb-3 dark:border-zinc-800">
                                             <Edit3 size={15} className="text-primary" />
-                                            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                                            <h3 className="text-xs font-bold tracking-wider text-slate-800 uppercase dark:text-slate-200">
                                                 Informasi Utama Alur Kerja
                                             </h3>
                                         </div>
-                                        
+
                                         <div className="space-y-4">
                                             {/* Row 1: Nama Alur Kerja */}
                                             <div className="w-full">
-                                                 <FormInput
-                                                     label="Nama Alur Kerja"
-                                                     type="text"
-                                                     autoFocus
-                                                     value={form.data.name}
-                                                     onChange={(e) => form.setData('name', e.target.value)}
-                                                     error={form.errors.name}
-                                                     placeholder="Contoh: ALUR PERSETUJUAN KONTRAK LOGISTIK"
-                                                     variant="outline"
-                                                     inputSize="compact"
-                                                 />
+                                                <FormInput
+                                                    label="Nama Alur Kerja"
+                                                    type="text"
+                                                    autoFocus
+                                                    value={form.data.name}
+                                                    onChange={(e) => form.setData('name', e.target.value)}
+                                                    error={form.errors.name}
+                                                    placeholder="Contoh: ALUR PERSETUJUAN KONTRAK LOGISTIK"
+                                                    variant="outline"
+                                                    inputSize="compact"
+                                                />
                                             </div>
 
                                             {/* Row 1.5: Deskripsi Alur Kerja */}
                                             <div className="w-full">
-                                                 <FormTextarea
-                                                     label="Deskripsi Alur Kerja"
-                                                     rows={3}
-                                                     value={form.data.description}
-                                                     onChange={(e) => form.setData('description', e.target.value)}
-                                                     error={form.errors.description}
-                                                     placeholder="Jelaskan ringkasan alur kerja, tujuan, dan peruntukannya..."
-                                                     inputSize="compact"
-                                                 />
+                                                <FormTextarea
+                                                    label="Deskripsi Alur Kerja"
+                                                    rows={3}
+                                                    value={form.data.description}
+                                                    onChange={(e) => form.setData('description', e.target.value)}
+                                                    error={form.errors.description}
+                                                    placeholder="Jelaskan ringkasan alur kerja, tujuan, dan peruntukannya..."
+                                                    inputSize="compact"
+                                                />
                                             </div>
 
                                             {/* Row 2: Tipe Alur Kerja (Workflow Type) */}
@@ -752,7 +784,7 @@ export default function WorkflowEditor({
                                                 <label className="text-xs font-semibold text-slate-700 dark:text-zinc-300">
                                                     Tipe & Hierarki Alur Kerja
                                                 </label>
-                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+                                                <div className="grid grid-cols-1 gap-2.5 md:grid-cols-3">
                                                     <div
                                                         onClick={() => {
                                                             form.setData((prev: any) => ({
@@ -762,14 +794,14 @@ export default function WorkflowEditor({
                                                             }));
                                                         }}
                                                         className={cn(
-                                                            'cursor-pointer p-3 rounded-lg border text-left transition-all flex flex-col gap-1',
+                                                            'flex cursor-pointer flex-col gap-1 rounded-lg border p-3 text-left transition-all',
                                                             form.data.workflow_type === 'main'
-                                                                ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/30 ring-1 ring-blue-500'
-                                                                : 'border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-slate-300'
+                                                                ? 'border-blue-500 bg-blue-50/50 ring-1 ring-blue-500 dark:bg-blue-950/30'
+                                                                : 'border-slate-200 bg-white hover:border-slate-300 dark:border-zinc-800 dark:bg-zinc-900',
                                                         )}
                                                     >
                                                         <div className="flex items-center justify-between">
-                                                            <div className="flex items-center gap-1.5 font-bold text-xs text-blue-700 dark:text-blue-400">
+                                                            <div className="flex items-center gap-1.5 text-xs font-bold text-blue-700 dark:text-blue-400">
                                                                 <GitBranch size={14} />
                                                                 <span>Workflow Utama (Master)</span>
                                                             </div>
@@ -787,14 +819,14 @@ export default function WorkflowEditor({
                                                             form.setData('workflow_type', 'sub_workflow');
                                                         }}
                                                         className={cn(
-                                                            'cursor-pointer p-3 rounded-lg border text-left transition-all flex flex-col gap-1',
+                                                            'flex cursor-pointer flex-col gap-1 rounded-lg border p-3 text-left transition-all',
                                                             form.data.workflow_type === 'sub_workflow'
-                                                                ? 'border-purple-500 bg-purple-50/50 dark:bg-purple-950/30 ring-1 ring-purple-500'
-                                                                : 'border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-slate-300'
+                                                                ? 'border-purple-500 bg-purple-50/50 ring-1 ring-purple-500 dark:bg-purple-950/30'
+                                                                : 'border-slate-200 bg-white hover:border-slate-300 dark:border-zinc-800 dark:bg-zinc-900',
                                                         )}
                                                     >
                                                         <div className="flex items-center justify-between">
-                                                            <div className="flex items-center gap-1.5 font-bold text-xs text-purple-700 dark:text-purple-400">
+                                                            <div className="flex items-center gap-1.5 text-xs font-bold text-purple-700 dark:text-purple-400">
                                                                 <GitFork size={14} />
                                                                 <span>Workflow Bagian (Sub-WF)</span>
                                                             </div>
@@ -816,14 +848,14 @@ export default function WorkflowEditor({
                                                             }));
                                                         }}
                                                         className={cn(
-                                                            'cursor-pointer p-3 rounded-lg border text-left transition-all flex flex-col gap-1',
+                                                            'flex cursor-pointer flex-col gap-1 rounded-lg border p-3 text-left transition-all',
                                                             form.data.workflow_type === 'standalone' || !form.data.workflow_type
-                                                                ? 'border-slate-600 dark:border-zinc-500 bg-slate-50/70 dark:bg-zinc-800/50 ring-1 ring-slate-600 dark:ring-zinc-500'
-                                                                : 'border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-slate-300'
+                                                                ? 'border-slate-600 bg-slate-50/70 ring-1 ring-slate-600 dark:border-zinc-500 dark:bg-zinc-800/50 dark:ring-zinc-500'
+                                                                : 'border-slate-200 bg-white hover:border-slate-300 dark:border-zinc-800 dark:bg-zinc-900',
                                                         )}
                                                     >
                                                         <div className="flex items-center justify-between">
-                                                            <div className="flex items-center gap-1.5 font-bold text-xs text-slate-700 dark:text-zinc-300">
+                                                            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-zinc-300">
                                                                 <Activity size={14} />
                                                                 <span>Workflow Standar</span>
                                                             </div>
@@ -839,8 +871,8 @@ export default function WorkflowEditor({
 
                                                 {/* If Sub-Workflow selected: Show Parent Master Workflow Picker */}
                                                 {form.data.workflow_type === 'sub_workflow' && (
-                                                    <div className="mt-3 p-3 bg-purple-50/40 dark:bg-purple-950/20 border border-purple-200/80 dark:border-purple-800/50 rounded-lg space-y-1.5">
-                                                        <label className="text-xs font-semibold text-purple-900 dark:text-purple-300 flex items-center gap-1.5">
+                                                    <div className="mt-3 space-y-1.5 rounded-lg border border-purple-200/80 bg-purple-50/40 p-3 dark:border-purple-800/50 dark:bg-purple-950/20">
+                                                        <label className="flex items-center gap-1.5 text-xs font-semibold text-purple-900 dark:text-purple-300">
                                                             <Layers size={13} />
                                                             Pilih Workflow Utama (Induk / Orchestrator):
                                                         </label>
@@ -848,7 +880,7 @@ export default function WorkflowEditor({
                                                             value={form.data.parent_workflow_id || ''}
                                                             onValueChange={(val) => form.setData('parent_workflow_id', val)}
                                                         >
-                                                            <SelectTrigger className="w-full bg-white dark:bg-zinc-900 border-purple-200 dark:border-purple-800 text-xs">
+                                                            <SelectTrigger className="w-full border-purple-200 bg-white text-xs dark:border-purple-800 dark:bg-zinc-900">
                                                                 <SelectValue placeholder="-- Pilih Workflow Induk --" />
                                                             </SelectTrigger>
                                                             <SelectContent>
@@ -862,7 +894,8 @@ export default function WorkflowEditor({
                                                             </SelectContent>
                                                         </Select>
                                                         <p className="text-[10px] text-purple-600 dark:text-purple-400">
-                                                            Menghubungkan alur kerja bagian ini ke Orchestrator untuk tracking dan visualisasi terpadu.
+                                                            Menghubungkan alur kerja bagian ini ke Orchestrator untuk tracking dan visualisasi
+                                                            terpadu.
                                                         </p>
                                                     </div>
                                                 )}
@@ -870,26 +903,32 @@ export default function WorkflowEditor({
 
                                             {/* Row 3: Checkboxes */}
                                             <div className="flex items-center gap-3">
-                                                <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-lg border border-slate-200/60 dark:border-zinc-800/80 bg-slate-50/40 dark:bg-zinc-900/30">
+                                                <div className="flex items-center gap-2 rounded-lg border border-slate-200/60 bg-slate-50/40 px-3.5 py-2.5 dark:border-zinc-800/80 dark:bg-zinc-900/30">
                                                     <Checkbox
                                                         id="is_default"
                                                         checked={form.data.is_default}
                                                         onCheckedChange={(c) => form.setData('is_default', !!c)}
                                                         className="h-4 w-4 rounded"
                                                     />
-                                                    <label htmlFor="is_default" className="text-xs font-semibold text-slate-800 dark:text-slate-200 cursor-pointer">
+                                                    <label
+                                                        htmlFor="is_default"
+                                                        className="cursor-pointer text-xs font-semibold text-slate-800 dark:text-slate-200"
+                                                    >
                                                         Alur Utama (Default)
                                                     </label>
                                                 </div>
 
-                                                <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-lg border border-slate-200/60 dark:border-zinc-800/80 bg-slate-50/40 dark:bg-zinc-900/30">
+                                                <div className="flex items-center gap-2 rounded-lg border border-slate-200/60 bg-slate-50/40 px-3.5 py-2.5 dark:border-zinc-800/80 dark:bg-zinc-900/30">
                                                     <Checkbox
                                                         id="is_selectable"
                                                         checked={form.data.is_selectable}
                                                         onCheckedChange={(c) => form.setData('is_selectable', !!c)}
                                                         className="h-4 w-4 rounded"
                                                     />
-                                                    <label htmlFor="is_selectable" className="text-xs font-semibold text-slate-800 dark:text-slate-200 cursor-pointer">
+                                                    <label
+                                                        htmlFor="is_selectable"
+                                                        className="cursor-pointer text-xs font-semibold text-slate-800 dark:text-slate-200"
+                                                    >
                                                         Tampil Sebagai Pilihan Opsi
                                                     </label>
                                                 </div>
@@ -928,19 +967,23 @@ export default function WorkflowEditor({
                                     />
                                 </FormSection>
                             )}
-                        {mainTab === 'steps' && (
-                            <div className="w-full min-w-0 bg-white dark:bg-zinc-900/90 border border-slate-200/80 dark:border-zinc-800 rounded-xl p-4 flex flex-col justify-between gap-4">
-                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 dark:border-zinc-800 pb-3.5 gap-3">
+                            {mainTab === 'steps' && (
+                                <div className="flex w-full min-w-0 flex-col justify-between gap-4 rounded-xl border border-slate-200/80 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900/90">
+                                    <div className="flex flex-col justify-between gap-3 border-b border-slate-100 pb-3.5 sm:flex-row sm:items-center dark:border-zinc-800">
                                         <div className="flex items-center gap-2">
-                                            <div className="bg-primary/10 text-primary p-1.5 rounded-lg shrink-0">
+                                            <div className="bg-primary/10 text-primary shrink-0 rounded-lg p-1.5">
                                                 <GitBranch size={16} />
                                             </div>
                                             <div className="flex flex-col">
-                                                <h3 className="text-xs font-bold uppercase tracking-wide text-slate-800 dark:text-zinc-100">Tahapan Alur Kerja</h3>
-                                                <p className="text-[10px] text-slate-500 dark:text-zinc-400">Atur dan kelola tahapan persetujuan kontrak</p>
+                                                <h3 className="text-xs font-bold tracking-wide text-slate-800 uppercase dark:text-zinc-100">
+                                                    Tahapan Alur Kerja
+                                                </h3>
+                                                <p className="text-[10px] text-slate-500 dark:text-zinc-400">
+                                                    Atur dan kelola tahapan persetujuan kontrak
+                                                </p>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-2 flex-wrap">
+                                        <div className="flex flex-wrap items-center gap-2">
                                             {/* Button Simulasi Aktor Modal Trigger */}
                                             <button
                                                 type="button"
@@ -949,43 +992,63 @@ export default function WorkflowEditor({
                                                     setSimActorModalOpen(true);
                                                 }}
                                                 className={cn(
-                                                    "inline-flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-xs font-bold transition-all border cursor-pointer select-none",
-                                                    (selectedSimInitiator || selectedSimPic || selectedSimCreator || selectedSimAdhocUsers.length > 0)
-                                                        ? "bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800 shadow-2xs"
-                                                        : "bg-slate-50 dark:bg-zinc-800/80 text-slate-700 dark:text-zinc-300 border-slate-200/80 dark:border-zinc-700/80 hover:bg-white dark:hover:bg-zinc-700 hover:border-slate-300"
+                                                    'inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 text-xs font-bold transition-all select-none',
+                                                    selectedSimInitiator || selectedSimPic || selectedSimCreator || selectedSimAdhocUsers.length > 0
+                                                        ? 'border-indigo-200 bg-indigo-50 text-indigo-700 shadow-2xs dark:border-indigo-800 dark:bg-indigo-950/50 dark:text-indigo-300'
+                                                        : 'border-slate-200/80 bg-slate-50 text-slate-700 hover:border-slate-300 hover:bg-white dark:border-zinc-700/80 dark:bg-zinc-800/80 dark:text-zinc-300 dark:hover:bg-zinc-700',
                                                 )}
                                                 title="Atur Pengguna Simulasi (Inisiator, PIC, Pembuat, Approver Tambahan)"
                                             >
-                                                <UsersIcon size={13} className={selectedSimInitiator || selectedSimPic || selectedSimCreator || selectedSimAdhocUsers.length > 0 ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400 dark:text-zinc-500"} />
+                                                <UsersIcon
+                                                    size={13}
+                                                    className={
+                                                        selectedSimInitiator ||
+                                                        selectedSimPic ||
+                                                        selectedSimCreator ||
+                                                        selectedSimAdhocUsers.length > 0
+                                                            ? 'text-indigo-600 dark:text-indigo-400'
+                                                            : 'text-slate-400 dark:text-zinc-500'
+                                                    }
+                                                />
                                                 <span>Aktor Simulasi</span>
-                                                {(selectedSimInitiator || selectedSimPic || selectedSimCreator || selectedSimAdhocUsers.length > 0) && (
-                                                    <span className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-md bg-indigo-600 text-white font-medium ml-0.5">
-                                                        {[selectedSimInitiator && 'Inisiator', selectedSimPic && 'PIC', selectedSimCreator && 'Pembuat', selectedSimAdhocUsers.length > 0 && 'Ad-Hoc'].filter(Boolean).length}
+                                                {(selectedSimInitiator ||
+                                                    selectedSimPic ||
+                                                    selectedSimCreator ||
+                                                    selectedSimAdhocUsers.length > 0) && (
+                                                    <span className="ml-0.5 flex items-center gap-1 rounded-md bg-indigo-600 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                                                        {
+                                                            [
+                                                                selectedSimInitiator && 'Inisiator',
+                                                                selectedSimPic && 'PIC',
+                                                                selectedSimCreator && 'Pembuat',
+                                                                selectedSimAdhocUsers.length > 0 && 'Ad-Hoc',
+                                                            ].filter(Boolean).length
+                                                        }
                                                     </span>
                                                 )}
                                             </button>
 
-                                            <div className="h-4 w-px bg-slate-200 dark:bg-zinc-700 mx-0.5" />
+                                            <div className="mx-0.5 h-4 w-px bg-slate-200 dark:bg-zinc-700" />
 
                                             {form.data.steps.length > 0 && (
                                                 <>
                                                     <button
                                                         type="button"
                                                         onClick={toggleExpandCollapseAll}
-                                                        className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:border-primary/40 hover:bg-primary/10 hover:text-primary transition-all dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:border-primary/40 dark:hover:text-primary cursor-pointer"
-                                                        title={isAllCollapsed ? 'Buka Semua Tahapan (Expand All)' : 'Tutup Semua Tahapan (Minimize All)'}
+                                                        className="hover:border-primary/40 hover:bg-primary/10 hover:text-primary dark:hover:border-primary/40 dark:hover:text-primary flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition-all dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+                                                        title={
+                                                            isAllCollapsed ? 'Buka Semua Tahapan (Expand All)' : 'Tutup Semua Tahapan (Minimize All)'
+                                                        }
                                                     >
                                                         {isAllCollapsed ? <ChevronsDown size={14} /> : <ChevronsUp size={14} />}
                                                     </button>
-                                                    <div className="h-3 w-px bg-slate-200 dark:bg-zinc-700 mx-0.5" />
+                                                    <div className="mx-0.5 h-3 w-px bg-slate-200 dark:bg-zinc-700" />
                                                     <button
                                                         type="button"
                                                         onClick={() =>
-                                                            selectedStepIds.size === form.data.steps.length
-                                                                ? clearSelection()
-                                                                : selectAllSteps()
+                                                            selectedStepIds.size === form.data.steps.length ? clearSelection() : selectAllSteps()
                                                         }
-                                                        className="flex items-center gap-1 text-[10px] font-medium text-slate-400 hover:text-primary transition-colors"
+                                                        className="hover:text-primary flex items-center gap-1 text-[10px] font-medium text-slate-400 transition-colors"
                                                         title={selectedStepIds.size === form.data.steps.length ? 'Batalkan semua' : 'Pilih semua'}
                                                     >
                                                         {selectedStepIds.size === form.data.steps.length ? (
@@ -999,7 +1062,7 @@ export default function WorkflowEditor({
                                                     </button>
                                                 </>
                                             )}
-                                            <span className="text-[10px] font-medium bg-primary/10 text-primary px-2 py-0.5 rounded-md">
+                                            <span className="bg-primary/10 text-primary rounded-md px-2 py-0.5 text-[10px] font-medium">
                                                 {form.data.steps.length} Tahap
                                             </span>
                                         </div>
@@ -1007,39 +1070,40 @@ export default function WorkflowEditor({
 
                                     {/* Modal Simulasi Aktor Khusus (Inisiator, PIC, Pembuat, Approver Tambahan) */}
                                     <Dialog open={simActorModalOpen} onOpenChange={setSimActorModalOpen}>
-                                        <DialogContent className="sm:max-w-3xl border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 rounded-[12px] border p-0 shadow-2xl overflow-hidden">
-                                            <div className="px-6 py-4 border-b border-primary/20 dark:border-zinc-700/80 bg-primary dark:bg-zinc-800/90 text-white dark:text-zinc-200 flex items-center justify-between rounded-t-[12px]">
+                                        <DialogContent className="overflow-hidden rounded-[12px] border border-slate-200/80 bg-white p-0 text-slate-800 shadow-2xl sm:max-w-3xl dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100">
+                                            <div className="border-primary/20 bg-primary flex items-center justify-between rounded-t-[12px] border-b px-6 py-4 text-white dark:border-zinc-700/80 dark:bg-zinc-800/90 dark:text-zinc-200">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="bg-white/20 text-white border border-white/20 dark:bg-primary/20 dark:text-primary dark:border-primary/30 flex h-9 w-9 items-center justify-center rounded-lg">
+                                                    <div className="dark:bg-primary/20 dark:text-primary dark:border-primary/30 flex h-9 w-9 items-center justify-center rounded-lg border border-white/20 bg-white/20 text-white">
                                                         <UsersIcon size={18} />
                                                     </div>
                                                     <div>
                                                         <DialogTitle className="text-sm font-bold tracking-tight text-white dark:text-zinc-100">
                                                             Pengaturan Aktor Simulasi Alur Kerja
                                                         </DialogTitle>
-                                                        <DialogDescription className="text-white/80 dark:text-zinc-400 text-xs font-medium mt-0.5">
-                                                            Pilih pengguna simulasi untuk mengevaluasi peran Inisiator, PIC, Pembuat Kontrak, atau Approver Tambahan
+                                                        <DialogDescription className="mt-0.5 text-xs font-medium text-white/80 dark:text-zinc-400">
+                                                            Pilih pengguna simulasi untuk mengevaluasi peran Inisiator, PIC, Pembuat Kontrak, atau
+                                                            Approver Tambahan
                                                         </DialogDescription>
                                                     </div>
                                                 </div>
                                             </div>
 
                                             {/* Role Switcher Subtabs */}
-                                            <div className="p-3 bg-slate-50/90 dark:bg-zinc-800/60 border-b border-slate-200/80 dark:border-zinc-800 flex items-center gap-2 overflow-x-auto">
+                                            <div className="flex items-center gap-2 overflow-x-auto border-b border-slate-200/80 bg-slate-50/90 p-3 dark:border-zinc-800 dark:bg-zinc-800/60">
                                                 <button
                                                     type="button"
                                                     onClick={() => setSimActorType('initiator')}
                                                     className={cn(
-                                                        "flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-bold border transition-all cursor-pointer",
+                                                        'flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border px-3 py-2 text-xs font-bold transition-all',
                                                         simActorType === 'initiator'
-                                                            ? "bg-white dark:bg-zinc-900 border-primary text-primary shadow-xs"
-                                                            : "bg-transparent border-transparent text-slate-600 dark:text-zinc-400 hover:bg-slate-200/60 dark:hover:bg-zinc-700/50"
+                                                            ? 'border-primary text-primary bg-white shadow-xs dark:bg-zinc-900'
+                                                            : 'border-transparent bg-transparent text-slate-600 hover:bg-slate-200/60 dark:text-zinc-400 dark:hover:bg-zinc-700/50',
                                                     )}
                                                 >
                                                     <UsersIcon size={13} className="shrink-0" />
                                                     <div className="flex flex-col text-left">
                                                         <span>Inisiator</span>
-                                                        <span className="text-[10px] font-medium text-slate-400 dark:text-zinc-400 truncate max-w-[100px]">
+                                                        <span className="max-w-[100px] truncate text-[10px] font-medium text-slate-400 dark:text-zinc-400">
                                                             {selectedSimInitiator ? selectedSimInitiator.name : 'Semua'}
                                                         </span>
                                                     </div>
@@ -1049,16 +1113,16 @@ export default function WorkflowEditor({
                                                     type="button"
                                                     onClick={() => setSimActorType('assigned_pic')}
                                                     className={cn(
-                                                        "flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-bold border transition-all cursor-pointer",
+                                                        'flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border px-3 py-2 text-xs font-bold transition-all',
                                                         simActorType === 'assigned_pic'
-                                                            ? "bg-white dark:bg-zinc-900 border-emerald-600 text-emerald-700 dark:text-emerald-400 shadow-xs"
-                                                            : "bg-transparent border-transparent text-slate-600 dark:text-zinc-400 hover:bg-slate-200/60 dark:hover:bg-zinc-700/50"
+                                                            ? 'border-emerald-600 bg-white text-emerald-700 shadow-xs dark:bg-zinc-900 dark:text-emerald-400'
+                                                            : 'border-transparent bg-transparent text-slate-600 hover:bg-slate-200/60 dark:text-zinc-400 dark:hover:bg-zinc-700/50',
                                                     )}
                                                 >
                                                     <UserCheck size={13} className="shrink-0" />
                                                     <div className="flex flex-col text-left">
                                                         <span>PIC Ditugaskan</span>
-                                                        <span className="text-[10px] font-medium text-slate-400 dark:text-zinc-400 truncate max-w-[100px]">
+                                                        <span className="max-w-[100px] truncate text-[10px] font-medium text-slate-400 dark:text-zinc-400">
                                                             {selectedSimPic ? selectedSimPic.name : 'Belum dipilih'}
                                                         </span>
                                                     </div>
@@ -1068,16 +1132,16 @@ export default function WorkflowEditor({
                                                     type="button"
                                                     onClick={() => setSimActorType('creator')}
                                                     className={cn(
-                                                        "flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-bold border transition-all cursor-pointer",
+                                                        'flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border px-3 py-2 text-xs font-bold transition-all',
                                                         simActorType === 'creator'
-                                                            ? "bg-white dark:bg-zinc-900 border-amber-600 text-amber-700 dark:text-amber-400 shadow-xs"
-                                                            : "bg-transparent border-transparent text-slate-600 dark:text-zinc-400 hover:bg-slate-200/60 dark:hover:bg-zinc-700/50"
+                                                            ? 'border-amber-600 bg-white text-amber-700 shadow-xs dark:bg-zinc-900 dark:text-amber-400'
+                                                            : 'border-transparent bg-transparent text-slate-600 hover:bg-slate-200/60 dark:text-zinc-400 dark:hover:bg-zinc-700/50',
                                                     )}
                                                 >
                                                     <Bookmark size={13} className="shrink-0" />
                                                     <div className="flex flex-col text-left">
                                                         <span>Pembuat</span>
-                                                        <span className="text-[10px] font-medium text-slate-400 dark:text-zinc-400 truncate max-w-[100px]">
+                                                        <span className="max-w-[100px] truncate text-[10px] font-medium text-slate-400 dark:text-zinc-400">
                                                             {selectedSimCreator ? selectedSimCreator.name : 'Belum dipilih'}
                                                         </span>
                                                     </div>
@@ -1087,57 +1151,60 @@ export default function WorkflowEditor({
                                                     type="button"
                                                     onClick={() => setSimActorType('adhoc_approvers')}
                                                     className={cn(
-                                                        "flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-bold border transition-all cursor-pointer",
+                                                        'flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border px-3 py-2 text-xs font-bold transition-all',
                                                         simActorType === 'adhoc_approvers'
-                                                            ? "bg-white dark:bg-zinc-900 border-indigo-600 text-indigo-700 dark:text-indigo-400 shadow-xs"
-                                                            : "bg-transparent border-transparent text-slate-600 dark:text-zinc-400 hover:bg-slate-200/60 dark:hover:bg-zinc-700/50"
+                                                            ? 'border-indigo-600 bg-white text-indigo-700 shadow-xs dark:bg-zinc-900 dark:text-indigo-400'
+                                                            : 'border-transparent bg-transparent text-slate-600 hover:bg-slate-200/60 dark:text-zinc-400 dark:hover:bg-zinc-700/50',
                                                     )}
                                                 >
                                                     <UserPlus size={13} className="shrink-0" />
                                                     <div className="flex flex-col text-left">
                                                         <span>Approver Tambahan</span>
-                                                        <span className="text-[10px] font-medium text-slate-400 dark:text-zinc-400 truncate max-w-[100px]">
-                                                            {selectedSimAdhocUsers.length > 0 ? `${selectedSimAdhocUsers.length} Dipilih` : 'Belum dipilih'}
+                                                        <span className="max-w-[100px] truncate text-[10px] font-medium text-slate-400 dark:text-zinc-400">
+                                                            {selectedSimAdhocUsers.length > 0
+                                                                ? `${selectedSimAdhocUsers.length} Dipilih`
+                                                                : 'Belum dipilih'}
                                                         </span>
                                                     </div>
                                                 </button>
                                             </div>
 
-                                            <div className="p-4 bg-slate-50/50 dark:bg-zinc-800/30 border-b border-slate-200/80 dark:border-zinc-800 flex items-center justify-between gap-3">
+                                            <div className="flex items-center justify-between gap-3 border-b border-slate-200/80 bg-slate-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-800/30">
                                                 <div className="relative flex-1">
-                                                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                                    <Search size={14} className="absolute top-1/2 left-3 -translate-y-1/2 text-slate-400" />
                                                     <input
                                                         type="text"
                                                         value={simActorSearch}
                                                         onChange={(e) => setSimActorSearch(e.target.value)}
                                                         placeholder={`Cari pengguna untuk ${simActorType === 'initiator' ? 'Inisiator' : simActorType === 'assigned_pic' ? 'PIC' : simActorType === 'creator' ? 'Pembuat' : 'Approver Tambahan (Bisa Multi)'}...`}
-                                                        className="w-full h-9 pl-9 pr-3 text-xs bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg outline-none focus:border-primary transition-all text-slate-800 dark:text-zinc-200"
+                                                        className="focus:border-primary h-9 w-full rounded-lg border border-slate-200 bg-white pr-3 pl-9 text-xs text-slate-800 transition-all outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
                                                         autoFocus
                                                     />
                                                 </div>
-                                                <div className="px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs font-bold shrink-0">
+                                                <div className="shrink-0 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
                                                     {filteredSimActorUsers.length} Pengguna
                                                 </div>
                                             </div>
 
-                                            <div className="p-4 max-h-[55vh] overflow-y-auto space-y-2">
+                                            <div className="max-h-[55vh] space-y-2 overflow-y-auto p-4">
                                                 {filteredSimActorUsers.length === 0 ? (
                                                     <div className="py-12 text-center text-slate-400 dark:text-zinc-500">
                                                         <UsersIcon size={28} className="mx-auto mb-2 opacity-30" />
                                                         <p className="text-xs font-medium">Tidak ada data pengguna yang cocok.</p>
                                                     </div>
                                                 ) : (
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                                                    <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
                                                         {filteredSimActorUsers.map((u: any) => {
                                                             const isAdhocMode = simActorType === 'adhoc_approvers';
                                                             const isSelected = isAdhocMode
                                                                 ? simAdhocIds.includes(String(u.id))
-                                                                : String(u.id) === String(
+                                                                : String(u.id) ===
+                                                                  String(
                                                                       simActorType === 'initiator'
                                                                           ? simInitiatorId
                                                                           : simActorType === 'assigned_pic'
-                                                                          ? simPicId
-                                                                          : simCreatorId
+                                                                            ? simPicId
+                                                                            : simCreatorId,
                                                                   );
 
                                                             return (
@@ -1155,34 +1222,36 @@ export default function WorkflowEditor({
                                                                             setSimAdhocIds((prev) =>
                                                                                 prev.includes(uIdStr)
                                                                                     ? prev.filter((id) => id !== uIdStr)
-                                                                                    : [...prev, uIdStr]
+                                                                                    : [...prev, uIdStr],
                                                                             );
                                                                         }
                                                                     }}
                                                                     className={cn(
-                                                                        "p-3 rounded-xl border transition-all flex flex-col justify-between gap-1.5 cursor-pointer shadow-2xs",
+                                                                        'flex cursor-pointer flex-col justify-between gap-1.5 rounded-xl border p-3 shadow-2xs transition-all',
                                                                         isSelected
-                                                                            ? "bg-primary/5 border-primary ring-2 ring-primary/20 dark:bg-primary/10"
-                                                                            : "bg-white dark:bg-zinc-900 border-slate-200/80 dark:border-zinc-800 hover:border-primary/50 hover:bg-slate-50/80 dark:hover:bg-zinc-800/80"
+                                                                            ? 'bg-primary/5 border-primary ring-primary/20 dark:bg-primary/10 ring-2'
+                                                                            : 'hover:border-primary/50 border-slate-200/80 bg-white hover:bg-slate-50/80 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800/80',
                                                                     )}
                                                                 >
                                                                     <div className="flex items-center justify-between gap-2">
-                                                                        <div className="font-bold text-xs text-slate-800 dark:text-zinc-100 truncate flex items-center gap-1.5">
+                                                                        <div className="flex items-center gap-1.5 truncate text-xs font-bold text-slate-800 dark:text-zinc-100">
                                                                             {isSelected && <Check size={14} className="text-primary shrink-0" />}
                                                                             <span className="truncate">{u.name}</span>
                                                                         </div>
                                                                         {u.role && (
-                                                                            <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md shrink-0">
+                                                                            <span className="text-primary bg-primary/10 shrink-0 rounded-md px-2 py-0.5 text-[10px] font-bold">
                                                                                 {u.role}
                                                                             </span>
                                                                         )}
                                                                     </div>
-                                                                    <div className="text-[11px] text-slate-500 dark:text-zinc-400 truncate">
+                                                                    <div className="truncate text-[11px] text-slate-500 dark:text-zinc-400">
                                                                         {u.email}
                                                                     </div>
-                                                                    <div className="text-[10px] text-slate-500 dark:text-zinc-400 flex items-center gap-1.5 flex-wrap pt-1 border-t border-slate-100 dark:border-zinc-800/60">
+                                                                    <div className="flex flex-wrap items-center gap-1.5 border-t border-slate-100 pt-1 text-[10px] text-slate-500 dark:border-zinc-800/60 dark:text-zinc-400">
                                                                         {(u.company?.name || u.company_name) && (
-                                                                            <span className="font-semibold text-slate-700 dark:text-zinc-300">{u.company?.name || u.company_name}</span>
+                                                                            <span className="font-semibold text-slate-700 dark:text-zinc-300">
+                                                                                {u.company?.name || u.company_name}
+                                                                            </span>
                                                                         )}
                                                                         {(u.department?.name || u.org_name) && (
                                                                             <>
@@ -1198,7 +1267,7 @@ export default function WorkflowEditor({
                                                 )}
                                             </div>
 
-                                            <DialogFooter className="p-4 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-800/50 flex items-center justify-between">
+                                            <DialogFooter className="flex items-center justify-between border-t border-slate-100 bg-slate-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-800/50">
                                                 <div className="flex items-center gap-2">
                                                     <Button
                                                         type="button"
@@ -1209,9 +1278,16 @@ export default function WorkflowEditor({
                                                             else if (simActorType === 'creator') setSimCreatorId('');
                                                             else setSimAdhocIds([]);
                                                         }}
-                                                        className="h-8 text-xs font-semibold px-3 rounded-lg"
+                                                        className="h-8 rounded-lg px-3 text-xs font-semibold"
                                                     >
-                                                        Reset {simActorType === 'initiator' ? 'Inisiator' : simActorType === 'assigned_pic' ? 'PIC' : simActorType === 'creator' ? 'Pembuat' : 'Approver Tambahan'}
+                                                        Reset{' '}
+                                                        {simActorType === 'initiator'
+                                                            ? 'Inisiator'
+                                                            : simActorType === 'assigned_pic'
+                                                              ? 'PIC'
+                                                              : simActorType === 'creator'
+                                                                ? 'Pembuat'
+                                                                : 'Approver Tambahan'}
                                                     </Button>
                                                     {(simInitiatorId || simPicId || simCreatorId || simAdhocIds.length > 0) && (
                                                         <Button
@@ -1223,7 +1299,7 @@ export default function WorkflowEditor({
                                                                 setSimCreatorId('');
                                                                 setSimAdhocIds([]);
                                                             }}
-                                                            className="h-8 text-xs font-semibold px-3 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40"
+                                                            className="h-8 rounded-lg px-3 text-xs font-semibold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40"
                                                         >
                                                             Reset Semua
                                                         </Button>
@@ -1233,7 +1309,7 @@ export default function WorkflowEditor({
                                                     type="button"
                                                     variant="primary"
                                                     onClick={() => setSimActorModalOpen(false)}
-                                                    className="h-8 text-xs font-bold px-4 rounded-lg"
+                                                    className="h-8 rounded-lg px-4 text-xs font-bold"
                                                 >
                                                     Selesai
                                                 </Button>
@@ -1243,34 +1319,34 @@ export default function WorkflowEditor({
 
                                     {/* Bulk Action Toolbar */}
                                     {selectedStepIds.size > 0 && (
-                                        <div className="flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 -mt-1">
-                                            <span className="text-xs font-bold text-primary">{selectedStepIds.size} dipilih</span>
-                                            <div className="h-3 w-px bg-primary/20" />
+                                        <div className="border-primary/20 bg-primary/5 -mt-1 flex items-center gap-2 rounded-lg border px-3 py-2">
+                                            <span className="text-primary text-xs font-bold">{selectedStepIds.size} dipilih</span>
+                                            <div className="bg-primary/20 h-3 w-px" />
                                             <button
                                                 type="button"
                                                 onClick={() => bulkMoveSelected('up')}
-                                                className="flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline cursor-pointer"
+                                                className="text-primary flex cursor-pointer items-center gap-1 text-[11px] font-semibold hover:underline"
                                             >
                                                 <ArrowUp size={12} /> Naik
                                             </button>
                                             <button
                                                 type="button"
                                                 onClick={() => bulkMoveSelected('down')}
-                                                className="flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline cursor-pointer"
+                                                className="text-primary flex cursor-pointer items-center gap-1 text-[11px] font-semibold hover:underline"
                                             >
                                                 <ArrowDown size={12} /> Turun
                                             </button>
                                             <button
                                                 type="button"
                                                 onClick={bulkDeleteSelected}
-                                                className="flex items-center gap-1 text-[11px] font-semibold text-rose-600 hover:underline ml-2 cursor-pointer"
+                                                className="ml-2 flex cursor-pointer items-center gap-1 text-[11px] font-semibold text-rose-600 hover:underline"
                                             >
                                                 <Trash2 size={12} /> Hapus
                                             </button>
                                             <button
                                                 type="button"
                                                 onClick={clearSelection}
-                                                className="ml-auto text-[11px] text-slate-400 hover:text-slate-600 transition-colors"
+                                                className="ml-auto text-[11px] text-slate-400 transition-colors hover:text-slate-600"
                                             >
                                                 Batalkan
                                             </button>
@@ -1282,10 +1358,10 @@ export default function WorkflowEditor({
                                             <div className="bg-primary/5 mb-4 rounded-2xl p-4">
                                                 <PlusCircle size={32} className="text-primary/20" />
                                             </div>
-                                            <span className="text-xs font-medium uppercase tracking-widest text-slate-400/80">
+                                            <span className="text-xs font-medium tracking-widest text-slate-400/80 uppercase">
                                                 Belum Ada Tahapan Terdefinisi
                                             </span>
-                                            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 font-normal">
+                                            <p className="mt-1 text-xs font-normal text-slate-500 dark:text-slate-400">
                                                 Klik tombol "Tambah Tahap" atau pilih dari Preset di sebelah kanan
                                             </p>
                                         </div>
@@ -1296,10 +1372,7 @@ export default function WorkflowEditor({
                                             onDragEnd={handleDragEnd}
                                             modifiers={[restrictToVerticalAxis]}
                                         >
-                                            <SortableContext
-                                                items={form.data.steps.map((s: any) => s.id)}
-                                                strategy={verticalListSortingStrategy}
-                                            >
+                                            <SortableContext items={form.data.steps.map((s: any) => s.id)} strategy={verticalListSortingStrategy}>
                                                 <div className="relative grid gap-4">
                                                     <div className="absolute top-12 bottom-12 left-[19.5px] z-0 w-px bg-slate-100 dark:bg-slate-800" />
                                                     {form.data.steps.map((step: any, idx: number) => (
@@ -1359,12 +1432,15 @@ export default function WorkflowEditor({
                                                             removeLocalStep={(i: number) => {
                                                                 const removedStep = form.data.steps[i];
                                                                 const removedStepId = removedStep?.id;
-                                                                const filtered = form.data.steps.filter(
-                                                                    (_: any, index: number) => index !== i,
-                                                                );
+                                                                const filtered = form.data.steps.filter((_: any, index: number) => index !== i);
                                                                 const normalized = filtered.map((item: any, index: number) => {
                                                                     const updatedActions = (item.actions || []).map((act: any) => {
-                                                                        if (removedStepId && act.transition_config?.type === 'absolute' && (act.transition_config?.step_id === removedStepId || act.next_step_id === removedStepId)) {
+                                                                        if (
+                                                                            removedStepId &&
+                                                                            act.transition_config?.type === 'absolute' &&
+                                                                            (act.transition_config?.step_id === removedStepId ||
+                                                                                act.next_step_id === removedStepId)
+                                                                        ) {
                                                                             return {
                                                                                 ...act,
                                                                                 transition_config: {
@@ -1428,12 +1504,12 @@ export default function WorkflowEditor({
 
                                     {/* Tambah Step button placed inside Tahapan Alur Kerja Card */}
                                     {/* Triple Direct Buttons: Tambah Tahap Default, Template Standar, & Gunakan Preset */}
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 pb-1 border-t border-slate-100 dark:border-zinc-800">
+                                    <div className="grid grid-cols-1 gap-3 border-t border-slate-100 pt-3 pb-1 sm:grid-cols-3 dark:border-zinc-800">
                                         <Button
                                             type="button"
                                             variant="primary"
                                             onClick={addLocalStep}
-                                            className="h-10 text-xs font-medium gap-2 shadow-2xs cursor-pointer"
+                                            className="h-10 cursor-pointer gap-2 text-xs font-medium shadow-2xs"
                                         >
                                             <PlusCircle size={15} />
                                             <span>Tambah Tahap Default</span>
@@ -1443,13 +1519,13 @@ export default function WorkflowEditor({
                                             type="button"
                                             variant="outline"
                                             onClick={() => setBuiltinTemplateModalOpen(true)}
-                                            className="h-10 text-xs font-medium gap-2 justify-between px-3.5 bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-800 shadow-2xs cursor-pointer"
+                                            className="h-10 cursor-pointer justify-between gap-2 border-slate-200 bg-white px-3.5 text-xs font-medium shadow-2xs hover:bg-slate-50 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:bg-zinc-800"
                                         >
                                             <div className="flex items-center gap-2 truncate">
                                                 <LayoutTemplate size={15} className="text-primary shrink-0" />
                                                 <span className="truncate">Template Standar</span>
                                             </div>
-                                            <span className="px-1.5 py-0.5 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[10px] font-medium shrink-0">
+                                            <span className="shrink-0 rounded-md bg-indigo-500/10 px-1.5 py-0.5 text-[10px] font-medium text-indigo-600 dark:text-indigo-400">
                                                 {BUILTIN_STEP_TEMPLATES.length}
                                             </span>
                                         </Button>
@@ -1458,467 +1534,475 @@ export default function WorkflowEditor({
                                             type="button"
                                             variant="outline"
                                             onClick={() => setPresetSelectModalOpen(true)}
-                                            className="h-10 text-xs font-medium gap-2 justify-between px-3.5 bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-800 shadow-2xs cursor-pointer"
+                                            className="h-10 cursor-pointer justify-between gap-2 border-slate-200 bg-white px-3.5 text-xs font-medium shadow-2xs hover:bg-slate-50 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:bg-zinc-800"
                                         >
                                             <div className="flex items-center gap-2 truncate">
                                                 <Bookmark size={15} className="text-primary shrink-0" />
                                                 <span className="truncate">Preset Tersimpan</span>
                                             </div>
                                             {presets.length > 0 && (
-                                                <span className="px-1.5 py-0.5 rounded-md bg-primary/10 text-primary text-[10px] font-medium shrink-0">
+                                                <span className="bg-primary/10 text-primary shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-medium">
                                                     {presets.length}
                                                 </span>
                                             )}
                                         </Button>
                                     </div>
                                 </div>
-                        )}
-                        {mainTab === 'visualizer' && (
-                            <div className="p-1">
-                                <WorkflowFlowVisualizer
-                                    steps={form.data.steps}
-                                    workflow={workflow}
-                                    allWorkflows={allWorkflows}
-                                    customActions={form.data.meta?.custom_actions || workflow?.meta?.custom_actions || []}
-                                    users={users}
-                                    roles={roles}
-                                    departments={departments}
-                                    divisions={divisions}
-                                    locations={locations}
-                                    companyGroups={companyGroups}
-                                    organizationGroups={organizationGroups}
-                                    companies={companies}
-                                    regions={regions}
-                                    simulationContext={simulationContext}
-                                    onOpenSimulationModal={() => {
-                                        setSimActorSearch('');
-                                        setSimActorModalOpen(true);
-                                    }}
-                                />
-                            </div>
-                        )}
-                        {mainTab === 'custom_actions' && (
-                            <div className="p-1">
-                                <CustomActionsManager
-                                    customActions={form.data.meta?.custom_actions || []}
-                                    onChange={(actions) =>
-                                        form.setData('meta', {
-                                            ...(form.data.meta || {}),
-                                            custom_actions: actions,
-                                        })
-                                    }
-                                    steps={form.data.steps}
-                                    allWorkflows={allWorkflows}
-                                    roles={roles}
-                                    departments={departments}
-                                    divisions={divisions}
-                                    locations={locations}
-                                    companyGroups={companyGroups}
-                                    organizationGroups={organizationGroups}
-                                    companies={companies}
-                                    regions={regions}
-                                    users={users}
-                                    contractStatuses={contractStatuses}
-                                    simulationContext={simulationContext}
-                                    onOpenSimulationModal={() => {
-                                        setSimActorSearch('');
-                                        setSimActorModalOpen(true);
-                                    }}
-                                />
-                            </div>
-                        )}
-                    </div>
-                </ManagementForm>
-            </div>
-        </div>
-
-        {/* --- Modal Pilih Template Tahapan Standar Bawaan --- */}
-        <Modal
-            isOpen={builtinTemplateModalOpen}
-            onClose={() => setBuiltinTemplateModalOpen(false)}
-            title={
-                <div className="flex items-center gap-2">
-                    <LayoutTemplate size={18} className="text-primary" />
-                    <span>Pilih Template Standar</span>
-                </div>
-            }
-            description="Pilih salah satu template tahapan bawaan sistem untuk disisipkan langsung ke alur kerja ini."
-            maxWidth="4xl"
-        >
-            <div className="space-y-3.5">
-                {/* Search Bar Template */}
-                <div className="relative">
-                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                    <input
-                        type="text"
-                        value={templateSearch}
-                        onChange={(e) => setTemplateSearch(e.target.value)}
-                        placeholder="Cari template standar (misal: Legal, Atasan, PIC, Signer, Finance)..."
-                        className="w-full h-9 pl-9 pr-4 text-xs rounded-lg border border-input bg-background focus:outline-none focus:ring-1 focus:ring-ring transition-all placeholder:text-muted-foreground"
-                    />
-                </div>
-
-                {filteredBuiltinTemplates.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-10 px-4 text-center border border-dashed border-slate-200 dark:border-zinc-800 rounded-xl">
-                        <Search size={24} className="text-slate-300 dark:text-zinc-700 mb-2" />
-                        <p className="text-xs font-medium text-slate-700 dark:text-zinc-300">Template Tidak Ditemukan</p>
-                        <p className="text-[11px] text-muted-foreground mt-0.5">
-                            Tidak ada template yang cocok dengan kata kunci "{templateSearch}".
-                        </p>
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[480px] overflow-y-auto p-0.5 custom-scrollbar">
-                        {filteredBuiltinTemplates.map((tpl) => {
-                            const stepData = tpl.step_data || {};
-                            return (
-                                <div
-                                    key={tpl.id}
-                                    className="group border border-slate-200/80 dark:border-zinc-800 hover:border-primary/60 bg-white dark:bg-zinc-900 rounded-xl p-3.5 transition-all flex flex-col justify-between gap-3 shadow-2xs hover:shadow-xs"
-                                >
-                                    <div className="flex flex-col gap-1.5 min-w-0">
-                                        <div className="flex items-center justify-between gap-2">
-                                            <span className="text-xs font-medium text-foreground truncate">
-                                                {tpl.name}
-                                            </span>
-                                            <span className="text-[9px] font-medium bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-1.5 py-0.5 rounded-md shrink-0">
-                                                {tpl.category}
-                                            </span>
-                                        </div>
-                                        <span className="text-[11px] text-muted-foreground line-clamp-2 leading-relaxed">
-                                            {tpl.description}
-                                        </span>
-
-                                        {/* Action Step Pills Preview */}
-                                        {stepData.actions && stepData.actions.length > 0 && (
-                                            <div className="flex flex-wrap items-center gap-1 pt-1 border-t border-border/40">
-                                                {stepData.actions.map((act: any, aIdx: number) => {
-                                                    const actName = act.name || act.action_code || `Aksi ${aIdx + 1}`;
-                                                    const isApprove = act.action_code === 'approve' || actName.toLowerCase().includes('setuju');
-                                                    const isReject = act.action_code === 'reject' || actName.toLowerCase().includes('tolak');
-
-                                                    return (
-                                                        <span
-                                                            key={aIdx}
-                                                            className={cn(
-                                                                'text-[9px] font-medium px-1.5 py-0.5 rounded-md border tracking-tight',
-                                                                isApprove && 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/40',
-                                                                isReject && 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900/40',
-                                                                !isApprove && !isReject && 'bg-muted text-muted-foreground border-border'
-                                                            )}
-                                                        >
-                                                            {actName}
-                                                        </span>
-                                                    );
-                                                })}
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div className="flex items-center gap-1.5 pt-1 border-t border-border/40">
-                                        <Button
-                                            type="button"
-                                            variant="primary"
-                                            onClick={() => {
-                                                const newStep = {
-                                                    ...JSON.parse(JSON.stringify(tpl.step_data)),
-                                                    id: `step_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-                                                    step: form.data.steps.length + 1,
-                                                };
-                                                form.setData('steps', [...form.data.steps, newStep]);
-                                                setBuiltinTemplateModalOpen(false);
-                                                showToast(`Tahap "${tpl.name}" berhasil ditambahkan!`, 'success');
-                                            }}
-                                            className="w-full h-7.5 text-xs font-medium"
-                                        >
-                                            + Sisipkan Template
-                                        </Button>
-                                    </div>
+                            )}
+                            {mainTab === 'visualizer' && (
+                                <div className="p-1">
+                                    <WorkflowFlowVisualizer
+                                        steps={form.data.steps}
+                                        workflow={workflow}
+                                        allWorkflows={allWorkflows}
+                                        customActions={form.data.meta?.custom_actions || workflow?.meta?.custom_actions || []}
+                                        users={users}
+                                        roles={roles}
+                                        departments={departments}
+                                        divisions={divisions}
+                                        locations={locations}
+                                        companyGroups={companyGroups}
+                                        organizationGroups={organizationGroups}
+                                        companies={companies}
+                                        regions={regions}
+                                        simulationContext={simulationContext}
+                                        onOpenSimulationModal={() => {
+                                            setSimActorSearch('');
+                                            setSimActorModalOpen(true);
+                                        }}
+                                    />
                                 </div>
-                            );
-                        })}
-                    </div>
-                )}
-
-                <div className="flex justify-end pt-2 border-t border-slate-100 dark:border-zinc-800">
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setBuiltinTemplateModalOpen(false)}
-                        className="h-8 px-4 text-xs font-medium"
-                    >
-                        Tutup
-                    </Button>
+                            )}
+                            {mainTab === 'custom_actions' && (
+                                <div className="p-1">
+                                    <CustomActionsManager
+                                        customActions={form.data.meta?.custom_actions || []}
+                                        onChange={(actions) =>
+                                            form.setData('meta', {
+                                                ...(form.data.meta || {}),
+                                                custom_actions: actions,
+                                            })
+                                        }
+                                        steps={form.data.steps}
+                                        allWorkflows={allWorkflows}
+                                        roles={roles}
+                                        departments={departments}
+                                        divisions={divisions}
+                                        locations={locations}
+                                        companyGroups={companyGroups}
+                                        organizationGroups={organizationGroups}
+                                        companies={companies}
+                                        regions={regions}
+                                        users={users}
+                                        contractStatuses={contractStatuses}
+                                        simulationContext={simulationContext}
+                                        onOpenSimulationModal={() => {
+                                            setSimActorSearch('');
+                                            setSimActorModalOpen(true);
+                                        }}
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    </ManagementForm>
                 </div>
             </div>
-        </Modal>
 
-        {/* --- Custom Modal Pilih Preset yang Tersimpan (Lebar & Modern) --- */}
-        <Modal
-            isOpen={presetSelectModalOpen}
-            onClose={() => setPresetSelectModalOpen(false)}
-            title={
-                <div className="flex items-center gap-2">
-                    <Bookmark size={18} className="text-primary" />
-                    <span>Pilih Preset Tahapan</span>
-                </div>
-            }
-            description="Pilih salah satu preset tahapan yang tersimpan untuk disisipkan ke alur kerja ini."
-            maxWidth="4xl"
-        >
-            <div className="space-y-3.5">
-                {/* Search Bar Preset */}
-                {presets.length > 0 && (
+            {/* --- Modal Pilih Template Tahapan Standar Bawaan --- */}
+            <Modal
+                isOpen={builtinTemplateModalOpen}
+                onClose={() => setBuiltinTemplateModalOpen(false)}
+                title={
+                    <div className="flex items-center gap-2">
+                        <LayoutTemplate size={18} className="text-primary" />
+                        <span>Pilih Template Standar</span>
+                    </div>
+                }
+                description="Pilih salah satu template tahapan bawaan sistem untuk disisipkan langsung ke alur kerja ini."
+                maxWidth="4xl"
+            >
+                <div className="space-y-3.5">
+                    {/* Search Bar Template */}
                     <div className="relative">
-                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                        <Search size={14} className="text-muted-foreground absolute top-1/2 left-3 -translate-y-1/2" />
                         <input
                             type="text"
-                            value={presetSearch}
-                            onChange={(e) => setPresetSearch(e.target.value)}
-                            placeholder="Cari nama preset atau deskripsi tahapan..."
-                            className="w-full h-9 pl-9 pr-4 text-xs rounded-lg border border-input bg-background focus:outline-none focus:ring-1 focus:ring-ring transition-all placeholder:text-muted-foreground"
+                            value={templateSearch}
+                            onChange={(e) => setTemplateSearch(e.target.value)}
+                            placeholder="Cari template standar (misal: Legal, Atasan, PIC, Signer, Finance)..."
+                            className="border-input bg-background focus:ring-ring placeholder:text-muted-foreground h-9 w-full rounded-lg border pr-4 pl-9 text-xs transition-all focus:ring-1 focus:outline-none"
                         />
                     </div>
-                )}
 
-                {presets.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-12 px-4 text-center border border-dashed border-slate-200 dark:border-zinc-800 rounded-xl">
-                        <Bookmark size={28} className="text-slate-300 dark:text-zinc-700 mb-2" />
-                        <p className="text-xs font-medium text-slate-700 dark:text-zinc-300">Belum Ada Preset Tersimpan</p>
-                        <p className="text-[11px] text-muted-foreground mt-0.5">
-                            Anda belum menyimpan preset tahapan apa pun ke database server.
-                        </p>
-                    </div>
-                ) : filteredPresets.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-10 px-4 text-center border border-dashed border-slate-200 dark:border-zinc-800 rounded-xl">
-                        <Search size={24} className="text-slate-300 dark:text-zinc-700 mb-2" />
-                        <p className="text-xs font-medium text-slate-700 dark:text-zinc-300">Preset Tidak Ditemukan</p>
-                        <p className="text-[11px] text-muted-foreground mt-0.5">
-                            Tidak ada preset yang cocok dengan kata kunci "{presetSearch}".
-                        </p>
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[480px] overflow-y-auto p-0.5 custom-scrollbar">
-                        {filteredPresets.map((preset) => {
-                            const stepData = preset.step_data || {};
-                            return (
-                                <div
-                                    key={preset.id}
-                                    className="group border border-slate-200/80 dark:border-zinc-800 hover:border-primary/60 bg-white dark:bg-zinc-900 rounded-xl p-3.5 transition-all flex flex-col justify-between gap-3 shadow-2xs hover:shadow-xs"
-                                >
-                                    <div className="flex flex-col gap-1.5 min-w-0">
-                                        <div className="flex items-center justify-between gap-2">
-                                            <span className="text-xs font-medium text-foreground truncate">
-                                                {preset.name}
-                                            </span>
-                                            <span className="text-[9px] font-medium bg-primary/10 text-primary px-1.5 py-0.5 rounded-md shrink-0">
-                                                Preset
-                                            </span>
-                                        </div>
-                                        <span className="text-[11px] text-muted-foreground line-clamp-2 leading-relaxed">
-                                            {stepData.description || stepData.name || stepData.label || `Role: ${stepData.approver_type || 'Custom'}`}
-                                        </span>
-
-                                        {/* Action Step Pills Preview */}
-                                        {stepData.actions && stepData.actions.length > 0 && (
-                                            <div className="flex flex-wrap items-center gap-1 pt-1 border-t border-border/40">
-                                                {stepData.actions.map((act: any, aIdx: number) => {
-                                                    const actName = act.master_action?.name || act.master_action_name || act.label || `Action ${aIdx + 1}`;
-                                                    const isApprove = actName.toLowerCase().includes('setuju') || actName.toLowerCase().includes('approve');
-                                                    const isReject = actName.toLowerCase().includes('tolak') || actName.toLowerCase().includes('reject');
-
-                                                    return (
-                                                        <span
-                                                            key={aIdx}
-                                                            className={cn(
-                                                                'text-[9px] font-medium px-1.5 py-0.5 rounded-md border tracking-tight',
-                                                                isApprove && 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/40',
-                                                                isReject && 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900/40',
-                                                                !isApprove && !isReject && 'bg-muted text-muted-foreground border-border'
-                                                            )}
-                                                        >
-                                                            {actName}
-                                                        </span>
-                                                    );
-                                                })}
+                    {filteredBuiltinTemplates.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 px-4 py-10 text-center dark:border-zinc-800">
+                            <Search size={24} className="mb-2 text-slate-300 dark:text-zinc-700" />
+                            <p className="text-xs font-medium text-slate-700 dark:text-zinc-300">Template Tidak Ditemukan</p>
+                            <p className="text-muted-foreground mt-0.5 text-[11px]">
+                                Tidak ada template yang cocok dengan kata kunci "{templateSearch}".
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="custom-scrollbar grid max-h-[480px] grid-cols-1 gap-3 overflow-y-auto p-0.5 sm:grid-cols-2 lg:grid-cols-3">
+                            {filteredBuiltinTemplates.map((tpl) => {
+                                const stepData = tpl.step_data || {};
+                                return (
+                                    <div
+                                        key={tpl.id}
+                                        className="group hover:border-primary/60 flex flex-col justify-between gap-3 rounded-xl border border-slate-200/80 bg-white p-3.5 shadow-2xs transition-all hover:shadow-xs dark:border-zinc-800 dark:bg-zinc-900"
+                                    >
+                                        <div className="flex min-w-0 flex-col gap-1.5">
+                                            <div className="flex items-center justify-between gap-2">
+                                                <span className="text-foreground truncate text-xs font-medium">{tpl.name}</span>
+                                                <span className="shrink-0 rounded-md bg-indigo-500/10 px-1.5 py-0.5 text-[9px] font-medium text-indigo-600 dark:text-indigo-400">
+                                                    {tpl.category}
+                                                </span>
                                             </div>
-                                        )}
-                                    </div>
+                                            <span className="text-muted-foreground line-clamp-2 text-[11px] leading-relaxed">{tpl.description}</span>
 
-                                    <div className="flex items-center gap-1.5 pt-1 border-t border-border/40">
-                                        <Button
-                                            type="button"
-                                            variant="primary"
-                                            onClick={() => {
-                                                const newStep = {
-                                                    ...JSON.parse(JSON.stringify(preset.step_data)),
-                                                    id: `step_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-                                                    step: form.data.steps.length + 1,
-                                                };
-                                                form.setData('steps', [...form.data.steps, newStep]);
-                                                setPresetSelectModalOpen(false);
-                                                showToast(`Tahap dari preset "${preset.name}" berhasil ditambahkan!`, 'success');
-                                            }}
-                                            className="flex-1 h-7.5 text-xs font-medium"
-                                        >
-                                            + Sisipkan
-                                        </Button>
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleEditPreset(preset);
-                                            }}
-                                            className="h-7.5 w-7.5 rounded-lg border border-border/60 hover:bg-muted text-muted-foreground hover:text-foreground shrink-0"
-                                            title="Ubah Preset"
-                                        >
-                                            <Pencil size={12} />
-                                        </Button>
+                                            {/* Action Step Pills Preview */}
+                                            {stepData.actions && stepData.actions.length > 0 && (
+                                                <div className="border-border/40 flex flex-wrap items-center gap-1 border-t pt-1">
+                                                    {stepData.actions.map((act: any, aIdx: number) => {
+                                                        const actName = act.name || act.action_code || `Aksi ${aIdx + 1}`;
+                                                        const isApprove = act.action_code === 'approve' || actName.toLowerCase().includes('setuju');
+                                                        const isReject = act.action_code === 'reject' || actName.toLowerCase().includes('tolak');
+
+                                                        return (
+                                                            <span
+                                                                key={aIdx}
+                                                                className={cn(
+                                                                    'rounded-md border px-1.5 py-0.5 text-[9px] font-medium tracking-tight',
+                                                                    isApprove &&
+                                                                        'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/40 dark:text-emerald-300',
+                                                                    isReject &&
+                                                                        'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/40 dark:text-rose-300',
+                                                                    !isApprove && !isReject && 'bg-muted text-muted-foreground border-border',
+                                                                )}
+                                                            >
+                                                                {actName}
+                                                            </span>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="border-border/40 flex items-center gap-1.5 border-t pt-1">
+                                            <Button
+                                                type="button"
+                                                variant="primary"
+                                                onClick={() => {
+                                                    const newStep = {
+                                                        ...JSON.parse(JSON.stringify(tpl.step_data)),
+                                                        id: `step_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                                                        step: form.data.steps.length + 1,
+                                                    };
+                                                    form.setData('steps', [...form.data.steps, newStep]);
+                                                    setBuiltinTemplateModalOpen(false);
+                                                    showToast(`Tahap "${tpl.name}" berhasil ditambahkan!`, 'success');
+                                                }}
+                                                className="h-7.5 w-full text-xs font-medium"
+                                            >
+                                                + Sisipkan Template
+                                            </Button>
+                                        </div>
                                     </div>
-                                </div>
-                            );
-                        })}
+                                );
+                            })}
+                        </div>
+                    )}
+
+                    <div className="flex justify-end border-t border-slate-100 pt-2 dark:border-zinc-800">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setBuiltinTemplateModalOpen(false)}
+                            className="h-8 px-4 text-xs font-medium"
+                        >
+                            Tutup
+                        </Button>
                     </div>
-                )}
-
-                <div className="flex justify-end pt-2 border-t border-slate-100 dark:border-zinc-800">
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setPresetSelectModalOpen(false)}
-                        className="h-8 px-4 text-xs font-medium"
-                    >
-                        Tutup
-                    </Button>
                 </div>
-            </div>
-        </Modal>
+            </Modal>
 
-        {/* --- Custom Modal Simpan Preset --- */}
-        <Modal
-            isOpen={presetModalOpen}
-            onClose={() => setPresetModalOpen(false)}
-            title={
-                <div className="flex items-center gap-2">
-                    <Bookmark size={18} className="text-primary" />
-                    <span>Simpan Preset Tahapan</span>
+            {/* --- Custom Modal Pilih Preset yang Tersimpan (Lebar & Modern) --- */}
+            <Modal
+                isOpen={presetSelectModalOpen}
+                onClose={() => setPresetSelectModalOpen(false)}
+                title={
+                    <div className="flex items-center gap-2">
+                        <Bookmark size={18} className="text-primary" />
+                        <span>Pilih Preset Tahapan</span>
+                    </div>
+                }
+                description="Pilih salah satu preset tahapan yang tersimpan untuk disisipkan ke alur kerja ini."
+                maxWidth="4xl"
+            >
+                <div className="space-y-3.5">
+                    {/* Search Bar Preset */}
+                    {presets.length > 0 && (
+                        <div className="relative">
+                            <Search size={14} className="text-muted-foreground absolute top-1/2 left-3 -translate-y-1/2" />
+                            <input
+                                type="text"
+                                value={presetSearch}
+                                onChange={(e) => setPresetSearch(e.target.value)}
+                                placeholder="Cari nama preset atau deskripsi tahapan..."
+                                className="border-input bg-background focus:ring-ring placeholder:text-muted-foreground h-9 w-full rounded-lg border pr-4 pl-9 text-xs transition-all focus:ring-1 focus:outline-none"
+                            />
+                        </div>
+                    )}
+
+                    {presets.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 px-4 py-12 text-center dark:border-zinc-800">
+                            <Bookmark size={28} className="mb-2 text-slate-300 dark:text-zinc-700" />
+                            <p className="text-xs font-medium text-slate-700 dark:text-zinc-300">Belum Ada Preset Tersimpan</p>
+                            <p className="text-muted-foreground mt-0.5 text-[11px]">
+                                Anda belum menyimpan preset tahapan apa pun ke database server.
+                            </p>
+                        </div>
+                    ) : filteredPresets.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 px-4 py-10 text-center dark:border-zinc-800">
+                            <Search size={24} className="mb-2 text-slate-300 dark:text-zinc-700" />
+                            <p className="text-xs font-medium text-slate-700 dark:text-zinc-300">Preset Tidak Ditemukan</p>
+                            <p className="text-muted-foreground mt-0.5 text-[11px]">
+                                Tidak ada preset yang cocok dengan kata kunci "{presetSearch}".
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="custom-scrollbar grid max-h-[480px] grid-cols-1 gap-3 overflow-y-auto p-0.5 sm:grid-cols-2 lg:grid-cols-3">
+                            {filteredPresets.map((preset) => {
+                                const stepData = preset.step_data || {};
+                                return (
+                                    <div
+                                        key={preset.id}
+                                        className="group hover:border-primary/60 flex flex-col justify-between gap-3 rounded-xl border border-slate-200/80 bg-white p-3.5 shadow-2xs transition-all hover:shadow-xs dark:border-zinc-800 dark:bg-zinc-900"
+                                    >
+                                        <div className="flex min-w-0 flex-col gap-1.5">
+                                            <div className="flex items-center justify-between gap-2">
+                                                <span className="text-foreground truncate text-xs font-medium">{preset.name}</span>
+                                                <span className="bg-primary/10 text-primary shrink-0 rounded-md px-1.5 py-0.5 text-[9px] font-medium">
+                                                    Preset
+                                                </span>
+                                            </div>
+                                            <span className="text-muted-foreground line-clamp-2 text-[11px] leading-relaxed">
+                                                {stepData.description ||
+                                                    stepData.name ||
+                                                    stepData.label ||
+                                                    `Role: ${stepData.approver_type || 'Custom'}`}
+                                            </span>
+
+                                            {/* Action Step Pills Preview */}
+                                            {stepData.actions && stepData.actions.length > 0 && (
+                                                <div className="border-border/40 flex flex-wrap items-center gap-1 border-t pt-1">
+                                                    {stepData.actions.map((act: any, aIdx: number) => {
+                                                        const actName =
+                                                            act.master_action?.name || act.master_action_name || act.label || `Action ${aIdx + 1}`;
+                                                        const isApprove =
+                                                            actName.toLowerCase().includes('setuju') || actName.toLowerCase().includes('approve');
+                                                        const isReject =
+                                                            actName.toLowerCase().includes('tolak') || actName.toLowerCase().includes('reject');
+
+                                                        return (
+                                                            <span
+                                                                key={aIdx}
+                                                                className={cn(
+                                                                    'rounded-md border px-1.5 py-0.5 text-[9px] font-medium tracking-tight',
+                                                                    isApprove &&
+                                                                        'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/40 dark:text-emerald-300',
+                                                                    isReject &&
+                                                                        'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/40 dark:text-rose-300',
+                                                                    !isApprove && !isReject && 'bg-muted text-muted-foreground border-border',
+                                                                )}
+                                                            >
+                                                                {actName}
+                                                            </span>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="border-border/40 flex items-center gap-1.5 border-t pt-1">
+                                            <Button
+                                                type="button"
+                                                variant="primary"
+                                                onClick={() => {
+                                                    const newStep = {
+                                                        ...JSON.parse(JSON.stringify(preset.step_data)),
+                                                        id: `step_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                                                        step: form.data.steps.length + 1,
+                                                    };
+                                                    form.setData('steps', [...form.data.steps, newStep]);
+                                                    setPresetSelectModalOpen(false);
+                                                    showToast(`Tahap dari preset "${preset.name}" berhasil ditambahkan!`, 'success');
+                                                }}
+                                                className="h-7.5 flex-1 text-xs font-medium"
+                                            >
+                                                + Sisipkan
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleEditPreset(preset);
+                                                }}
+                                                className="border-border/60 hover:bg-muted text-muted-foreground hover:text-foreground h-7.5 w-7.5 shrink-0 rounded-lg border"
+                                                title="Ubah Preset"
+                                            >
+                                                <Pencil size={12} />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+
+                    <div className="flex justify-end border-t border-slate-100 pt-2 dark:border-zinc-800">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setPresetSelectModalOpen(false)}
+                            className="h-8 px-4 text-xs font-medium"
+                        >
+                            Tutup
+                        </Button>
+                    </div>
                 </div>
-            }
-            description="Masukkan nama identifikasi untuk preset tahapan ini agar dapat digunakan kembali secara berulang."
-            maxWidth="md"
-        >
-            <div className="p-6 space-y-4">
-                <FormInput
-                    label="Nama Preset"
-                    value={presetNameInput}
-                    onChange={(e) => setPresetNameInput(e.target.value)}
-                    placeholder="Contoh: Approval Direksi & Finance"
-                    required
-                    autoFocus
-                />
+            </Modal>
 
-                <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setPresetModalOpen(false)}
-                        className="h-10 px-4 text-xs font-bold"
-                    >
-                        Batal
-                    </Button>
-                    <Button
-                        type="button"
-                        onClick={() => {
-                            if (!presetNameInput.trim() || !targetPresetStep) return;
-                            router.post(
-                                route('admin.workflows.presets.store'),
-                                { name: presetNameInput.trim(), step_data: targetPresetStep },
-                                {
-                                    preserveScroll: true,
-                                    onSuccess: () => {
+            {/* --- Custom Modal Simpan Preset --- */}
+            <Modal
+                isOpen={presetModalOpen}
+                onClose={() => setPresetModalOpen(false)}
+                title={
+                    <div className="flex items-center gap-2">
+                        <Bookmark size={18} className="text-primary" />
+                        <span>Simpan Preset Tahapan</span>
+                    </div>
+                }
+                description="Masukkan nama identifikasi untuk preset tahapan ini agar dapat digunakan kembali secara berulang."
+                maxWidth="md"
+            >
+                <div className="space-y-4 p-6">
+                    <FormInput
+                        label="Nama Preset"
+                        value={presetNameInput}
+                        onChange={(e) => setPresetNameInput(e.target.value)}
+                        placeholder="Contoh: Approval Direksi & Finance"
+                        required
+                        autoFocus
+                    />
+
+                    <div className="flex items-center justify-end gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
+                        <Button type="button" variant="outline" onClick={() => setPresetModalOpen(false)} className="h-10 px-4 text-xs font-bold">
+                            Batal
+                        </Button>
+                        <Button
+                            type="button"
+                            onClick={async () => {
+                                if (!presetNameInput.trim() || !targetPresetStep) return;
+                                try {
+                                    const res: any = await workflowsApi.presets.create({
+                                        name: presetNameInput.trim(),
+                                        step_data: targetPresetStep,
+                                    });
+                                    if (res) {
                                         setPresetModalOpen(false);
+                                        const presetItem = res?.data || res;
+                                        if (presetItem) {
+                                            setPresets((prev) => [presetItem, ...prev]);
+                                        }
                                         showToast(`Preset "${presetNameInput.trim()}" berhasil disimpan!`, 'success');
-                                    },
+                                    }
+                                } catch (err: any) {
+                                    showToast(err.response?.data?.message || 'Gagal menyimpan preset', 'danger');
                                 }
-                            );
-                        }}
-                        className="h-10 px-5 text-xs font-bold bg-primary text-white hover:bg-primary/90 border-none"
-                    >
-                        Simpan Preset
-                    </Button>
+                            }}
+                            className="bg-primary hover:bg-primary/90 h-10 border-none px-5 text-xs font-bold text-white"
+                        >
+                            Simpan Preset
+                        </Button>
+                    </div>
                 </div>
-            </div>
-        </Modal>
+            </Modal>
 
-        {/* --- Custom Modal Ubah Preset --- */}
-        <Modal
-            isOpen={editPresetModalOpen}
-            onClose={() => setEditPresetModalOpen(false)}
-            title={
-                <div className="flex items-center gap-2">
-                    <Bookmark size={18} className="text-primary" />
-                    <span>Ubah Preset Tahapan</span>
-                </div>
-            }
-            description="Perbarui nama atau deskripsi tahapan untuk preset ini."
-            maxWidth="md"
-        >
-            <div className="p-6 space-y-4">
-                <FormInput
-                    label="Nama Preset"
-                    value={editPresetName}
-                    onChange={(e) => setEditPresetName(e.target.value)}
-                    placeholder="Contoh: Approval Direksi & Finance"
-                    required
-                    autoFocus
-                />
+            {/* --- Custom Modal Ubah Preset --- */}
+            <Modal
+                isOpen={editPresetModalOpen}
+                onClose={() => setEditPresetModalOpen(false)}
+                title={
+                    <div className="flex items-center gap-2">
+                        <Bookmark size={18} className="text-primary" />
+                        <span>Ubah Preset Tahapan</span>
+                    </div>
+                }
+                description="Perbarui nama atau deskripsi tahapan untuk preset ini."
+                maxWidth="md"
+            >
+                <div className="space-y-4 p-6">
+                    <FormInput
+                        label="Nama Preset"
+                        value={editPresetName}
+                        onChange={(e) => setEditPresetName(e.target.value)}
+                        placeholder="Contoh: Approval Direksi & Finance"
+                        required
+                        autoFocus
+                    />
 
-                <FormInput
-                    label="Deskripsi / Judul Tahap"
-                    value={editPresetDescription}
-                    onChange={(e) => setEditPresetDescription(e.target.value)}
-                    placeholder="Contoh: Review Legal Staff & Finance"
-                />
+                    <FormInput
+                        label="Deskripsi / Judul Tahap"
+                        value={editPresetDescription}
+                        onChange={(e) => setEditPresetDescription(e.target.value)}
+                        placeholder="Contoh: Review Legal Staff & Finance"
+                    />
 
-                <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setEditPresetModalOpen(false)}
-                        className="h-10 px-4 text-xs font-bold"
-                    >
-                        Batal
-                    </Button>
-                    <Button
-                        type="button"
-                        onClick={() => {
-                            if (!editPresetName.trim() || !editingPreset) return;
-                            const updatedStepData = {
-                                ...(editingPreset.step_data || {}),
-                                name: editPresetDescription.trim(),
-                                description: editPresetDescription.trim(),
-                                label: editPresetDescription.trim(),
-                            };
-                            router.put(
-                                route('admin.workflows.presets.update', editingPreset.id),
-                                { name: editPresetName.trim(), step_data: updatedStepData },
-                                {
-                                    preserveScroll: true,
-                                    onSuccess: () => {
+                    <div className="flex items-center justify-end gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
+                        <Button type="button" variant="outline" onClick={() => setEditPresetModalOpen(false)} className="h-10 px-4 text-xs font-bold">
+                            Batal
+                        </Button>
+                        <Button
+                            type="button"
+                            onClick={async () => {
+                                if (!editPresetName.trim() || !editingPreset) return;
+                                const updatedStepData = {
+                                    ...(editingPreset.step_data || {}),
+                                    name: editPresetDescription.trim(),
+                                    description: editPresetDescription.trim(),
+                                    label: editPresetDescription.trim(),
+                                };
+                                try {
+                                    const res: any = await workflowsApi.presets.update(editingPreset.id, {
+                                        name: editPresetName.trim(),
+                                        step_data: updatedStepData,
+                                    });
+                                    if (res) {
                                         setEditPresetModalOpen(false);
+                                        const updatedItem = res?.data || res;
+                                        setPresets((prev) =>
+                                            prev.map((p) =>
+                                                p.id === editingPreset.id
+                                                    ? updatedItem || { ...p, name: editPresetName.trim(), step_data: updatedStepData }
+                                                    : p,
+                                            ),
+                                        );
                                         showToast(`Preset "${editPresetName.trim()}" berhasil diperbarui!`, 'success');
-                                    },
+                                    }
+                                } catch (err: any) {
+                                    showToast(err.response?.data?.message || 'Gagal memperbarui preset', 'danger');
                                 }
-                            );
-                        }}
-                        className="h-10 px-5 text-xs font-bold bg-primary text-white hover:bg-primary/90 border-none"
-                    >
-                        Simpan Perubahan
-                    </Button>
+                            }}
+                            className="bg-primary hover:bg-primary/90 h-10 border-none px-5 text-xs font-bold text-white"
+                        >
+                            Simpan Perubahan
+                        </Button>
+                    </div>
                 </div>
-            </div>
-        </Modal>
-    </>
-);
+            </Modal>
+        </>
+    );
 }

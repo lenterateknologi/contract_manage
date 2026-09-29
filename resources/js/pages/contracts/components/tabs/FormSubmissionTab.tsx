@@ -8,7 +8,7 @@ import { Modal } from '@/components/ui/dialogs/Modal';
 import { contractApi } from '@/pages/contracts/utils';
 import { cn } from '@/lib/utils';
 import { Contract } from '@/pages/contracts/types';
-import axios from 'axios';
+import { subresourcesApi, formTemplatesApi } from '@/api';
 import { ArrowRight, Check, Columns, Download, FileText, FolderOpen, History, Loader2, MoreVertical, PlusCircle } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getAutofillValue } from '../parts/autofill';
@@ -33,11 +33,6 @@ interface VersionItem {
     created_by: any;
     created_at: string;
 }
-
-const api = axios.create({
-    headers: { 'X-Requested-With': 'XMLHttpRequest', Accept: 'application/json' },
-    withCredentials: true,
-});
 
 // ═══════════════════════════════════════════════════════════════════════
 //  Principal Components
@@ -249,11 +244,11 @@ function GenericFormTab({
         }
         setLoading(true);
         try {
-            const [tplRes, subRes] = await Promise.all([
-                api.get(`/api/form-templates/${matchingTemplate.id}/fields`),
+            const [tplRes, subRes]: [any, any] = await Promise.all([
+                formTemplatesApi.getFields(matchingTemplate.id),
                 contractApi.formSubmissions.get(selected.id, docType),
             ]);
-            const tplFields: FormField[] = tplRes.data.fields ?? [];
+            const tplFields: FormField[] = tplRes?.fields ?? tplRes?.data?.fields ?? [];
             setFields(tplFields);
             setManualFields(new Set());
 
@@ -483,19 +478,12 @@ function GenericFormTab({
         }
 
         try {
-            const res = await axios.post(
-                `/api/contracts/${selected.id}/form-submissions/${docType}/pdf/queue`,
-                {
-                    data: JSON.stringify(formData),
-                    form_template_id: matchingTemplate.id,
-                },
-                {
-                    headers: { 'X-Requested-With': 'XMLHttpRequest', Accept: 'application/json' },
-                    withCredentials: true,
-                },
-            );
+            const res: any = await subresourcesApi.formSubmissions.queuePdf(selected.id, docType, {
+                data: JSON.stringify(formData),
+                form_template_id: matchingTemplate.id,
+            });
 
-            const jobId = res.data.job_id;
+            const jobId = res?.job_id || res?.data?.job_id;
 
             setPdfJobId(jobId);
 
@@ -507,11 +495,8 @@ function GenericFormTab({
             const interval = setInterval(async () => {
                 pollCount++;
                 try {
-                    const statusRes = await axios.get(`/admin/form-templates/pdf-status/${jobId}`, {
-                        headers: { 'X-Requested-With': 'XMLHttpRequest', Accept: 'application/json' },
-                        withCredentials: true,
-                    });
-                    const statusData = statusRes.data;
+                    const statusRes: any = await subresourcesApi.formSubmissions.pdfStatus(jobId);
+                    const statusData = statusRes?.data || statusRes;
                     setPdfJobStatus(statusData);
 
                     // Update Progress Toast

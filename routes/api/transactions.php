@@ -29,6 +29,10 @@ Route::prefix('contracts')->group(function () {
     });
 
     Route::controller(ContractApprovalController::class)->prefix('{id}')->group(function () {
+        Route::get('/workflow', 'getWorkflow');
+        Route::get('/timeline', 'getTimeline');
+        Route::get('/requirements', 'getRequirements');
+        Route::get('/actions', 'getAvailableActions');
         Route::post('/send', 'send');
         Route::post('/assign-pic', 'assignPic');
         Route::post('/approve', 'approve');
@@ -47,6 +51,7 @@ Route::prefix('contracts')->group(function () {
         Route::post('/revision', 'uploadRevision');
         Route::get('/revision/versions', 'getRevisionVersions');
         Route::post('/version', 'changeVersion');
+        Route::get('/attachments', 'getAttachments');
         Route::post('/attachments', 'uploadAttachment');
         Route::delete('/attachments/{atId}', 'deleteAttachment');
         Route::get('/download', 'download')->name('api.contracts.download');

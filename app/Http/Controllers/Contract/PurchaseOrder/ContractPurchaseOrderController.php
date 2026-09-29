@@ -6,12 +6,15 @@ use App\Http\Controllers\Controller;
 use App\Http\Formatters\ContractFormatter;
 use App\Models\Contract;
 use App\Models\ContractPurchaseOrder;
+use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class ContractPurchaseOrderController extends Controller
 {
+    use ApiResponse;
+
     /**
      * List POs for this contract.
      */
@@ -20,10 +23,7 @@ class ContractPurchaseOrderController extends Controller
         $contract = Contract::findOrFail($contractId);
         $pos = $contract->purchaseOrders()->with('creator')->latest()->get();
 
-        return response()->json([
-            'status' => 'success',
-            'data' => $pos,
-        ]);
+        return $this->successResponse($pos, 'Purchase orders retrieved successfully');
     }
 
     /**
@@ -56,12 +56,10 @@ class ContractPurchaseOrderController extends Controller
             'created_by' => Auth::id(),
         ]);
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Purchase Order berhasil ditambahkan',
-            'data' => $po->load('creator'),
+        return $this->successResponse([
+            'purchase_order' => $po->load('creator'),
             'contract' => ContractFormatter::formatContract($contract->fresh(), true),
-        ]);
+        ], 'Purchase Order berhasil ditambahkan', 201);
     }
 
     /**
@@ -95,12 +93,10 @@ class ContractPurchaseOrderController extends Controller
             'updated_by' => Auth::id(),
         ]);
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Purchase Order berhasil diperbarui',
-            'data' => $po->fresh()->load('creator'),
+        return $this->successResponse([
+            'purchase_order' => $po->fresh()->load('creator'),
             'contract' => ContractFormatter::formatContract($contract->fresh(), true),
-        ]);
+        ], 'Purchase Order berhasil diperbarui');
     }
 
     /**
@@ -112,10 +108,8 @@ class ContractPurchaseOrderController extends Controller
         $po = $contract->purchaseOrders()->findOrFail($poId);
         $po->delete();
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Purchase Order berhasil dihapus',
+        return $this->successResponse([
             'contract' => ContractFormatter::formatContract($contract->fresh(), true),
-        ]);
+        ], 'Purchase Order berhasil dihapus');
     }
 }

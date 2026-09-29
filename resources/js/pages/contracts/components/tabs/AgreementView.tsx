@@ -1,3 +1,4 @@
+import { Icons } from '@/components/ui';
 import { Button } from '@/components/ui/buttons/Button';
 import LoadingLottie from '@/components/ui/feedback/LoadingLottie';
 import { useToast } from '@/components/ui/feedback/Toast';
@@ -5,31 +6,17 @@ import { SearchInput } from '@/components/ui/inputs/SearchInput';
 import { useDebounce } from '@/hooks/use-debounce';
 import { cn } from '@/lib/utils';
 import { Contract } from '@/pages/contracts/types';
-import axios from 'axios';
-import { AppIcon, Icons } from '@/components/ui';
-
-const {
-    ArrowRight,
-    Diff,
-    Download,
-    ExternalLink,
-    FileText,
-    History,
-    Loader2,
-    Maximize2,
-    Minimize2,
-    MoreVertical,
-    PenTool,
-    RefreshCw,
-    Upload,
-} = Icons;
+import { contractsApi, approvalsApi, subresourcesApi } from '@/api';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+
+const { ArrowRight, Diff, Download, ExternalLink, FileText, History, Loader2, Maximize2, Minimize2, MoreVertical, PenTool, RefreshCw, Upload } =
+    Icons;
 
 interface AgreementVersion {
     id: string;
     version_no: number;
     file_name: string;
-    file_path: string;
+    file_path?: string;
     change_log: string | null;
     uploaded_by: string;
     uploader?: { name: string };
@@ -80,10 +67,13 @@ export default function AgreementView({
     const toggleFullscreen = () => {
         if (!previewContainerRef.current) return;
         if (!document.fullscreenElement) {
-            previewContainerRef.current.requestFullscreen().then(() => setIsFullscreen(true)).catch(() => {
-                const url = selectedVno ? `/api/contracts/${contract.id}/pdf/${selectedVno}?type=${effectiveDocType}` : null;
-                if (url) window.open(url, '_blank');
-            });
+            previewContainerRef.current
+                .requestFullscreen()
+                .then(() => setIsFullscreen(true))
+                .catch(() => {
+                    const url = selectedVno ? `/api/contracts/${contract.id}/pdf/${selectedVno}?type=${effectiveDocType}` : null;
+                    if (url) window.open(url, '_blank');
+                });
         } else {
             document.exitFullscreen().then(() => setIsFullscreen(false));
         }
@@ -115,11 +105,10 @@ export default function AgreementView({
         async (forceLatest = false, silent = false) => {
             if (!silent) setLoading(true);
             try {
-                const url = isRevision
-                    ? `/api/contracts/${contract.id}/revision/versions?type=${effectiveDocType}`
-                    : `/api/contracts/${contract.id}/agreement/versions`;
-                const res = await axios.get(url);
-                const data = Array.isArray(res.data) ? res.data : [];
+                const res: any = isRevision
+                    ? await subresourcesApi.files.getRevisionVersions(contract.id, effectiveDocType)
+                    : await subresourcesApi.files.getAgreementVersions(contract.id);
+                const data = Array.isArray(res) ? res : (res?.data ?? []);
                 setVersions(data);
 
                 if (data.length > 0 && (forceLatest || !selectedVno)) {
@@ -202,8 +191,8 @@ export default function AgreementView({
             newMeta[`downloaded_step_${activeSignerApproval.id}`] = new Date().toISOString();
 
             try {
-                const res = await axios.patch(`/api/contracts/${contract.id}`, { metadata: newMeta });
-                if (onUpdate) onUpdate(res.data);
+                const res: any = await contractsApi.update(contract.id, { metadata: newMeta });
+                if (onUpdate && res) onUpdate(res?.data || res);
             } catch (e) {
                 console.error('Failed to update download metadata', e);
             }
@@ -256,16 +245,15 @@ export default function AgreementView({
 
         // If it's a signer, use the approval/signing API
         if (isSigner) {
-            const formData = new FormData();
-            formData.append('attachment', file);
-            formData.append('note', 'Pembaruan Dokumen TTD');
-            formData.append('action_code', 'approve');
-
             try {
-                const res = await axios.post(`/api/contracts/${contract.id}/approve`, formData, uploadConfig);
+                const res: any = await approvalsApi.approve(
+                    contract.id,
+                    { attachment: file, note: 'Pembaruan Dokumen TTD', action_code: 'approve' },
+                    uploadConfig,
+                );
                 setUploadProgress(100);
                 setUploadPhase('rendering');
-                if (onUpdate && res.data) onUpdate(res.data);
+                if (onUpdate && res) onUpdate(res?.data || res);
                 showToast('Persetujuan Tanda Tangan berhasil diunggah.', 'success');
                 await loadVersions(true, true);
             } catch (err: any) {
@@ -289,12 +277,13 @@ export default function AgreementView({
         }
 
         try {
-            const url = isRevision ? `/api/contracts/${contract.id}/revision` : `/api/contracts/${contract.id}/agreement`;
-            const res = await axios.post(url, formData, uploadConfig);
+            const res: any = isRevision
+                ? await subresourcesApi.files.uploadRevision(contract.id, formData, uploadConfig)
+                : await subresourcesApi.files.uploadAgreement(contract.id, formData, uploadConfig);
             setUploadProgress(100);
             setUploadPhase('rendering');
             setUploadNote('');
-            if (onUpdate && res.data) onUpdate(res.data);
+            if (onUpdate && res) onUpdate(res?.data || res);
             await loadVersions(true, true);
             const typeLabel = effectiveDocType === 'f1' ? 'Sub-dokumen F1' : effectiveDocType === 'f2' ? 'Sub-dokumen F2' : 'Draft Perjanjian';
             showToast(`${typeLabel} berhasil diunggah.`, 'success');
@@ -348,15 +337,15 @@ export default function AgreementView({
     const titleLabel = labelMapping[effectiveDocType] || 'Persetujuan';
 
     return (
-        <div className="bg-card animate-in fade-in flex flex-1 flex-col w-full h-full min-h-0 overflow-hidden duration-300 p-3 lg:p-4 gap-3">
+        <div className="bg-card animate-in fade-in flex h-full min-h-0 w-full flex-1 flex-col gap-3 overflow-hidden p-3 duration-300 lg:p-4">
             {/* Header Area */}
-            <div className="bg-primary text-primary-foreground shrink-0 flex h-9.5 min-h-[38px] max-h-[38px] items-center justify-between px-4 rounded-xl shadow-xs">
+            <div className="bg-primary text-primary-foreground flex h-9.5 max-h-[38px] min-h-[38px] shrink-0 items-center justify-between rounded-xl px-4 shadow-xs">
                 <div className="flex items-center gap-3">
                     <div className="flex items-center gap-2">
                         <PenTool size={15} className="text-primary-foreground/90" />
-                        <h4 className="text-xs font-semibold tracking-tight text-primary-foreground uppercase">Preview {titleLabel}</h4>
+                        <h4 className="text-primary-foreground text-xs font-semibold tracking-tight uppercase">Preview {titleLabel}</h4>
                         {selectedVno && (
-                            <span className="rounded bg-white/20 border border-white/30 px-1.5 py-0.5 text-[9px] font-bold text-white">
+                            <span className="rounded border border-white/30 bg-white/20 px-1.5 py-0.5 text-[9px] font-bold text-white">
                                 V{selectedVno}
                             </span>
                         )}
@@ -370,10 +359,10 @@ export default function AgreementView({
                                 type="button"
                                 onClick={() => setShowVersions(!showVersions)}
                                 className={cn(
-                                    "flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-xs font-medium transition-colors border cursor-pointer",
-                                    showVersions 
-                                        ? "bg-white text-primary border-white shadow-xs font-bold" 
-                                        : "bg-white/15 hover:bg-white/25 text-white border-white/20"
+                                    'flex h-7 cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 text-xs font-medium transition-colors',
+                                    showVersions
+                                        ? 'text-primary border-white bg-white font-bold shadow-xs'
+                                        : 'border-white/20 bg-white/15 text-white hover:bg-white/25',
                                 )}
                             >
                                 <History size={13} />
@@ -381,7 +370,7 @@ export default function AgreementView({
                             </button>
 
                             {showVersions && (
-                                <div className="animate-in fade-in zoom-in-95 bg-surface-base text-foreground absolute top-full left-0 z-[999] mt-2 w-72 origin-top-left rounded-xl border border-surface-border p-1 shadow-2xl duration-200">
+                                <div className="animate-in fade-in zoom-in-95 bg-surface-base text-foreground border-surface-border absolute top-full left-0 z-[999] mt-2 w-72 origin-top-left rounded-xl border p-1 shadow-2xl duration-200">
                                     <div className="border-b border-black/5 p-2 dark:border-white/5">
                                         <SearchInput
                                             autoFocus
@@ -431,10 +420,10 @@ export default function AgreementView({
                         type="button"
                         onClick={toggleFullscreen}
                         title={isFullscreen ? 'Keluar Full Screen' : 'Layar Penuh (Full Screen)'}
-                        className="flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-xs font-medium bg-white/15 hover:bg-white/25 text-white border border-white/20 transition-colors cursor-pointer"
+                        className="flex h-7 cursor-pointer items-center gap-1.5 rounded-lg border border-white/20 bg-white/15 px-2.5 text-xs font-medium text-white transition-colors hover:bg-white/25"
                     >
                         {isFullscreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
-                        <span className="hidden sm:inline text-[11px]">{isFullscreen ? 'Keluar' : 'Full Screen'}</span>
+                        <span className="hidden text-[11px] sm:inline">{isFullscreen ? 'Keluar' : 'Full Screen'}</span>
                     </button>
 
                     <div className="relative">
@@ -442,10 +431,10 @@ export default function AgreementView({
                             type="button"
                             onClick={() => setShowMoreActions(!showMoreActions)}
                             className={cn(
-                                "flex items-center justify-center h-7 w-7 rounded-lg text-xs transition-colors border cursor-pointer",
-                                showMoreActions 
-                                    ? "bg-white text-primary border-white shadow-xs" 
-                                    : "bg-white/15 hover:bg-white/25 text-white border-white/20"
+                                'flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg border text-xs transition-colors',
+                                showMoreActions
+                                    ? 'text-primary border-white bg-white shadow-xs'
+                                    : 'border-white/20 bg-white/15 text-white hover:bg-white/25',
                             )}
                         >
                             <MoreVertical size={14} />
@@ -525,7 +514,7 @@ export default function AgreementView({
                             />
                             <button
                                 type="button"
-                                className="bg-white text-primary hover:bg-white/90 h-7 px-3 text-xs font-bold rounded-lg shadow-xs flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
+                                className="text-primary flex h-7 cursor-pointer items-center gap-1.5 rounded-lg bg-white px-3 text-xs font-bold shadow-xs transition-all hover:bg-white/90 disabled:opacity-50"
                                 disabled={uploading}
                                 onClick={() => {
                                     if (isSigner && !stepDownloaded) {
@@ -544,45 +533,48 @@ export default function AgreementView({
             </div>
 
             {/* Main Preview Area - PDF Iframe (Full Width & Height, No Padding/Margin) */}
-            <div ref={previewContainerRef} className="relative flex flex-1 flex-col w-full h-full min-h-0 overflow-hidden bg-white dark:bg-zinc-900 rounded-xl border border-surface-border p-0 m-0">
+            <div
+                ref={previewContainerRef}
+                className="border-surface-border relative m-0 flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden rounded-xl border bg-white p-0 dark:bg-zinc-900"
+            >
                 {/* Uploading / Processing Glassmorphism Overlay */}
                 {uploading && (
-                    <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-md transition-all duration-300 animate-in fade-in">
-                        <div className="w-full max-w-md mx-4 p-6 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-2xl text-slate-800 dark:text-zinc-100 flex flex-col items-center text-center animate-in zoom-in-95 duration-200">
+                    <div className="animate-in fade-in absolute inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-md transition-all duration-300">
+                        <div className="animate-in zoom-in-95 mx-4 flex w-full max-w-md flex-col items-center rounded-2xl border border-slate-200 bg-white p-6 text-center text-slate-800 shadow-2xl duration-200 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100">
                             <div className="relative mb-4">
-                                <div className="h-16 w-16 rounded-2xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center text-primary">
+                                <div className="bg-primary/10 dark:bg-primary/20 text-primary flex h-16 w-16 items-center justify-center rounded-2xl">
                                     {uploadPhase === 'uploading' ? (
-                                        <Upload className="h-8 w-8 animate-bounce text-primary" />
+                                        <Upload className="text-primary h-8 w-8 animate-bounce" />
                                     ) : uploadPhase === 'processing' ? (
-                                        <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+                                        <RefreshCw className="text-primary h-8 w-8 animate-spin" />
                                     ) : (
-                                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                        <Loader2 className="text-primary h-8 w-8 animate-spin" />
                                     )}
                                 </div>
-                                <span className="absolute -bottom-1 -right-1 flex h-4 w-4">
-                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                                    <span className="relative inline-flex rounded-full h-4 w-4 bg-primary"></span>
+                                <span className="absolute -right-1 -bottom-1 flex h-4 w-4">
+                                    <span className="bg-primary absolute inline-flex h-full w-full animate-ping rounded-full opacity-75"></span>
+                                    <span className="bg-primary relative inline-flex h-4 w-4 rounded-full"></span>
                                 </span>
                             </div>
 
-                            <h4 className="text-sm font-bold tracking-tight mb-1 text-slate-900 dark:text-white">
+                            <h4 className="mb-1 text-sm font-bold tracking-tight text-slate-900 dark:text-white">
                                 {uploadPhase === 'uploading' && 'Mengunggah Berkas...'}
                                 {uploadPhase === 'processing' && 'Memproses & Mengonversi Dokumen ke PDF...'}
                                 {uploadPhase === 'rendering' && 'Menyiapkan Tampilan Preview...'}
                             </h4>
 
                             {uploadFileName && (
-                                <p className="text-xs text-slate-500 dark:text-zinc-400 font-medium mb-4 truncate max-w-xs">
+                                <p className="mb-4 max-w-xs truncate text-xs font-medium text-slate-500 dark:text-zinc-400">
                                     {uploadFileName} {uploadFileSize ? `(${uploadFileSize})` : ''}
                                 </p>
                             )}
 
                             {/* Progress bar */}
-                            <div className="w-full bg-slate-100 dark:bg-zinc-800 rounded-full h-2.5 overflow-hidden mb-2.5">
+                            <div className="mb-2.5 h-2.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-zinc-800">
                                 <div
                                     className={cn(
-                                        "h-full rounded-full transition-all duration-300 bg-primary",
-                                        uploadPhase === 'processing' && "animate-pulse"
+                                        'bg-primary h-full rounded-full transition-all duration-300',
+                                        uploadPhase === 'processing' && 'animate-pulse',
                                     )}
                                     style={{
                                         width: uploadPhase === 'processing' ? '100%' : `${uploadProgress}%`,
@@ -590,7 +582,7 @@ export default function AgreementView({
                                 />
                             </div>
 
-                            <div className="w-full flex justify-between items-center text-[10px] font-semibold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">
+                            <div className="flex w-full items-center justify-between text-[10px] font-semibold tracking-wider text-slate-400 uppercase dark:text-zinc-500">
                                 <span>
                                     {uploadPhase === 'uploading' ? 'Upload ke server' : uploadPhase === 'processing' ? 'Konversi PDF' : 'Finalisasi'}
                                 </span>
@@ -602,11 +594,11 @@ export default function AgreementView({
 
                 {loading ? (
                     /* High-polish Document Skeleton during initial loading */
-                    <div className="flex flex-1 flex-col items-center justify-center p-8 bg-transparent animate-pulse">
-                        <div className="w-full max-w-[210mm] h-[85vh] max-h-[700px] bg-transparent p-8 flex flex-col justify-between">
+                    <div className="flex flex-1 animate-pulse flex-col items-center justify-center bg-transparent p-8">
+                        <div className="flex h-[85vh] max-h-[700px] w-full max-w-[210mm] flex-col justify-between bg-transparent p-8">
                             <div className="space-y-6">
                                 {/* Header skeleton */}
-                                <div className="flex justify-between items-center pb-6 border-b border-slate-100 dark:border-zinc-800">
+                                <div className="flex items-center justify-between border-b border-slate-100 pb-6 dark:border-zinc-800">
                                     <div className="flex items-center gap-3">
                                         <div className="h-10 w-10 rounded-lg bg-slate-200 dark:bg-zinc-800" />
                                         <div className="space-y-2">
@@ -633,26 +625,27 @@ export default function AgreementView({
                                 </div>
                             </div>
 
-                            <div className="flex items-center justify-center gap-2 py-4 text-xs font-semibold text-primary">
+                            <div className="text-primary flex items-center justify-center gap-2 py-4 text-xs font-semibold">
                                 <Loader2 className="h-4 w-4 animate-spin" />
                                 <span>Menyiapkan Dokumen {titleLabel}...</span>
                             </div>
                         </div>
                     </div>
                 ) : versions.length === 0 ? (
-                    <div className="flex flex-1 flex-col items-center justify-center p-12 text-center bg-transparent">
+                    <div className="flex flex-1 flex-col items-center justify-center bg-transparent p-12 text-center">
                         <div className="mb-4 text-black dark:text-zinc-200">
                             <FileText size={40} strokeWidth={1.5} />
                         </div>
                         <h4 className="mb-1 text-sm font-bold text-black dark:text-white">Dokumen {titleLabel} Belum Tersedia</h4>
-                        <p className="max-w-md text-xs text-black/80 dark:text-zinc-400 mb-5">
-                            Belum ada berkas yang diunggah untuk tahap ini. Unggah berkas (.pdf, .docx, atau .doc) untuk mulai melihat pratinjau dokumen.
+                        <p className="mb-5 max-w-md text-xs text-black/80 dark:text-zinc-400">
+                            Belum ada berkas yang diunggah untuk tahap ini. Unggah berkas (.pdf, .docx, atau .doc) untuk mulai melihat pratinjau
+                            dokumen.
                         </p>
                         {canEdit && (
                             <button
                                 type="button"
                                 onClick={() => fileInputRef.current?.click()}
-                                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold hover:opacity-90 transition-all cursor-pointer"
+                                className="bg-primary text-primary-foreground inline-flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all hover:opacity-90"
                             >
                                 <Upload size={14} />
                                 <span>Pilih Berkas untuk Diunggah</span>
@@ -660,15 +653,13 @@ export default function AgreementView({
                         )}
                     </div>
                 ) : (
-                    <div className="relative w-full h-full min-h-0 flex-1 p-0 m-0 border-none overflow-hidden bg-slate-100 dark:bg-zinc-950">
+                    <div className="relative m-0 h-full min-h-0 w-full flex-1 overflow-hidden border-none bg-slate-100 p-0 dark:bg-zinc-950">
                         {/* Iframe Loading Spinner overlay */}
                         {isIframeLoading && (
-                            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xs transition-opacity duration-300">
-                                <div className="flex items-center gap-2.5 px-4 py-2 rounded-full bg-white dark:bg-zinc-800 shadow-md border border-slate-200 dark:border-zinc-700">
-                                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                                    <span className="text-xs font-semibold text-slate-700 dark:text-zinc-200">
-                                        Merender Pratinjau PDF...
-                                    </span>
+                            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/70 backdrop-blur-xs transition-opacity duration-300 dark:bg-zinc-900/70">
+                                <div className="flex items-center gap-2.5 rounded-full border border-slate-200 bg-white px-4 py-2 shadow-md dark:border-zinc-700 dark:bg-zinc-800">
+                                    <Loader2 className="text-primary h-4 w-4 animate-spin" />
+                                    <span className="text-xs font-semibold text-slate-700 dark:text-zinc-200">Merender Pratinjau PDF...</span>
                                 </div>
                             </div>
                         )}
@@ -677,7 +668,7 @@ export default function AgreementView({
                             <iframe
                                 src={pdfUrl}
                                 onLoad={() => setIsIframeLoading(false)}
-                                className="w-full h-full min-h-0 flex-1 border-none p-0 m-0"
+                                className="m-0 h-full min-h-0 w-full flex-1 border-none p-0"
                                 title="Agreement Preview"
                             />
                         ) : (

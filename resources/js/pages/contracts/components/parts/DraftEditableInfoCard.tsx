@@ -1,21 +1,7 @@
 import { TreeSelect } from '@/components/ui/selection/TreeSelect';
 import { Contract, ContractType } from '@/pages/contracts/types';
 import { resolveVendorTaxPkp } from '@/pages/contracts/utils';
-import {
-    AlertCircle,
-    CheckCircle2,
-    ChevronDown,
-    ChevronUp,
-    CornerDownRight,
-    Edit3,
-    Eye,
-    GitBranch,
-    Info,
-    Layers,
-    Lock,
-    Tag,
-    UserCheck,
-} from 'lucide-react';
+import { ChevronDown, ChevronUp, Edit3, Eye, GitBranch, Info, Layers, Lock, Tag } from 'lucide-react';
 import React, { useEffect, useMemo, useState } from 'react';
 import { ContractInfoForm } from './ContractInfoForm';
 
@@ -59,14 +45,7 @@ export function DraftEditableInfoCard({
     types,
     submissionTypes = [],
     vendors = [],
-    formTemplates,
-    canUpdate,
     onUpdate,
-    processing,
-    setPreviewTitle,
-    setPreviewUrl,
-    setPreviewHasFile,
-    setPreviewOpen,
     meId,
     onStateChange,
     saveRef,
@@ -418,12 +397,12 @@ export function DraftEditableInfoCard({
                             onTaxRequiredChange={(newVal) => {
                                 setTaxRequired(newVal);
                             }}
-                            canEditFirstParty={selected.allow_first_party_edit !== false}
-                            canEditVendor={selected.allow_vendor_edit !== false}
-                            canEditCategory={selected.allow_category_edit !== false}
-                            canEditPrice={selected.allow_price_edit !== false}
-                            canEditPeriod={selected.allow_period_edit !== false}
-                            canEditTaxToggle={selected.allow_tax_toggle_edit !== false}
+                            canEditFirstParty={selected.allow?.first_party_edit !== false && selected.allow_first_party_edit !== false}
+                            canEditVendor={selected.allow?.vendor_edit !== false && selected.allow_vendor_edit !== false}
+                            canEditCategory={selected.allow?.category_edit !== false && selected.allow_category_edit !== false}
+                            canEditPrice={selected.allow?.price_edit !== false && selected.allow_price_edit !== false}
+                            canEditPeriod={selected.allow?.period_edit !== false && selected.allow_period_edit !== false}
+                            canEditTaxToggle={selected.allow?.tax_toggle_edit !== false && selected.allow_tax_toggle_edit !== false}
                         />
                     </div>
                 )}
@@ -449,13 +428,17 @@ export function DraftEditableInfoCard({
                 {!workflowMinimized && (
                     <div className="bg-surface-base text-text-main border-surface-border flex flex-col gap-3.5 rounded-xl border p-4 shadow-xs">
                         {/* Kategori Dokumen */}
-                        {selected.show_category !== false && (
+                        {selected.show?.category !== false && selected.show_category !== false && (
                             <div className="flex flex-col gap-1.5">
                                 <div className="flex items-center justify-between gap-2 text-[10px]">
                                     <div className="text-muted-foreground flex items-center gap-1.5 font-bold tracking-wider uppercase">
                                         <Tag size={12} className="text-muted-foreground/80 shrink-0" />
                                         <span>Kategori Dokumen</span>
-                                        {!!(selected.require_category || selected.workflow_step?.meta?.require_category) && (
+                                        {!!(
+                                            selected.required?.category ||
+                                            selected.require_category ||
+                                            selected.workflow_step?.meta?.require_category
+                                        ) && (
                                             <span className="ml-0.5 font-black text-rose-500" title="Wajib Diisi">
                                                 *
                                             </span>
@@ -502,7 +485,7 @@ export function DraftEditableInfoCard({
 
                         {/* Alur Kerja (Workflow Information) */}
                         <div className="flex flex-col gap-1.5 pt-0.5">
-                            <div className="flex items-center justify-between gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                            <div className="text-muted-foreground flex items-center justify-between gap-1.5 text-[10px] font-bold tracking-wider uppercase">
                                 <div className="flex items-center gap-1.5">
                                     <GitBranch size={12} className="text-muted-foreground/80 shrink-0" />
                                     <span>Informasi Alur Kerja</span>
@@ -517,22 +500,32 @@ export function DraftEditableInfoCard({
 
                             <div className="grid grid-cols-1 gap-1 text-[11px]">
                                 {/* 1. Workflow Utama */}
-                                <div className="flex items-center justify-between gap-2 py-0.5 border-b border-surface-border/40">
+                                <div className="border-surface-border/40 flex items-center justify-between gap-2 border-b py-0.5">
                                     <span className="text-muted-foreground text-[10px] font-medium">Workflow Utama:</span>
-                                    <span className="text-text-main font-bold truncate max-w-[200px]" title={selected.origin_workflow?.name || selected.workflow?.name}>
+                                    <span
+                                        className="text-text-main max-w-[200px] truncate font-bold"
+                                        title={selected.origin_workflow?.name || selected.workflow?.name}
+                                    >
                                         {selected.origin_workflow?.name || selected.workflow?.name || 'Alur Standar'}
                                     </span>
                                 </div>
 
                                 {/* 2. Workflow Saat Ini */}
-                                <div className="flex items-center justify-between gap-2 py-0.5 border-b border-surface-border/40">
+                                <div className="border-surface-border/40 flex items-center justify-between gap-2 border-b py-0.5">
                                     <span className="text-muted-foreground text-[10px] font-medium">Workflow Saat Ini:</span>
-                                    <div className="flex items-center gap-1 min-w-0">
-                                        <span className="text-text-main font-bold truncate max-w-[180px]" title={selected.workflow?.name || selected.sub_workflow?.name || selected.origin_workflow?.name}>
-                                            {selected.workflow?.name || selected.sub_workflow?.name || selected.origin_workflow?.name || 'Alur Standar'}
+                                    <div className="flex min-w-0 items-center gap-1">
+                                        <span
+                                            className="text-text-main max-w-[180px] truncate font-bold"
+                                            title={selected.workflow?.name || selected.sub_workflow?.name || selected.origin_workflow?.name}
+                                        >
+                                            {selected.workflow?.name ||
+                                                selected.sub_workflow?.name ||
+                                                selected.origin_workflow?.name ||
+                                                'Alur Standar'}
                                         </span>
-                                        {(selected.is_in_sub_workflow || (selected.origin_workflow && selected.origin_workflow_id !== selected.workflow_id)) && (
-                                            <span className="text-[8px] font-bold px-1 py-0.2 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300 shrink-0">
+                                        {(selected.is_in_sub_workflow ||
+                                            (selected.origin_workflow && selected.origin_workflow_id !== selected.workflow_id)) && (
+                                            <span className="py-0.2 shrink-0 rounded bg-amber-500/15 px-1 text-[8px] font-bold text-amber-700 dark:text-amber-300">
                                                 Sub
                                             </span>
                                         )}
@@ -542,7 +535,10 @@ export function DraftEditableInfoCard({
                                 {/* 3. Origin Workflow */}
                                 <div className="flex items-center justify-between gap-2 py-0.5">
                                     <span className="text-muted-foreground text-[10px] font-medium">Origin Workflow:</span>
-                                    <span className="text-text-main font-semibold truncate max-w-[200px]" title={selected.origin_workflow?.name || '-'}>
+                                    <span
+                                        className="text-text-main max-w-[200px] truncate font-semibold"
+                                        title={selected.origin_workflow?.name || '-'}
+                                    >
                                         {selected.origin_workflow?.name || selected.workflow?.name || '-'}
                                     </span>
                                 </div>
@@ -579,19 +575,17 @@ export function DraftEditableInfoCard({
                                 pendingApproval?.approver_name ||
                                 pendingApproval?.approver?.name;
                             const stepCategory = currentStep?.step_category || pendingApproval?.step_category;
-                            const stepType = currentStep?.step_type || pendingApproval?.step_type;
-                            const meta = currentStep?.meta || {};
                             const actions = (currentStep?.action_configs || currentStep?.actions || []) as any[];
 
                             return (
                                 <div className="border-surface-border/60 flex flex-col gap-1.5 border-t pt-2">
-                                    <div className="flex items-center justify-between gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                                    <div className="text-muted-foreground flex items-center justify-between gap-1.5 text-[10px] font-bold tracking-wider uppercase">
                                         <div className="flex items-center gap-1.5">
                                             <Layers size={12} className="text-muted-foreground/80 shrink-0" />
                                             <span>Tahap Saat Ini (Current Step)</span>
                                         </div>
                                         {stepNumber && totalSteps > 0 && (
-                                            <span className="text-primary font-bold text-[9.5px]">
+                                            <span className="text-primary text-[9.5px] font-bold">
                                                 Tahap {stepNumber}/{totalSteps}
                                             </span>
                                         )}
@@ -599,15 +593,15 @@ export function DraftEditableInfoCard({
 
                                     <div className="grid grid-cols-1 gap-1 text-[11px]">
                                         {/* Step Name & Status */}
-                                        <div className="flex items-center justify-between gap-2 py-0.5 border-b border-surface-border/40">
+                                        <div className="border-surface-border/40 flex items-center justify-between gap-2 border-b py-0.5">
                                             <span className="text-muted-foreground text-[10px] font-medium">Nama Tahap:</span>
-                                            <div className="flex items-center gap-1.5 min-w-0">
+                                            <div className="flex min-w-0 items-center gap-1.5">
                                                 {stepCategory && (
                                                     <span className="py-0.2 rounded border border-indigo-500/20 bg-indigo-500/10 px-1 text-[8px] font-bold tracking-wider text-indigo-700 uppercase dark:text-indigo-300">
                                                         {stepCategory}
                                                     </span>
                                                 )}
-                                                <span className="text-foreground text-xs font-bold truncate">
+                                                <span className="text-foreground truncate text-xs font-bold">
                                                     {isApproved
                                                         ? 'Semua Tahap Selesai (Disetujui)'
                                                         : isRejected
@@ -620,19 +614,17 @@ export function DraftEditableInfoCard({
                                         {/* Approver / PIC */}
                                         {!isApproved && !isRejected && (
                                             <>
-                                                <div className="flex items-center justify-between gap-2 py-0.5 border-b border-surface-border/40">
+                                                <div className="border-surface-border/40 flex items-center justify-between gap-2 border-b py-0.5">
                                                     <span className="text-muted-foreground text-[10px] font-medium">Approver / PIC:</span>
-                                                    <span className="text-foreground font-bold truncate max-w-[200px]">
+                                                    <span className="text-foreground max-w-[200px] truncate font-bold">
                                                         {stepApprover || (stepRole ? `Menunggu ${stepRole}` : 'Belum Ditentukan')}
                                                     </span>
                                                 </div>
 
                                                 {stepRole && (
-                                                    <div className="flex items-center justify-between gap-2 py-0.5 border-b border-surface-border/40">
+                                                    <div className="border-surface-border/40 flex items-center justify-between gap-2 border-b py-0.5">
                                                         <span className="text-muted-foreground text-[10px] font-medium">Wewenang / Role:</span>
-                                                        <span className="text-foreground font-semibold text-[10px] uppercase">
-                                                            {stepRole}
-                                                        </span>
+                                                        <span className="text-foreground text-[10px] font-semibold uppercase">{stepRole}</span>
                                                     </div>
                                                 )}
 

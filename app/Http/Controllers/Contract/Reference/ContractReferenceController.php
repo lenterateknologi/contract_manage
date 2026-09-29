@@ -6,11 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Http\Formatters\ContractFormatter;
 use App\Models\Contract;
 use App\Services\Contract\Reference\ContractReferenceService;
+use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class ContractReferenceController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(
         protected ContractReferenceService $referenceService
     ) {}
@@ -23,10 +26,7 @@ class ContractReferenceController extends Controller
         $contract = Contract::findOrFail($contractId);
         $reference = $this->referenceService->getReference($contract);
 
-        return response()->json([
-            'status' => 'success',
-            'data' => $reference,
-        ]);
+        return $this->successResponse($reference, 'Contract reference retrieved successfully');
     }
 
     /**
@@ -40,10 +40,7 @@ class ContractReferenceController extends Controller
 
         $results = $this->referenceService->searchAvailableReferences($contract, $keyword, $limit);
 
-        return response()->json([
-            'status' => 'success',
-            'data' => $results,
-        ]);
+        return $this->successResponse($results, 'Available contract references retrieved successfully');
     }
 
     /**
@@ -58,9 +55,6 @@ class ContractReferenceController extends Controller
         $contract = Contract::findOrFail($contractId);
         $updated = $this->referenceService->updateReference($contract, $request->input('parent_id'));
 
-        return response()->json([
-            'status' => 'success',
-            'data' => ContractFormatter::formatContract($updated, true),
-        ]);
+        return $this->successResponse(ContractFormatter::formatContract($updated, true), 'Contract reference updated successfully');
     }
 }

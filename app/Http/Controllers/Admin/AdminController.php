@@ -48,15 +48,7 @@ class AdminController extends Controller
         protected OrganizationQuery $organizationQuery,
     ) {}
 
-    #[OA\Get(
-        path: '/api/admin/users',
-        summary: 'Get list of users',
-        tags: ['Admin'],
-        security: [['bearerAuth' => []]],
-        responses: [
-            new OA\Response(response: 200, description: 'List of users'),
-        ],
-    )]
+    
     public function users(Request $request)
     {
         $query = $this->userQuery->list($request);
@@ -244,15 +236,7 @@ class AdminController extends Controller
         ]);
     }
 
-    #[OA\Get(
-        path: '/api/admin/roles',
-        summary: 'Get list of roles',
-        tags: ['Admin'],
-        security: [['bearerAuth' => []]],
-        responses: [
-            new OA\Response(response: 200, description: 'List of roles'),
-        ],
-    )]
+   
     public function roles(Request $request)
     {
         $query = Role::query()

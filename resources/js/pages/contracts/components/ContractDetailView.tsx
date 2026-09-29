@@ -2,7 +2,13 @@ import { Icons } from '@/components/ui';
 import { cn } from '@/lib/utils';
 import { ContractActionSection } from '@/pages/contracts/components/parts/ContractActionSection';
 import { ContractDetailHeader } from '@/pages/contracts/components/parts/ContractDetailHeader';
-import { AdvancedInfoCard, DraftEditableInfoCard, PicInfoCard, RequesterInfoCard, VendorInfoCard } from '@/pages/contracts/components/parts/DraftEditableInfoCard';
+import {
+    AdvancedInfoCard,
+    DraftEditableInfoCard,
+    PicInfoCard,
+    RequesterInfoCard,
+    VendorInfoCard,
+} from '@/pages/contracts/components/parts/DraftEditableInfoCard';
 import { Contract, ContractType } from '@/pages/contracts/types';
 import { contractApi } from '@/pages/contracts/utils';
 import { resolveContractRequirements } from '@/pages/contracts/utils/requirements';
@@ -31,26 +37,32 @@ const {
 } = Icons;
 
 // Lazy load modals
-const SharedAddhocModal = lazy(() => import('@/pages/contracts/components/modals/shared/SharedAddhocModal').then(m => ({ default: m.SharedAddhocModal })));
-const SharedActionModal = lazy(() => import('@/pages/contracts/components/modals/shared/SharedApproveModal').then(m => ({ default: m.SharedActionModal })));
-const SharedAssignModal = lazy(() => import('@/pages/contracts/components/modals/shared/SharedAssignModal').then(m => ({ default: m.SharedAssignModal })));
+const SharedAddhocModal = lazy(() =>
+    import('@/pages/contracts/components/modals/shared/SharedAddhocModal').then((m) => ({ default: m.SharedAddhocModal })),
+);
+const SharedActionModal = lazy(() =>
+    import('@/pages/contracts/components/modals/shared/SharedApproveModal').then((m) => ({ default: m.SharedActionModal })),
+);
+const SharedAssignModal = lazy(() =>
+    import('@/pages/contracts/components/modals/shared/SharedAssignModal').then((m) => ({ default: m.SharedAssignModal })),
+);
 
 // Lazy load Tab Components for performance
-const AgreementTab = lazy(() => import('../show/tabs/AgreementTab').then(m => ({ default: m.AgreementTab })));
-const AttachmentsTab = lazy(() => import('../show/tabs/AttachmentsTab').then(m => ({ default: m.AttachmentsTab })));
-const AuditTrailTab = lazy(() => import('../show/tabs/AuditTrailTab').then(m => ({ default: m.AuditTrailTab })));
-const ChatTab = lazy(() => import('../show/tabs/ChatTab').then(m => ({ default: m.ChatTab })));
-const F1Tab = lazy(() => import('../show/tabs/F1Tab').then(m => ({ default: m.F1Tab })));
-const F2Tab = lazy(() => import('../show/tabs/F2Tab').then(m => ({ default: m.F2Tab })));
-const MembersTab = lazy(() => import('../show/tabs/MembersTab').then(m => ({ default: m.MembersTab })));
-const ReferencesTab = lazy(() => import('../show/tabs/ReferencesTab').then(m => ({ default: m.ReferencesTab })));
-const TimelineTab = lazy(() => import('../show/tabs/TimelineTab').then(m => ({ default: m.TimelineTab })));
-const RelatedWorkflowsTab = lazy(() => import('../show/tabs/RelatedWorkflowsTab').then(m => ({ default: m.RelatedWorkflowsTab })));
+const AgreementTab = lazy(() => import('../show/tabs/AgreementTab').then((m) => ({ default: m.AgreementTab })));
+const AttachmentsTab = lazy(() => import('../show/tabs/AttachmentsTab').then((m) => ({ default: m.AttachmentsTab })));
+const AuditTrailTab = lazy(() => import('../show/tabs/AuditTrailTab').then((m) => ({ default: m.AuditTrailTab })));
+const ChatTab = lazy(() => import('../show/tabs/ChatTab').then((m) => ({ default: m.ChatTab })));
+const F1Tab = lazy(() => import('../show/tabs/F1Tab').then((m) => ({ default: m.F1Tab })));
+const F2Tab = lazy(() => import('../show/tabs/F2Tab').then((m) => ({ default: m.F2Tab })));
+const MembersTab = lazy(() => import('../show/tabs/MembersTab').then((m) => ({ default: m.MembersTab })));
+const ReferencesTab = lazy(() => import('../show/tabs/ReferencesTab').then((m) => ({ default: m.ReferencesTab })));
+const TimelineTab = lazy(() => import('../show/tabs/TimelineTab').then((m) => ({ default: m.TimelineTab })));
+const RelatedWorkflowsTab = lazy(() => import('../show/tabs/RelatedWorkflowsTab').then((m) => ({ default: m.RelatedWorkflowsTab })));
 
 import LoadingLottie from '@/components/ui/feedback/LoadingLottie';
 
 const TabSkeleton = () => (
-    <div className="flex flex-1 items-center justify-center min-h-[400px] w-full p-6">
+    <div className="flex min-h-[400px] w-full flex-1 items-center justify-center p-6">
         <LoadingLottie width={120} height={120} />
     </div>
 );
@@ -103,82 +115,114 @@ export const ContractDetailView = ({
 
     // Tab
     const rawTab = params.get('tab') || getClientPref<string>('detail_tab', 'documents');
-    const initialTab = rawTab === 'reference' ? 'references' : (rawTab === 'vendor' ? 'parties' : rawTab);
+    const initialTab = rawTab === 'reference' ? 'references' : rawTab === 'vendor' ? 'parties' : rawTab;
     const [detailTab, setDetailTabState] = useState(initialTab);
 
+    const currentSub = params.get('subtab');
+
     // Document subtab (f1, f2, agreement)
-    const rawDocSub = params.get('subtab') || getClientPref<'f1' | 'f2' | 'agreement'>('detail_doc_subtab', 'f1');
-    const [docSubTab, setDocSubTabState] = useState<'f1' | 'f2' | 'agreement'>(['f1', 'f2', 'agreement'].includes(rawDocSub) ? (rawDocSub as any) : 'f1');
+    const rawDocSub =
+        (initialTab === 'documents' && currentSub) || params.get('docsubtab') || getClientPref<'f1' | 'f2' | 'agreement'>('detail_doc_subtab', 'f1');
+    const [docSubTab, setDocSubTabState] = useState<'f1' | 'f2' | 'agreement'>(
+        ['f1', 'f2', 'agreement'].includes(rawDocSub) ? (rawDocSub as any) : 'f1',
+    );
 
     // Parties subtab
-    const rawPartySub = params.get('partysubtab') || params.get('subtab') || getClientPref<string>('detail_party_subtab', 'requester');
-    const initialPartySub = rawPartySub === 'vendor' ? 'second_party' : (['sla', 'advanced_info', 'timeline'].includes(rawPartySub) ? 'timeline' : rawPartySub);
-    const [partySubTab, setPartySubTabState] = useState<'requester' | 'second_party' | 'pic' | 'timeline'>((['requester', 'second_party', 'pic', 'timeline'].includes(initialPartySub) ? initialPartySub : 'requester') as any);
+    const rawPartySub =
+        (initialTab === 'parties' && currentSub) || params.get('partysubtab') || getClientPref<string>('detail_party_subtab', 'requester');
+    const initialPartySub =
+        rawPartySub === 'vendor' ? 'second_party' : ['sla', 'advanced_info', 'timeline'].includes(rawPartySub) ? 'timeline' : rawPartySub;
+    const [partySubTab, setPartySubTabState] = useState<'requester' | 'second_party' | 'pic' | 'timeline'>(
+        (['requester', 'second_party', 'pic', 'timeline'].includes(initialPartySub) ? initialPartySub : 'requester') as any,
+    );
 
     // Discussion subtab
-    const rawDiscSub = params.get('discsubtab') || params.get('subtab') || getClientPref<string>('detail_disc_subtab', 'chat');
+    const rawDiscSub = (initialTab === 'discussion' && currentSub) || params.get('discsubtab') || getClientPref<string>('detail_disc_subtab', 'chat');
     const [discSubTab, setDiscSubTabState] = useState<'chat' | 'members'>((['chat', 'members'].includes(rawDiscSub) ? rawDiscSub : 'chat') as any);
 
     // History subtab
-    const rawHistSub = params.get('histsubtab') || params.get('subtab') || getClientPref<string>('detail_hist_subtab', 'timeline');
+    const rawHistSub =
+        (initialTab === 'history' && currentSub) || params.get('histsubtab') || getClientPref<string>('detail_hist_subtab', 'timeline');
     const [historySubTab, setHistorySubTabState] = useState<'timeline' | 'related_workflows' | 'audit'>(
         (['timeline', 'related_workflows', 'audit'].includes(rawHistSub) ? rawHistSub : 'timeline') as any,
     );
 
     // Ref subtab
-    const rawRefSub = params.get('refsubtab') || params.get('subtab') || getClientPref<string>('detail_ref_subtab', 'parent');
-    const [refSubTab, setRefSubTabState] = useState<'parent' | 'purchase_orders'>((['parent', 'purchase_orders'].includes(rawRefSub) ? rawRefSub : 'parent') as any);
+    const rawRefSub = (initialTab === 'references' && currentSub) || params.get('refsubtab') || getClientPref<string>('detail_ref_subtab', 'parent');
+    const [refSubTab, setRefSubTabState] = useState<'parent' | 'purchase_orders'>(
+        (['parent', 'purchase_orders'].includes(rawRefSub) ? rawRefSub : 'parent') as any,
+    );
+
+    // Clean single URL param updater
+    const updateUrlParams = (newTab: string, newSubtab?: string) => {
+        const newParams = new URLSearchParams();
+        newParams.set('tab', newTab);
+        if (newSubtab) {
+            newParams.set('subtab', newSubtab);
+        }
+        window.history.replaceState({}, '', `${window.location.pathname}?${newParams.toString()}`);
+    };
+
+    useEffect(() => {
+        // Clean up legacy noisy query params on mount
+        const search = window.location.search;
+        if (search.includes('discsubtab=') || search.includes('histsubtab=') || search.includes('partysubtab=') || search.includes('refsubtab=')) {
+            const activeSub =
+                detailTab === 'documents'
+                    ? docSubTab
+                    : detailTab === 'parties'
+                      ? partySubTab
+                      : detailTab === 'discussion'
+                        ? discSubTab
+                        : detailTab === 'history'
+                          ? historySubTab
+                          : detailTab === 'references'
+                            ? refSubTab
+                            : undefined;
+            updateUrlParams(detailTab, activeSub);
+        }
+    }, []);
 
     const setDetailTab = (tab: string) => {
         setDetailTabState(tab);
         setClientPref('detail_tab', tab);
-        const newParams = new URLSearchParams(window.location.search);
-        newParams.set('tab', tab);
-        window.history.replaceState({}, '', `${window.location.pathname}?${newParams.toString()}`);
+        let activeSub: string | undefined;
+        if (tab === 'documents') activeSub = docSubTab;
+        else if (tab === 'parties') activeSub = partySubTab;
+        else if (tab === 'discussion') activeSub = discSubTab;
+        else if (tab === 'history') activeSub = historySubTab;
+        else if (tab === 'references') activeSub = refSubTab;
+        updateUrlParams(tab, activeSub);
     };
 
     const setPartySubTab = (sub: 'requester' | 'second_party' | 'pic' | 'timeline') => {
         setPartySubTabState(sub);
         setClientPref('detail_party_subtab', sub);
-        const newParams = new URLSearchParams(window.location.search);
-        newParams.set('partysubtab', sub);
-        newParams.set('subtab', sub);
-        window.history.replaceState({}, '', `${window.location.pathname}?${newParams.toString()}`);
+        updateUrlParams(detailTab, sub);
     };
 
     const setDocSubTab = (sub: 'f1' | 'f2' | 'agreement') => {
         setDocSubTabState(sub);
         setClientPref('detail_doc_subtab', sub);
-        const newParams = new URLSearchParams(window.location.search);
-        newParams.set('subtab', sub);
-        window.history.replaceState({}, '', `${window.location.pathname}?${newParams.toString()}`);
+        updateUrlParams(detailTab, sub);
     };
 
     const setDiscSubTab = (sub: 'chat' | 'members') => {
         setDiscSubTabState(sub);
         setClientPref('detail_disc_subtab', sub);
-        const newParams = new URLSearchParams(window.location.search);
-        newParams.set('discsubtab', sub);
-        newParams.set('subtab', sub);
-        window.history.replaceState({}, '', `${window.location.pathname}?${newParams.toString()}`);
+        updateUrlParams(detailTab, sub);
     };
 
     const setHistorySubTab = (sub: 'timeline' | 'related_workflows' | 'audit') => {
         setHistorySubTabState(sub);
         setClientPref('detail_hist_subtab', sub);
-        const newParams = new URLSearchParams(window.location.search);
-        newParams.set('histsubtab', sub);
-        newParams.set('subtab', sub);
-        window.history.replaceState({}, '', `${window.location.pathname}?${newParams.toString()}`);
+        updateUrlParams(detailTab, sub);
     };
 
     const setRefSubTab = (sub: 'parent' | 'purchase_orders') => {
         setRefSubTabState(sub);
         setClientPref('detail_ref_subtab', sub);
-        const newParams = new URLSearchParams(window.location.search);
-        newParams.set('refsubtab', sub);
-        newParams.set('subtab', sub);
-        window.history.replaceState({}, '', `${window.location.pathname}?${newParams.toString()}`);
+        updateUrlParams(detailTab, sub);
     };
 
     const [processing, setProcessing] = useState(false);
@@ -289,7 +333,10 @@ export const ContractDetailView = ({
             );
             handleContractUpdate(c);
 
-            let msg = contract.status === 'draft' && contract.workflow_step?.step === 1 ? 'Pengajuan persetujuan berhasil dikirim.' : 'Pengajuan disetujui.';
+            let msg =
+                contract.status === 'draft' && contract.workflow_step?.step === 1
+                    ? 'Pengajuan persetujuan berhasil dikirim.'
+                    : 'Pengajuan disetujui.';
             if (assignedPicId) msg = 'PIC ditugaskan dan pengajuan disetujui.';
             if (isFinal) msg = 'Penandatanganan selesai dikonfigurasi sebagai final.';
 
@@ -300,8 +347,6 @@ export const ContractDetailView = ({
             showToast(error.response?.data?.message || 'Gagal memproses persetujuan.', 'danger');
         }
     };
-
-
 
     const canApprove = !!contract.can_approve;
 
@@ -316,7 +361,6 @@ export const ContractDetailView = ({
     const isSubStepReviewer = useMemo(() => {
         return !!activePendingApproval && (activePendingApproval.sub_step != null || activePendingApproval.role === 'Persetujuan Tambahan');
     }, [activePendingApproval]);
-
 
     const applicableStepActions = useMemo(() => {
         const rawActions = contract.workflow_step?.actions || [];
@@ -339,17 +383,17 @@ export const ContractDetailView = ({
             [];
         if (!customActions || !Array.isArray(customActions) || customActions.length === 0) return [];
 
-        const hasAssignedPic = !!contract.assigned_pic_id;
-        const hasSigners = (contract.approvals || []).some(
-            (a: any) => a.role === 'Pihak 1' || a.role === 'Pihak 2' || a.role === 'Penandatangan'
-        );
+        const hasAssignedPic = !!(contract.assigned_pic?.id || contract.assigned_pic_id);
+        const hasSigners = (contract.approvals || []).some((a: any) => a.role === 'Pihak 1' || a.role === 'Pihak 2' || a.role === 'Penandatangan');
 
         return customActions.filter((act) => {
             if (act.is_active === false) return false;
 
             // Do not allow nested ad-hoc action on ad-hoc review steps
-            if (act.action_code === 'add_adhoc' &&
-                (contract.workflow_step?.step_category === 'adhoc_review' || (contract.workflow_step?.meta as any)?.is_adhoc_step)) {
+            if (
+                act.action_code === 'add_adhoc' &&
+                (contract.workflow_step?.step_category === 'adhoc_review' || (contract.workflow_step?.meta as any)?.is_adhoc_step)
+            ) {
                 return false;
             }
 
@@ -357,9 +401,7 @@ export const ContractDetailView = ({
             if (act.scope === 'specific_steps' && Array.isArray(act.step_ids) && act.step_ids.length > 0) {
                 const currentStepId = String(contract.workflow_step_id);
                 const currentStepSeq = contract.workflow_step?.step;
-                const matchStep = act.step_ids.some(
-                    (sid: string) => String(sid) === currentStepId || String(sid) === String(currentStepSeq)
-                );
+                const matchStep = act.step_ids.some((sid: string) => String(sid) === currentStepId || String(sid) === String(currentStepSeq));
                 if (!matchStep) return false;
             }
 
@@ -377,7 +419,22 @@ export const ContractDetailView = ({
             const currentUserObj = meUser || { id: meId };
             return matchUserAgainstWorkflowPool(currentUserObj, { authorities }, contract);
         });
-    }, [contract.workflow, contract.origin_workflow, contract.workflow_step, contract.workflow_step_id, contract.created_by, contract.initiated_by_id, contract.assigned_pic_id, contract.approvals, contract.initiator, contract.creator, meId, meUser, isSubStepReviewer]);
+    }, [
+        contract.workflow,
+        contract.origin_workflow,
+        contract.workflow_step,
+        contract.workflow_step_id,
+        contract.created_by,
+        contract.initiated_by_id,
+        contract.assigned_pic?.id,
+        contract.assigned_pic_id,
+        contract.approvals,
+        contract.initiator,
+        contract.creator,
+        meId,
+        meUser,
+        isSubStepReviewer,
+    ]);
 
     // Check if standard step action panel is blocked by any custom action that requires completion first
     const isStepActionLocked = useMemo(() => {
@@ -438,43 +495,37 @@ export const ContractDetailView = ({
         }
     };
 
+    const tabs = useMemo(() => {
+        const meta = contract.workflow_step?.meta || {};
+        const hasF1 = meta.show_tab_f1 !== false && ((contract as any).f1_mode || 'upload') !== 'none';
+        const hasF2 = meta.show_tab_f2 !== false && ((contract as any).f2_mode || 'upload') !== 'none';
+        const hasAgreement = meta.show_tab_agreement !== false && ((contract as any).contract_mode || 'upload') !== 'none';
+        const hasDocuments = hasF1 || hasF2 || hasAgreement;
 
-    const tabs = useMemo(
-        () => {
-            const meta = contract.workflow_step?.meta || {};
-            const hasF1 = meta.show_tab_f1 !== false && ((contract as any).f1_mode || 'upload') !== 'none';
-            const hasF2 = meta.show_tab_f2 !== false && ((contract as any).f2_mode || 'upload') !== 'none';
-            const hasAgreement = meta.show_tab_agreement !== false && ((contract as any).contract_mode || 'upload') !== 'none';
-            const hasDocuments = hasF1 || hasF2 || hasAgreement;
+        const hasChat = meta.show_tab_chat !== false;
+        const hasMembers = meta.show_tab_members !== false;
+        const hasDiscussion = hasChat || hasMembers;
 
-            const hasChat = meta.show_tab_chat !== false;
-            const hasMembers = meta.show_tab_members !== false;
-            const hasDiscussion = hasChat || hasMembers;
+        const hasTimeline = meta.show_tab_timeline !== false;
+        const hasHistory = hasTimeline || true; // Audit log is always available
 
-            const hasTimeline = meta.show_tab_timeline !== false;
-            const hasHistory = hasTimeline || true; // Audit log is always available
-
-            return [
-                { id: 'documents', label: 'Dokumen', icon: FileText, mode: hasDocuments ? 'always' : 'none' },
-                { id: 'history', label: 'Riwayat & Alur', icon: History, mode: hasHistory ? 'always' : 'none' },
-                { id: 'attachments', label: 'Lampiran', icon: Paperclip, mode: meta.show_tab_attachments === false ? 'none' : 'always' },
-                { id: 'discussion', label: 'Diskusi & Member', icon: MessageSquare, mode: hasDiscussion ? 'always' : 'none' },
-                { id: 'references', label: 'Referensi', icon: Link2, mode: meta.show_tab_references === false ? 'none' : 'always' },
-                { id: 'parties', label: 'Informasi Lanjutan', icon: Users, mode: 'always' },
-            ].filter((tab) => tab.mode !== 'none');
-        },
-        [contract],
-    );
+        return [
+            { id: 'documents', label: 'Dokumen', icon: FileText, mode: hasDocuments ? 'always' : 'none' },
+            { id: 'history', label: 'Riwayat & Alur', icon: History, mode: hasHistory ? 'always' : 'none' },
+            { id: 'attachments', label: 'Lampiran', icon: Paperclip, mode: meta.show_tab_attachments === false ? 'none' : 'always' },
+            { id: 'discussion', label: 'Diskusi & Member', icon: MessageSquare, mode: hasDiscussion ? 'always' : 'none' },
+            { id: 'references', label: 'Referensi', icon: Link2, mode: meta.show_tab_references === false ? 'none' : 'always' },
+            { id: 'parties', label: 'Informasi Lanjutan', icon: Users, mode: 'always' },
+        ].filter((tab) => tab.mode !== 'none');
+    }, [contract]);
 
     // Tracking review status per step
     const currentStepKey = contract.workflow_step_id ? `step_${contract.workflow_step_id}` : 'general';
     const stepReviews = useMemo(() => {
-        return (
-            (contract as any).doc_reviews?.[currentStepKey] ||
+        return ((contract as any).doc_reviews?.[currentStepKey] ||
             contract.metadata?.doc_reviews?.[currentStepKey] ||
             contract.metadata?.[`doc_reviews_${currentStepKey}`] ||
-            {}
-        ) as Record<string, any>;
+            {}) as Record<string, any>;
     }, [(contract as any).doc_reviews, contract.metadata, currentStepKey]);
 
     // Track viewed tabs to avoid duplicate review calls in same session
@@ -488,13 +539,16 @@ export const ContractDetailView = ({
 
             if (!isAlreadyReviewed && !reviewedInSessionRef.current.has(sessionKey)) {
                 reviewedInSessionRef.current.add(sessionKey);
-                contractApi.reviewDoc(contract.id, docSubTab).then((res) => {
-                    if (res?.contract) {
-                        handleContractUpdate(res.contract, true);
-                    }
-                }).catch((err) => {
-                    console.error('Failed to log doc review:', err);
-                });
+                contractApi
+                    .reviewDoc(contract.id, docSubTab)
+                    .then((res) => {
+                        if (res?.contract) {
+                            handleContractUpdate(res.contract, true);
+                        }
+                    })
+                    .catch((err) => {
+                        console.error('Failed to log doc review:', err);
+                    });
             }
         }
     }, [detailTab, docSubTab, contract.id, contract.can_approve, currentStepKey, stepReviews]);
@@ -524,7 +578,7 @@ export const ContractDetailView = ({
                     label: 'F1 (Permohonan)',
                     icon: FileText,
                     isReviewed: isRev,
-                    badge: isRev ? 'Direview' : (reqReviewF1 ? 'Perlu Review' : undefined),
+                    badge: isRev ? 'Direview' : reqReviewF1 ? 'Perlu Review' : undefined,
                     badgeVariant: isRev ? 'success' : 'warning',
                 });
             }
@@ -535,7 +589,7 @@ export const ContractDetailView = ({
                     label: 'F2 (Ringkasan)',
                     icon: FileCheck,
                     isReviewed: isRev,
-                    badge: isRev ? 'Direview' : (reqReviewF2 ? 'Perlu Review' : undefined),
+                    badge: isRev ? 'Direview' : reqReviewF2 ? 'Perlu Review' : undefined,
                     badgeVariant: isRev ? 'success' : 'warning',
                 });
             }
@@ -546,7 +600,7 @@ export const ContractDetailView = ({
                     label: 'Draft Perjanjian',
                     icon: PenTool,
                     isReviewed: isRev,
-                    badge: isRev ? 'Direview' : (reqReviewAgreement ? 'Perlu Review' : undefined),
+                    badge: isRev ? 'Direview' : reqReviewAgreement ? 'Perlu Review' : undefined,
                     badgeVariant: isRev ? 'success' : 'warning',
                 });
             }
@@ -584,9 +638,7 @@ export const ContractDetailView = ({
                 ...(hasTimeline
                     ? [
                           { id: 'timeline', label: 'Alur Approval & Proses', icon: GitCommit },
-                          ...(ENABLE_RELATED_WORKFLOWS_TAB
-                              ? [{ id: 'related_workflows', label: 'Workflow Terkait', icon: Workflow }]
-                              : []),
+                          ...(ENABLE_RELATED_WORKFLOWS_TAB ? [{ id: 'related_workflows', label: 'Workflow Terkait', icon: Workflow }] : []),
                       ]
                     : []),
                 { id: 'audit', label: 'Audit Log & Activity', icon: ShieldCheck },
@@ -700,7 +752,7 @@ export const ContractDetailView = ({
         const isParty = detailTab === 'parties';
         const isExternalTab = isAudit || isMembers || isParty;
 
-        if (tabs.length > 0 && !tabs.some(t => t.id === detailTab) && !isExternalTab) {
+        if (tabs.length > 0 && !tabs.some((t) => t.id === detailTab) && !isExternalTab) {
             setDetailTab(tabs[0].id);
         } else if (tabs.length === 0 && !isExternalTab) {
             setDetailTab('empty');
@@ -813,9 +865,8 @@ export const ContractDetailView = ({
         }
     }, [detailTab, docSubTab, partySubTab, historySubTab, discSubTab, refSubTab]);
 
-
     return (
-        <div className="mx-auto flex w-full max-w-full flex-1 flex-col relative h-full overflow-hidden">
+        <div className="relative mx-auto flex h-full w-full max-w-full flex-1 flex-col overflow-hidden">
             {/* Action & Status Header Bar */}
             <ContractDetailHeader
                 contract={contract}
@@ -851,15 +902,15 @@ export const ContractDetailView = ({
                 }}
             />
 
-            <div className="flex-1 min-h-0 overflow-hidden p-3 lg:p-4 h-[calc(100vh-64px)]">
-                <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_390px] h-full min-h-0 items-start">
+            <div className="h-[calc(100vh-64px)] min-h-0 flex-1 overflow-hidden p-3 lg:p-4">
+                <div className="grid h-full min-h-0 grid-cols-1 items-start gap-4 lg:grid-cols-[1fr_390px]">
                     {/* Left Column: Form / Document Detail */}
-                    <div className="flex flex-col min-w-0 h-full min-h-0 overflow-hidden">
+                    <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden">
                         {contract.workflow_step?.meta?.show_document_detail !== false && (
-                            <div className="bg-surface-base border-surface-border overflow-hidden rounded-xl border shadow-xs flex-1 flex flex-col min-h-0 h-full">
+                            <div className="bg-surface-base border-surface-border flex h-full min-h-0 flex-1 flex-col overflow-hidden rounded-xl border shadow-xs">
                                 {/* Content Card Header: Sub-tabs from Sub-sidebar */}
                                 {activeSubChildren && activeSubChildren.length > 1 && (
-                                    <div className="flex items-center justify-between px-4 py-2 border-b border-surface-border bg-surface-muted/30 shrink-0 gap-2">
+                                    <div className="border-surface-border bg-surface-muted/30 flex shrink-0 items-center justify-between gap-2 border-b px-4 py-2">
                                         <div className="flex items-center gap-1 overflow-x-auto">
                                             {activeSubChildren.map((child) => {
                                                 const isActive = activeSubId === child.id;
@@ -870,10 +921,10 @@ export const ContractDetailView = ({
                                                         type="button"
                                                         onClick={() => handleSubTabChange(child.id)}
                                                         className={cn(
-                                                            'flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap',
+                                                            'flex cursor-pointer items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-all',
                                                             isActive
-                                                                ? 'bg-surface-base text-primary shadow-xs border border-surface-border font-bold'
-                                                                : 'text-text-desc hover:text-text-main hover:bg-surface-muted/60'
+                                                                ? 'bg-surface-base text-primary border-surface-border border font-bold shadow-xs'
+                                                                : 'text-text-desc hover:text-text-main hover:bg-surface-muted/60',
                                                         )}
                                                     >
                                                         {ChildIcon && (
@@ -886,12 +937,12 @@ export const ContractDetailView = ({
                                                         {child.badge && (
                                                             <span
                                                                 className={cn(
-                                                                    'text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0',
+                                                                    'shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-semibold',
                                                                     child.badgeVariant === 'success' || child.isReviewed
-                                                                        ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold'
+                                                                        ? 'bg-emerald-500/15 font-bold text-emerald-600 dark:text-emerald-400'
                                                                         : child.badgeVariant === 'warning'
-                                                                          ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold'
-                                                                          : 'bg-surface-muted text-text-desc'
+                                                                          ? 'bg-amber-500/15 font-bold text-amber-600 dark:text-amber-400'
+                                                                          : 'bg-surface-muted text-text-desc',
                                                                 )}
                                                             >
                                                                 {child.badge}
@@ -903,28 +954,39 @@ export const ContractDetailView = ({
                                         </div>
                                     </div>
                                 )}
-                                <div className="flex flex-1 flex-col min-h-0 h-full overflow-hidden">
+                                <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
                                     <Suspense fallback={<TabSkeleton />}>
                                         {/* Documents Tab View (F1, F2, Agreement kept mounted to preserve unsaved form inputs) */}
                                         {(() => {
                                             const meta = contract.workflow_step?.meta || {};
                                             const hasF1 = meta.show_tab_f1 !== false && ((contract as any).f1_mode || 'upload') !== 'none';
                                             const hasF2 = meta.show_tab_f2 !== false && ((contract as any).f2_mode || 'upload') !== 'none';
-                                            const hasAgreement = meta.show_tab_agreement !== false && ((contract as any).contract_mode || 'upload') !== 'none';
+                                            const hasAgreement =
+                                                meta.show_tab_agreement !== false && ((contract as any).contract_mode || 'upload') !== 'none';
 
                                             const docSubTabs = [
                                                 { id: 'f1', label: 'F1 (Permohonan)', icon: FileText, show: hasF1 },
                                                 { id: 'f2', label: 'F2 (Ringkasan)', icon: FileCheck, show: hasF2 },
                                                 { id: 'agreement', label: 'Perjanjian', icon: PenTool, show: hasAgreement },
-                                            ].filter(t => t.show);
+                                            ].filter((t) => t.show);
 
-                                            const activeSub = docSubTabs.some(t => t.id === docSubTab) ? docSubTab : (docSubTabs[0]?.id || 'f1');
+                                            const activeSub = docSubTabs.some((t) => t.id === docSubTab) ? docSubTab : docSubTabs[0]?.id || 'f1';
 
                                             return (
-                                                <div className={cn("flex-col flex-1 min-h-0 h-full overflow-hidden", detailTab === 'documents' ? "flex" : "hidden")}>
-                                                    <div className="flex-1 min-h-0 h-full flex flex-col overflow-hidden relative">
+                                                <div
+                                                    className={cn(
+                                                        'h-full min-h-0 flex-1 flex-col overflow-hidden',
+                                                        detailTab === 'documents' ? 'flex' : 'hidden',
+                                                    )}
+                                                >
+                                                    <div className="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden">
                                                         {hasF1 && (
-                                                            <div className={cn("flex-1 min-h-0 h-full flex flex-col overflow-hidden", activeSub === 'f1' ? "flex" : "hidden")}>
+                                                            <div
+                                                                className={cn(
+                                                                    'flex h-full min-h-0 flex-1 flex-col overflow-hidden',
+                                                                    activeSub === 'f1' ? 'flex' : 'hidden',
+                                                                )}
+                                                            >
                                                                 <F1Tab
                                                                     contract={contract}
                                                                     formTemplates={formTemplates}
@@ -939,7 +1001,12 @@ export const ContractDetailView = ({
                                                             </div>
                                                         )}
                                                         {hasF2 && (
-                                                            <div className={cn("flex-1 min-h-0 h-full flex flex-col overflow-hidden", activeSub === 'f2' ? "flex" : "hidden")}>
+                                                            <div
+                                                                className={cn(
+                                                                    'flex h-full min-h-0 flex-1 flex-col overflow-hidden',
+                                                                    activeSub === 'f2' ? 'flex' : 'hidden',
+                                                                )}
+                                                            >
                                                                 <F2Tab
                                                                     contract={contract}
                                                                     formTemplates={formTemplates}
@@ -954,7 +1021,12 @@ export const ContractDetailView = ({
                                                             </div>
                                                         )}
                                                         {hasAgreement && (
-                                                            <div className={cn("flex-1 min-h-0 h-full flex flex-col overflow-hidden", activeSub === 'agreement' ? "flex" : "hidden")}>
+                                                            <div
+                                                                className={cn(
+                                                                    'flex h-full min-h-0 flex-1 flex-col overflow-hidden',
+                                                                    activeSub === 'agreement' ? 'flex' : 'hidden',
+                                                                )}
+                                                            >
                                                                 <AgreementTab
                                                                     contract={contract}
                                                                     formTemplates={formTemplates}
@@ -970,7 +1042,7 @@ export const ContractDetailView = ({
                                         })()}
 
                                         {detailTab === 'parties' && (
-                                            <div className="flex-1 min-h-0 h-full flex flex-col overflow-hidden">
+                                            <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
                                                 {(() => {
                                                     switch (partySubTab) {
                                                         case 'requester':
@@ -988,33 +1060,38 @@ export const ContractDetailView = ({
                                             </div>
                                         )}
                                         {detailTab === 'attachments' && (
-                                            <AttachmentsTab contract={contract} canUpdate={canUpdate} onUpdate={handleContractUpdate} showToast={showToast} meUser={meUser} />
+                                            <AttachmentsTab
+                                                contract={contract}
+                                                canUpdate={canUpdate}
+                                                onUpdate={handleContractUpdate}
+                                                showToast={showToast}
+                                                meUser={meUser}
+                                            />
                                         )}
 
-                                        {detailTab === 'history' && (() => {
-                                            const activeSub = ['timeline', 'related_workflows', 'audit'].includes(historySubTab) ? historySubTab : 'timeline';
+                                        {detailTab === 'history' &&
+                                            (() => {
+                                                const activeSub = ['timeline', 'related_workflows', 'audit'].includes(historySubTab)
+                                                    ? historySubTab
+                                                    : 'timeline';
 
-                                            return (
-                                                <div className="flex-1 min-h-0 h-full flex flex-col overflow-hidden">
-                                                    {activeSub === 'timeline' && (
-                                                        <TimelineTab
-                                                            contract={contract}
-                                                            meId={meId}
-                                                            onApprove={(note, file) => handleApprove(note, file)}
-                                                            showToast={showToast}
-                                                        />
-                                                    )}
-                                                    {activeSub === 'related_workflows' && (
-                                                        <RelatedWorkflowsTab
-                                                            contract={contract}
-                                                            meId={meId}
-                                                            showToast={showToast}
-                                                        />
-                                                    )}
-                                                    {activeSub === 'audit' && <AuditTrailTab contract={contract} />}
-                                                </div>
-                                            );
-                                        })()}
+                                                return (
+                                                    <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
+                                                        {activeSub === 'timeline' && (
+                                                            <TimelineTab
+                                                                contract={contract}
+                                                                meId={meId}
+                                                                onApprove={(note, file) => handleApprove(note, file)}
+                                                                showToast={showToast}
+                                                            />
+                                                        )}
+                                                        {activeSub === 'related_workflows' && (
+                                                            <RelatedWorkflowsTab contract={contract} meId={meId} showToast={showToast} />
+                                                        )}
+                                                        {activeSub === 'audit' && <AuditTrailTab contract={contract} />}
+                                                    </div>
+                                                );
+                                            })()}
                                         {detailTab === 'references' && (
                                             <ReferencesTab
                                                 contract={contract}
@@ -1029,21 +1106,31 @@ export const ContractDetailView = ({
                                             />
                                         )}
 
-                                        {detailTab === 'discussion' && (() => {
-                                            const activeSub = ['chat', 'members'].includes(discSubTab) ? discSubTab : 'chat';
+                                        {detailTab === 'discussion' &&
+                                            (() => {
+                                                const activeSub = ['chat', 'members'].includes(discSubTab) ? discSubTab : 'chat';
 
-                                            return (
-                                                <div className="flex-1 min-h-0 flex flex-col">
-                                                    {activeSub === 'chat' && <ChatTab contract={contract} meId={meId} users={users || []} onUpdate={handleContractUpdate} />}
-                                                    {activeSub === 'members' && <MembersTab contract={contract} users={users || []} />}
-                                                </div>
-                                            );
-                                        })()}
+                                                return (
+                                                    <div className="flex min-h-0 flex-1 flex-col">
+                                                        {activeSub === 'chat' && (
+                                                            <ChatTab
+                                                                contract={contract}
+                                                                meId={meId}
+                                                                users={users || []}
+                                                                onUpdate={handleContractUpdate}
+                                                            />
+                                                        )}
+                                                        {activeSub === 'members' && <MembersTab contract={contract} users={users || []} />}
+                                                    </div>
+                                                );
+                                            })()}
                                         {detailTab === 'empty' && (
                                             <div className="flex h-full min-h-[400px] flex-col items-center justify-center text-slate-400">
                                                 <FileText size={48} className="mb-4 text-slate-300 opacity-50" />
                                                 <p className="text-sm font-semibold uppercase">Tidak Ada Tab Tersedia</p>
-                                                <p className="mt-1 text-xs text-slate-500">Semua tab disembunyikan berdasarkan pengaturan alur kerja saat ini.</p>
+                                                <p className="mt-1 text-xs text-slate-500">
+                                                    Semua tab disembunyikan berdasarkan pengaturan alur kerja saat ini.
+                                                </p>
                                             </div>
                                         )}
                                     </Suspense>
@@ -1052,7 +1139,7 @@ export const ContractDetailView = ({
                         )}
                     </div>
                     {/* Right Column: Panel Informasi & Aksi */}
-                    <div className="flex flex-col gap-3.5 min-w-0 h-full min-h-0 overflow-y-auto custom-scrollbar pr-1 pb-6">
+                    <div className="custom-scrollbar flex h-full min-h-0 min-w-0 flex-col gap-3.5 overflow-y-auto pr-1 pb-6">
                         {/* SECTION: AKSI PERSYARATAN & APPROVAL (WRAPPED IN CARD) */}
                         <ContractActionSection
                             contract={contract}
@@ -1067,7 +1154,7 @@ export const ContractDetailView = ({
                             showSpecialActions={showSpecialActions}
                             masterContractStatuses={masterContractStatuses}
                             onToggleSpecialActions={() => setShowSpecialActions(!showSpecialActions)}
-                            onActionClick={(action, actionCode, isCustomAction) => {
+                            onActionClick={(action, actionCode) => {
                                 const code = (actionCode || action?.action_code)?.toLowerCase();
                                 setActiveStepAction(action);
                                 setActiveActionCode(actionCode || action?.action_code);
@@ -1138,8 +1225,8 @@ export const ContractDetailView = ({
                             <div className="flex justify-between border-b border-black/5 pb-1">
                                 <span className="text-text-soft uppercase">Info Edit</span>
                                 <div className="flex gap-4">
-                                    <span className={contract.allow_info_edit ? 'font-bold text-green-600' : 'font-bold text-rose-600'}>
-                                        {contract.allow_info_edit ? 'T' : 'F'}
+                                    <span className={(contract.allow?.info_edit ?? contract.allow_info_edit) ? 'font-bold text-green-600' : 'font-bold text-rose-600'}>
+                                        {(contract.allow?.info_edit ?? contract.allow_info_edit) ? 'T' : 'F'}
                                     </span>
                                     <span className="text-amber-600">
                                         {(contract.workflow_step as any)?.meta?.allow_info_edit !== false ? 'T' : 'F'}
@@ -1149,8 +1236,8 @@ export const ContractDetailView = ({
                             <div className="flex justify-between border-b border-black/5 pb-1">
                                 <span className="text-text-soft uppercase">F1 Edit</span>
                                 <div className="flex gap-4">
-                                    <span className={contract.allow_f1_edit ? 'font-bold text-green-600' : 'font-bold text-rose-600'}>
-                                        {contract.allow_f1_edit ? 'T' : 'F'}
+                                    <span className={(contract.allow?.f1_edit ?? contract.allow_f1_edit) ? 'font-bold text-green-600' : 'font-bold text-rose-600'}>
+                                        {(contract.allow?.f1_edit ?? contract.allow_f1_edit) ? 'T' : 'F'}
                                     </span>
                                     <span className="text-amber-600">
                                         {(contract.workflow_step as any)?.meta?.allow_f1_edit !== false ? 'T' : 'F'}
@@ -1160,8 +1247,8 @@ export const ContractDetailView = ({
                             <div className="flex justify-between border-b border-black/5 pb-1">
                                 <span className="text-text-soft uppercase">F2 Edit</span>
                                 <div className="flex gap-4">
-                                    <span className={contract.allow_f2_edit ? 'font-bold text-green-600' : 'font-bold text-rose-600'}>
-                                        {contract.allow_f2_edit ? 'T' : 'F'}
+                                    <span className={(contract.allow?.f2_edit ?? contract.allow_f2_edit) ? 'font-bold text-green-600' : 'font-bold text-rose-600'}>
+                                        {(contract.allow?.f2_edit ?? contract.allow_f2_edit) ? 'T' : 'F'}
                                     </span>
                                     <span className="text-amber-600">
                                         {(contract.workflow_step as any)?.meta?.allow_f2_edit !== false ? 'T' : 'F'}
@@ -1171,8 +1258,8 @@ export const ContractDetailView = ({
                             <div className="flex justify-between border-b border-black/5 pb-1">
                                 <span className="text-text-soft uppercase">Draft Edit</span>
                                 <div className="flex gap-4">
-                                    <span className={contract.allow_agreement_edit ? 'font-bold text-green-600' : 'font-bold text-rose-600'}>
-                                        {contract.allow_agreement_edit ? 'T' : 'F'}
+                                    <span className={(contract.allow?.agreement_edit ?? contract.allow_agreement_edit) ? 'font-bold text-green-600' : 'font-bold text-rose-600'}>
+                                        {(contract.allow?.agreement_edit ?? contract.allow_agreement_edit) ? 'T' : 'F'}
                                     </span>
                                     <span className="text-amber-600">
                                         {(contract.workflow_step as any)?.meta?.allow_agreement_edit !== false ? 'T' : 'F'}
@@ -1182,8 +1269,8 @@ export const ContractDetailView = ({
                             <div className="flex justify-between border-b border-black/5 pb-1">
                                 <span className="text-text-soft uppercase">Attachment</span>
                                 <div className="flex gap-4">
-                                    <span className={contract.allow_attachment_edit ? 'font-bold text-green-600' : 'font-bold text-rose-600'}>
-                                        {contract.allow_attachment_edit ? 'T' : 'F'}
+                                    <span className={(contract.allow?.attachment_edit ?? contract.allow_attachment_edit) ? 'font-bold text-green-600' : 'font-bold text-rose-600'}>
+                                        {(contract.allow?.attachment_edit ?? contract.allow_attachment_edit) ? 'T' : 'F'}
                                     </span>
                                     <span className="text-amber-600">
                                         {(contract.workflow_step as any)?.meta?.allow_attachment_edit !== false ? 'T' : 'F'}
@@ -1193,8 +1280,8 @@ export const ContractDetailView = ({
                             <div className="flex justify-between border-b border-black/5 pb-1">
                                 <span className="text-text-soft uppercase">Reference</span>
                                 <div className="flex gap-4">
-                                    <span className={contract.allow_reference ? 'font-bold text-green-600' : 'font-bold text-rose-600'}>
-                                        {contract.allow_reference ? 'T' : 'F'}
+                                    <span className={(contract.allow?.reference ?? contract.allow_reference) ? 'font-bold text-green-600' : 'font-bold text-rose-600'}>
+                                        {(contract.allow?.reference ?? contract.allow_reference) ? 'T' : 'F'}
                                     </span>
                                     <span className="text-amber-600">
                                         {(contract.workflow_step as any)?.meta?.allow_reference !== false ? 'T' : 'F'}
@@ -1235,7 +1322,11 @@ export const ContractDetailView = ({
                     onUpdate={handleContractUpdate}
                     actionCode={activeActionCode}
                     actionId={activeStepAction?.id}
-                    actionAlias={activeStepAction?.alias || (applicableStepActions.find((a: any) => a.action_code === activeActionCode)?.alias ?? (isSubStepReviewer ? 'Setujui Penelaahan' : undefined))}
+                    actionAlias={
+                        activeStepAction?.alias ||
+                        (applicableStepActions.find((a: any) => a.action_code === activeActionCode)?.alias ??
+                            (isSubStepReviewer ? 'Setujui Penelaahan' : undefined))
+                    }
                     isSubStep={isSubStepReviewer}
                 />
             </Suspense>
@@ -1253,7 +1344,9 @@ export const ContractDetailView = ({
                     showToast={showToast}
                     actionCode={activeActionCode}
                     actionId={activeStepAction?.id}
-                    actionAlias={activeStepAction?.alias || (applicableStepActions.find((a: any) => a.action_code === activeActionCode)?.alias ?? undefined)}
+                    actionAlias={
+                        activeStepAction?.alias || (applicableStepActions.find((a: any) => a.action_code === activeActionCode)?.alias ?? undefined)
+                    }
                 />
             </Suspense>
             <Suspense fallback={null}>
@@ -1269,7 +1362,9 @@ export const ContractDetailView = ({
                     showToast={showToast}
                     actionCode={activeActionCode}
                     actionId={activeStepAction?.id}
-                    actionAlias={activeStepAction?.alias || (applicableStepActions.find((a: any) => a.action_code === activeActionCode)?.alias ?? undefined)}
+                    actionAlias={
+                        activeStepAction?.alias || (applicableStepActions.find((a: any) => a.action_code === activeActionCode)?.alias ?? undefined)
+                    }
                 />
             </Suspense>
         </div>

@@ -147,9 +147,10 @@ export function MasterDataTab({ data }: MasterDataTabProps) {
                                     data={counts.groupBreakdown.filter((g: any) => (g.users || 0) > 0)}
                                     margin={{ top: 15, right: 20, left: 10, bottom: 80 }}
                                     onClick={(entry) => {
-                                        const payload = entry?.activePayload?.[0]?.payload;
+                                        const payload = (entry as { activePayload?: Array<{ payload?: { id?: string | number } }> })
+                                            ?.activePayload?.[0]?.payload;
                                         if (payload?.id) {
-                                            router.visit(`/admin/core/users?organization_group_id%5B0%5D=${encodeURIComponent(payload.id)}`);
+                                            router.visit(`/admin/core/users?organization_group_id%5B0%5D=${encodeURIComponent(String(payload.id))}`);
                                         }
                                     }}
                                     className="cursor-pointer"
@@ -254,9 +255,10 @@ export function MasterDataTab({ data }: MasterDataTabProps) {
                                     data={counts.usersByGroup}
                                     margin={{ top: 15, right: 20, left: 10, bottom: 45 }}
                                     onClick={(entry) => {
-                                        const payload = entry?.activePayload?.[0]?.payload;
+                                        const payload = (entry as { activePayload?: Array<{ payload?: { group_id?: string | number } }> })
+                                            ?.activePayload?.[0]?.payload;
                                         if (payload?.group_id) {
-                                            router.visit(`/admin/core/users?company_group_id%5B0%5D=${encodeURIComponent(payload.group_id)}`);
+                                            router.visit(`/admin/core/users?company_group_id%5B0%5D=${encodeURIComponent(String(payload.group_id))}`);
                                         } else {
                                             router.visit('/admin/core/users');
                                         }
@@ -348,9 +350,10 @@ export function MasterDataTab({ data }: MasterDataTabProps) {
                                         data={counts.usersByCompany}
                                         margin={{ top: 15, right: 20, left: 10, bottom: 75 }}
                                         onClick={(entry) => {
-                                            const payload = entry?.activePayload?.[0]?.payload;
+                                            const payload = (entry as { activePayload?: Array<{ payload?: { company_id?: string | number } }> })
+                                                ?.activePayload?.[0]?.payload;
                                             if (payload?.company_id) {
-                                                router.visit(`/admin/core/users?company_id%5B0%5D=${encodeURIComponent(payload.company_id)}`);
+                                                router.visit(`/admin/core/users?company_id%5B0%5D=${encodeURIComponent(String(payload.company_id))}`);
                                             }
                                         }}
                                         className="cursor-pointer"

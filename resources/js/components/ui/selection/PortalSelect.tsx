@@ -1,10 +1,13 @@
-import * as React from 'react';
-import { Search, ChevronDown, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Check, ChevronDown, Search } from 'lucide-react';
+import * as React from 'react';
 
 export interface PortalSelectOption {
     value: string;
     label: string;
+    disabled?: boolean;
+    description?: string;
+    badge?: string;
 }
 
 interface PortalSelectProps {
@@ -39,7 +42,7 @@ export function PortalSelect({
     const filteredOptions = React.useMemo(() => {
         if (!search.trim()) return options;
         const searchLower = search.toLowerCase();
-        return options.filter(opt => opt.label.toLowerCase().includes(searchLower));
+        return options.filter(opt => opt.label.toLowerCase().includes(searchLower) || (opt.description && opt.description.toLowerCase().includes(searchLower)));
     }, [options, search]);
 
     React.useEffect(() => {
@@ -75,23 +78,42 @@ export function PortalSelect({
                 ) : (
                     filteredOptions.map(opt => {
                         const isSelected = String(value) === String(opt.value);
+                        const isDisabled = !!opt.disabled;
                         return (
                             <button
                                 key={opt.value}
                                 type="button"
+                                disabled={isDisabled}
                                 onClick={() => {
+                                    if (isDisabled) return;
                                     onValueChange(opt.value);
                                     setOpen(false);
                                     setSearch('');
                                 }}
                                 className={cn(
                                     'flex w-full items-center justify-between px-3 py-2 text-left text-[12px] rounded-md transition-all',
-                                    isSelected
-                                        ? 'bg-sidebar-primary/10 text-sidebar-primary font-semibold'
-                                        : 'text-sidebar-foreground/80 hover:bg-sidebar-accent/30'
+                                    isDisabled && 'opacity-60 cursor-not-allowed bg-slate-100/50 dark:bg-zinc-800/40 text-slate-400 dark:text-zinc-500',
+                                    !isDisabled && isSelected && 'bg-sidebar-primary/10 text-sidebar-primary font-semibold',
+                                    !isDisabled && !isSelected && 'text-sidebar-foreground/80 hover:bg-sidebar-accent/30 cursor-pointer'
                                 )}
                             >
-                                <span>{opt.label}</span>
+                                <div className="flex flex-col min-w-0 pr-2">
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                        <span className={cn(isSelected && 'font-semibold', isDisabled && 'text-slate-400 dark:text-zinc-500')}>
+                                            {opt.label}
+                                        </span>
+                                        {opt.badge && (
+                                            <span className="rounded bg-primary/10 text-primary border border-primary/20 px-1.5 py-0.2 text-[9px] font-bold">
+                                                {opt.badge}
+                                            </span>
+                                        )}
+                                    </div>
+                                    {opt.description && (
+                                        <span className="text-[10px] text-muted-foreground font-medium mt-0.5">
+                                            {opt.description}
+                                        </span>
+                                    )}
+                                </div>
                                 {isSelected && <Check size={12} className="text-sidebar-primary shrink-0 ml-2" />}
                             </button>
                         );

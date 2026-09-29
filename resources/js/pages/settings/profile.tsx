@@ -13,34 +13,30 @@ import {
     FileText,
     Fingerprint,
     Globe,
-    KeyRound,
     Layers,
     Loader2,
-    Lock,
     Mail,
     MapPin,
     Palette,
     Save,
     Shield,
-    ShieldCheck,
-    Smartphone,
     User,
     Verified,
     Zap,
 } from 'lucide-react';
 import { FormEventHandler, useMemo, useRef, useState } from 'react';
 
-import { Avatar } from '@/pages/contracts/components/ui/ui';
-import AppearanceToggleTab from '@/layouts/app/components/AppearanceTabs';
+import DeleteUser from '@/components/profile/DeleteUser';
 import { Button } from '@/components/ui/buttons/Button';
-import { Input } from '@/components/ui/inputs/Input';
+import { StatusBadge } from '@/components/ui/feedback/StatusBadge';
+import { useToast } from '@/components/ui/feedback/Toast';
 import InputError from '@/components/ui/forms/InputError';
 import { Label } from '@/components/ui/forms/Label';
-import { StatusBadge } from '@/components/ui/feedback/StatusBadge';
-import DeleteUser from '@/components/profile/DeleteUser';
+import { Input } from '@/components/ui/inputs/Input';
+import AppearanceToggleTab from '@/layouts/app/components/AppearanceTabs';
 import SettingsLayout from '@/layouts/settings/layout';
-import { useToast } from '@/components/ui/feedback/Toast';
 import { cn } from '@/lib/utils';
+import { Avatar } from '@/pages/contracts/components/ui/ui';
 
 import { UserProfile as BaseUserProfile } from '@/pages/contracts/types';
 
@@ -81,7 +77,7 @@ interface UserProfile extends BaseUserProfile {
 
 interface ProfileProps {
     department?: string;
-    recentContracts: RecentContract[];
+    recentContracts?: RecentContract[];
     user?: UserProfile;
 }
 
@@ -125,7 +121,7 @@ export default function Profile({ department, recentContracts = [], user: propUs
         bio: string;
     }>({
         name: user.name,
-        email: user.email,
+        email: user.email || '',
         username: user.username || '',
         phone: user.phone || '',
         position: user.position || '',
@@ -153,7 +149,7 @@ export default function Profile({ department, recentContracts = [], user: propUs
         const formData = new FormData();
         formData.append('photo', file);
         formData.append('name', profileForm.data.name || user.name);
-        formData.append('email', profileForm.data.email || user.email);
+        formData.append('email', profileForm.data.email || user.email || '');
         if (profileForm.data.username) formData.append('username', profileForm.data.username);
         if (profileForm.data.phone) formData.append('phone', profileForm.data.phone);
         if (profileForm.data.position) formData.append('position', profileForm.data.position);
@@ -227,17 +223,15 @@ export default function Profile({ department, recentContracts = [], user: propUs
         <>
             <Head title="Profil" />
             <SettingsLayout>
-                <div className="dark:bg-background min-h-full w-full bg-white md:-m-[9px] md:w-[calc(100%+18px)] pb-20">
-
+                <div className="dark:bg-background min-h-full w-full bg-white pb-20 md:-m-[9px] md:w-[calc(100%+18px)]">
                     {/* Header */}
-                    <div className="dark:bg-surface-base border-surface-border bg-white border-b">
+                    <div className="dark:bg-surface-base border-surface-border border-b bg-white">
                         <div className="w-full px-6 pt-10 pb-0">
-
                             {/* User info row */}
-                            <div className="flex items-start justify-between gap-6 mb-8">
+                            <div className="mb-8 flex items-start justify-between gap-6">
                                 <div className="flex items-center gap-5">
                                     {/* Avatar with Direct Upload */}
-                                    <div className="relative shrink-0 group">
+                                    <div className="group relative shrink-0">
                                         <input
                                             type="file"
                                             ref={fileInputRef}
@@ -249,8 +243,8 @@ export default function Profile({ department, recentContracts = [], user: propUs
                                         <div
                                             onClick={() => !isUploadingPhoto && fileInputRef.current?.click()}
                                             className={cn(
-                                                "dark:border-surface-border h-16 w-16 overflow-hidden rounded-full border border-gray-200 shadow-sm relative",
-                                                isUploadingPhoto ? "cursor-wait opacity-80" : "cursor-pointer"
+                                                'dark:border-surface-border relative h-16 w-16 overflow-hidden rounded-full border border-gray-200 shadow-sm',
+                                                isUploadingPhoto ? 'cursor-wait opacity-80' : 'cursor-pointer',
                                             )}
                                         >
                                             {previewUrl ? (
@@ -260,11 +254,11 @@ export default function Profile({ department, recentContracts = [], user: propUs
                                             )}
 
                                             {isUploadingPhoto ? (
-                                                <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white">
+                                                <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-white">
                                                     <Loader2 size={20} className="animate-spin" />
                                                 </div>
                                             ) : (
-                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+                                                <div className="absolute inset-0 flex items-center justify-center bg-black/40 text-white opacity-0 transition-opacity group-hover:opacity-100">
                                                     <Camera size={18} />
                                                 </div>
                                             )}
@@ -273,7 +267,7 @@ export default function Profile({ department, recentContracts = [], user: propUs
                                             type="button"
                                             onClick={() => !isUploadingPhoto && fileInputRef.current?.click()}
                                             disabled={isUploadingPhoto}
-                                            className="bg-primary hover:bg-primary/90 transition-colors absolute -right-1 -bottom-1 flex h-6 w-6 items-center justify-center rounded-full text-white shadow-sm cursor-pointer disabled:opacity-50"
+                                            className="bg-primary hover:bg-primary/90 absolute -right-1 -bottom-1 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full text-white shadow-sm transition-colors disabled:opacity-50"
                                             title="Ubah Foto Profil Langsung"
                                         >
                                             {isUploadingPhoto ? <Loader2 size={11} className="animate-spin" /> : <Camera size={12} />}
@@ -282,7 +276,7 @@ export default function Profile({ department, recentContracts = [], user: propUs
 
                                     {/* Name & meta */}
                                     <div>
-                                        <div className="flex items-center gap-3 mb-1">
+                                        <div className="mb-1 flex items-center gap-3">
                                             <h1 className="text-text-main text-xl font-semibold">{user.name}</h1>
                                             {isPrivileged && <Verified size={16} className="text-primary" />}
                                             <span className="bg-surface-muted text-text-soft border-surface-border rounded border px-2 py-0.5 text-xs">
@@ -304,8 +298,7 @@ export default function Profile({ department, recentContracts = [], user: propUs
                                 </div>
 
                                 {/* Actions */}
-                                <div className="flex items-center gap-2 shrink-0">
-
+                                <div className="flex shrink-0 items-center gap-2">
                                     <Button
                                         variant="primary"
                                         size="sm"
@@ -314,7 +307,7 @@ export default function Profile({ department, recentContracts = [], user: propUs
                                         disabled={profileForm.processing || passwordForm.processing}
                                     >
                                         {profileForm.processing || passwordForm.processing ? (
-                                            <Loader2 size={14} className="animate-spin mr-1.5" />
+                                            <Loader2 size={14} className="mr-1.5 animate-spin" />
                                         ) : (
                                             <Save size={14} className="mr-1.5" />
                                         )}
@@ -325,7 +318,7 @@ export default function Profile({ department, recentContracts = [], user: propUs
 
                             {/* Stats */}
                             {activeStats.length > 0 && (
-                                <div className="flex items-center gap-6 mb-6">
+                                <div className="mb-6 flex items-center gap-6">
                                     {activeStats.map((stat, i) => (
                                         <div key={i} className="text-text-soft flex items-center gap-2 text-sm">
                                             <stat.icon size={14} className="text-primary" />
@@ -337,7 +330,7 @@ export default function Profile({ department, recentContracts = [], user: propUs
                             )}
 
                             {/* Tabs */}
-                            <div className="flex items-center gap-1 -mb-px">
+                            <div className="-mb-px flex items-center gap-1">
                                 {(
                                     [
                                         { id: 'general', label: 'Profil', icon: Fingerprint },
@@ -353,7 +346,7 @@ export default function Profile({ department, recentContracts = [], user: propUs
                                             'flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-medium transition-colors',
                                             activeTab === id
                                                 ? 'border-primary text-primary'
-                                                : 'border-transparent text-text-soft hover:text-text-main',
+                                                : 'text-text-soft hover:text-text-main border-transparent',
                                         )}
                                     >
                                         <Icon size={14} />
@@ -366,7 +359,6 @@ export default function Profile({ department, recentContracts = [], user: propUs
 
                     {/* Content */}
                     <div className="w-full px-6 py-10">
-
                         {/* General Tab */}
                         {activeTab === 'general' && (
                             <div className="space-y-8">
@@ -379,11 +371,7 @@ export default function Profile({ department, recentContracts = [], user: propUs
                                             onChange={(v) => profileForm.setData('name', v)}
                                             error={profileForm.errors.name}
                                         />
-                                        <FormField
-                                            label="Username"
-                                            value={profileForm.data.username}
-                                            readOnly
-                                        />
+                                        <FormField label="Username" value={profileForm.data.username} readOnly />
                                         <FormField
                                             label="Email"
                                             value={profileForm.data.email}
@@ -401,7 +389,7 @@ export default function Profile({ department, recentContracts = [], user: propUs
                                             <textarea
                                                 value={profileForm.data.bio}
                                                 onChange={(e) => profileForm.setData('bio', e.target.value)}
-                                                className="border-surface-border bg-surface-muted/10 focus:border-primary w-full rounded-lg border p-3 text-sm leading-relaxed outline-none transition-colors"
+                                                className="border-surface-border bg-surface-muted/10 focus:border-primary w-full rounded-lg border p-3 text-sm leading-relaxed transition-colors outline-none"
                                                 rows={4}
                                                 placeholder="Deskripsikan peran dan fokus profesional Anda..."
                                             />
@@ -451,11 +439,7 @@ export default function Profile({ department, recentContracts = [], user: propUs
                                             onChange={(v) => passwordForm.setData('password_confirmation', v)}
                                             error={passwordForm.errors.password_confirmation}
                                         />
-                                        <Button
-                                            disabled={passwordForm.processing}
-                                            variant="primary"
-                                            className="h-9 rounded-lg px-5 text-sm"
-                                        >
+                                        <Button disabled={passwordForm.processing} variant="primary" className="h-9 rounded-lg px-5 text-sm">
                                             {passwordForm.processing ? 'Menyimpan...' : 'Simpan Password'}
                                         </Button>
                                     </form>
@@ -471,10 +455,7 @@ export default function Profile({ department, recentContracts = [], user: propUs
                                         <h2 className="text-text-main text-lg font-semibold">Aktivitas Terakhir</h2>
                                         <p className="text-text-soft text-sm">Kontrak yang baru saja Anda akses atau buat.</p>
                                     </div>
-                                    <Link
-                                        href="/contracts"
-                                        className="text-primary hover:underline flex items-center gap-1 text-sm"
-                                    >
+                                    <Link href="/contracts" className="text-primary flex items-center gap-1 text-sm hover:underline">
                                         Lihat semua <ArrowUpRight size={14} />
                                     </Link>
                                 </div>
@@ -492,9 +473,7 @@ export default function Profile({ department, recentContracts = [], user: propUs
                                                         <p className="text-primary mb-1 truncate text-xs font-medium">
                                                             {c.form_no || c.contract_no || '—'}
                                                         </p>
-                                                        <p className="text-text-main line-clamp-2 text-sm font-medium leading-snug">
-                                                            {c.title}
-                                                        </p>
+                                                        <p className="text-text-main line-clamp-2 text-sm leading-snug font-medium">{c.title}</p>
                                                     </div>
                                                     <div className="shrink-0">
                                                         <StatusBadge status={c.status} statusInfo={(c as any).status_info} />
@@ -526,9 +505,7 @@ export default function Profile({ department, recentContracts = [], user: propUs
                                         <Activity size={36} strokeWidth={1.5} className="text-text-soft opacity-30" />
                                         <div>
                                             <p className="text-text-soft text-sm font-medium">Belum ada aktivitas</p>
-                                            <p className="text-text-soft mt-1 text-xs opacity-60">
-                                                Aktivitas kontrak Anda akan muncul di sini.
-                                            </p>
+                                            <p className="text-text-soft mt-1 text-xs opacity-60">Aktivitas kontrak Anda akan muncul di sini.</p>
                                         </div>
                                     </div>
                                 )}
@@ -547,12 +524,11 @@ export default function Profile({ department, recentContracts = [], user: propUs
 
                     {/* Footer */}
                     <div className="border-surface-border/40 border-t px-6 py-6">
-                        <div className="w-full flex items-center justify-between">
+                        <div className="flex w-full items-center justify-between">
                             <p className="text-text-soft text-xs">Sistem Manajemen Kontrak · {new Date().getFullYear()}</p>
                             <DeleteUser className="text-danger hover:bg-danger/5 rounded-lg px-3 py-1.5 text-xs transition-colors" />
                         </div>
                     </div>
-
                 </div>
             </SettingsLayout>
         </>

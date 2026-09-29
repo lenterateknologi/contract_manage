@@ -1,10 +1,22 @@
-// ─── Types ──────────────────────────────────────────────────────────
+export interface UserFilterSettings {
+    categories?: string[];
+    contract_type_ids?: (string | number)[];
+    submission_type_ids?: (string | number)[];
+    status?: string[];
+    [key: string]: unknown;
+}
+
 export interface UserProfile {
     id: string;
     name: string;
     email?: string;
     initials: string;
     role?: string;
+    is_admin?: boolean;
+    filter_settings?: UserFilterSettings | Record<string, unknown> | null;
+    phone?: string;
+    position?: string;
+    can_create_on_behalf?: boolean;
     department_id?: string | null;
     department_name?: string;
     division_name?: string;
@@ -15,10 +27,27 @@ export interface UserProfile {
         id: string;
         name: string;
     };
+    company?: {
+        id?: string;
+        name?: string;
+        address?: string;
+    } | string;
+    manager?: UserProfile | null;
+    reporting_to?: UserProfile | null;
+    nip?: string;
+    employee_id?: string;
+    jobtitle_name?: string;
+    job_position_name?: string;
+    location_name?: string;
+    role_name?: string;
+    address?: string;
     bg_color?: string;
     text_color?: string;
     avatar?: string;
     avatar_url?: string;
+    email_verified_at?: string | null;
+    created_at?: string;
+    updated_at?: string;
 }
 
 export interface ContractPurchaseOrder {
@@ -43,6 +72,7 @@ export interface ContractVersion {
 
     version_no: number;
     file_name: string;
+    file_path?: string;
     change_log: string;
     uploaded_by: string;
     is_final: boolean;
@@ -141,8 +171,10 @@ export interface ContractAttachment {
 }
 
 export interface ContractType {
-    id: string;
+    id: string | number;
     name: string;
+    code?: string;
+    parent_id?: string | number | null;
     description?: string;
 }
 
@@ -169,6 +201,7 @@ export interface Contract {
     title: string;
     description: string;
     contract_date: string | null;
+    start_date?: string | null;
     end_date: string | null;
     contract_type: string | null;
     contract_type_id?: string;
@@ -198,12 +231,71 @@ export interface Contract {
     assigned_pic_id?: string | null;
     assigned_by_id?: string | null;
     price?: number | string | null;
+    tax_required?: boolean;
+    is_in_sub_workflow?: boolean;
+    sub_workflow?: {
+        id?: string;
+        name?: string;
+        [key: string]: unknown;
+    } | null;
     f1_file?: string | null;
     f2_file?: string | null;
     f1_items?: any[];
     agreement_file?: string | null;
-    agreement_content?: string | null;
     status: ContractStatus;
+    meta?: Record<string, any>;
+    allow?: {
+        info_edit?: boolean;
+        title_edit?: boolean;
+        first_party_edit?: boolean;
+        vendor_edit?: boolean;
+        category_edit?: boolean;
+        f2_contract_no_edit?: boolean;
+        tax_toggle_edit?: boolean;
+        price_edit?: boolean;
+        period_edit?: boolean;
+        f1_edit?: boolean;
+        f2_edit?: boolean;
+        agreement_edit?: boolean;
+        attachment_edit?: boolean;
+        reference?: boolean;
+        [key: string]: boolean | undefined;
+    };
+    show?: {
+        info?: boolean;
+        title?: boolean;
+        first_party?: boolean;
+        vendor?: boolean;
+        category?: boolean;
+        f2_contract_no?: boolean;
+        tax_toggle?: boolean;
+        price?: boolean;
+        period?: boolean;
+        [key: string]: boolean | undefined;
+    };
+    required?: {
+        f1?: boolean;
+        f2?: boolean;
+        agreement?: boolean;
+        title?: boolean;
+        first_party?: boolean;
+        vendor?: boolean;
+        category?: boolean;
+        f2_contract_no?: boolean;
+        tax_toggle?: boolean;
+        price?: boolean;
+        period?: boolean;
+        [key: string]: boolean | undefined;
+    };
+    modes?: {
+        display?: 'interactive' | 'pdf';
+        f1?: 'interactive' | 'upload';
+        f1_form_template_id?: string | null;
+        f2?: 'interactive' | 'upload';
+        f2_form_template_id?: string | null;
+        contract?: 'interactive' | 'upload';
+        contract_form_template_id?: string | null;
+    };
     display_mode?: 'interactive' | 'pdf';
     allow_info_edit?: boolean;
     allow_title_edit?: boolean;
@@ -372,7 +464,7 @@ export type ContractStatus = 'draft' | 'in_review' | 'revision' | 'approved' | '
 
 export interface PaginatedData<T> {
     data: T[];
-    links: {
+    links?: {
         url: string | null;
         label: string;
         active: boolean;
@@ -380,12 +472,12 @@ export interface PaginatedData<T> {
     current_page: number;
     last_page: number;
     total: number;
-    first_page_url: string;
-    last_page_url: string;
-    prev_page_url: string | null;
-    next_page_url: string | null;
-    from: number;
-    to: number;
-    path: string;
+    first_page_url?: string;
+    last_page_url?: string;
+    prev_page_url?: string | null;
+    next_page_url?: string | null;
+    from?: number | null;
+    to?: number | null;
+    path?: string;
     per_page: number;
 }

@@ -1,5 +1,5 @@
-import { useSyncExternalStore, useMemo } from 'react';
 import { type PovOptions } from '@/types';
+import { useMemo, useSyncExternalStore } from 'react';
 
 export interface NavPovOption {
     id: string;
@@ -17,9 +17,14 @@ export interface DashboardTypePovOption {
     badge: string;
     description: string;
     config?: {
-        show_overview: boolean;
-        show_workload: boolean;
-        show_master_data: boolean;
+        show_overview?: boolean;
+        show_overview_contract?: boolean;
+        show_overview_non_contract?: boolean;
+        show_overview_nda?: boolean;
+        show_workload?: boolean;
+        show_master_data?: boolean;
+        has_setting?: boolean;
+        [key: string]: unknown;
     };
 }
 
@@ -276,7 +281,7 @@ export function usePov(povOptions?: PovOptions | null) {
                 roleName: r.name,
                 badge: r.badge || 'Role',
                 description: r.description || `Simulasi menu hak akses ${r.name}`,
-                allowedRoutes: r.allowed_routes === null ? undefined : (r.allowed_routes || []),
+                allowedRoutes: r.allowed_routes === null ? undefined : r.allowed_routes || [],
                 can_create_on_behalf: r.can_create_on_behalf,
             }));
         }

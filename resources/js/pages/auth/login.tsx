@@ -15,7 +15,6 @@ interface LoginForm {
     email: string;
     password: string;
     remember: boolean;
-    [key: string]: string | boolean;
 }
 
 interface LoginProps {

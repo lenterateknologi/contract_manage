@@ -1,12 +1,11 @@
+import { getFileIcon } from '@/components/ui';
 import { Button } from '@/components/ui/buttons/Button';
-import { StatusBadge } from '@/components/ui/feedback/StatusBadge';
-import { CompactSwitch } from '@/components/ui/selection/CompactSwitch';
-import { FormTextarea } from '@/components/ui/inputs/FormTextarea';
-import { SearchableMultiSelect } from '@/components/ui/selection/SearchableMultiSelect';
 import { Modal } from '@/components/ui/dialogs/Modal';
-import { getFileIcon, AttachmentCategoryBadge } from '@/components/ui';
-import { cn } from '@/lib/utils';
+import { FormTextarea } from '@/components/ui/inputs/FormTextarea';
+import { CompactSwitch } from '@/components/ui/selection/CompactSwitch';
+import { SearchableMultiSelect } from '@/components/ui/selection/SearchableMultiSelect';
 import { formatFileSize } from '@/lib/formatters';
+import { cn } from '@/lib/utils';
 import { contractApi } from '@/pages/contracts/utils';
 import { matchUserAgainstWorkflowPool } from '@/pages/workflows/workflow-filter';
 import { CheckCircle2, Loader2, Paperclip, Plus, UserCheck, Users, X } from 'lucide-react';
@@ -62,7 +61,7 @@ export function SharedAssignModal({ open, onClose, contract, onUpdate, showToast
             });
             const config = activeAction?.assignee_config || {};
             const targetStepId = activeAction?.next_step_id || config.default_target_step || null;
-            
+
             setSelectedTargetStepId(targetStepId ? String(targetStepId) : null);
             setNote('');
             setAttachments([]);
@@ -94,28 +93,32 @@ export function SharedAssignModal({ open, onClose, contract, onUpdate, showToast
             });
 
             // 1. Check custom action configuration from workflow meta (e.g. action_assign_pic)
-            const customActions: any[] = 
-                contract?.workflow?.meta?.custom_actions || 
-                contract?.origin_workflow?.meta?.custom_actions || 
-                contract?.workflow_step?.workflow?.meta?.custom_actions || [];
-            const customAction = customActions.find((ca: any) => ca.id === 'action_assign_pic' || ca.action_code === 'assign' || ca.action_code === actionCode);
-
-            // 2. Check step action configuration
-            const hasAssigneeConfig = activeAction?.assignee_config && (
-                (activeAction.assignee_config.custom && activeAction.assignee_config.custom.length > 0) ||
-                (activeAction.assignee_config.users && activeAction.assignee_config.users.length > 0) ||
-                (activeAction.assignee_config.roles && activeAction.assignee_config.roles.length > 0) ||
-                (activeAction.assignee_config.departments && activeAction.assignee_config.departments.length > 0) ||
-                (activeAction.assignee_config.divisions && activeAction.assignee_config.divisions.length > 0) ||
-                (activeAction.assignee_config.company_groups && activeAction.assignee_config.company_groups.length > 0) ||
-                (activeAction.assignee_config.regions && activeAction.assignee_config.regions.length > 0) ||
-                (activeAction.assignee_config.authorities && activeAction.assignee_config.authorities.length > 0) ||
-                activeAction.assignee_config.is_initiator_role ||
-                activeAction.assignee_config.is_initiator_department ||
-                activeAction.assignee_config.is_initiator_user
+            const customActions: any[] =
+                contract?.workflow?.meta?.custom_actions ||
+                contract?.origin_workflow?.meta?.custom_actions ||
+                contract?.workflow_step?.workflow?.meta?.custom_actions ||
+                [];
+            const customAction = customActions.find(
+                (ca: any) => ca.id === 'action_assign_pic' || ca.action_code === 'assign' || ca.action_code === actionCode,
             );
 
-            const hasCustomPersonnel = customAction?.eligible_personnel && Array.isArray(customAction.eligible_personnel) && customAction.eligible_personnel.length > 0;
+            // 2. Check step action configuration
+            const hasAssigneeConfig =
+                activeAction?.assignee_config &&
+                ((activeAction.assignee_config.custom && activeAction.assignee_config.custom.length > 0) ||
+                    (activeAction.assignee_config.users && activeAction.assignee_config.users.length > 0) ||
+                    (activeAction.assignee_config.roles && activeAction.assignee_config.roles.length > 0) ||
+                    (activeAction.assignee_config.departments && activeAction.assignee_config.departments.length > 0) ||
+                    (activeAction.assignee_config.divisions && activeAction.assignee_config.divisions.length > 0) ||
+                    (activeAction.assignee_config.company_groups && activeAction.assignee_config.company_groups.length > 0) ||
+                    (activeAction.assignee_config.regions && activeAction.assignee_config.regions.length > 0) ||
+                    (activeAction.assignee_config.authorities && activeAction.assignee_config.authorities.length > 0) ||
+                    activeAction.assignee_config.is_initiator_role ||
+                    activeAction.assignee_config.is_initiator_department ||
+                    activeAction.assignee_config.is_initiator_user);
+
+            const hasCustomPersonnel =
+                customAction?.eligible_personnel && Array.isArray(customAction.eligible_personnel) && customAction.eligible_personnel.length > 0;
 
             let config: any = null;
             if (hasCustomPersonnel) {
@@ -126,8 +129,12 @@ export function SharedAssignModal({ open, onClose, contract, onUpdate, showToast
 
             const finalTargetStepId = targetStepIdVal || contract?.workflow_step_id;
 
-            // Existing assignees should be pre-selected from contract.assigned_pic_id
-            const existingAssigneeUserIds = contract?.assigned_pic_id ? [String(contract.assigned_pic_id)] : [];
+            // Existing assignees should be pre-selected from contract.assigned_pic
+            const existingAssigneeUserIds = contract?.assigned_pic?.id
+                ? [String(contract.assigned_pic.id)]
+                : contract?.assigned_pic_id
+                  ? [String(contract.assigned_pic_id)]
+                  : [];
 
             let availableUsers: any[] = [];
             if (config && Object.keys(config).length > 0) {
@@ -185,7 +192,7 @@ export function SharedAssignModal({ open, onClose, contract, onUpdate, showToast
                 actionCode,
                 actionId,
             );
-            
+
             onUpdate(updatedContract);
             showToast(`Penugasan ${ROLE_NAME} berhasil diperbarui.`, 'success');
             onClose();
@@ -212,15 +219,11 @@ export function SharedAssignModal({ open, onClose, contract, onUpdate, showToast
                         variant="ghost"
                         onClick={onClose}
                         disabled={loading}
-                        className="h-9 text-xs bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-700 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-900/50 border border-rose-200 dark:border-rose-800/50 font-semibold"
+                        className="h-9 border border-rose-200 bg-rose-50 text-xs font-semibold text-rose-600 hover:bg-rose-100 hover:text-rose-700 dark:border-rose-800/50 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-900/50"
                     >
                         Batal
                     </Button>
-                    <Button
-                        onClick={handleSubmit}
-                        disabled={loading || selectedUserIds.length === 0}
-                        className="min-w-[140px] h-9 text-xs"
-                    >
+                    <Button onClick={handleSubmit} disabled={loading || selectedUserIds.length === 0} className="h-9 min-w-[140px] text-xs">
                         {loading ? <Loader2 size={15} className="mr-1.5 animate-spin" /> : <CheckCircle2 size={15} className="mr-1.5" />}
                         Konfirmasi Penugasan
                     </Button>
@@ -228,8 +231,8 @@ export function SharedAssignModal({ open, onClose, contract, onUpdate, showToast
             }
         >
             <div className="space-y-3.5 pt-1">
-                <div className="rounded-lg border border-primary/10 bg-primary/5 p-3">
-                    <p className="text-[11px] leading-relaxed font-normal text-primary/90">
+                <div className="border-primary/10 bg-primary/5 rounded-lg border p-3">
+                    <p className="text-primary/90 text-[11px] leading-relaxed font-normal">
                         Pilih personil yang akan bertanggung jawab untuk memproses dokumen ini pada tahap selanjutnya.
                     </p>
                 </div>
@@ -244,7 +247,7 @@ export function SharedAssignModal({ open, onClose, contract, onUpdate, showToast
                             </div>
                         </div>
                         <div className="border-surface-border bg-surface-muted/20 relative flex items-center gap-3 rounded-xl border p-2">
-                            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
+                            <div className="bg-primary/10 text-primary flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold">
                                 {contract.assigned_pic.name?.substring(0, 2).toUpperCase()}
                             </div>
                             <div className="flex min-w-0 flex-col">
@@ -330,7 +333,7 @@ export function SharedAssignModal({ open, onClose, contract, onUpdate, showToast
                                 return (
                                     <div
                                         key={uid}
-                                        className="group flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-bold text-primary transition-all hover:bg-primary/10"
+                                        className="group border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold transition-all"
                                     >
                                         <span className="max-w-[200px] truncate">
                                             {u.name}
@@ -362,9 +365,7 @@ export function SharedAssignModal({ open, onClose, contract, onUpdate, showToast
                     <div className="flex items-center justify-between">
                         <label className="text-text-desc text-[11px] font-bold uppercase">Lampiran Berkas Pendukung (Opsional)</label>
                         {attachments.length > 0 && (
-                            <span className="text-[10px] font-bold text-primary">
-                                {attachments.length} Berkas Baru Dipilih
-                            </span>
+                            <span className="text-primary text-[10px] font-bold">{attachments.length} Berkas Baru Dipilih</span>
                         )}
                     </div>
 
@@ -390,23 +391,28 @@ export function SharedAssignModal({ open, onClose, contract, onUpdate, showToast
                                     }
                                 }}
                                 className={cn(
-                                    "border-surface-border text-text-desc hover:border-primary hover:text-primary hover:bg-surface-muted flex h-auto w-full flex-col items-center justify-center gap-1.5 border-2 border-dashed py-5 transition-all rounded-lg cursor-pointer",
-                                    isDragging && "border-primary bg-primary/10 scale-[0.99]"
+                                    'border-surface-border text-text-desc hover:border-primary hover:text-primary hover:bg-surface-muted flex h-auto w-full cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border-2 border-dashed py-5 transition-all',
+                                    isDragging && 'border-primary bg-primary/10 scale-[0.99]',
                                 )}
                             >
                                 <div className="flex items-center gap-2">
                                     <Paperclip size={16} className="opacity-60" />
                                     <span className="text-xs font-bold tracking-wide uppercase">Pilih / Drag & Drop Berkas</span>
                                 </div>
-                                <span className="text-[10px] text-muted-foreground font-normal">Mendukung format PDF, Gambar, Dokumen, dan Spreadsheet</span>
+                                <span className="text-muted-foreground text-[10px] font-normal">
+                                    Mendukung format PDF, Gambar, Dokumen, dan Spreadsheet
+                                </span>
                             </div>
                         ) : (
                             <div className="space-y-1.5">
                                 {attachments.map((file, idx) => (
-                                    <div key={idx} className="border-surface-border bg-surface-muted/70 flex items-center justify-between rounded-lg border px-3 py-2">
-                                        <div className="flex items-center gap-2.5 overflow-hidden min-w-0">
+                                    <div
+                                        key={idx}
+                                        className="border-surface-border bg-surface-muted/70 flex items-center justify-between rounded-lg border px-3 py-2"
+                                    >
+                                        <div className="flex min-w-0 items-center gap-2.5 overflow-hidden">
                                             {getFileIcon(file.name)}
-                                            <div className="flex flex-col min-w-0">
+                                            <div className="flex min-w-0 flex-col">
                                                 <span className="text-text-main truncate text-xs font-bold">{file.name}</span>
                                                 <span className="text-text-desc text-[10px] font-medium">{formatFileSize(file.size)}</span>
                                             </div>
@@ -415,7 +421,7 @@ export function SharedAssignModal({ open, onClose, contract, onUpdate, showToast
                                             type="button"
                                             variant="ghost"
                                             size="icon"
-                                            onClick={() => setAttachments(prev => prev.filter((_, i) => i !== idx))}
+                                            onClick={() => setAttachments((prev) => prev.filter((_, i) => i !== idx))}
                                             className="text-text-desc hover:text-danger hover:bg-danger/10 h-7 w-7 shrink-0"
                                         >
                                             <X size={14} />
@@ -437,8 +443,8 @@ export function SharedAssignModal({ open, onClose, contract, onUpdate, showToast
                                     }}
                                     onDrop={handleFileDrop}
                                     className={cn(
-                                        "w-full text-xs font-semibold flex items-center justify-center gap-1.5 border border-dashed border-primary/40 text-primary hover:bg-primary/5 h-8 mt-1 rounded-md cursor-pointer transition-all",
-                                        isDragging && "bg-primary/15 border-primary"
+                                        'border-primary/40 text-primary hover:bg-primary/5 mt-1 flex h-8 w-full cursor-pointer items-center justify-center gap-1.5 rounded-md border border-dashed text-xs font-semibold transition-all',
+                                        isDragging && 'bg-primary/15 border-primary',
                                     )}
                                 >
                                     <Plus size={14} />

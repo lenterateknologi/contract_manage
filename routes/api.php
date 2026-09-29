@@ -8,6 +8,7 @@ Route::middleware('auth')->group(function () {
     require __DIR__.'/api/services.php';
     require __DIR__.'/api/settings.php';
     require __DIR__.'/api/discussions.php';
+    require __DIR__.'/api/notifications.php';
 });
 
 require __DIR__.'/api/auth.php';

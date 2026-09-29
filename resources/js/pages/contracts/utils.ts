@@ -1,28 +1,9 @@
 import { Contract, PaginatedData } from '@/pages/contracts/types';
-import axios from 'axios';
+import { apiClient, unwrapResponse } from '@/api/client';
 
-// Helper: read a specific cookie value by name
-function getCookie(name: string): string | null {
-    const match = document.cookie.match(new RegExp('(?:^|; )' + name.replace(/([.*+?^=!:${}()|[\]/\\])/g, '\\$1') + '=([^;]*)'));
-    return match ? decodeURIComponent(match[1]) : null;
-}
-
-// ── HTTP API Client ──────────────────────────────────────────────────
-const api = axios.create({
-    headers: { 'X-Requested-With': 'XMLHttpRequest', Accept: 'application/json' },
-    withCredentials: true,
-});
-
-api.interceptors.request.use((config) => {
-    const token = getCookie('XSRF-TOKEN');
-    if (token) {
-        config.headers['X-XSRF-TOKEN'] = token;
-    }
-    return config;
-});
-
-// Helper for extracting data
-const unwrap = <T>(promise: Promise<{ data: T }>): Promise<T> => promise.then((r) => r.data);
+// ── HTTP API Client & Helper ──────────────────────────────────────────
+const api = apiClient;
+const unwrap = unwrapResponse;
 
 // ── Contract API Endpoints ───────────────────────────────────────────
 export const contractApi = {
@@ -161,14 +142,32 @@ export const contractApi = {
         `/api/contracts/${id}/vendor-document-pdf/${encodeURIComponent(docId)}${fileName ? `?fileName=${encodeURIComponent(fileName)}` : ''}`,
 
     // 5. Chat & Discussion Messages
+    discussions: {
+        list: (params?: { page?: number; per_page?: number; category?: string; search?: string; unread_only?: boolean }) =>
+            unwrap(api.get('/api/discussions', { params })),
+        detail: (contractId: string, params?: { limit?: number; search?: string }) =>
+            unwrap(api.get(`/api/discussions/${contractId}`, { params })),
+        send: (contractId: string, message: string, file?: File) => {
+            const fd = new FormData();
+            fd.append('message', message);
+            if (file) fd.append('attachment', file);
+            return unwrap(api.post(`/api/discussions/${contractId}/messages`, fd));
+        },
+        markRead: (contractId: string) => unwrap(api.post(`/api/discussions/${contractId}/read`)),
+    },
+
     messages: {
-        list: (contractId: string) => unwrap(api.get(`/api/contracts/${contractId}/messages`)),
+        list: (contractId: string, params?: { limit?: number; search?: string }) =>
+            unwrap(api.get(`/api/contracts/${contractId}/messages`, { params })),
+        detail: (messageId: string) => unwrap(api.get(`/api/messages/${messageId}`)),
         send: (contractId: string, message: string, file?: File) => {
             const fd = new FormData();
             fd.append('message', message);
             if (file) fd.append('attachment', file);
             return unwrap(api.post(`/api/contracts/${contractId}/messages`, fd));
         },
+        react: (messageId: string, emoji: string) =>
+            unwrap(api.post(`/api/messages/${messageId}/reaction`, { emoji })),
         markRead: (contractId: string) => unwrap(api.post(`/api/contracts/${contractId}/messages/read`)),
     },
 

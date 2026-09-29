@@ -74,18 +74,35 @@ class WorkflowQueryService
             'initiatorAuthorities.organizationGroup',
         ])->get();
 
-        if (! $user) {
-            return $workflows->filter(fn ($w) => $w->initiator_type === 'all' && $w->initiatorAuthorities->isEmpty())->values();
-        }
-
-        return $workflows->filter(function ($w) use ($user) {
+        return $workflows->map(function ($w) use ($user) {
             // Workflows with no specific initiator authorities and initiator_type 'all' are available to everyone
             if ($w->initiator_type === 'all' && $w->initiatorAuthorities->isEmpty()) {
-                return true;
+                $w->setAttribute('is_eligible', true);
+                $w->setAttribute('ineligible_reason', null);
+
+                return $w;
+            }
+
+            if (! $user) {
+                $w->setAttribute('is_eligible', false);
+                $w->setAttribute('ineligible_reason', 'Memerlukan login pengguna');
+
+                return $w;
+            }
+
+            // Admins & Super Admins are always eligible
+            if ($user->isAdmin() || $user->isSuperAdmin()) {
+                $w->setAttribute('is_eligible', true);
+                $w->setAttribute('ineligible_reason', null);
+
+                return $w;
             }
 
             if ($w->initiatorAuthorities->isEmpty()) {
-                return false;
+                $w->setAttribute('is_eligible', false);
+                $w->setAttribute('ineligible_reason', 'Otoritas inisiator belum dikonfigurasi');
+
+                return $w;
             }
 
             $userRoleId = $user->role_id;
@@ -95,11 +112,12 @@ class WorkflowQueryService
                 $userDivId = $user->getRelation('department')->division_id;
             }
 
-            // Check if any single rule directly matches the user
             $roleRules = $w->initiatorAuthorities->whereNotNull('role_id');
             $deptRules = $w->initiatorAuthorities->whereNotNull('department_id');
             $divRules = $w->initiatorAuthorities->whereNotNull('division_id');
             $otherRules = $w->initiatorAuthorities->filter(fn ($r) => empty($r->role_id) && empty($r->department_id) && empty($r->division_id));
+
+            $isEligible = false;
 
             // 1. Check composite role + department/division constraint
             if ($roleRules->isNotEmpty()) {
@@ -108,29 +126,59 @@ class WorkflowQueryService
                     $deptMatches = $deptRules->isEmpty() || $deptRules->contains(fn ($r) => (string) $r->department_id === (string) $userDeptId);
                     $divMatches = $divRules->isEmpty() || $divRules->contains(fn ($r) => (string) $r->division_id === (string) $userDivId);
                     if ($deptMatches && $divMatches) {
-                        return true;
+                        $isEligible = true;
                     }
                 }
             }
 
             // 2. Check department-only or division-only rules (when not combined with role)
-            if ($roleRules->isEmpty()) {
+            if (! $isEligible && $roleRules->isEmpty()) {
                 if ($deptRules->isNotEmpty() && $deptRules->contains(fn ($r) => (string) $r->department_id === (string) $userDeptId)) {
-                    return true;
+                    $isEligible = true;
                 }
                 if ($divRules->isNotEmpty() && $divRules->contains(fn ($r) => (string) $r->division_id === (string) $userDivId)) {
-                    return true;
+                    $isEligible = true;
                 }
             }
 
-            // 3. Check specific user or universal matching rules (e.g. org_group, user_id, location, etc.)
-            foreach ($otherRules as $rule) {
-                if (\App\Models\Authority::ruleMatchesUser($rule, $user)) {
-                    return true;
+            // 3. Check specific user or universal matching rules
+            if (! $isEligible) {
+                foreach ($otherRules as $rule) {
+                    if (\App\Models\Authority::ruleMatchesUser($rule, $user)) {
+                        $isEligible = true;
+                        break;
+                    }
                 }
             }
 
-            return false;
+            $reason = null;
+            if (! $isEligible) {
+                $reasons = [];
+                if ($roleRules->isNotEmpty()) {
+                    $roles = $roleRules->map(fn ($r) => $r->role?->name)->filter()->unique()->join(', ');
+                    if ($roles) {
+                        $reasons[] = "Role: {$roles}";
+                    }
+                }
+                if ($deptRules->isNotEmpty()) {
+                    $depts = $deptRules->map(fn ($r) => $r->department?->name)->filter()->unique()->join(', ');
+                    if ($depts) {
+                        $reasons[] = "Departemen: {$depts}";
+                    }
+                }
+                if ($divRules->isNotEmpty()) {
+                    $divs = $divRules->map(fn ($r) => $r->division?->name)->filter()->unique()->join(', ');
+                    if ($divs) {
+                        $reasons[] = "Divisi: {$divs}";
+                    }
+                }
+                $reason = ! empty($reasons) ? 'Khusus untuk '.implode(' & ', $reasons) : 'Kewenangan inisiator tidak sesuai';
+            }
+
+            $w->setAttribute('is_eligible', $isEligible);
+            $w->setAttribute('ineligible_reason', $reason);
+
+            return $w;
         })->values();
     }
 

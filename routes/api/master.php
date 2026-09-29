@@ -103,13 +103,23 @@ Route::prefix('admin')->group(function () {
         Route::delete('/{vendor}/documents/{document}', 'destroyDocument');
     });
 
-    // Workflows
+    // Workflows (REST API)
     Route::controller(WorkflowAdminController::class)->prefix('workflows')->group(function () {
         Route::get('/', 'index');
+        Route::get('/options', 'options');
         Route::post('/', 'store');
-        Route::put('/{workflow}', 'update');
-        Route::delete('/{workflow}', 'destroy');
+        Route::get('/export', 'export');
+        Route::post('/import', 'import');
         Route::post('/bulk-delete', 'bulkDestroy');
+        Route::post('/presets', 'storePreset');
+        Route::put('/presets/{preset}', 'updatePreset');
+        Route::delete('/presets/{preset}', 'destroyPreset');
+        Route::get('/{workflow}', 'show');
+        Route::put('/{workflow}', 'update');
+        Route::patch('/{workflow}/toggle', 'toggleField');
+        Route::delete('/{workflow}', 'destroy');
+        Route::post('/{workflow}/duplicate', 'duplicate');
+        Route::get('/{workflow}/preview', 'preview');
         Route::get('/{workflow}/steps', 'steps');
         Route::post('/{workflow}/steps', 'updateSteps');
     });

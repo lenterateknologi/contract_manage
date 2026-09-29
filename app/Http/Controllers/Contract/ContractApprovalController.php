@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Contract;
 
 use App\Http\Actions\Contract\ApproveContractAction;
+use App\Http\Actions\Contract\GetContractAvailableActionsAction;
+use App\Http\Actions\Contract\GetContractRequirementsAction;
 use App\Http\Actions\Contract\RejectContractAction;
 use App\Http\Controllers\Controller;
 use App\Http\Formatters\ContractFormatter;
@@ -19,16 +21,21 @@ use App\Models\User;
 use App\Models\Workflow;
 use App\Models\WorkflowStep;
 use App\Services\Workflow\ContractWorkflowService;
+use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class ContractApprovalController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(
         protected ContractWorkflowService $workflowService,
         protected ApproveContractAction $approveAction,
         protected RejectContractAction $rejectAction,
+        protected GetContractRequirementsAction $getContractRequirementsAction,
+        protected GetContractAvailableActionsAction $getContractAvailableActionsAction,
         protected ContractDetailQuery $contractDetailQuery,
     ) {}
 
@@ -38,7 +45,7 @@ class ContractApprovalController extends Controller
             $contract = $this->contractDetailQuery->find($id);
 
             if ($contract->status !== 'draft') {
-                return response()->json(['message' => 'Hanya kontrak berstatus draft yang dapat dikirim.'], 422);
+                return $this->errorResponse('Hanya kontrak berstatus draft yang dapat dikirim.', 422);
             }
 
             $workflowId = $request->input('workflow_id');
@@ -47,9 +54,9 @@ class ContractApprovalController extends Controller
             // Use workflow service to send for approval
             $contract = $this->workflowService->sendForApproval($contract, $workflowId, $customSteps, true);
 
-            return response()->json(ContractFormatter::formatContract($contract->fresh()), 200);
+            return $this->successResponse(ContractFormatter::formatContract($contract->fresh()), 'Kontrak berhasil dikirim untuk persetujuan.');
         } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
+            return $this->errorResponse($e->getMessage(), 422);
         }
     }
 
@@ -150,6 +157,7 @@ class ContractApprovalController extends Controller
         }
 
         $desc = 'PIC ditugaskan ke: '.($pic ? $pic->name : $picId).($note ? " (Catatan: {$note})" : '');
+        $desc = 'PIC ditugaskan ke: '.($pic ? $pic->name : $picId).($note ? " (Catatan: {$note})" : '');
         ContractHistory::create([
             'contract_id' => $contract->id,
             'action' => 'WORKFLOW_ASSIGNED',
@@ -157,7 +165,7 @@ class ContractApprovalController extends Controller
             'actor_id' => $actorId,
         ]);
 
-        return response()->json(ContractFormatter::formatContract($contract->fresh()));
+        return $this->successResponse(ContractFormatter::formatContract($contract->fresh()), 'PIC berhasil ditugaskan');
     }
 
     public function approve(ApproveContractRequest $request, string $id): JsonResponse
@@ -243,9 +251,8 @@ class ContractApprovalController extends Controller
         }
 
         if (! $approval) {
-            return response()->json(['message' => 'Tidak ada persetujuan tertunda yang ditemukan untuk Anda.'], 422);
+            return $this->errorResponse('Tidak ada persetujuan tertunda yang ditemukan untuk Anda.', 422);
         }
-
 
         $attachmentPath = null;
         $filesToProcess = [];
@@ -255,7 +262,6 @@ class ContractApprovalController extends Controller
             $filesToProcess = [$request->file('attachment')];
         }
 
-        
         $isFirst = true;
         foreach ($filesToProcess as $file) {
             if (! $file) continue;
@@ -287,7 +293,7 @@ class ContractApprovalController extends Controller
             $request->input('action_id'),
         );
 
-        return response()->json(ContractFormatter::formatContract($contract->fresh()));
+        return $this->successResponse(ContractFormatter::formatContract($contract->fresh()), 'Persetujuan berhasil diproses');
     }
 
     public function reject(RejectContractRequest $request, string $id): JsonResponse
@@ -315,7 +321,7 @@ class ContractApprovalController extends Controller
         }
 
         if (! $approval) {
-            return response()->json(['message' => 'Tidak ada persetujuan tertunda yang ditemukan untuk Anda.'], 422);
+            return $this->errorResponse('Tidak ada persetujuan tertunda yang ditemukan untuk Anda.', 422);
         }
 
         $attachmentPath = null;
@@ -347,13 +353,13 @@ class ContractApprovalController extends Controller
 
         $contract = $this->rejectAction->execute($contract, $approval, $request->reason, $attachmentPath);
 
-        return response()->json(ContractFormatter::formatContract($contract->fresh()));
+        return $this->successResponse(ContractFormatter::formatContract($contract->fresh()), 'Penolakan / revisi berhasil diproses');
     }
 
     public function bulkApprove(BulkApproveContractRequest $request): JsonResponse
     {
         if (! $this->approveAction->checkBulkPermission('can_bulk_approve')) {
-            return response()->json(['message' => 'Anda tidak memiliki izin untuk aksi massal ini.'], 403);
+            return $this->errorResponse('Anda tidak memiliki izin untuk aksi massal ini.', 403);
         }
 
         $ids = $request->input('ids');
@@ -361,7 +367,7 @@ class ContractApprovalController extends Controller
 
         $count = $this->approveAction->bulkApprove($ids, $note);
 
-        return response()->json(['message' => "$count kontrak berhasil disetujui."]);
+        return $this->successResponse(['approved_count' => $count], "{$count} kontrak berhasil disetujui.");
     }
 
     public function getNextStep(Contract $contract): ?WorkflowStep
@@ -428,7 +434,7 @@ class ContractApprovalController extends Controller
             }
 
             if (! $targetStepId) {
-                return response()->json(['message' => 'Tahap alur kerja tidak aktif saat ini.'], 422);
+                return $this->errorResponse('Tahap alur kerja tidak aktif saat ini.', 422);
             }
 
             $role = $request->input('role', config('master.roles.adhoc_approver'));
@@ -445,7 +451,7 @@ class ContractApprovalController extends Controller
                     ->whereIn('status', ['pending', 'waiting'])
                     ->exists();
                 if ($existing) {
-                    return response()->json(['message' => "User sudah terdaftar sebagai {$role} yang aktif."], 422);
+                    return $this->errorResponse("User sudah terdaftar sebagai {$role} yang aktif.", 422);
                 }
             }
 
@@ -713,9 +719,9 @@ class ContractApprovalController extends Controller
                 }
             }
 
-            return response()->json(ContractFormatter::formatContract($contract->fresh()), 200);
+            return $this->successResponse(ContractFormatter::formatContract($contract->fresh()), 'Partisipan alur kerja berhasil ditambahkan');
         } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
+            return $this->errorResponse($e->getMessage(), 422);
         }
     }
 
@@ -731,9 +737,9 @@ class ContractApprovalController extends Controller
                 ->where('is_active', false)
                 ->update(['is_active' => true, 'status' => 'pending']);
 
-            return response()->json(ContractFormatter::formatContract($contract->fresh()), 200);
+            return $this->successResponse(ContractFormatter::formatContract($contract->fresh()), 'Partisipan berhasil diajukan');
         } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
+            return $this->errorResponse($e->getMessage(), 422);
         }
     }
 
@@ -745,26 +751,119 @@ class ContractApprovalController extends Controller
 
             if (! $approval) {
                 // If it's already gone, consider it a success to avoid 404 errors in UI
-                return response()->json(ContractFormatter::formatContract($contract->fresh()), 200);
+                return $this->successResponse(ContractFormatter::formatContract($contract->fresh()), 'Persetujuan telah dihapus');
             }
 
             if ((string) $approval->contract_id !== (string) $id) {
-                return response()->json(['message' => 'Persetujuan tidak ditemukan pada kontrak ini.'], 404);
+                return $this->errorResponse('Persetujuan tidak ditemukan pada kontrak ini.', 404);
             }
 
             if ($approval->role !== config('master.roles.adhoc_approver') && $approval->role !== 'Penandatangan') {
-                return response()->json(['message' => 'Hanya persetujuan tambahan atau penandatangan yang dapat dihapus.'], 403);
+                return $this->errorResponse('Hanya persetujuan tambahan atau penandatangan yang dapat dihapus.', 403);
             }
 
             if (! in_array($approval->status, ['pending', 'waiting'])) {
-                return response()->json(['message' => 'Persetujuan yang sudah diproses tidak dapat dihapus.'], 403);
+                return $this->errorResponse('Persetujuan yang sudah diproses tidak dapat dihapus.', 403);
             }
 
             $approval->forceDelete();
 
-            return response()->json(ContractFormatter::formatContract($contract->fresh()), 200);
+            return $this->successResponse(ContractFormatter::formatContract($contract->fresh()), 'Persetujuan berhasil dihapus');
         } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 500);
+            return $this->errorResponse($e->getMessage(), 500);
         }
+    }
+
+    public function getTimeline(Request $request, string $id): JsonResponse
+    {
+        $contract = $this->contractDetailQuery->find($id);
+
+        $contract->loadMissing([
+            'approvals.approver.department',
+            'approvals.workflowStep.workflow.steps',
+            'workflowStep.actions',
+            'histories.actor.department',
+        ]);
+
+        $approvals = ContractFormatter::mapApprovalTimeline($contract, true);
+
+        $historiesQuery = $contract->histories()->with('actor:id,name,role_id,email')->latest();
+        if ($request->has('page') || $request->has('per_page')) {
+            $perPage = $request->integer('per_page', 10);
+            $histories = $historiesQuery->paginate($perPage);
+        } else {
+            $histories = $historiesQuery->get()->map(fn ($h) => [
+                'action' => $h->action,
+                'description' => $h->description,
+                'actor_id' => $h->actor_id,
+                'created_at' => $h->created_at->format('Y-m-d H:i'),
+                'actor' => ContractFormatter::formatUser($h->actor),
+            ]);
+        }
+
+        return $this->successResponse([
+            'contract_id' => $contract->id,
+            'current_step' => $contract->workflowStep ? [
+                'id' => $contract->workflowStep->id,
+                'name' => $contract->workflowStep->name,
+                'step' => $contract->workflowStep->step,
+            ] : null,
+            'progress' => $contract->progressData(true),
+            'approvals' => $approvals,
+            'histories' => $histories,
+        ], 'Contract timeline retrieved successfully');
+    }
+
+    public function getWorkflow(Request $request, string $id): JsonResponse
+    {
+        $contract = $this->contractDetailQuery->find($id);
+
+        $contract->loadMissing([
+            'workflow.steps.approverAuthorities',
+            'workflow.steps.actions',
+            'workflow.contractType',
+            'workflowStep.actions',
+            'workflowStep.approverAuthorities',
+            'originWorkflowStep',
+            'approvals.approver.department',
+            'approvals.workflowStep',
+        ]);
+
+        $formatted = ContractFormatter::formatContract($contract, true);
+
+        return $this->successResponse([
+            'contract_id' => $contract->id,
+            'workflow_id' => $contract->workflow_id,
+            'workflow' => $formatted['workflow'] ?? null,
+            'workflow_step_id' => $contract->workflow_step_id,
+            'workflow_step' => $formatted['workflow_step'] ?? null,
+            'next_step' => $formatted['next_step'] ?? null,
+            'is_in_sub_workflow' => $formatted['is_in_sub_workflow'] ?? false,
+            'current_sub_workflow_id' => $formatted['current_sub_workflow_id'] ?? null,
+            'sub_workflow' => $formatted['sub_workflow'] ?? null,
+            'origin_workflow_id' => $formatted['origin_workflow_id'] ?? null,
+            'origin_workflow' => $formatted['origin_workflow'] ?? null,
+            'origin_workflow_step_id' => $formatted['origin_workflow_step_id'] ?? null,
+            'origin_workflow_step' => $formatted['origin_workflow_step'] ?? null,
+            'branch_step_number' => $formatted['branch_step_number'] ?? null,
+            'progress' => $formatted['progress'] ?? null,
+            'requires_pic_assignment' => $formatted['requires_pic_assignment'] ?? false,
+            'can_approve' => $formatted['can_approve'] ?? false,
+            'pending_approval_id' => $formatted['pending_approval_id'] ?? null,
+        ], 'Contract workflow details retrieved successfully');
+    }
+
+    public function getRequirements(Request $request, string $id): JsonResponse
+    {
+        $contract = $this->contractDetailQuery->find($id);
+
+        return $this->getContractRequirementsAction->execute($contract, $request);
+    }
+
+    public function getAvailableActions(Request $request, string $id): JsonResponse
+    {
+        $contract = $this->contractDetailQuery->find($id);
+
+        return $this->getContractAvailableActionsAction->execute($contract, $request);
     }
 }

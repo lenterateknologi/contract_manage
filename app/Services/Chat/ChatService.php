@@ -99,18 +99,210 @@ class ChatService
     }
 
     /**
+     * Get discussions list with pagination and search/category filters.
+     */
+    public function getDiscussions(User $user, array $filters = [], int $perPage = 15): array
+    {
+        $allTypes = \App\Models\ContractType::all();
+        $typeToRootMap = [];
+        foreach ($allTypes as $t) {
+            $curr = $t;
+            while ($curr && $curr->parent_id) {
+                $curr = $allTypes->firstWhere('id', $curr->parent_id);
+            }
+            $rootCode = $curr?->code;
+            $rootName = strtolower($curr?->name ?? '');
+            if ($rootCode === 'NDA' || str_contains($rootName, 'nda') || str_contains($rootName, 'kerahasiaan')) {
+                $typeToRootMap[$t->id] = 'nda';
+            } elseif ($rootCode === 'A-2' || str_contains($rootName, 'non kontrak')) {
+                $typeToRootMap[$t->id] = 'non_kontrak';
+            } else {
+                $typeToRootMap[$t->id] = 'kontrak';
+            }
+        }
+
+        $lastMessageQuery = ContractMessage::query()
+            ->select('created_at')
+            ->whereColumn('contract_id', 't_contracts.id')
+            ->latest('created_at')
+            ->limit(1);
+
+        $query = Contract::query()
+            ->select(['id', 'form_no', 'contract_no', 'title', 'status', 'contract_type_id', 'created_by', 'created_at', 'updated_at'])
+            ->selectSub($lastMessageQuery, 'last_message_at')
+            ->whereRaw("UPPER(status) != 'DRAFT'")
+            ->where(function ($q) use ($user) {
+                $q->where('created_by', $user->id)
+                    ->orWhere('initiated_by_id', $user->id)
+                    ->orWhere('assigned_pic_id', $user->id)
+                    ->orWhere('assigned_by_id', $user->id)
+                    ->orWhereHas('approvals', function ($sq) use ($user) {
+                        $sq->where('user_id', $user->id);
+                    })
+                    ->orWhereHas('messages', function ($sq) use ($user) {
+                        $sq->where('user_id', $user->id);
+                    });
+            })
+            ->with([
+                'creator:id,name,role_id',
+                'contractType:id,name',
+            ])
+            ->withCount(['messages as unread_count' => function ($q) use ($user) {
+                $q->whereJsonDoesntContain('read_by', $user->id);
+            }]);
+
+        // Category filter
+        if (! empty($filters['category']) && $filters['category'] !== 'all') {
+            $categoryTarget = strtolower($filters['category']);
+            $matchingTypeIds = array_keys(array_filter($typeToRootMap, fn ($cat) => $cat === $categoryTarget));
+            $query->whereIn('contract_type_id', $matchingTypeIds);
+        }
+
+        // Search filter
+        if (! empty($filters['search'])) {
+            $search = trim($filters['search']);
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhere('contract_no', 'like', "%{$search}%")
+                    ->orWhere('form_no', 'like', "%{$search}%")
+                    ->orWhereHas('messages', function ($mq) use ($search) {
+                        $mq->where('message', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        $query->orderByRaw('COALESCE(('.$lastMessageQuery->toSql().'), t_contracts.updated_at) DESC');
+
+        $paginated = $query->paginate($perPage);
+
+        $contractIds = collect($paginated->items())->pluck('id');
+        $latestMessages = $contractIds->isNotEmpty()
+            ? ContractMessage::with(['user:id,name,role_id,image_src'])
+                ->whereIn('contract_id', $contractIds)
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->unique('contract_id')
+                ->keyBy('contract_id')
+            : collect();
+
+        $items = collect($paginated->items())->map(function ($c) use ($typeToRootMap, $latestMessages) {
+            $effectiveTimestamp = $c->last_message_at
+                ? Carbon::parse($c->last_message_at)
+                : ($c->updated_at ?? $c->created_at);
+
+            $lastMsg = $latestMessages->get($c->id);
+
+            return [
+                'id' => $c->id,
+                'form_no' => $c->form_no,
+                'contract_no' => $c->contract_no,
+                'title' => $c->title,
+                'status' => $c->status,
+                'contract_type' => $c->contractType?->name ?? '—',
+                'contract_type_id' => $c->contract_type_id,
+                'parent_category' => $c->contract_type_id ? ($typeToRootMap[$c->contract_type_id] ?? 'kontrak') : 'kontrak',
+                'unread_count' => $c->unread_count ?? 0,
+                'last_message' => $lastMsg ? [
+                    'id' => $lastMsg->id,
+                    'message' => $lastMsg->message,
+                    'has_attachment' => ! empty($lastMsg->attachment_path),
+                    'attachment_name' => $lastMsg->attachment_name,
+                    'created_at' => $lastMsg->created_at ? $lastMsg->created_at->format('Y-m-d H:i') : null,
+                    'created_at_formatted' => $lastMsg->created_at ? $lastMsg->created_at->diffForHumans() : '',
+                    'user' => $lastMsg->user ? [
+                        'id' => $lastMsg->user->id,
+                        'name' => $lastMsg->user->name,
+                        'initials' => $lastMsg->user->initials,
+                        'avatar' => $lastMsg->user->avatar_url ?? $lastMsg->user->avatar ?? null,
+                    ] : null,
+                ] : null,
+                'updated_at' => $effectiveTimestamp ? $effectiveTimestamp->toIso8601String() : null,
+                'updated_at_formatted' => $effectiveTimestamp ? $effectiveTimestamp->diffForHumans() : '',
+                'creator' => $c->creator ? ['id' => $c->creator->id, 'name' => $c->creator->name] : null,
+            ];
+        });
+
+        return [
+            'data' => $items,
+            'current_page' => $paginated->currentPage(),
+            'per_page' => $paginated->perPage(),
+            'total' => $paginated->total(),
+            'last_page' => $paginated->lastPage(),
+        ];
+    }
+
+    /**
+     * Get discussion detail for a specific contract including header metadata and messages.
+     */
+    public function getDiscussionDetail(Contract $contract, User $user, int $limit = 50, ?string $search = null): array
+    {
+        $contract->loadMissing(['creator:id,name,role_id', 'contractType:id,name']);
+
+        $messagesQuery = $contract->messages()->with(['user'])->orderBy('created_at', 'asc')->orderBy('id', 'asc');
+        if (! empty($search)) {
+            $messagesQuery->where('message', 'like', '%'.trim($search).'%');
+        }
+        $messages = $messagesQuery->take($limit)->get();
+
+        $unreadCount = $contract->messages()
+            ->where('user_id', '!=', $user->id)
+            ->whereJsonDoesntContain('read_by', $user->id)
+            ->count();
+
+        return [
+            'contract' => [
+                'id' => $contract->id,
+                'form_no' => $contract->form_no,
+                'contract_no' => $contract->contract_no,
+                'title' => $contract->title,
+                'status' => $contract->status,
+                'contract_type' => $contract->contractType?->name ?? '—',
+                'contract_type_id' => $contract->contract_type_id,
+                'creator' => $contract->creator ? ['id' => $contract->creator->id, 'name' => $contract->creator->name] : null,
+            ],
+            'unread_count' => $unreadCount,
+            'messages' => $this->formatMessages($messages, $user->id),
+        ];
+    }
+
+    /**
      * Get formatted messages for a contract.
      */
-    public function getContractMessages(Contract $contract, int $limit = 100, ?string $currentUserId = null): Collection
+    public function getContractMessages(Contract $contract, int $limit = 100, ?string $currentUserId = null, ?string $search = null): Collection
     {
-        $messages = $contract->messages()
+        $query = $contract->messages()
             ->with(['user'])
             ->orderBy('created_at', 'asc')
-            ->orderBy('id', 'asc')
-            ->take($limit)
-            ->get();
+            ->orderBy('id', 'asc');
+
+        if (! empty($search)) {
+            $query->where('message', 'like', '%'.trim($search).'%');
+        }
+
+        $messages = $query->take($limit)->get();
 
         return $this->formatMessages($messages, $currentUserId);
+    }
+
+    /**
+     * Get a single message by ID.
+     */
+    public function getMessageDetail(string $messageId, ?string $currentUserId = null): ?array
+    {
+        $msg = ContractMessage::with(['user', 'contract'])->find($messageId);
+        if (! $msg) {
+            return null;
+        }
+
+        $formatted = $this->formatMessage($msg, $currentUserId);
+        $formatted['contract'] = [
+            'id' => $msg->contract?->id,
+            'title' => $msg->contract?->title,
+            'contract_no' => $msg->contract?->contract_no,
+            'status' => $msg->contract?->status,
+        ];
+
+        return $formatted;
     }
 
     /**

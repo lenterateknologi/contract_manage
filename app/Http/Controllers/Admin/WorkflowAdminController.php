@@ -6,6 +6,7 @@ use App\Http\Actions\Workflow\DestroyWorkflowAction;
 use App\Http\Actions\Workflow\DuplicateWorkflowAction;
 use App\Http\Actions\Workflow\StoreWorkflowAction;
 use App\Http\Actions\Workflow\UpdateWorkflowAction;
+use App\Http\Actions\Workflow\UpdateWorkflowStepsAction;
 use App\Http\Controllers\Controller;
 use App\Http\Queries\Master\UserQuery;
 use App\Http\Queries\Master\WorkflowQuery;
@@ -127,6 +128,23 @@ class WorkflowAdminController extends Controller
             ];
         });
 
+        if ($request->wantsJson() || $request->is('api/*')) {
+            return response()->json([
+                'success' => true,
+                'data' => $paginator->items(),
+                'pagination' => [
+                    'current_page' => $paginator->currentPage(),
+                    'last_page' => $paginator->lastPage(),
+                    'per_page' => $paginator->perPage(),
+                    'total' => $paginator->total(),
+                    'from' => $paginator->firstItem(),
+                    'to' => $paginator->lastItem(),
+                ],
+                'contract_types' => $allTypes->values()->map(fn ($t) => ['id' => $t->id, 'name' => $t->name, 'code' => $t->code]),
+                'filters' => $filters,
+            ]);
+        }
+
         return Inertia::render('admin/Index', [
             'currentView' => 'workflows',
             'workflows' => $paginator,
@@ -135,6 +153,31 @@ class WorkflowAdminController extends Controller
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
                 ['title' => 'Alur Kerja (Workflows)', 'href' => route('admin.workflows'), 'description' => 'Konfigurasi tahapan persetujuan.', 'icon' => 'GitBranch'],
+            ],
+        ]);
+    }
+
+    public function options()
+    {
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'contractTypes' => ContractType::select('id', 'name', 'code', 'parent_id')->orderBy('name')->get(),
+                'departments' => Department::select('id', 'name', 'code', 'idorg_group', 'org_group_name')->where('is_used', true)->orderBy('name')->get(),
+                'divisions' => Division::select('id', 'name', 'code', 'department_id')->orderBy('name')->get(),
+                'locations' => Location::select('id', 'name', 'code')->where('is_used', true)->orderBy('name')->get(),
+                'roles' => Role::select('id', 'name')->orderBy('name')->get(),
+                'users' => User::select('id', 'name', 'email', 'nik', 'username', 'role_id', 'department_id', 'division_id', 'company_id', 'company_name', 'org_name', 'location_id', 'idlocation', 'location_name', 'company_group_id', 'region_id', 'is_used')->with(['department:id,name,idorg_group,org_group_name', 'company:id,name,company_group_name,region_name', 'location:id,name,code'])->where('is_used', true)->orderBy('name')->get(),
+                'companyGroups' => CompanyGroup::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
+                'organizationGroups' => OrganizationGroup::select('id', 'name', 'code', 'idorg_group')->where('is_used', true)->orderBy('name')->get(),
+                'regions' => Region::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
+                'companies' => Company::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
+                'contractStatuses' => ContractStatus::select('id', 'code', 'label', 'color', 'bg_color', 'icon')->orderBy('label')->get(),
+                'allWorkflows' => $this->workflowQuery->options()->get(),
+                'workflowTypes' => \App\Enums\WorkflowType::options(),
+                'masterWorkflows' => Workflow::where('workflow_type', 'main')->select('id', 'name')->orderBy('name')->get(),
+                'formTemplates' => FormTemplate::select('id', 'name')->orderBy('name')->get(),
+                'stepPresets' => WorkflowStepPreset::select('id', 'name', 'step_data', 'created_at')->latest()->get(),
             ],
         ]);
     }
@@ -182,6 +225,47 @@ class WorkflowAdminController extends Controller
         ]);
     }
 
+    public function show(Workflow $workflow)
+    {
+        $workflowData = $this->formatWorkflowDetail($workflow);
+
+        return response()->json([
+            'success' => true,
+            'data' => $workflowData,
+        ]);
+    }
+
+    public function steps(Workflow $workflow)
+    {
+        $workflowData = $this->formatWorkflowDetail($workflow);
+
+        return response()->json([
+            'success' => true,
+            'data' => $workflowData['steps'] ?? [],
+        ]);
+    }
+
+    public function updateSteps(Request $request, Workflow $workflow, UpdateWorkflowStepsAction $action)
+    {
+        try {
+            $updated = $action->execute($workflow, $request->all());
+            $workflowData = $this->formatWorkflowDetail($updated);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Steps alur kerja berhasil diperbarui.',
+                'data' => $workflowData,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Workflow Update Steps Error: '.$e->getMessage(), ['trace' => $e->getTraceAsString()]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memperbarui steps alur kerja: '.$e->getMessage(),
+            ], 422);
+        }
+    }
+
     public function create()
     {
         return Inertia::render('workflows/form', [
@@ -212,86 +296,7 @@ class WorkflowAdminController extends Controller
 
     public function edit(Workflow $workflow)
     {
-        $workflow = $this->workflowQuery->findForEdit($workflow->id);
-
-        $workflowData = $workflow->toArray();
-
-        $workflowData['initiator_authorities'] = $workflow->initiatorAuthorities->toArray();
-
-        $workflowData['steps'] = $workflow->steps->map(function ($s) {
-            $sd = $s->toArray();
-            $sd['role'] = $s->approverAuthorities->filter(fn ($a) => ! $a->role_use_initiator)->map(fn ($a) => $a->role?->name)->filter()->values()->toArray();
-            $sd['user_ids'] = $s->approverAuthorities->pluck('user_id')->filter()->values()->toArray();
-            $sd['department_ids'] = $s->approverAuthorities->filter(fn ($a) => ! $a->department_use_initiator)->pluck('department_id')->filter()->values()->toArray();
-            $sd['division_ids'] = $s->approverAuthorities->filter(fn ($a) => ! $a->division_use_initiator)->pluck('division_id')->filter()->values()->toArray();
-            $sd['approver_authorities'] = $s->approverAuthorities->map(function ($a) {
-                $arr = $a->toArray();
-                if (in_array($a->authority_type, ['initiator', 'assigned_pic', 'creator', 'adhoc_approvers', 'adhoc'])) {
-                    $arr['authority_type'] = 'custom';
-                    $arr['user_id'] = $a->authority_type;
-                }
-
-                return $arr;
-            })->toArray();
-
-            // Reconstruct approver_config if present, or initialize empty
-            $config = $s->approver_config ?? [];
-            if (! is_array($config)) {
-                $config = [];
-            }
-
-            // Ensure items inside config are consistent with the arrays
-            $config['roles'] = $config['roles'] ?? $sd['role'];
-            $config['departments'] = $config['departments'] ?? $sd['department_ids'];
-            $config['users'] = $config['users'] ?? $sd['user_ids'];
-
-            $sd['approver_config'] = $config;
-
-            $sd['actions'] = $s->actions->sortBy(fn ($action) => (int) data_get($action->transition_config, 'order', 999))->values()->map(function ($action) {
-                // ponytail: Reconstruct sub-flex arrays from additionalAuthorities
-                $addAuth = $action->additionalAuthorities->groupBy('additional_type');
-
-                $signingParties = $action->signing_parties ?? [];
-                if (isset($addAuth['signer'])) {
-                    $signingParties['authorities'] = $addAuth['signer']->map->toArray()->toArray();
-                }
-
-                $assigneeConfig = $action->assignee_config ?? [];
-                if (isset($addAuth['assignee'])) {
-                    $assigneeConfig['authorities'] = $addAuth['assignee']->map->toArray()->toArray();
-                }
-
-                $reviewerConfig = [];
-                if (isset($addAuth['reviewer'])) {
-                    $reviewerConfig['authorities'] = $addAuth['reviewer']->map->toArray()->toArray();
-                }
-
-                return [
-                    'id' => $action->id,
-                    'action_code' => $action->action_code ? (is_object($action->action_code) ? $action->action_code->value : (string) $action->action_code) : null,
-                    'code' => $action->action_code ? (is_object($action->action_code) ? $action->action_code->value : (string) $action->action_code) : null,
-                    'master_action_id' => $action->action_code ? (is_object($action->action_code) ? $action->action_code->value : (string) $action->action_code) : null,
-                    'master_action_name' => $action->action_code ? (is_object($action->action_code) ? $action->action_code->label() : ($action->alias ?: 'Action')) : ($action->alias ?: 'Action'),
-                    'master_action' => null,
-                    'next_step_id' => $action->next_step_id,
-                    'next_workflow_id' => $action->next_workflow_id,
-                    'next_workflow_step_id' => $action->next_workflow_step_id,
-                    'required_fields' => $action->required_fields ?? [],
-                    'autofilled_fields' => $action->autofilled_fields ?? [],
-                    'signing_parties' => $signingParties,
-                    'assignee_config' => $assigneeConfig,
-                    'reviewer_config' => $reviewerConfig,
-                    'transition_config' => $action->transition_config,
-                    'alias' => $action->alias,
-                    'target_status' => $action->target_status,
-                    'description' => $action->description,
-                    'is_active' => $action->is_active,
-                    'is_visible' => $action->is_visible,
-                ];
-            })->toArray();
-
-            return $sd;
-        });
+        $workflowData = $this->formatWorkflowDetail($workflow);
 
         return Inertia::render('workflows/form', [
             'workflow' => $workflowData,
@@ -326,11 +331,26 @@ class WorkflowAdminController extends Controller
         try {
             $workflow = $action->execute($request->validated());
 
+            if ($request->wantsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Workflow berhasil dibuat. Silakan konfigurasikan alur kerja.',
+                    'data' => $this->formatWorkflowDetail($workflow),
+                ], 201);
+            }
+
             return redirect()->route('admin.workflows.edit', $workflow->id)->with('success', 'Workflow berhasil dibuat. Silakan konfigurasikan alur kerja.');
         } catch (\Exception $e) {
             Log::error('Workflow Store Error: '.$e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
             ]);
+
+            if ($request->wantsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gagal menyimpan alur kerja: '.$e->getMessage(),
+                ], 422);
+            }
 
             return back()->withErrors(['error' => 'Gagal menyimpan alur kerja: '.$e->getMessage()]);
         }
@@ -341,13 +361,28 @@ class WorkflowAdminController extends Controller
         Log::info('Incoming Workflow Update Request', $request->all());
 
         try {
-            $action->execute($workflow, $request->validated());
+            $updated = $action->execute($workflow, $request->validated());
+
+            if ($request->wantsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Workflow berhasil diperbarui.',
+                    'data' => $this->formatWorkflowDetail($updated ?: $workflow),
+                ]);
+            }
 
             return back()->with('success', 'Workflow berhasil diperbarui.');
         } catch (\Exception $e) {
             Log::error('Workflow Update Error: '.$e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
             ]);
+
+            if ($request->wantsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gagal memperbarui alur kerja: '.$e->getMessage(),
+                ], 422);
+            }
 
             return back()->withErrors(['error' => 'Gagal memperbarui alur kerja: '.$e->getMessage()]);
         }
@@ -372,31 +407,81 @@ class WorkflowAdminController extends Controller
                 $field => $value,
             ]);
 
+            if ($request->wantsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Perubahan berhasil disimpan.',
+                    'data' => $workflow->fresh(),
+                ]);
+            }
+
             return back()->with('success', 'Perubahan berhasil disimpan.');
         } catch (\Exception $e) {
             Log::error('Workflow Toggle Error: '.$e->getMessage());
+
+            if ($request->wantsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gagal memperbarui: '.$e->getMessage(),
+                ], 422);
+            }
 
             return back()->withErrors(['error' => 'Gagal memperbarui: '.$e->getMessage()]);
         }
     }
 
-    public function destroy(Workflow $workflow, DestroyWorkflowAction $action)
+    public function destroy(Workflow $workflow, DestroyWorkflowAction $action, Request $request)
     {
-        $action->execute($workflow);
+        try {
+            $action->execute($workflow);
 
-        return redirect()->back();
+            if ($request->wantsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Alur kerja berhasil dihapus.',
+                ]);
+            }
+
+            return redirect()->back();
+        } catch (\Exception $e) {
+            Log::error('Workflow Destroy Error: '.$e->getMessage());
+
+            if ($request->wantsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gagal menghapus alur kerja: '.$e->getMessage(),
+                ], 422);
+            }
+
+            return back()->withErrors(['error' => 'Gagal menghapus alur kerja: '.$e->getMessage()]);
+        }
     }
 
-    public function duplicate(Workflow $workflow, DuplicateWorkflowAction $action)
+    public function duplicate(Workflow $workflow, DuplicateWorkflowAction $action, Request $request)
     {
         try {
             $newWorkflow = $action->execute($workflow);
+
+            if ($request->wantsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'success' => true,
+                    'message' => "Alur kerja '{$workflow->name}' berhasil diduplikasi sebagai '{$newWorkflow->name}'.",
+                    'data' => $this->formatWorkflowDetail($newWorkflow),
+                ], 201);
+            }
 
             return redirect()->route('admin.workflows')->with('success', "Alur kerja '{$workflow->name}' berhasil diduplikasi sebagai '{$newWorkflow->name}'.");
         } catch (\Exception $e) {
             Log::error('Workflow Duplicate Error: '.$e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
             ]);
+
+            if ($request->wantsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gagal menduplikasi alur kerja: '.$e->getMessage(),
+                ], 422);
+            }
 
             return back()->withErrors(['error' => 'Gagal menduplikasi alur kerja: '.$e->getMessage()]);
         }
@@ -406,10 +491,24 @@ class WorkflowAdminController extends Controller
     {
         $ids = $request->input('ids', []);
         if (empty($ids)) {
+            if ($request->wantsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tidak ada alur kerja yang dipilih.',
+                ], 422);
+            }
+
             return back();
         }
 
         Workflow::whereIn('id', $ids)->delete();
+
+        if ($request->wantsJson() || $request->is('api/*')) {
+            return response()->json([
+                'success' => true,
+                'message' => count($ids).' alur kerja berhasil dihapus.',
+            ]);
+        }
 
         return back()->with('success', count($ids).' alur kerja berhasil dihapus.');
     }
@@ -553,6 +652,10 @@ class WorkflowAdminController extends Controller
             $data = json_decode($content, true);
 
             if (! is_array($data)) {
+                if ($request->wantsJson() || $request->is('api/*')) {
+                    return response()->json(['success' => false, 'message' => 'Format file JSON tidak valid.'], 422);
+                }
+
                 return back()->withErrors(['error' => 'Format file JSON tidak valid.']);
             }
 
@@ -579,11 +682,25 @@ class WorkflowAdminController extends Controller
                 }
             });
 
+            if ($request->wantsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'success' => true,
+                    'message' => "{$count} Alur Kerja berhasil diimpor.",
+                ]);
+            }
+
             return redirect()->route('admin.workflows')->with('success', "{$count} Alur Kerja berhasil diimpor.");
         } catch (\Exception $e) {
             Log::error('Workflow Import Error: '.$e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
             ]);
+
+            if ($request->wantsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gagal mengimpor alur kerja: '.$e->getMessage(),
+                ], 422);
+            }
 
             return back()->withErrors(['error' => 'Gagal mengimpor alur kerja: '.$e->getMessage()]);
         }
@@ -602,6 +719,14 @@ class WorkflowAdminController extends Controller
             'created_by_user_id' => auth()->id(),
         ]);
 
+        if ($request->wantsJson() || $request->is('api/*')) {
+            return response()->json([
+                'success' => true,
+                'message' => "Preset '{$preset->name}' berhasil disimpan.",
+                'data' => $preset,
+            ], 201);
+        }
+
         return back()->with('success', "Preset '{$preset->name}' berhasil disimpan.");
     }
 
@@ -619,14 +744,116 @@ class WorkflowAdminController extends Controller
 
         $preset->update($updates);
 
+        if ($request->wantsJson() || $request->is('api/*')) {
+            return response()->json([
+                'success' => true,
+                'message' => "Preset '{$preset->name}' berhasil diperbarui.",
+                'data' => $preset,
+            ]);
+        }
+
         return back()->with('success', "Preset '{$preset->name}' berhasil diperbarui.");
     }
 
-    public function destroyPreset(WorkflowStepPreset $preset)
+    public function destroyPreset(Request $request, WorkflowStepPreset $preset)
     {
         $name = $preset->name;
         $preset->delete();
 
+        if ($request->wantsJson() || $request->is('api/*')) {
+            return response()->json([
+                'success' => true,
+                'message' => "Preset '{$name}' berhasil dihapus.",
+            ]);
+        }
+
         return back()->with('success', "Preset '{$name}' berhasil dihapus.");
+    }
+
+    /**
+     * Format a workflow instance into the complete frontend/API payload.
+     */
+    protected function formatWorkflowDetail(Workflow $workflow): array
+    {
+        $wf = $this->workflowQuery->findForEdit($workflow->id);
+
+        $workflowData = $wf->toArray();
+        $workflowData['initiator_authorities'] = $wf->initiatorAuthorities->toArray();
+
+        $workflowData['steps'] = $wf->steps->map(function ($s) {
+            $sd = $s->toArray();
+            $sd['role'] = $s->approverAuthorities->filter(fn ($a) => ! $a->role_use_initiator)->map(fn ($a) => $a->role?->name)->filter()->values()->toArray();
+            $sd['user_ids'] = $s->approverAuthorities->pluck('user_id')->filter()->values()->toArray();
+            $sd['department_ids'] = $s->approverAuthorities->filter(fn ($a) => ! $a->department_use_initiator)->pluck('department_id')->filter()->values()->toArray();
+            $sd['division_ids'] = $s->approverAuthorities->filter(fn ($a) => ! $a->division_use_initiator)->pluck('division_id')->filter()->values()->toArray();
+            $sd['approver_authorities'] = $s->approverAuthorities->map(function ($a) {
+                $arr = $a->toArray();
+                if (in_array($a->authority_type, ['initiator', 'assigned_pic', 'creator', 'adhoc_approvers', 'adhoc'])) {
+                    $arr['authority_type'] = 'custom';
+                    $arr['user_id'] = $a->authority_type;
+                }
+
+                return $arr;
+            })->toArray();
+
+            // Reconstruct approver_config if present, or initialize empty
+            $config = $s->approver_config ?? [];
+            if (! is_array($config)) {
+                $config = [];
+            }
+
+            // Ensure items inside config are consistent with the arrays
+            $config['roles'] = $config['roles'] ?? $sd['role'];
+            $config['departments'] = $config['departments'] ?? $sd['department_ids'];
+            $config['users'] = $config['users'] ?? $sd['user_ids'];
+
+            $sd['approver_config'] = $config;
+
+            $sd['actions'] = $s->actions->sortBy(fn ($action) => (int) data_get($action->transition_config, 'order', 999))->values()->map(function ($action) {
+                $addAuth = $action->additionalAuthorities->groupBy('additional_type');
+
+                $signingParties = $action->signing_parties ?? [];
+                if (isset($addAuth['signer'])) {
+                    $signingParties['authorities'] = $addAuth['signer']->map->toArray()->toArray();
+                }
+
+                $assigneeConfig = $action->assignee_config ?? [];
+                if (isset($addAuth['assignee'])) {
+                    $assigneeConfig['authorities'] = $addAuth['assignee']->map->toArray()->toArray();
+                }
+
+                $reviewerConfig = [];
+                if (isset($addAuth['reviewer'])) {
+                    $reviewerConfig['authorities'] = $addAuth['reviewer']->map->toArray()->toArray();
+                }
+
+                return [
+                    'id' => $action->id,
+                    'action_code' => $action->action_code ? (is_object($action->action_code) ? $action->action_code->value : (string) $action->action_code) : null,
+                    'code' => $action->action_code ? (is_object($action->action_code) ? $action->action_code->value : (string) $action->action_code) : null,
+                    'master_action_id' => $action->action_code ? (is_object($action->action_code) ? $action->action_code->value : (string) $action->action_code) : null,
+                    'master_action_name' => $action->action_code ? (is_object($action->action_code) ? $action->action_code->label() : ($action->alias ?: 'Action')) : ($action->alias ?: 'Action'),
+                    'master_action' => null,
+                    'next_step_id' => $action->next_step_id,
+                    'next_workflow_id' => $action->next_workflow_id,
+                    'next_workflow_step_id' => $action->next_workflow_step_id,
+                    'required_fields' => $action->required_fields ?? [],
+                    'autofilled_fields' => $action->autofilled_fields ?? [],
+                    'signing_parties' => $signingParties,
+                    'assignee_config' => $assigneeConfig,
+                    'reviewer_config' => $reviewerConfig,
+                    'transition_config' => $action->transition_config,
+                    'alias' => $action->alias,
+                    'target_status' => $action->target_status,
+                    'description' => $action->description,
+                    'is_active' => $action->is_active,
+                    'is_visible' => $action->is_visible,
+                ];
+            })->toArray();
+
+            return $sd;
+        });
+
+        return $workflowData;
     }
 }

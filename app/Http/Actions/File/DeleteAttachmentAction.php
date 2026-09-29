@@ -6,6 +6,7 @@ use App\Http\Formatters\ContractFormatter;
 use App\Models\Contract;
 use App\Models\ContractAttachment;
 use App\Models\ContractHistory;
+use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -13,6 +14,8 @@ use Illuminate\Support\Facades\Storage;
 
 class DeleteAttachmentAction
 {
+    use ApiResponse;
+
     public function __construct(protected ContractFormatter $formatter) {}
 
     public function execute(Contract $contract, string $atId): JsonResponse
@@ -37,6 +40,6 @@ class DeleteAttachmentAction
 
         $contract->load(['creator', 'versions.uploader', 'approvals.approver', 'histories.actor', 'messages.user', 'attachments.uploader']);
 
-        return response()->json($this->formatter->formatContract($contract));
+        return $this->successResponse($this->formatter->formatContract($contract), 'Lampiran berhasil dihapus');
     }
 }

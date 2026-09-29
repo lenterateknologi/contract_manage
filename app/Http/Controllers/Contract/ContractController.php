@@ -20,6 +20,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Services\ContractFilterScopeService;
 use App\Services\Workflow\ContractWorkflowService;
+use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -35,6 +36,8 @@ use OpenApi\Attributes as OA;
 
 class ContractController extends Controller
 {
+    use ApiResponse;
+
     private ContractWorkflowService $workflowService;
 
     private StoreContractAction $storeAction;
@@ -85,16 +88,14 @@ class ContractController extends Controller
             ->paginate($request->integer('per_page', 15))
             ->through(fn ($c) => ContractFormatter::formatContract($c, false));
 
-        return response()->json($contracts);
+        return $this->successResponse($contracts, 'Contracts retrieved successfully');
     }
 
     /**
      * Generalized method for Inertia contract views
      */
-    public function contractsView(Request $request, string $view = 'contracts'): Response
+    public function contractsView(Request $request, string $view = 'contracts'): Response|JsonResponse
     {
-        $loaders = $this->contractOptionsQuery->getLoaders();
-
         $contracts = in_array($view, ['dashboard', 'profile'])
             ? new LengthAwarePaginator([], 0, 15)
             : $this->contractListQuery
@@ -104,6 +105,17 @@ class ContractController extends Controller
                 ->through(fn ($c) => ContractFormatter::formatContract($c, false));
 
         $counts = $this->getCachedContractCounts(Auth::id());
+
+        if ($request->wantsJson() && ! $request->header('X-Inertia')) {
+            return response()->json([
+                'status' => 'success',
+                'view' => $view,
+                'data' => $contracts,
+                'counts' => $counts,
+            ]);
+        }
+
+        $loaders = $this->contractOptionsQuery->getLoaders();
         $meta = $this->getViewMetadata($view);
 
         $data = array_merge([
@@ -270,11 +282,27 @@ class ContractController extends Controller
         });
     }
 
-    public function showView(Request $request, string $id): Response
+    public function showView(Request $request, string $id): Response|JsonResponse
     {
         $contract = $this->contractDetailQuery->find($id);
 
         Gate::authorize('view', $contract);
+
+        if ($request->wantsJson() && ! $request->header('X-Inertia')) {
+            $formatted = ContractFormatter::formatContract($contract, true);
+            // Separate heavy sub-resources to their dedicated endpoints
+            unset(
+                $formatted['approvals'],
+                $formatted['histories'],
+                $formatted['workflow'],
+                $formatted['sub_workflow'],
+                $formatted['origin_workflow'],
+                $formatted['origin_workflow_step'],
+                $formatted['next_step']
+            );
+
+            return $this->successResponse($formatted, 'Contract retrieved successfully');
+        }
 
         $loaders = $this->contractOptionsQuery->getLoaders();
 
@@ -309,19 +337,19 @@ class ContractController extends Controller
     {
         $loaders = $this->contractOptionsQuery->getLoaders();
 
-        return response()->json($loaders['types']());
+        return $this->successResponse($loaders['types'](), 'Contract types retrieved successfully');
     }
 
     public function getSubmissionTypes(): JsonResponse
     {
         $loaders = $this->contractOptionsQuery->getLoaders();
 
-        return response()->json($loaders['submissionTypes']());
+        return $this->successResponse($loaders['submissionTypes'](), 'Submission types retrieved successfully');
     }
 
     public function getDashboardMetrics(Request $request): JsonResponse
     {
-        return response()->json((new ContractDashboardQuery)->getMetrics($request));
+        return $this->successResponse((new ContractDashboardQuery)->getMetrics($request), 'Dashboard metrics retrieved successfully');
     }
 
     #[OA\Get(
@@ -342,11 +370,11 @@ class ContractController extends Controller
         $contract = $this->contractDetailQuery->find($id);
 
         // Authorization: Only Admin or Creator can view drafts
-        if ($contract->status === 'draft' && $contract->created_by !== Auth::id() && Auth::user()->role !== 'Admin') {
-            abort(403, 'Halaman tidak tersedia');
+        if ($contract->status === 'draft' && $contract->created_by !== Auth::id() && Auth::user()?->role !== 'Admin') {
+            return $this->errorResponse('Halaman tidak tersedia', 403);
         }
 
-        return response()->json(ContractFormatter::formatContract($contract));
+        return $this->successResponse(ContractFormatter::formatContract($contract), 'Contract retrieved successfully');
     }
 
     public function getWorkflows(Request $request): JsonResponse
@@ -364,7 +392,7 @@ class ContractController extends Controller
         $contractType = $request->query('contract_type');
         $workflows = $this->workflowService->getAvailableWorkflows($user, $contractType);
 
-        return response()->json($workflows);
+        return $this->successResponse($workflows, 'Workflows retrieved successfully');
     }
 
     public function getUsers(Request $request): JsonResponse
@@ -372,42 +400,22 @@ class ContractController extends Controller
         $loaders = $this->contractOptionsQuery->getLoaders();
         $users = $loaders['users']();
 
-        return response()->json($users);
+        return $this->successResponse($users, 'Users retrieved successfully');
     }
 
     public function getRoles(): JsonResponse
     {
         $loaders = $this->contractOptionsQuery->getLoaders();
 
-        return response()->json($loaders['roles']());
+        return $this->successResponse($loaders['roles'](), 'Roles retrieved successfully');
     }
 
-    #[OA\Post(
-        path: '/api/contracts',
-        summary: 'Create a new contract',
-        tags: ['Contracts'],
-        security: [['bearerAuth' => []]],
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\JsonContent(
-                properties: [
-                    new OA\Property(property: 'title', type: 'string'),
-                    new OA\Property(property: 'contract_type_id', type: 'string'),
-                    new OA\Property(property: 'submission_type_id', type: 'string'),
-                    new OA\Property(property: 'vendor_id', type: 'string'),
-                ],
-            ),
-        ),
-        responses: [
-            new OA\Response(response: 201, description: 'Contract created'),
-            new OA\Response(response: 422, description: 'Validation error'),
-        ],
-    )]
+   
     public function store(StoreContractRequest $request): JsonResponse
     {
         $contract = $this->storeAction->execute($request->validated());
 
-        return response()->json(ContractFormatter::formatContract($contract), 201);
+        return $this->successResponse(ContractFormatter::formatContract($contract), 'Contract created successfully', 201);
     }
 
     public function update(UpdateContractRequest $request, string $id): JsonResponse
@@ -431,7 +439,7 @@ class ContractController extends Controller
 
         $contract = $this->updateAction->execute($contract, $validated);
 
-        return response()->json(ContractFormatter::formatContract($this->contractDetailQuery->find($contract->id)));
+        return $this->successResponse(ContractFormatter::formatContract($this->contractDetailQuery->find($contract->id)), 'Contract updated successfully');
     }
 
     public function reviewDoc(Request $request, string $id): JsonResponse
@@ -441,7 +449,7 @@ class ContractController extends Controller
 
         $doc = $request->input('doc'); // 'f1' | 'f2' | 'agreement'
         if (! in_array($doc, ['f1', 'f2', 'agreement'])) {
-            return response()->json(['message' => 'Invalid document type'], 422);
+            return $this->errorResponse('Invalid document type', 422);
         }
 
         $user = $request->user();
@@ -523,11 +531,10 @@ class ContractController extends Controller
             $contract->update(['metadata' => $metadata]);
         }
 
-        return response()->json([
-            'message' => $isEligibleReviewer ? 'Dokumen berhasil ditandai telah direview di database' : 'Dokumen dibuka (view-only)',
+        return $this->successResponse([
             'metadata' => $contract->metadata,
             'contract' => ContractFormatter::formatContract($this->contractDetailQuery->find($contract->id)),
-        ]);
+        ], $isEligibleReviewer ? 'Dokumen berhasil ditandai telah direview di database' : 'Dokumen dibuka (view-only)');
     }
 
     public function destroy(string $id): JsonResponse
@@ -535,7 +542,7 @@ class ContractController extends Controller
         $contract = $this->contractDetailQuery->find($id);
 
         if ($contract->status !== 'draft') {
-            return response()->json(['message' => 'Hanya kontrak berstatus draft yang dapat dihapus.'], 422);
+            return $this->errorResponse('Hanya kontrak berstatus draft yang dapat dihapus.', 422);
         }
 
         return DB::transaction(function () use ($contract) {
@@ -545,19 +552,19 @@ class ContractController extends Controller
             // Other relations are deleted by database cascade
             $contract->delete();
 
-            return response()->json(['message' => 'Kontrak berhasil dihapus.']);
+            return $this->successResponse(null, 'Kontrak berhasil dihapus.');
         });
     }
 
     public function bulkDestroy(Request $request): JsonResponse
     {
         if (! $this->checkBulkPermission('can_bulk_delete')) {
-            return response()->json(['message' => 'Anda tidak memiliki izin untuk aksi massal ini.'], 403);
+            return $this->errorResponse('Anda tidak memiliki izin untuk aksi massal ini.', 403);
         }
 
         $ids = $request->input('ids');
         if (empty($ids)) {
-            return response()->json(['message' => 'Tidak ada kontrak yang dipilih.'], 422);
+            return $this->errorResponse('Tidak ada kontrak yang dipilih.', 422);
         }
 
         return DB::transaction(function () use ($ids) {
@@ -572,7 +579,7 @@ class ContractController extends Controller
                 }
             }
 
-            return response()->json(['message' => "$count kontrak berhasil dihapus."]);
+            return $this->successResponse(['deleted_count' => $count], "{$count} kontrak berhasil dihapus.");
         });
     }
 

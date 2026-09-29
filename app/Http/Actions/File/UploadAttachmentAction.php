@@ -6,6 +6,7 @@ use App\Http\Formatters\ContractFormatter;
 use App\Models\Contract;
 use App\Models\ContractAttachment;
 use App\Models\ContractHistory;
+use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -14,6 +15,8 @@ use Illuminate\Support\Str;
 
 class UploadAttachmentAction
 {
+    use ApiResponse;
+
     public function __construct(protected ContractFormatter $formatter) {}
 
     public function execute(Contract $contract, Request $request): JsonResponse
@@ -32,7 +35,7 @@ class UploadAttachmentAction
         }
 
         if (empty($uploadedFiles)) {
-            return response()->json(['message' => 'Tidak ada berkas yang diunggah.'], 422);
+            return $this->errorResponse('Tidak ada berkas yang diunggah.', 422);
         }
 
         $category = $request->input('category', 'Additional');
@@ -71,6 +74,6 @@ class UploadAttachmentAction
 
         $contract->load(['creator', 'versions.uploader', 'approvals.approver', 'histories.actor', 'messages.user', 'attachments.uploader']);
 
-        return response()->json($this->formatter->formatContract($contract));
+        return $this->successResponse($this->formatter->formatContract($contract), 'Lampiran berhasil diunggah', 201);
     }
 }

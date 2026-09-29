@@ -1,32 +1,15 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { router, usePage } from '@inertiajs/react';
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogDescription,
-} from '@/components/ui/dialogs/Dialog';
-import { Input } from '@/components/ui/inputs/Input';
-import { Badge } from '@/components/ui/feedback/Badge';
-import { Button } from '@/components/ui/buttons/Button';
 import { UserAvatarIcon } from '@/components/profile/UserAvatar';
-import { type SharedData } from '@/types';
-import { AppIcon, Icons } from '@/components/ui';
-
-const {
-    Search,
-    UserCheck,
-    Building2,
-    Briefcase,
-    Loader2,
-    ShieldAlert,
-    ArrowRightLeft,
-    Check,
-    CornerDownLeft,
-    Sparkles,
-} = Icons;
+import { Button } from '@/components/ui/buttons/Button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialogs/Dialog';
+import { Badge } from '@/components/ui/feedback/Badge';
+import { Icons } from '@/components/ui/icons';
+import { Input } from '@/components/ui/inputs/Input';
 import { cn } from '@/lib/utils';
+import { SharedData } from '@/types';
+import { router, usePage } from '@inertiajs/react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+
+const { Search, UserCheck, Building2, Briefcase, Loader2, ShieldAlert, ArrowRightLeft, Check, CornerDownLeft, Sparkles } = Icons;
 
 export interface ImpersonationUser {
     id: string;
@@ -110,7 +93,7 @@ export function UserSwitchModal({ open, onOpenChange }: UserSwitchModalProps) {
                     setSwitchingId(null);
                     onOpenChange(false);
                 },
-            }
+            },
         );
     };
 
@@ -126,44 +109,42 @@ export function UserSwitchModal({ open, onOpenChange }: UserSwitchModalProps) {
                     setLeaving(false);
                     onOpenChange(false);
                 },
-            }
+            },
         );
     };
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-2xl p-0 overflow-hidden rounded-2xl shadow-2xl border border-border/80 gap-0">
+            <DialogContent className="border-border/80 max-w-2xl gap-0 overflow-hidden rounded-2xl border p-0 shadow-2xl">
                 {/* Header with decorative background */}
-                <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 pb-4 border-b border-border/60">
+                <div className="from-primary/10 via-primary/5 border-border/60 border-b bg-gradient-to-r to-transparent p-6 pb-4">
                     <DialogHeader className="space-y-1">
                         <div className="flex items-center gap-2">
-                            <div className="flex items-center justify-center size-8 rounded-lg bg-primary text-primary-foreground shadow-sm">
+                            <div className="bg-primary text-primary-foreground flex size-8 items-center justify-center rounded-lg shadow-sm">
                                 <ArrowRightLeft className="size-4" />
                             </div>
-                            <DialogTitle className="text-lg font-bold text-foreground flex items-center gap-2">
+                            <DialogTitle className="text-foreground flex items-center gap-2 text-lg font-bold">
                                 Ganti Akun Login (Switch User)
-                                <Badge variant="secondary" className="text-[10px] font-semibold bg-primary/15 text-primary border-0">
+                                <Badge variant="secondary" className="bg-primary/15 text-primary border-0 text-[10px] font-semibold">
                                     Super Admin
                                 </Badge>
                             </DialogTitle>
                         </div>
-                        <DialogDescription className="text-xs text-muted-foreground">
+                        <DialogDescription className="text-muted-foreground text-xs">
                             Pilih akun pengguna mana pun dari database untuk langsung login dan mencoba sistem dari akun riil mereka.
                         </DialogDescription>
                     </DialogHeader>
 
                     {/* Active Impersonation Notice if active */}
                     {isImpersonating && (
-                        <div className="mt-3.5 flex items-center justify-between p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-900 dark:text-amber-200">
+                        <div className="mt-3.5 flex items-center justify-between rounded-xl border border-amber-500/30 bg-amber-500/15 p-2.5 text-amber-900 dark:text-amber-200">
                             <div className="flex items-center gap-2 text-xs">
-                                <ShieldAlert className="size-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                                <ShieldAlert className="size-4 shrink-0 text-amber-600 dark:text-amber-400" />
                                 <div>
                                     <span className="font-semibold">Sedang login sebagai: </span>
                                     <span className="underline">{auth.user?.name}</span> ({auth.user?.role})
                                     {auth.impersonation?.impersonator && (
-                                        <span className="text-[11px] block opacity-80">
-                                            Admin Asli: {auth.impersonation.impersonator.name}
-                                        </span>
+                                        <span className="block text-[11px] opacity-80">Admin Asli: {auth.impersonation.impersonator.name}</span>
                                     )}
                                 </div>
                             </div>
@@ -172,13 +153,9 @@ export function UserSwitchModal({ open, onOpenChange }: UserSwitchModalProps) {
                                 variant="outline"
                                 onClick={handleLeaveImpersonation}
                                 disabled={leaving}
-                                className="h-7 text-xs bg-amber-500 text-white hover:bg-amber-600 hover:text-white border-0 font-medium cursor-pointer"
+                                className="h-7 cursor-pointer border-0 bg-amber-500 text-xs font-medium text-white hover:bg-amber-600 hover:text-white"
                             >
-                                {leaving ? (
-                                    <Loader2 className="size-3.5 animate-spin mr-1" />
-                                ) : (
-                                    <CornerDownLeft className="size-3.5 mr-1" />
-                                )}
+                                {leaving ? <Loader2 className="mr-1 size-3.5 animate-spin" /> : <CornerDownLeft className="mr-1 size-3.5" />}
                                 Kembali ke Admin
                             </Button>
                         </div>
@@ -186,28 +163,26 @@ export function UserSwitchModal({ open, onOpenChange }: UserSwitchModalProps) {
 
                     {/* Search Input Box */}
                     <div className="relative mt-3.5">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                        <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
                         <Input
                             type="text"
                             placeholder="Cari nama, NIK, role, jabatan, perusahaan, atau departemen..."
                             value={searchQuery}
                             onChange={handleSearchChange}
                             autoFocus
-                            className="pl-9 pr-9 h-10 bg-background/80 border-border/80 focus:bg-background rounded-xl text-sm"
+                            className="bg-background/80 border-border/80 focus:bg-background h-10 rounded-xl pr-9 pl-9 text-sm"
                         />
-                        {loading && (
-                            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 size-4 text-primary animate-spin" />
-                        )}
+                        {loading && <Loader2 className="text-primary absolute top-1/2 right-3 size-4 -translate-y-1/2 animate-spin" />}
                     </div>
                 </div>
 
                 {/* Users List Container */}
-                <div className="max-h-[380px] overflow-y-auto p-3 space-y-1.5 custom-scrollbar bg-muted/20">
+                <div className="custom-scrollbar bg-muted/20 max-h-[380px] space-y-1.5 overflow-y-auto p-3">
                     {users.length === 0 && !loading && (
-                        <div className="py-12 text-center text-muted-foreground flex flex-col items-center justify-center">
-                            <UserCheck className="size-8 opacity-30 mb-2" />
+                        <div className="text-muted-foreground flex flex-col items-center justify-center py-12 text-center">
+                            <UserCheck className="mb-2 size-8 opacity-30" />
                             <p className="text-xs font-semibold">Tidak ada pengguna yang cocok</p>
-                            <p className="text-[11px] mt-0.5">Coba kata kunci pencarian nama atau NIK lainnya</p>
+                            <p className="mt-0.5 text-[11px]">Coba kata kunci pencarian nama atau NIK lainnya</p>
                         </div>
                     )}
 
@@ -220,43 +195,43 @@ export function UserSwitchModal({ open, onOpenChange }: UserSwitchModalProps) {
                                 key={user.id}
                                 onClick={() => !isCurrent && handleSwitchUser(user)}
                                 className={cn(
-                                    'group flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer',
+                                    'group flex cursor-pointer items-center justify-between rounded-xl border p-3 transition-all',
                                     isCurrent
                                         ? 'bg-primary/5 border-primary/30 cursor-default'
-                                        : 'bg-card hover:bg-accent/70 hover:border-primary/40 border-border/50 shadow-2xs'
+                                        : 'bg-card hover:bg-accent/70 hover:border-primary/40 border-border/50 shadow-2xs',
                                 )}
                             >
-                                <div className="flex items-center gap-3 min-w-0 flex-1 mr-3">
+                                <div className="mr-3 flex min-w-0 flex-1 items-center gap-3">
                                     {/* Initials Avatar */}
                                     <UserAvatarIcon
                                         user={user}
                                         size="md"
                                         className={cn(
-                                            'size-9 rounded-xl text-xs font-bold shrink-0 transition-transform group-hover:scale-105',
-                                            isCurrent && 'ring-2 ring-primary shadow-sm',
+                                            'size-9 shrink-0 rounded-xl text-xs font-bold transition-transform group-hover:scale-105',
+                                            isCurrent && 'ring-primary shadow-sm ring-2',
                                         )}
                                     />
 
                                     {/* User Details */}
                                     <div className="min-w-0 flex-1">
-                                        <div className="flex items-center gap-2 flex-wrap">
-                                            <span className="text-xs font-bold text-foreground group-hover:text-primary transition-colors truncate">
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <span className="text-foreground group-hover:text-primary truncate text-xs font-bold transition-colors">
                                                 {user.name}
                                             </span>
                                             {user.nik && (
-                                                <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-muted/80 text-muted-foreground">
+                                                <span className="py-0.2 bg-muted/80 text-muted-foreground rounded px-1.5 font-mono text-[10px]">
                                                     {user.nik}
                                                 </span>
                                             )}
                                             <Badge
                                                 variant="outline"
-                                                className="text-[10px] py-0 px-1.5 font-semibold bg-primary/10 text-primary border-primary/20"
+                                                className="bg-primary/10 text-primary border-primary/20 px-1.5 py-0 text-[10px] font-semibold"
                                             >
                                                 {user.role}
                                             </Badge>
                                         </div>
 
-                                        <div className="flex items-center gap-3 text-[11px] text-muted-foreground mt-0.5 truncate">
+                                        <div className="text-muted-foreground mt-0.5 flex items-center gap-3 truncate text-[11px]">
                                             {user.job_title && (
                                                 <span className="flex items-center gap-1 truncate">
                                                     <Briefcase className="size-3 shrink-0 opacity-70" />
@@ -270,9 +245,7 @@ export function UserSwitchModal({ open, onOpenChange }: UserSwitchModalProps) {
                                                 </span>
                                             )}
                                             {user.department && (
-                                                <span className="text-[10.5px] opacity-75 truncate hidden sm:inline">
-                                                    • {user.department}
-                                                </span>
+                                                <span className="hidden truncate text-[10.5px] opacity-75 sm:inline">• {user.department}</span>
                                             )}
                                         </div>
                                     </div>
@@ -281,7 +254,7 @@ export function UserSwitchModal({ open, onOpenChange }: UserSwitchModalProps) {
                                 {/* Action Button */}
                                 <div className="shrink-0">
                                     {isCurrent ? (
-                                        <div className="flex items-center gap-1 text-xs text-primary font-bold px-2 py-1 bg-primary/10 rounded-lg">
+                                        <div className="text-primary bg-primary/10 flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-bold">
                                             <Check className="size-3.5" />
                                             <span>Akun Aktif</span>
                                         </div>
@@ -294,12 +267,12 @@ export function UserSwitchModal({ open, onOpenChange }: UserSwitchModalProps) {
                                                 e.stopPropagation();
                                                 handleSwitchUser(user);
                                             }}
-                                            className="h-8 px-3 text-xs font-semibold group-hover:bg-primary group-hover:text-primary-foreground transition-all cursor-pointer rounded-lg"
+                                            className="group-hover:bg-primary group-hover:text-primary-foreground h-8 cursor-pointer rounded-lg px-3 text-xs font-semibold transition-all"
                                         >
                                             {isSwitchingThis ? (
-                                                <Loader2 className="size-3.5 animate-spin mr-1.5" />
+                                                <Loader2 className="mr-1.5 size-3.5 animate-spin" />
                                             ) : (
-                                                <Sparkles className="size-3.5 mr-1.5 opacity-70 group-hover:opacity-100" />
+                                                <Sparkles className="mr-1.5 size-3.5 opacity-70 group-hover:opacity-100" />
                                             )}
                                             Masuk
                                         </Button>
@@ -311,14 +284,9 @@ export function UserSwitchModal({ open, onOpenChange }: UserSwitchModalProps) {
                 </div>
 
                 {/* Footer Info */}
-                <div className="p-3 bg-muted/40 border-t border-border/50 flex items-center justify-between text-[11px] text-muted-foreground">
+                <div className="bg-muted/40 border-border/50 text-muted-foreground flex items-center justify-between border-t p-3 text-[11px]">
                     <span>💡 Menampilkan hasil pencarian instan (maks. 25 user).</span>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onOpenChange(false)}
-                        className="h-7 text-xs font-medium cursor-pointer"
-                    >
+                    <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)} className="h-7 cursor-pointer text-xs font-medium">
                         Tutup
                     </Button>
                 </div>

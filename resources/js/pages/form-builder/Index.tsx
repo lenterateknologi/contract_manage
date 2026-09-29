@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 import { closestCenter, DndContext, DragEndEvent, DragOverlay, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { Head, Link, useForm } from '@inertiajs/react';
-import axios from 'axios';
+import { formTemplatesApi } from '@/api';
 import { ArrowLeft, Clock, Download, Edit3, Eye, FileText, GitBranch, GitCommit, Grid, HelpCircle, Layout, List, Loader2, Play, Plus, Redo, RotateCcw, Rows, Save, Trash2, Undo, User } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { TrashZone } from './components/TrashZone';
@@ -1978,18 +1978,18 @@ function FormBuilder({ template }: Props) {
         setSaving(true);
 
         try {
-            const res = await axios.post(`/admin/form-templates/export-queue`, {
+            const res: any = await formTemplatesApi.exportQueue({
                 template: data,
                 form_data: JSON.stringify(previewData),
             });
 
-            const jobId = res.data.job_id;
+            const jobId = res?.job_id || res?.data?.job_id;
 
             // Poll the status endpoint until complete or failed
             const interval = setInterval(async () => {
                 try {
-                    const statusRes = await axios.get(`/admin/form-templates/pdf-status/${jobId}`);
-                    const statusData = statusRes.data;
+                    const statusRes: any = await formTemplatesApi.pdfStatus(jobId);
+                    const statusData = statusRes?.data || statusRes;
 
                     if (statusData.status === 'completed') {
                         clearInterval(interval);
