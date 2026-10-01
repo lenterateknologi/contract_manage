@@ -20,7 +20,6 @@ export interface ActionConfig {
     icon: LucideIcon;
     color: string;
     hexColor?: string;
-    hexBg?: string;
     badgeClass: string;
     buttonClass: string;
     iconBgClass: string;
@@ -154,7 +153,6 @@ export function getActionConfig(
     // Ambil langsung konfigurasi status dari Master Status database
     const masterObj = masterStatuses?.find((s: any) => s.code?.toLowerCase() === effectiveStatusKey);
     const hexColor = masterObj?.color || inlineStatusInfo?.color;
-    const hexBg = masterObj?.bg_color || inlineStatusInfo?.bg_color;
     const statusIconName = masterObj?.icon || inlineStatusInfo?.icon;
 
     // Fallback classes jika belum ada Master Status
@@ -191,7 +189,6 @@ export function getActionConfig(
         icon: finalIcon,
         color: effectiveStatusKey,
         hexColor,
-        hexBg,
         badgeClass,
         buttonClass,
         iconBgClass,
@@ -278,12 +275,3 @@ export const ActionIcon: React.FC<ActionIconProps> = ({
     const Icon = config.icon;
     return <Icon size={size} className={cn('shrink-0', className)} />;
 };
-
-export function getActionBadge(
-    actionCode?: string | null,
-    alias?: string | null,
-    className?: string,
-    targetStatus?: string | null
-) {
-    return <ActionBadge actionCode={actionCode} alias={alias} className={className} targetStatus={targetStatus} />;
-}

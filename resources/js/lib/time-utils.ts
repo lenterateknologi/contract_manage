@@ -107,18 +107,14 @@ export function formatDateShort(date: string | Date | null | undefined): string 
  * Format a date to Indonesian format e.g. "8 Sep 2026"
  */
 export function formatDateIndo(date: string | Date | null | undefined): string {
-    const d = parseDateInput(date);
-    if (!d) return '-';
-    return `${d.getDate()} ${ID_MONTHS_SHORT[d.getMonth()]} ${d.getFullYear()}`;
+    return formatDate(date);
 }
 
 /**
  * Format a date to Indonesian long format e.g. "8 September 2026"
  */
 export function formatDateLong(date: string | Date | null | undefined): string {
-    const d = parseDateInput(date);
-    if (!d) return '-';
-    return `${d.getDate()} ${ID_MONTHS_LONG[d.getMonth()]} ${d.getFullYear()}`;
+    return formatDate(date, { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
 /**

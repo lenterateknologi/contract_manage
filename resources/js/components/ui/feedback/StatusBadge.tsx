@@ -6,7 +6,6 @@ import LucideIcons from '@/lib/lucide-dynamic';
 export interface StatusInfo {
     label?: string;
     color?: string;
-    bg_color?: string;
     icon?: string | null;
 }
 
@@ -51,10 +50,6 @@ export const StatusBadge = ({
         lg: 13,
     }[size] || 11;
 
-    const style: React.CSSProperties = React.useMemo(() => ({
-        '--status-color': resolvedColor,
-    } as React.CSSProperties), [resolvedColor]);
-
     return (
         <span
             className={cn(
@@ -68,7 +63,7 @@ export const StatusBadge = ({
                 sizeClasses,
                 className,
             )}
-            style={style}
+            style={{ '--status-color': resolvedColor } as React.CSSProperties}
         >
             {IconComp ? (
                 <IconComp size={iconSize} className="shrink-0" />
