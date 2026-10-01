@@ -14,53 +14,8 @@ class ContractHistory extends Model
     use HasUuids, SoftDeletes;
 
     protected $fillable = [
-        'contract_id',
-        'action',
-        'description',
-        'actor_id',
-        'ip_address',
-        'user_agent',
-        'step_name',
-        'step_number',
-        'metadata',
-        'created_by',
-        'updated_by',
+        'contract_id', 'action', 'description', 'actor_id',
     ];
-
-    protected $casts = [
-        'metadata' => 'array',
-        'step_number' => 'integer',
-        'created_at' => 'datetime',
-    ];
-
-    public static function record(
-        string $contractId,
-        string $action,
-        string $description,
-        ?string $actorId = null,
-        ?array $metadata = null,
-        ?string $stepName = null,
-        ?int $stepNumber = null
-    ): self {
-        $request = request();
-        $ip = $request ? $request->ip() : null;
-        $userAgent = $request ? substr((string) $request->userAgent(), 0, 500) : null;
-        $resolvedActorId = $actorId ?: auth()->id();
-
-        return static::create([
-            'contract_id' => $contractId,
-            'action' => $action,
-            'description' => $description,
-            'actor_id' => $resolvedActorId,
-            'ip_address' => $ip,
-            'user_agent' => $userAgent,
-            'step_name' => $stepName,
-            'step_number' => $stepNumber,
-            'metadata' => $metadata,
-            'created_by' => $resolvedActorId,
-            'updated_by' => $resolvedActorId,
-        ]);
-    }
 
     public function contract(): BelongsTo
     {

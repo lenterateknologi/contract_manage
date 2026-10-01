@@ -27,9 +27,6 @@ import {
     PlusCircle,
     FileText,
     ExternalLink,
-    Shield,
-    Globe,
-    Laptop,
     Clock,
     User,
     Layers,
@@ -56,9 +53,6 @@ interface AuditLog {
     actor_division?: string;
     step_name?: string;
     step_number?: number;
-    ip_address?: string;
-    user_agent?: string;
-    metadata?: Record<string, any> | null;
     created_at: string;
 }
 
@@ -292,7 +286,7 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
                     <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[11px] font-bold">
                         Tahap {row.step_number}
                     </span>
-                ) : <span className="text-text-muted text-xs">—</span>
+                ) : <span className="text-text-desc text-xs">—</span>
             )
         },
         {
@@ -305,7 +299,7 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
             accessorKey: 'actor',
             cell: (row: AuditLog) => (
                 <span className="text-text-main font-medium text-xs whitespace-nowrap">
-                    {row.actor}
+                    {row.actor || 'System'}
                 </span>
             )
         },
@@ -313,7 +307,7 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
             header: 'Jabatan / Role',
             accessorKey: 'actor_role',
             cell: (row: AuditLog) => (
-                <span className="text-text-muted text-xs whitespace-nowrap">
+                <span className="text-text-desc text-xs whitespace-nowrap">
                     {row.actor_role || '—'}
                 </span>
             )
@@ -322,7 +316,7 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
             header: 'Departemen',
             accessorKey: 'actor_department',
             cell: (row: AuditLog) => (
-                <span className="text-text-muted text-xs whitespace-nowrap">
+                <span className="text-text-desc text-xs whitespace-nowrap">
                     {row.actor_department || '—'}
                 </span>
             )
@@ -332,16 +326,7 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
             accessorKey: 'description',
             cell: (row: AuditLog) => (
                 <span className="text-text-main text-xs truncate max-w-[300px] block" title={row.description}>
-                    {row.description}
-                </span>
-            )
-        },
-        {
-            header: 'IP Address',
-            accessorKey: 'ip_address',
-            cell: (row: AuditLog) => (
-                <span className="font-mono text-[11px] text-text-muted whitespace-nowrap">
-                    {row.ip_address || '—'}
+                    {row.description || '—'}
                 </span>
             )
         },
@@ -356,7 +341,7 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
                         e.stopPropagation();
                         handleRowClick(row);
                     }}
-                    className="h-7 w-7 p-0 rounded-md text-text-muted hover:text-primary hover:bg-primary/10"
+                    className="h-7 w-7 p-0 rounded-md text-text-desc hover:text-primary hover:bg-primary/10 cursor-pointer"
                     title="Buka detail jejak audit"
                 >
                     <Eye size={14} />
@@ -436,35 +421,35 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
 
             {/* Audit Inspector Side Drawer */}
             <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-                <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto p-6 bg-surface border-l border-border">
+                <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto p-6 bg-surface-card border-l border-surface-border">
                     {selectedLog && (
                         <div className="space-y-6">
                             {/* Drawer Header */}
-                            <SheetHeader className="text-left border-b border-border pb-4">
+                            <SheetHeader className="text-left border-b border-surface-border pb-4">
                                 <div className="flex items-center justify-between gap-2">
                                     {renderActionBadge(selectedLog.action)}
-                                    <span className="text-[11px] text-text-muted font-mono">
-                                        ID: {selectedLog.id ? selectedLog.id.substring(0, 8) : '—'}
+                                    <span className="text-[11px] text-text-desc font-mono">
+                                        ID: {selectedLog.id ? String(selectedLog.id).substring(0, 8) : '—'}
                                     </span>
                                 </div>
                                 <SheetTitle className="text-base font-bold text-text-main mt-2">
                                     Detail Jejak Audit
                                 </SheetTitle>
-                                <SheetDescription className="text-xs text-text-muted flex items-center gap-1">
+                                <SheetDescription className="text-xs text-text-desc flex items-center gap-1">
                                     <Clock size={12} />
-                                    {formatDateTime(selectedLog.created_at)} ({formatDate(selectedLog.created_at)})
+                                    {selectedLog.created_at ? `${formatDateTime(selectedLog.created_at)} (${formatDate(selectedLog.created_at)})` : '—'}
                                 </SheetDescription>
                             </SheetHeader>
 
                             {/* Section 1: Dokumen Terkait */}
-                            <div className="space-y-2 p-3.5 rounded-lg border border-border bg-surface-muted/50">
+                            <div className="space-y-2 p-3.5 rounded-lg border border-surface-border bg-surface-muted/70 dark:bg-zinc-800/40">
                                 <div className="flex items-center justify-between">
-                                    <span className="text-[11px] font-bold text-text-muted uppercase tracking-wider flex items-center gap-1.5">
+                                    <span className="text-[11px] font-bold text-text-desc uppercase tracking-wider flex items-center gap-1.5">
                                         <FileText size={13} className="text-primary" /> Dokumen Kontrak
                                     </span>
                                     {selectedLog.contract_id && (
                                         <Link
-                                            href={`/admin/contracts/${selectedLog.contract_id}`}
+                                            href={`/contracts/${selectedLog.contract_id}`}
                                             className="text-xs font-semibold text-primary hover:underline flex items-center gap-1"
                                         >
                                             Buka Kontrak <ExternalLink size={11} />
@@ -474,15 +459,15 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
                                 <div className="text-sm font-semibold text-text-main mt-1">
                                     {selectedLog.contract_title || '—'}
                                 </div>
-                                <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-border/50 text-text-muted">
+                                <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-surface-border/50 text-text-desc">
                                     <div>
-                                        <span className="text-[10px] text-text-muted block">No. Form / Ref:</span>
+                                        <span className="text-[10px] text-text-desc block">No. Form / Ref:</span>
                                         <span className="font-mono font-medium text-text-main">
                                             {selectedLog.form_no || selectedLog.contract_no || '—'}
                                         </span>
                                     </div>
                                     <div>
-                                        <span className="text-[10px] text-text-muted block">Tipe Kontrak:</span>
+                                        <span className="text-[10px] text-text-desc block">Tipe Kontrak:</span>
                                         <span className="font-medium text-text-main">
                                             {selectedLog.contract_type || '—'}
                                         </span>
@@ -491,8 +476,8 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
                             </div>
 
                             {/* Section 2: Tahap Alur Kerja */}
-                            <div className="space-y-2 p-3.5 rounded-lg border border-border bg-surface-muted/50">
-                                <span className="text-[11px] font-bold text-text-muted uppercase tracking-wider flex items-center gap-1.5">
+                            <div className="space-y-2 p-3.5 rounded-lg border border-surface-border bg-surface-muted/70 dark:bg-zinc-800/40">
+                                <span className="text-[11px] font-bold text-text-desc uppercase tracking-wider flex items-center gap-1.5">
                                     <Layers size={13} className="text-primary" /> Tahap Alur Kerja Saat Aksi
                                 </span>
                                 <div className="flex items-center gap-2 mt-1">
@@ -508,16 +493,16 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
                             </div>
 
                             {/* Section 3: Pelaksana / Aktor */}
-                            <div className="space-y-2 p-3.5 rounded-lg border border-border bg-surface-muted/50">
-                                <span className="text-[11px] font-bold text-text-muted uppercase tracking-wider flex items-center gap-1.5">
+                            <div className="space-y-2 p-3.5 rounded-lg border border-surface-border bg-surface-muted/70 dark:bg-zinc-800/40">
+                                <span className="text-[11px] font-bold text-text-desc uppercase tracking-wider flex items-center gap-1.5">
                                     <User size={13} className="text-primary" /> Informasi Pelaksana
                                 </span>
                                 <div className="space-y-1 mt-1">
                                     <div className="text-sm font-semibold text-text-main">
-                                        {selectedLog.actor}
+                                        {selectedLog.actor || 'System'}
                                     </div>
                                     {selectedLog.actor_email && (
-                                        <div className="text-xs text-text-muted">
+                                        <div className="text-xs text-text-desc">
                                             {selectedLog.actor_email}
                                         </div>
                                     )}
@@ -528,12 +513,12 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
                                             </span>
                                         )}
                                         {selectedLog.actor_department && (
-                                            <span className="text-[11px] px-2 py-0.5 rounded bg-surface border border-border text-text-muted">
+                                            <span className="text-[11px] px-2 py-0.5 rounded bg-surface-base border border-surface-border text-text-desc">
                                                 {selectedLog.actor_department}
                                             </span>
                                         )}
                                         {selectedLog.actor_division && (
-                                            <span className="text-[11px] px-2 py-0.5 rounded bg-surface border border-border text-text-muted">
+                                            <span className="text-[11px] px-2 py-0.5 rounded bg-surface-base border border-surface-border text-text-desc">
                                                 {selectedLog.actor_division}
                                             </span>
                                         )}
@@ -543,47 +528,11 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
 
                             {/* Section 4: Deskripsi & Catatan Lengkap */}
                             <div className="space-y-1.5">
-                                <span className="text-xs font-bold text-text-muted uppercase tracking-wider">
+                                <span className="text-xs font-bold text-text-desc uppercase tracking-wider">
                                     Deskripsi / Catatan Transaksi
                                 </span>
-                                <div className="p-3.5 rounded-lg border border-border bg-surface text-xs text-text-main leading-relaxed whitespace-pre-wrap">
+                                <div className="p-3.5 rounded-lg border border-surface-border bg-surface-base dark:bg-zinc-800/60 text-xs text-text-main leading-relaxed whitespace-pre-wrap">
                                     {selectedLog.description || 'Tidak ada catatan tambahan.'}
-                                </div>
-                            </div>
-
-                            {/* Section 5: Metadata & Snapshot Perubahan (jika ada) */}
-                            {selectedLog.metadata && Object.keys(selectedLog.metadata).length > 0 && (
-                                <div className="space-y-1.5">
-                                    <span className="text-xs font-bold text-text-muted uppercase tracking-wider">
-                                        Payload & Metadata Perubahan
-                                    </span>
-                                    <pre className="p-3 rounded-lg border border-border bg-zinc-950 text-zinc-100 text-[11px] font-mono overflow-x-auto max-h-48">
-                                        {JSON.stringify(selectedLog.metadata, null, 2)}
-                                    </pre>
-                                </div>
-                            )}
-
-                            {/* Section 6: Informasi Teknis & Forensik */}
-                            <div className="space-y-2 p-3.5 rounded-lg border border-border/70 bg-surface-muted/30 text-xs text-text-muted">
-                                <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted flex items-center gap-1.5">
-                                    <Shield size={12} className="text-emerald-500" /> Informasi Teknis & Jaringan
-                                </span>
-                                <div className="grid grid-cols-1 gap-1.5 pt-1 text-[11px]">
-                                    <div className="flex items-center gap-2">
-                                        <Globe size={12} className="text-text-muted shrink-0" />
-                                        <span>IP Address:</span>
-                                        <span className="font-mono text-text-main font-semibold">
-                                            {selectedLog.ip_address || '127.0.0.1 (Local/System)'}
-                                        </span>
-                                    </div>
-                                    {selectedLog.user_agent && (
-                                        <div className="flex items-start gap-2">
-                                            <Laptop size={12} className="text-text-muted shrink-0 mt-0.5" />
-                                            <span className="truncate text-text-muted" title={selectedLog.user_agent}>
-                                                {selectedLog.user_agent}
-                                            </span>
-                                        </div>
-                                    )}
                                 </div>
                             </div>
                         </div>

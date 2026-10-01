@@ -30,11 +30,8 @@ export const StatusBadge = ({
     const masterObj = masterStatuses.find((m: any) => m.code?.toLowerCase() === (status || '').toLowerCase());
 
     const label = statusInfo?.label || masterObj?.label || (status || '').toUpperCase();
-    const color = statusInfo?.color || masterObj?.color;
-    const bgColor = statusInfo?.bg_color || masterObj?.bg_color;
+    const resolvedColor = statusInfo?.color || masterObj?.color || '#64748b';
     const iconName = statusInfo?.icon || masterObj?.icon;
-
-    const hasCustomColors = Boolean(color || bgColor);
 
     const IconComp = showIcon && iconName && (LucideIcons as any)[iconName]
         ? (LucideIcons as any)[iconName]
@@ -54,45 +51,29 @@ export const StatusBadge = ({
         lg: 13,
     }[size] || 11;
 
-    const badgeStyle: React.CSSProperties | undefined = React.useMemo(() => {
-        if (!hasCustomColors) return undefined;
-
-        if (bgColor) {
-            return {
-                backgroundColor: bgColor,
-                color: color || '#ffffff',
-                borderColor: color ? `color-mix(in srgb, ${color} 30%, transparent)` : undefined,
-            };
-        }
-
-        if (color) {
-            return {
-                backgroundColor: `color-mix(in srgb, ${color} 14%, transparent)`,
-                color: color,
-                borderColor: `color-mix(in srgb, ${color} 28%, transparent)`,
-            };
-        }
-
-        return undefined;
-    }, [color, bgColor, hasCustomColors]);
+    const style: React.CSSProperties = React.useMemo(() => ({
+        '--status-color': resolvedColor,
+    } as React.CSSProperties), [resolvedColor]);
 
     return (
         <span
             className={cn(
-                'inline-flex items-center rounded-full font-semibold tracking-tight uppercase whitespace-nowrap shadow-xs border',
+                'inline-flex items-center rounded-full font-semibold tracking-tight uppercase whitespace-nowrap shadow-xs border transition-colors',
+                'bg-[color-mix(in_srgb,var(--status-color)_12%,transparent)]',
+                'dark:bg-[color-mix(in_srgb,var(--status-color)_18%,#18181b)]',
+                'border-[color-mix(in_srgb,var(--status-color)_24%,transparent)]',
+                'dark:border-[color-mix(in_srgb,var(--status-color)_32%,transparent)]',
+                'text-[var(--status-color)]',
+                'dark:text-[color-mix(in_srgb,var(--status-color)_85%,#ffffff)]',
                 sizeClasses,
-                !hasCustomColors && 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-700',
                 className,
             )}
-            style={badgeStyle}
+            style={style}
         >
             {IconComp ? (
                 <IconComp size={iconSize} className="shrink-0" />
             ) : (
-                <span
-                    className="h-1.5 w-1.5 rounded-full shrink-0"
-                    style={{ backgroundColor: color || 'currentColor' }}
-                />
+                <span className="h-1.5 w-1.5 rounded-full shrink-0 bg-current opacity-80" />
             )}
             <span>{label}</span>
         </span>

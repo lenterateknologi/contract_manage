@@ -42,7 +42,6 @@ class AuditReportExport implements FromCollection, ShouldAutoSize, WithEvents, W
             'Aksi',
             'Deskripsi / Catatan',
             'Aktor',
-            'IP Address',
         ];
     }
 
@@ -60,9 +59,7 @@ class AuditReportExport implements FromCollection, ShouldAutoSize, WithEvents, W
         $actionStr = is_object($history->action) ? ($history->action->value ?? (string) $history->action) : (string) ($history->action ?? '');
         $label = $customLabel ?: ucwords(str_replace('_', ' ', strtolower($actionStr)));
 
-        $stepName = $history->step_name
-            ?? $contract?->workflowStep?->label
-            ?? ($history->step_number ? "Tahap {$history->step_number}" : '—');
+        $stepName = $contract?->workflowStep?->label ?? '—';
 
         return [
             $history->created_at ? $history->created_at->format('Y-m-d H:i:s') : '—',
@@ -73,7 +70,6 @@ class AuditReportExport implements FromCollection, ShouldAutoSize, WithEvents, W
             mb_strtoupper($label),
             $history->description,
             $history->actor?->name ?? 'System',
-            $history->ip_address ?? '—',
         ];
     }
 

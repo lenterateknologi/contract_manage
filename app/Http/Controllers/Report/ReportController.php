@@ -382,9 +382,7 @@ class ReportController extends Controller
             ->paginate($perPage, ['*'], 'page', $page);
 
         $histories->getCollection()->transform(function ($h) {
-            $stepName = $h->step_name
-                ?? $h->contract?->workflowStep?->label
-                ?? ($h->step_number ? "Tahap {$h->step_number}" : null);
+            $stepName = $h->contract?->workflowStep?->label;
 
             $actorRole = $h->actor?->jobtitle_name
                 ?? $h->actor?->joblevel_name
@@ -415,10 +413,7 @@ class ReportController extends Controller
                 'actor_department' => $actorDept,
                 'actor_division' => $actorDiv,
                 'step_name' => $stepName,
-                'step_number' => $h->step_number ?? $h->contract?->workflowStep?->step,
-                'ip_address' => $h->ip_address,
-                'user_agent' => $h->user_agent,
-                'metadata' => $h->metadata,
+                'step_number' => $h->contract?->workflowStep?->step,
                 'created_at' => $h->created_at ? $h->created_at->toIso8601String() : null,
             ];
         });
