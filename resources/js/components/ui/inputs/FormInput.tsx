@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/inputs/Input';
 import { Label } from '@/components/ui/forms/Label';
 import InputError from '@/components/ui/forms/InputError';
+import { Lock } from 'lucide-react';
 
 export interface FormInputProps extends React.ComponentProps<typeof Input> {
     label?: React.ReactNode;
@@ -20,6 +21,7 @@ const FormInput = React.forwardRef<HTMLInputElement, FormInputProps>(
         const id = React.useId();
         const inputId = props.id || id;
         const isCompact = inputSize === 'compact';
+        const isNonEditable = Boolean(props.disabled || props.readOnly);
 
         return (
             <div className={cn('space-y-1.5 w-full group', containerClassName)}>
@@ -43,6 +45,12 @@ const FormInput = React.forwardRef<HTMLInputElement, FormInputProps>(
                                 label
                             )}
                         </Label>
+                        {isNonEditable && (
+                            <span className="flex items-center gap-1 text-[10px] text-muted-foreground font-normal">
+                                <Lock size={10} className="opacity-70" />
+                                <span>Terkunci</span>
+                            </span>
+                        )}
                     </div>
                 )}
                 <div className="relative">
@@ -60,17 +68,21 @@ const FormInput = React.forwardRef<HTMLInputElement, FormInputProps>(
                         className={cn(
                             isCompact && 'h-9 px-3 text-sm rounded-lg',
                             Icon && (isCompact ? 'pl-9' : 'pl-11'),
-                            rightAction && 'pr-11',
+                            (rightAction || isNonEditable) && 'pr-10',
                             error && 'border-rose-500 focus-visible:ring-rose-500 focus-visible:border-rose-500',
                             className
                         )}
                         {...props}
                     />
-                    {rightAction && (
+                    {rightAction ? (
                         <div className="absolute right-0 top-0 bottom-0 flex items-center pr-3.5">
                             {rightAction}
                         </div>
-                    )}
+                    ) : isNonEditable ? (
+                        <div className="absolute right-0 top-0 bottom-0 flex items-center pr-3 text-slate-400 dark:text-zinc-500 pointer-events-none" title="Field tidak dapat diedit">
+                            <Lock size={isCompact ? 12 : 14} className="opacity-70" />
+                        </div>
+                    ) : null}
                 </div>
                 {helperText && !error && (
                     <p className="text-[11px] text-muted-foreground px-0.5 mt-1 font-normal">

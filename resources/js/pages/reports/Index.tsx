@@ -4,7 +4,7 @@ import { StatusBadge } from '@/components/ui/feedback/StatusBadge';
 import { cn, formatDate, formatDateTime, formatRelativeTime } from '@/lib/utils';
 import { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
-import axios from 'axios';
+import { reportsApi } from '@/api';
 import { BarChart3, Download, FileText, History, ListFilter } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -43,10 +43,9 @@ export default function ReportsPage() {
 
     const fetchData = (currentFilters = activeFilters) => {
         setLoading(true);
-        axios
-            .post('/admin/reports/api/data', currentFilters)
-            .then((res) => {
-                setData(res.data);
+        reportsApi.getData(currentFilters)
+            .then((res: any) => {
+                setData(res);
                 setLoading(false);
             })
             .catch(() => setLoading(false));
@@ -81,15 +80,10 @@ export default function ReportsPage() {
     };
 
     const exportCsv = () => {
-        const params = new URLSearchParams();
-        if (activeFilters.date_from) params.append('date_from', activeFilters.date_from);
-        if (activeFilters.date_to) params.append('date_to', activeFilters.date_to);
-        activeFilters.contract_type_ids.forEach((id: string) => params.append('contract_type_ids[]', id));
-        activeFilters.creator_ids.forEach((id: string) => params.append('creator_ids[]', id));
-        activeFilters.involved_ids.forEach((id: string) => params.append('involved_ids[]', id));
-
-        const endpoint = activeTab === 'contracts' ? '/admin/reports/api/export' : '/admin/reports/api/audit/export';
-        window.location.href = `${endpoint}?${params.toString()}`;
+        const url = activeTab === 'contracts'
+            ? reportsApi.getExportAnalyticsUrl(activeFilters)
+            : reportsApi.getExportAuditUrl(activeFilters);
+        window.location.href = url;
     };
 
     const filterCategories: FilterCategory[] = useMemo(
@@ -264,11 +258,12 @@ function ContractRegistryTable({ contracts }: { contracts: any[] }) {
                             <th className="px-4 py-3 text-xs font-bold text-text-soft uppercase tracking-wider">Parameter</th>
                             <th className="px-4 py-3 text-xs font-bold text-text-soft uppercase tracking-wider">Judul Rekap</th>
                             <th className="px-4 py-3 text-xs font-bold text-text-soft uppercase tracking-wider">Tipe</th>
+                            <th className="px-4 py-3 text-xs font-bold text-text-soft uppercase tracking-wider">Alur Kerja</th>
+                            <th className="px-4 py-3 text-xs font-bold text-text-soft uppercase tracking-wider">Tahap Saat Ini</th>
                             <th className="px-4 py-3 text-xs font-bold text-text-soft uppercase tracking-wider">Pemilik</th>
                             <th className="px-4 py-3 text-xs font-bold text-text-soft uppercase tracking-wider">Registrasi</th>
                             <th className="px-4 py-3 text-xs font-bold text-text-soft uppercase tracking-wider text-center">Status</th>
                             <th className="px-4 py-3 text-xs font-bold text-text-soft uppercase tracking-wider text-right">Aging</th>
-                            <th className="px-4 py-3 text-xs font-bold text-text-soft uppercase tracking-wider">Stage</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-surface-border">
@@ -277,6 +272,17 @@ function ContractRegistryTable({ contracts }: { contracts: any[] }) {
                                 <td className="px-4 py-3 font-mono font-semibold text-text-soft">{c.form_no || c.contract_no || '—'}</td>
                                 <td className="px-4 py-3 font-bold text-text-main uppercase truncate max-w-[200px]">{c.title}</td>
                                 <td className="px-4 py-3 text-text-soft uppercase font-bold">{c.type || 'N/A'}</td>
+                                <td className="px-4 py-3 text-text-main font-normal">{c.current_workflow || '—'}</td>
+                                <td className="px-4 py-3 text-text-main font-normal">
+                                    <div className="flex items-center gap-1.5">
+                                        {c.current_step_number && (
+                                            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold shrink-0">
+                                                {c.current_step_number}
+                                            </span>
+                                        )}
+                                        <span className="truncate max-w-[140px]">{c.current_step || '—'}</span>
+                                    </div>
+                                </td>
                                 <td className="px-4 py-3 text-text-soft uppercase font-semibold">{c.creator}</td>
                                 <td className="px-4 py-3 text-text-soft font-semibold">
                                     {formatDate(c.created_at)}
@@ -285,7 +291,6 @@ function ContractRegistryTable({ contracts }: { contracts: any[] }) {
                                     <StatusBadge status={c.status} />
                                 </td>
                                 <td className="px-4 py-3 text-right font-mono font-semibold text-text-soft">{formatRelativeTime(c.created_at)}</td>
-                                <td className="px-4 py-3 font-bold text-text-soft uppercase">{c.current_step}</td>
                             </tr>
                         ))}
                     </tbody>

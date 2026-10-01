@@ -3,9 +3,10 @@ import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/inputs/Textarea';
 import { Label } from '@/components/ui/forms/Label';
 import InputError from '@/components/ui/forms/InputError';
+import { Lock } from 'lucide-react';
 
 export interface FormTextareaProps extends React.ComponentProps<typeof Textarea> {
-    label?: string;
+    label?: React.ReactNode;
     error?: string;
     helperText?: string;
     containerClassName?: string;
@@ -18,6 +19,7 @@ const FormTextarea = React.forwardRef<HTMLTextAreaElement, FormTextareaProps>(
         const id = React.useId();
         const inputId = props.id || id;
         const isCompact = inputSize === 'compact';
+        const isNonEditable = Boolean(props.disabled || props.readOnly);
 
         return (
             <div className={cn('space-y-1.5 w-full group', containerClassName)}>
@@ -26,26 +28,47 @@ const FormTextarea = React.forwardRef<HTMLTextAreaElement, FormTextareaProps>(
                         <Label
                             htmlFor={inputId}
                             className={cn(
-                                'font-bold uppercase  transition-colors',
+                                'font-bold uppercase tracking-wider transition-colors flex items-center gap-1',
                                 isCompact ? 'text-[10px]' : 'text-[11px]',
                                 error ? 'text-rose-500' : 'text-slate-700 dark:text-zinc-200 group-focus-within:text-primary',
                                 labelClassName
                             )}
                         >
-                            {label}
+                            {typeof label === 'string' ? (
+                                <>
+                                    {label.replace(/\s*\*$/, '')}
+                                    {(props.required || label.includes('*')) && <span className="text-rose-500 ml-0.5">*</span>}
+                                </>
+                            ) : (
+                                label
+                            )}
                         </Label>
+                        {isNonEditable && (
+                            <span className="flex items-center gap-1 text-[10px] text-muted-foreground font-normal">
+                                <Lock size={10} className="opacity-70" />
+                                <span>Terkunci</span>
+                            </span>
+                        )}
                     </div>
                 )}
-                <Textarea
-                    id={inputId}
-                    ref={ref}
-                    className={cn(
-                        isCompact && 'min-h-[60px] px-3 text-sm rounded-lg',
-                        error && 'border-rose-500 focus-visible:ring-rose-500 focus-visible:border-rose-500',
-                        className
+                <div className="relative">
+                    <Textarea
+                        id={inputId}
+                        ref={ref}
+                        className={cn(
+                            isCompact && 'min-h-[60px] px-3 text-sm rounded-lg',
+                            isNonEditable && 'pr-9',
+                            error && 'border-rose-500 focus-visible:ring-rose-500 focus-visible:border-rose-500',
+                            className
+                        )}
+                        {...props}
+                    />
+                    {isNonEditable && (
+                        <div className="absolute right-3 top-3 text-slate-400 dark:text-zinc-500 pointer-events-none" title="Field tidak dapat diedit">
+                            <Lock size={isCompact ? 12 : 14} className="opacity-70" />
+                        </div>
                     )}
-                    {...props}
-                />
+                </div>
                 {helperText && !error && (
                     <p className="text-[11px] text-muted-foreground px-0.5 mt-1 font-normal">
                         {helperText}

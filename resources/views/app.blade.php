@@ -18,6 +18,19 @@
         <link rel="shortcut icon" href="{{ config('app.favicon', '/images/logo.png') }}">
         <link rel="apple-touch-icon" href="{{ config('app.logo', '/images/logo.png') }}">
 
+        <script>
+            (function() {
+                try {
+                    var appearance = localStorage.getItem('appearance') || 'system';
+                    var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    if (appearance === 'dark' || (appearance === 'system' && prefersDark)) {
+                        document.documentElement.classList.add('dark');
+                    } else {
+                        document.documentElement.classList.remove('dark');
+                    }
+                } catch (e) {}
+            })();
+        </script>
 
         @routes
         @viteReactRefresh

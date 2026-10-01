@@ -2,8 +2,7 @@ import React, { useMemo } from 'react';
 import { cn, formatDateRange } from '@/lib/utils';
 import { Button } from '@/components/ui/buttons/Button';
 import { Bookmark, BookmarkCheck, Calendar, Check, ChevronDown, RotateCcw, SlidersHorizontal, Trash2, X } from 'lucide-react';
-import { DateRangeCalendar } from '@/components/ui/inputs/DateRangeCalendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/dialogs/Popover';
+import { DateRangePicker } from '@/components/ui/inputs/DateRangePicker';
 import { SearchableMultiSelect } from '@/components/ui/selection/SearchableMultiSelect';
 
 export interface FilterOption {
@@ -69,63 +68,20 @@ function DateRangeField({
     const fromVal = typeof activeFilters[fromKey] === 'string' ? activeFilters[fromKey].split('T')[0] : '';
     const toVal = typeof activeFilters[toKey] === 'string' ? activeFilters[toKey].split('T')[0] : '';
 
-    const hasDate = Boolean(fromVal || toVal);
-
     return (
         <div className="space-y-1.5 w-full">
             <div className="flex items-center justify-between">
                 <label className="text-xs font-semibold text-text-desc block truncate">{category.label}</label>
             </div>
-            <Popover>
-                <PopoverTrigger asChild className="w-full">
-                    <div
-                        className={cn(
-                            'flex min-h-[40px] w-full items-center justify-between rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-left text-sm font-semibold text-foreground transition-all outline-none cursor-pointer hover:border-primary/50 focus:border-primary focus:ring-1 focus:ring-primary shadow-xs',
-                            hasDate && 'border-primary ring-1 ring-primary',
-                        )}
-                    >
-                        <div className="flex flex-wrap gap-1.5 pr-2 min-w-0 flex-1">
-                            {hasDate ? (
-                                <span
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="inline-flex items-center gap-1 bg-primary text-primary-foreground px-2 py-0.5 rounded text-[10px] hover:bg-primary/90 transition-colors"
-                                >
-                                    <Calendar size={10} className="shrink-0" />
-                                    <span>
-                                        {formatDateRange(fromVal, toVal)}
-                                    </span>
-                                    <button
-                                        type="button"
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            onFilterChange({ [fromKey]: '', [toKey]: '' });
-                                        }}
-                                        className="text-white/70 hover:text-white dark:text-slate-900/70 dark:hover:text-slate-900 focus:outline-none ml-0.5"
-                                        title="Hapus Tanggal"
-                                    >
-                                        <X size={10} />
-                                    </button>
-                                </span>
-                            ) : (
-                                <span className="text-slate-400 dark:text-slate-500 py-0.5 text-sm font-medium truncate">
-                                    Semua {category.label}
-                                </span>
-                            )}
-                        </div>
-                        <ChevronDown size={13} className="text-slate-400 shrink-0 ml-2" />
-                    </div>
-                </PopoverTrigger>
-                <PopoverContent align="start" className="w-[var(--button-width)] min-w-[260px] max-w-[90vw] p-3 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-2xl rounded-lg z-[999999]">
-                    <DateRangeCalendar
-                        from={fromVal}
-                        to={toVal}
-                        onChange={(f, t) => {
-                            onFilterChange({ [fromKey]: f, [toKey]: t });
-                        }}
-                    />
-                </PopoverContent>
-            </Popover>
+            <DateRangePicker
+                from={fromVal}
+                to={toVal}
+                label={category.label}
+                variant="dropdown-field"
+                onChange={(f, t) => {
+                    onFilterChange({ [fromKey]: f, [toKey]: t });
+                }}
+            />
         </div>
     );
 }

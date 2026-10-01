@@ -13,6 +13,7 @@ export * from './modules/notifications.api';
 export * from './modules/discussions.api';
 export * from './modules/workflows.api';
 export * from './modules/form-templates.api';
+export * from './modules/reports.api';
 
 // Unified composite API instance for convenience
 import { authApi } from './modules/auth.api';
@@ -23,6 +24,7 @@ import { notificationsApi } from './modules/notifications.api';
 import { discussionsApi } from './modules/discussions.api';
 import { workflowsApi } from './modules/workflows.api';
 import { formTemplatesApi } from './modules/form-templates.api';
+import { reportsApi } from './modules/reports.api';
 
 export const api = {
     auth: authApi,
@@ -33,6 +35,7 @@ export const api = {
     discussions: discussionsApi,
     workflows: workflowsApi,
     formTemplates: formTemplatesApi,
+    reports: reportsApi,
 };
 
 export default api;

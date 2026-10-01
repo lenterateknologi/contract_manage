@@ -76,8 +76,56 @@ export const contractsApi = {
         unwrapResponse(apiClient.get(API_ENDPOINTS.CONTRACTS.ROLES)),
 
     /**
-     * Get dashboard metrics
+     * Get dashboard metrics (all or filtered by section)
      */
     getDashboardMetrics: (params?: any): Promise<any> =>
-        unwrapResponse(apiClient.get(API_ENDPOINTS.CONTRACTS.DASHBOARD_METRICS, { params })),
+        unwrapResponse(apiClient.get(API_ENDPOINTS.CONTRACTS.DASHBOARD.METRICS, { params })),
+
+    /**
+     * Get dashboard summary & KPIs
+     */
+    getDashboardSummary: (params?: any): Promise<any> =>
+        unwrapResponse(apiClient.get(API_ENDPOINTS.CONTRACTS.DASHBOARD.SUMMARY, { params })),
+
+    /**
+     * Get dashboard overview
+     */
+    getDashboardOverview: (params?: any): Promise<any> =>
+        unwrapResponse(apiClient.get(API_ENDPOINTS.CONTRACTS.DASHBOARD.OVERVIEW, { params })),
+
+    /**
+     * Get dashboard distributions
+     */
+    getDashboardDistributions: (params?: any): Promise<any> =>
+        unwrapResponse(apiClient.get(API_ENDPOINTS.CONTRACTS.DASHBOARD.DISTRIBUTIONS, { params })),
+
+    /**
+     * Get dashboard trends
+     */
+    getDashboardTrends: (params?: any): Promise<any> =>
+        unwrapResponse(apiClient.get(API_ENDPOINTS.CONTRACTS.DASHBOARD.TRENDS, { params })),
+
+    /**
+     * Get dashboard analysis
+     */
+    getDashboardAnalysis: (params?: any): Promise<any> =>
+        unwrapResponse(apiClient.get(API_ENDPOINTS.CONTRACTS.DASHBOARD.ANALYSIS, { params })),
+
+    /**
+     * Get dashboard workload
+     */
+    getDashboardWorkload: (params?: any): Promise<any> =>
+        unwrapResponse(apiClient.get(API_ENDPOINTS.CONTRACTS.DASHBOARD.WORKLOAD, { params })),
+
+    /**
+     * Get dashboard master data
+     */
+    getDashboardMasterData: (params?: any): Promise<any> =>
+        unwrapResponse(apiClient.get(API_ENDPOINTS.CONTRACTS.DASHBOARD.MASTER_DATA, { params })),
+
+    /**
+     * Get dashboard recent activity
+     */
+    getDashboardRecentActivity: (params?: any): Promise<any> =>
+        unwrapResponse(apiClient.get(API_ENDPOINTS.CONTRACTS.DASHBOARD.RECENT_ACTIVITY, { params })),
 };

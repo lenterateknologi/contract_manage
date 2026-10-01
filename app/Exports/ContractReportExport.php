@@ -14,10 +14,12 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 class ContractReportExport implements FromCollection, ShouldAutoSize, WithHeadings, WithMapping, WithStyles
 {
     protected $contracts;
+    protected $latestHistories;
 
-    public function __construct(Collection $contracts)
+    public function __construct(Collection $contracts, $latestHistories = null)
     {
         $this->contracts = $contracts;
+        $this->latestHistories = $latestHistories ?? collect();
     }
 
     public function collection()
@@ -29,10 +31,16 @@ class ContractReportExport implements FromCollection, ShouldAutoSize, WithHeadin
     {
         return [
             'ID',
-            'No. Kontrak',
+            'No. Form / Kontrak',
             'Judul',
             'Tipe',
             'Perjanjian',
+            'Alur Kerja (Workflow)',
+            'Tahap Saat Ini (Current Step)',
+            'Aktor / Approver Tahap Ini',
+            'Aksi Terakhir',
+            'Dilakukan Oleh (Last Action By)',
+            'Waktu Aksi Terakhir',
             'Status',
             'Pembuat',
             'Tgl Dibuat',
@@ -43,15 +51,53 @@ class ContractReportExport implements FromCollection, ShouldAutoSize, WithHeadin
 
     public function map($contract): array
     {
+        $pendingApprovals = $contract->approvals ? $contract->approvals->where('status', 'pending') : collect();
+        $pendingApproval = $pendingApprovals->first();
+        $currentStep = $contract->workflowStep?->label
+            ?? $pendingApproval?->role
+            ?? ($contract->current_step_number ? "Tahap {$contract->current_step_number}" : '—');
+
+        $actors = [];
+        if ($pendingApprovals->isNotEmpty()) {
+            $actors = $pendingApprovals->map(function ($a) {
+                return $a->approver?->name ?: ($a->approver_name ?: $a->role);
+            })->filter()->unique()->values()->all();
+        }
+
+        if (empty($actors)) {
+            if (in_array(strtolower((string) $contract->status), ['draft', 'revision'])) {
+                $actors = array_filter([$contract->creator?->name]);
+            } elseif ($contract->assignedPic) {
+                $actors = [$contract->assignedPic->name];
+            } elseif ($contract->workflowStep?->approver_type === 'assigned_pic' && $contract->assignedPic) {
+                $actors = [$contract->assignedPic->name];
+            } elseif ($contract->workflowStep?->approver_type === 'creator' || $contract->workflowStep?->approver_type === 'initiator') {
+                $actors = array_filter([$contract->creator?->name]);
+            }
+        }
+
+        $currentActorDisplay = ! empty($actors) ? implode(', ', $actors) : '—';
+
+        $lastHistory = $this->latestHistories->get($contract->id);
+        $lastActionBy = $lastHistory?->actor?->name ?? $contract->creator?->name ?? '—';
+        $lastAction = $lastHistory?->action ?? 'CREATE';
+        $lastActionAt = $lastHistory?->created_at ? $lastHistory->created_at->format('Y-m-d H:i') : ($contract->updated_at ? $contract->updated_at->format('Y-m-d H:i') : '—');
+
         return [
             $contract->id,
-            $contract->contract_no,
+            $contract->form_no ?: ($contract->contract_no ?: '—'),
             $contract->title,
             $contract->contractType->name ?? '—',
             $contract->submissionType->name ?? '—',
+            $contract->workflow->name ?? '—',
+            $currentStep,
+            $currentActorDisplay,
+            $lastAction,
+            $lastActionBy,
+            $lastActionAt,
             strtoupper($contract->status),
             $contract->creator->name ?? '—',
-            $contract->created_at->toDateString(),
+            $contract->created_at ? $contract->created_at->format('Y-m-d H:i') : '—',
             $contract->current_version,
             $contract->description,
         ];

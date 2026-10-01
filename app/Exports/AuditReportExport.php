@@ -20,7 +20,7 @@ class AuditReportExport implements FromCollection, ShouldAutoSize, WithEvents, W
 
     protected $contract;
 
-    public function __construct(Collection $histories, Contract $contract)
+    public function __construct(Collection $histories, ?Contract $contract = null)
     {
         $this->histories = $histories;
         $this->contract = $contract;
@@ -35,16 +35,20 @@ class AuditReportExport implements FromCollection, ShouldAutoSize, WithEvents, W
     {
         return [
             'Waktu',
-            'No. Pengajuan',
+            'No. Form / Kontrak',
             'Judul Kontrak',
+            'Tipe',
+            'Tahap (Workflow Step)',
             'Aksi',
-            'Deskripsi',
+            'Deskripsi / Catatan',
             'Aktor',
+            'IP Address',
         ];
     }
 
     public function map($history): array
     {
+        $contract = $history->contract ?? $this->contract;
         $desc = $history->description ?? '';
         $customLabel = null;
         if (preg_match('/^([^\n]+?)(?:\s+pada\s+\[|\s+oleh\s+:?)/iu', $desc, $matches)) {
@@ -56,13 +60,20 @@ class AuditReportExport implements FromCollection, ShouldAutoSize, WithEvents, W
         $actionStr = is_object($history->action) ? ($history->action->value ?? (string) $history->action) : (string) ($history->action ?? '');
         $label = $customLabel ?: ucwords(str_replace('_', ' ', strtolower($actionStr)));
 
+        $stepName = $history->step_name
+            ?? $contract?->workflowStep?->label
+            ?? ($history->step_number ? "Tahap {$history->step_number}" : '—');
+
         return [
-            $history->created_at ? $history->created_at->format('d/m/Y H:i') : '—',
-            $this->contract->form_no ?? '—',
-            $this->contract->title ?? '—',
+            $history->created_at ? $history->created_at->format('Y-m-d H:i:s') : '—',
+            $contract?->form_no ?: ($contract?->contract_no ?: '—'),
+            $contract?->title ?? '—',
+            $contract?->contractType?->name ?? '—',
+            $stepName,
             mb_strtoupper($label),
             $history->description,
-            $history->actor->name ?? 'System',
+            $history->actor?->name ?? 'System',
+            $history->ip_address ?? '—',
         ];
     }
 

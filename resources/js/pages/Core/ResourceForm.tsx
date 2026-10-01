@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 import AuthorityTableManager from '@/pages/workflows/components/AuthorityTableManager';
 import { SlaSimulationModal } from '@/pages/contracts/components/parts/SlaSimulationModal';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowLeft, Calculator, ExternalLink, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Calculator, ExternalLink, Plus, Trash2, Lock } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
 const COMMON_ICONS = [
@@ -247,14 +247,16 @@ function MultiSelectField({
                                 onToggleChange(!toggleValue);
                             }}
                             className={cn(
-                                "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-all duration-300 outline-hidden active:scale-95",
-                                toggleValue ? 'bg-primary dark:bg-white' : 'bg-slate-200 dark:bg-slate-800',
-                                disabled && "cursor-not-allowed"
+                                "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 outline-none active:scale-95",
+                                toggleValue ? "bg-primary" : "bg-slate-200 dark:bg-zinc-700",
+                                disabled && "cursor-not-allowed opacity-60"
                             )}
                         >
                             <span
-                                className={`pointer-events-none block h-3 w-3 rounded-full shadow-lg transition-transform duration-300 ring-0 ${toggleValue ? 'translate-x-5 bg-white dark:bg-primary' : 'translate-x-1 bg-white dark:bg-white/50'
-                                    }`}
+                                className={cn(
+                                    "pointer-events-none block h-3.5 w-3.5 rounded-full bg-white dark:bg-zinc-100 shadow-sm transition-transform duration-200",
+                                    toggleValue ? "translate-x-4.5" : "translate-x-1"
+                                )}
                             />
                         </button>
                     </div>
@@ -1211,11 +1213,22 @@ export default function ResourceForm({
                 )}
                 {field.type === 'readonly' && (
                     <div className="space-y-1.5 w-full">
-                        <label className="text-[11px] font-bold text-slate-700 dark:text-zinc-200 uppercase px-0.5 tracking-wider">
-                            {field.label}
-                        </label>
-                        <div className="flex h-10 w-full items-center rounded-lg border border-border bg-muted px-3 text-xs font-medium text-foreground select-all cursor-default">
-                            {data[field.name] ?? <span className="italic text-muted-foreground">{field.placeholder || '—'}</span>}
+                        <div className="flex items-center justify-between px-0.5">
+                            <label className="text-[11px] font-bold text-slate-700 dark:text-zinc-200 uppercase tracking-wider">
+                                {field.label}
+                            </label>
+                            <span className="flex items-center gap-1 text-[10px] text-muted-foreground font-normal">
+                                <Lock size={10} className="opacity-70" />
+                                <span>Terkunci</span>
+                            </span>
+                        </div>
+                        <div className="relative">
+                            <div className="flex h-10 w-full items-center rounded-lg border border-border bg-slate-100/70 dark:bg-zinc-900/80 px-3 pr-9 text-xs font-medium text-foreground select-all cursor-default">
+                                {data[field.name] ?? <span className="italic text-muted-foreground">{field.placeholder || '—'}</span>}
+                            </div>
+                            <div className="absolute right-3 top-0 bottom-0 flex items-center text-slate-400 dark:text-zinc-500 pointer-events-none" title="Field tidak dapat diedit">
+                                <Lock size={14} className="opacity-70" />
+                            </div>
                         </div>
                         {field.helperText && (
                             <p className="text-[11px] text-muted-foreground px-0.5 mt-1 font-normal">
@@ -1399,69 +1412,68 @@ export default function ResourceForm({
                         )}
                     </div>
                 )}
-                {field.type === 'switch' && (() => {
+                {(field.type === 'switch' || field.type === 'toggle') && (() => {
                     const isChecked = data[field.name] === true || data[field.name] === 1 || data[field.name] === '1' || data[field.name] === 'true';
                     return (
-                        <div
-                            onClick={() => setData(field.name, !isChecked)}
-                            className={cn(
-                                "group relative flex items-start justify-between p-4 rounded-xl border transition-all cursor-pointer select-none",
-                                isChecked
-                                    ? "bg-primary/5 border-primary/40 shadow-xs ring-1 ring-primary/20 dark:bg-primary/10 dark:border-primary/50"
-                                    : "bg-surface-base border-border hover:border-slate-300 dark:hover:border-zinc-700 hover:bg-surface-muted/30"
-                            )}
-                        >
-                            <div className="flex items-start gap-3 pr-2">
-                                <div className={cn(
-                                    "p-2 rounded-lg transition-colors shrink-0",
+                        <div className="space-y-1.5 w-full">
+                            <Label className="text-[11px] font-bold uppercase text-slate-700 dark:text-zinc-200 px-0.5">
+                                {field.label} {field.required && <span className="text-rose-500">*</span>}
+                            </Label>
+                            <div
+                                onClick={() => setData(field.name, !isChecked)}
+                                className={cn(
+                                    "flex min-h-[38px] items-center justify-between px-3.5 py-2 rounded-lg border transition-all cursor-pointer select-none",
                                     isChecked
-                                        ? "bg-primary/15 text-primary dark:bg-primary/25"
-                                        : "bg-surface-muted text-muted-foreground group-hover:text-foreground"
-                                )}>
-                                    {IconComponent ? (
-                                        <IconComponent className="h-4 w-4" />
-                                    ) : (
-                                        <LucideIcons.Eye className="h-4 w-4" />
+                                        ? "border-primary/50 bg-primary/[0.04] dark:bg-primary/[0.08] dark:border-primary/50"
+                                        : "border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:border-slate-300 dark:hover:border-zinc-600"
+                                )}
+                            >
+                                <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                                    {IconComponent && (
+                                        <IconComponent className={cn(
+                                            "h-4 w-4 shrink-0 transition-colors",
+                                            isChecked ? "text-primary" : "text-slate-400 dark:text-zinc-500"
+                                        )} />
                                     )}
-                                </div>
-                                <div className="space-y-0.5">
-                                    <div className="flex items-center gap-2">
-                                        <h4 className={cn(
-                                            "text-xs font-bold leading-tight transition-colors",
-                                            isChecked ? "text-foreground font-semibold" : "text-slate-700 dark:text-zinc-200"
+                                    <div className="flex flex-col min-w-0">
+                                        <span className={cn(
+                                            "text-xs font-semibold truncate transition-colors",
+                                            isChecked ? "text-primary dark:text-primary font-bold" : "text-slate-700 dark:text-zinc-300"
                                         )}>
-                                            {field.label}
-                                        </h4>
-                                        {isChecked && (
-                                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-primary/10 text-primary uppercase font-mono">
-                                                Aktif
+                                            {isChecked ? 'Aktif' : 'Nonaktif'}
+                                        </span>
+                                        {field.helperText && (
+                                            <span className="text-[10.5px] text-muted-foreground line-clamp-1 font-normal">
+                                                {field.helperText}
                                             </span>
                                         )}
                                     </div>
-                                    {field.helperText && (
-                                        <p className="text-[10.5px] text-muted-foreground line-clamp-2 leading-relaxed font-normal">
-                                            {field.helperText}
-                                        </p>
-                                    )}
+                                </div>
+                                <div className="shrink-0 ml-2" onClick={(e) => e.stopPropagation()}>
+                                    <button
+                                        type="button"
+                                        role="switch"
+                                        aria-checked={isChecked}
+                                        onClick={() => setData(field.name, !isChecked)}
+                                        className={cn(
+                                            "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+                                            isChecked ? "bg-primary" : "bg-slate-200 dark:bg-zinc-700"
+                                        )}
+                                    >
+                                        <span
+                                            className={cn(
+                                                "pointer-events-none block h-3.5 w-3.5 rounded-full bg-white dark:bg-zinc-100 shadow-sm transition-transform duration-200",
+                                                isChecked ? "translate-x-4.5" : "translate-x-1"
+                                            )}
+                                        />
+                                    </button>
                                 </div>
                             </div>
-                            <div className="shrink-0 pt-0.5" onClick={(e) => e.stopPropagation()}>
-                                <button
-                                    type="button"
-                                    role="switch"
-                                    aria-checked={isChecked}
-                                    onClick={() => setData(field.name, !isChecked)}
-                                    className={cn(
-                                        "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-all duration-300 outline-hidden active:scale-95",
-                                        isChecked ? 'bg-primary dark:bg-white' : 'bg-slate-200 dark:bg-slate-800'
-                                    )}
-                                >
-                                    <span
-                                        className={`pointer-events-none block h-3 w-3 rounded-full shadow-lg transition-transform duration-300 ring-0 ${isChecked ? 'translate-x-5 bg-white dark:bg-primary' : 'translate-x-1 bg-white dark:bg-white/50'
-                                            }`}
-                                    />
-                                </button>
-                            </div>
+                            {errors[field.name] && (
+                                <span className="text-rose-500 text-[10px] font-bold uppercase mt-1 block">
+                                    {errors[field.name]}
+                                </span>
+                            )}
                         </div>
                     );
                 })()}

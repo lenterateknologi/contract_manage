@@ -26,6 +26,16 @@ Route::controller(ContractController::class)->group(function () {
         Route::get('/archived', 'contractsView')->defaults('view', 'archived')->name('contracts.archived');
         Route::get('/in-progress', 'contractsView')->defaults('view', 'in_progress')->name('contracts.in_progress');
         Route::get('/dashboard-metrics', 'getDashboardMetrics')->name('contracts.dashboard-metrics');
+        Route::prefix('dashboard')->group(function () {
+            Route::get('/summary', 'getDashboardSummary')->name('contracts.dashboard.summary');
+            Route::get('/overview', 'getDashboardOverview')->name('contracts.dashboard.overview');
+            Route::get('/distributions', 'getDashboardDistributions')->name('contracts.dashboard.distributions');
+            Route::get('/trends', 'getDashboardTrends')->name('contracts.dashboard.trends');
+            Route::get('/analysis', 'getDashboardAnalysis')->name('contracts.dashboard.analysis');
+            Route::get('/workload', 'getDashboardWorkload')->name('contracts.dashboard.workload');
+            Route::get('/master-data', 'getDashboardMasterData')->name('contracts.dashboard.master-data');
+            Route::get('/recent-activity', 'getDashboardRecentActivity')->name('contracts.dashboard.recent-activity');
+        });
         Route::get('/{id}', 'showView')->name('contracts.show');
 
         // Metadata & Helpers

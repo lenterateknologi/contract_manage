@@ -15,8 +15,7 @@ import {
 import { cn, formatDate } from '@/lib/utils';
 import { Button } from '@/components/ui/buttons/Button';
 import { Label } from '@/components/ui/forms/Label';
-import { DateRangeCalendar } from '@/components/ui/inputs/DateRangeCalendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/dialogs/Popover';
+import { DateRangePicker } from '@/components/ui/inputs/DateRangePicker';
 import { SearchableMultiSelect } from '@/components/ui/selection/SearchableMultiSelect';
 import type { FilterCategory, FilterOption } from './FilterPopover';
 
@@ -77,60 +76,17 @@ function DateRangeCategoryOptions({
     const fromVal = typeof activeFilters[fromKey] === 'string' ? activeFilters[fromKey].split('T')[0] : '';
     const toVal = typeof activeFilters[toKey] === 'string' ? activeFilters[toKey].split('T')[0] : '';
 
-    const formatDateText = (s: string) => {
-        if (!s) return '';
-        return formatDate(s);
-    };
-
     return (
-        <div className="w-full space-y-2">
-            <Popover>
-                <PopoverTrigger asChild className="w-full">
-                    <button
-                        type="button"
-                        className={cn(
-                            "w-full flex items-center justify-between p-2.5 text-xs border rounded-lg transition-all cursor-pointer shadow-xs",
-                            fromVal || toVal
-                                ? "bg-primary/5 border-primary text-primary font-semibold"
-                                : "bg-background border-input text-muted-foreground hover:border-primary/50 hover:text-foreground"
-                        )}
-                    >
-                        <div className="flex items-start gap-2 text-left w-full min-w-0">
-                            <Calendar size={14} className={cn("mt-0.5 shrink-0", fromVal || toVal ? "text-primary" : "text-muted-foreground")} />
-                            {fromVal || toVal ? (
-                                <div className="flex flex-col text-[11px] leading-tight w-full min-w-0">
-                                    <span className="truncate">Mulai: {formatDateText(fromVal) || '-'}</span>
-                                    <span className="truncate">Sampai: {formatDateText(toVal) || '-'}</span>
-                                </div>
-                            ) : (
-                                <span className="text-xs truncate">Pilih rentang tanggal...</span>
-                            )}
-                        </div>
-                        <ChevronDown size={12} className="opacity-60 shrink-0 ml-1" />
-                    </button>
-                </PopoverTrigger>
-                <PopoverContent align="start" className="w-[280px] sm:w-[320px] p-4 bg-background border border-border shadow-2xl rounded-2xl z-[99999]">
-                    <DateRangeCalendar
-                        from={fromVal}
-                        to={toVal}
-                        onChange={(f, t) => {
-                            onFilterChange({ [fromKey]: f, [toKey]: t });
-                        }}
-                    />
-                </PopoverContent>
-            </Popover>
-
-            {(fromVal || toVal) && (
-                <button
-                    type="button"
-                    onClick={() => {
-                        onFilterChange({ [fromKey]: '', [toKey]: '' });
-                    }}
-                    className="w-full text-[10px] font-semibold text-muted-foreground hover:text-danger text-center py-1 transition-colors cursor-pointer uppercase"
-                >
-                    Hapus Filter Tanggal
-                </button>
-            )}
+        <div className="w-full">
+            <DateRangePicker
+                from={fromVal}
+                to={toVal}
+                label={category.label}
+                variant="dropdown-field"
+                onChange={(f, t) => {
+                    onFilterChange({ [fromKey]: f, [toKey]: t });
+                }}
+            />
         </div>
     );
 }

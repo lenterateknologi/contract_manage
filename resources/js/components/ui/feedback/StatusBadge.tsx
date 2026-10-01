@@ -54,30 +54,44 @@ export const StatusBadge = ({
         lg: 13,
     }[size] || 11;
 
+    const badgeStyle: React.CSSProperties | undefined = React.useMemo(() => {
+        if (!hasCustomColors) return undefined;
+
+        if (bgColor) {
+            return {
+                backgroundColor: bgColor,
+                color: color || '#ffffff',
+                borderColor: color ? `color-mix(in srgb, ${color} 30%, transparent)` : undefined,
+            };
+        }
+
+        if (color) {
+            return {
+                backgroundColor: `color-mix(in srgb, ${color} 14%, transparent)`,
+                color: color,
+                borderColor: `color-mix(in srgb, ${color} 28%, transparent)`,
+            };
+        }
+
+        return undefined;
+    }, [color, bgColor, hasCustomColors]);
+
     return (
         <span
             className={cn(
                 'inline-flex items-center rounded-full font-semibold tracking-tight uppercase whitespace-nowrap shadow-xs border',
                 sizeClasses,
-                !hasCustomColors && 'bg-slate-700 text-white border-transparent',
+                !hasCustomColors && 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-700',
                 className,
             )}
-            style={
-                hasCustomColors
-                    ? {
-                          backgroundColor: bgColor || undefined,
-                          color: color || '#ffffff',
-                          borderColor: color ? `${color}30` : undefined,
-                      }
-                    : undefined
-            }
+            style={badgeStyle}
         >
             {IconComp ? (
                 <IconComp size={iconSize} className="shrink-0" />
             ) : (
                 <span
                     className="h-1.5 w-1.5 rounded-full shrink-0"
-                    style={{ backgroundColor: color || '#ffffff' }}
+                    style={{ backgroundColor: color || 'currentColor' }}
                 />
             )}
             <span>{label}</span>

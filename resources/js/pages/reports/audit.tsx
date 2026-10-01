@@ -1,29 +1,73 @@
 import { DataTable } from '@/components/ui/tables/DataTable';
 import { PageTable } from '@/components/ui/navigation/PageTable';
 import { Button } from '@/components/ui/buttons/Button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/dialogs/Popover';
-import { DateRangeCalendar } from '@/components/ui/inputs/DateRangeCalendar';
-import { cn, formatDate, formatDateTime, formatDateRange, getPresetDateRange, DATE_RANGE_PRESETS } from '@/lib/utils';
+import { DateRangePicker } from '@/components/ui/inputs/DateRangePicker';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/dialogs/Sheet';
+import { cn, formatDate, formatDateTime, formatDateRange } from '@/lib/utils';
 import { BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/react';
-import axios from 'axios';
+import { Head, Link } from '@inertiajs/react';
+import { reportsApi } from '@/api';
 import { useToast } from '@/components/ui/feedback/Toast';
-import { Download, Loader2, History, Calendar as CalendarIcon, X, ChevronDown, RotateCcw, FileSpreadsheet } from 'lucide-react';
+import {
+    Download,
+    Loader2,
+    History,
+    Calendar as CalendarIcon,
+    X,
+    ChevronDown,
+    RotateCcw,
+    FileSpreadsheet,
+    Eye,
+    CheckCircle2,
+    XCircle,
+    AlertTriangle,
+    RefreshCw,
+    UserCheck,
+    Send,
+    PlusCircle,
+    FileText,
+    ExternalLink,
+    Shield,
+    Globe,
+    Laptop,
+    Clock,
+    User,
+    Layers,
+    Tag,
+    Info,
+} from 'lucide-react';
 import React, { useEffect, useMemo, useState } from 'react';
 
 interface AuditLog {
     id: string;
-    form_no: string;
-    contract_no: string;
+    contract_id: string;
+    form_no?: string;
+    contract_no?: string;
+    contract_title?: string;
+    contract_status?: string;
+    contract_type?: string;
     action: string;
     description: string;
     actor: string;
+    actor_id?: string;
+    actor_email?: string;
+    actor_role?: string;
+    actor_department?: string;
+    actor_division?: string;
+    step_name?: string;
+    step_number?: number;
+    ip_address?: string;
+    user_agent?: string;
+    metadata?: Record<string, any> | null;
     created_at: string;
 }
 
 interface AuditData {
     histories: AuditLog[];
     users: { id: string; name: string }[];
+    types?: { id: string; name: string }[];
+    contracts?: { id: string; name: string }[];
+    actions?: string[];
 }
 
 export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem[] }) {
@@ -31,12 +75,26 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
     const [data, setData] = useState<AuditData | null>(null);
     const [loading, setLoading] = useState(true);
     const [exportLoading, setExportLoading] = useState(false);
-    const [isDateOpen, setIsDateOpen] = useState(false);
+    const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
+    const [isSheetOpen, setIsSheetOpen] = useState(false);
 
-    const [filters, setFilters] = useState({
+    const [filters, setFilters] = useState<{
+        date_from: string;
+        date_to: string;
+        creator_ids: string[];
+        contract_ids: string[];
+        contract_type_ids: string[];
+        actions: string[];
+        search: string;
+        audit_page: number;
+    }>({
         date_from: '',
         date_to: '',
         creator_ids: [],
+        contract_ids: [],
+        contract_type_ids: [],
+        actions: [],
+        search: '',
         audit_page: 1,
     });
 
@@ -44,23 +102,25 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
         current_page: 1,
         last_page: 1,
         total: 0,
-        per_page: 15,
+        per_page: 25,
     });
 
     const fetchData = (currentFilters = filters) => {
         setLoading(true);
-        axios
-            .post('/admin/reports/api/data', currentFilters)
-            .then((res) => {
+        reportsApi.getAuditLogs(currentFilters)
+            .then((res: any) => {
                 setData({
-                    histories: res.data.histories.data || [],
-                    users: res.data.users,
+                    histories: res.histories?.data || [],
+                    users: res.users || [],
+                    types: res.types || [],
+                    contracts: res.contracts || [],
+                    actions: res.actions || [],
                 });
                 setPagination({
-                    current_page: res.data.histories.current_page || 1,
-                    last_page: res.data.histories.last_page || 1,
-                    total: res.data.histories.total || 0,
-                    per_page: res.data.histories.per_page || 15,
+                    current_page: res.histories?.current_page || 1,
+                    last_page: res.histories?.last_page || 1,
+                    total: res.histories?.total || 0,
+                    per_page: res.histories?.per_page || 25,
                 });
                 setLoading(false);
             })
@@ -87,6 +147,10 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
             date_from: '',
             date_to: '',
             creator_ids: [],
+            contract_ids: [],
+            contract_type_ids: [],
+            actions: [],
+            search: '',
             audit_page: 1,
         };
         setFilters(clear);
@@ -96,22 +160,45 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
     const handleExport = () => {
         setExportLoading(true);
         showToast('Menyiapkan dan mengunduh berkas Excel Jejak Audit...', 'info');
-        const params = new URLSearchParams();
-        if (filters.date_from) params.append('date_from', filters.date_from);
-        if (filters.date_to) params.append('date_to', filters.date_to);
-        filters.creator_ids.forEach((id: string) => params.append('creator_ids[]', id));
+        const url = reportsApi.getExportAuditUrl(filters);
         setTimeout(() => setExportLoading(false), 2000);
-        window.location.href = `/admin/reports/api/audit/export?${params.toString()}`;
+        window.location.href = url;
+    };
+
+    const handleRowClick = (log: AuditLog) => {
+        setSelectedLog(log);
+        setIsSheetOpen(true);
     };
 
     const filterCategories = useMemo(
         () => [
             { label: 'Rentang Waktu', key: 'date', type: 'date-range' },
             {
-                label: 'Aktor (User)',
+                label: 'Aktor (Person)',
                 key: 'creator_ids',
                 type: 'searchable',
                 options: data?.users.map((u) => ({ label: u.name, value: u.id })) || [],
+            },
+            {
+                label: 'Dokumen Pengajuan',
+                key: 'contract_ids',
+                type: 'searchable',
+                options: data?.contracts?.map((c) => ({ label: c.name, value: c.id })) || [],
+            },
+            {
+                label: 'Tipe Aksi (Action)',
+                key: 'actions',
+                type: 'searchable',
+                options: (data?.actions || ['approve', 'reject', 'create', 'update', 'submit', 'revision', 'delete']).map((a) => ({
+                    label: a.toUpperCase(),
+                    value: a,
+                })),
+            },
+            {
+                label: 'Tipe Kontrak',
+                key: 'contract_type_ids',
+                type: 'searchable',
+                options: data?.types?.map((t) => ({ label: t.name, value: t.id })) || [],
             },
         ],
         [data],
@@ -124,52 +211,157 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
         [filters.date_from, filters.date_to],
     );
 
+    const renderActionBadge = (action: string) => {
+        const act = (action || '').toLowerCase();
+        let colorClass = 'bg-slate-50 text-slate-700 border-slate-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700';
+        let IconComponent = Info;
+
+        if (act.includes('approve') || act.includes('submit') || act.includes('create') || act.includes('sign')) {
+            colorClass = 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/60';
+            IconComponent = act.includes('create') ? PlusCircle : CheckCircle2;
+        } else if (act.includes('reject') || act.includes('delete') || act.includes('cancel') || act.includes('terminate')) {
+            colorClass = 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-900/60';
+            IconComponent = XCircle;
+        } else if (act.includes('revise') || act.includes('revision') || act.includes('assign') || act.includes('update')) {
+            colorClass = 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/60';
+            IconComponent = act.includes('assign') ? UserCheck : RefreshCw;
+        } else if (act.includes('sent') || act.includes('send')) {
+            colorClass = 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-900/60';
+            IconComponent = Send;
+        }
+
+        return (
+            <span className={cn('inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold tracking-wide border', colorClass)}>
+                <IconComponent size={12} className="shrink-0" />
+                <span>{action}</span>
+            </span>
+        );
+    };
+
     const columns = [
         {
-            header: 'Timestamp',
+            header: 'Waktu Transaksi',
             accessorKey: 'created_at',
-            cell: (row: any) => (
-                <span className="text-text-desc text-sm whitespace-nowrap">
+            cell: (row: AuditLog) => (
+                <span className="text-text-main font-medium text-xs whitespace-nowrap">
                     {formatDateTime(row.created_at)}
                 </span>
             )
         },
         {
-            header: 'Ref ID',
+            header: 'No. Form / Kontrak',
             accessorKey: 'form_no',
-            cell: (row: any) => <span className="font-mono text-sm text-text-main">#{(row.form_no || row.contract_no || '').split('/').pop()}</span>
+            cell: (row: AuditLog) => (
+                <span className="text-xs font-mono font-bold text-primary whitespace-nowrap">
+                    {row.form_no || row.contract_no || (row.contract_id ? `#${row.contract_id.substring(0, 8)}` : '—')}
+                </span>
+            )
         },
         {
-            header: 'Action Event',
-            accessorKey: 'action',
-            cell: (row: any) => {
-                const actionType = row.action.toLowerCase();
-                const isAlert = actionType.includes('reject') || actionType.includes('delete') || actionType.includes('cancel');
-                const isSuccess = actionType.includes('approve') || actionType.includes('create') || actionType.includes('submit');
-                const isSystem = actionType.includes('system') || actionType.includes('update');
-
-                return (
-                    <span className={cn(
-                        "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium tracking-wide",
-                        isAlert ? "bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-900/60" :
-                        isSuccess ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/60" :
-                        isSystem ? "bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-900/60" :
-                        "bg-slate-50 text-slate-700 border border-slate-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700"
-                    )}>
-                        {row.action}
+            header: 'Judul Kontrak',
+            accessorKey: 'contract_title',
+            cell: (row: AuditLog) => (
+                <span className="text-text-main font-medium text-xs truncate max-w-[260px] block" title={row.contract_title}>
+                    {row.contract_title || '—'}
+                </span>
+            )
+        },
+        {
+            header: 'Tipe Kontrak',
+            accessorKey: 'contract_type',
+            cell: (row: AuditLog) => (
+                <span className="text-text-main text-xs whitespace-nowrap">
+                    {row.contract_type || '—'}
+                </span>
+            )
+        },
+        {
+            header: 'Tahap Alur Kerja',
+            accessorKey: 'step_name',
+            cell: (row: AuditLog) => (
+                <span className="text-text-main text-xs truncate max-w-[180px] block" title={row.step_name}>
+                    {row.step_name || '—'}
+                </span>
+            )
+        },
+        {
+            header: 'No. Tahap',
+            accessorKey: 'step_number',
+            cell: (row: AuditLog) => (
+                row.step_number ? (
+                    <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[11px] font-bold">
+                        Tahap {row.step_number}
                     </span>
-                );
-            }
+                ) : <span className="text-text-muted text-xs">—</span>
+            )
         },
         {
-            header: 'Transaction Log Data',
-            accessorKey: 'description',
-            cell: (row: any) => <span className="text-text-main text-sm">{row.description}</span>
+            header: 'Jenis Aksi',
+            accessorKey: 'action',
+            cell: (row: AuditLog) => renderActionBadge(row.action)
         },
         {
-            header: 'Author Entity',
+            header: 'Pelaksana (Actor)',
             accessorKey: 'actor',
-            cell: (row: any) => <span className="text-text-desc text-sm">@{row.actor.split(' ')[0]}</span>
+            cell: (row: AuditLog) => (
+                <span className="text-text-main font-medium text-xs whitespace-nowrap">
+                    {row.actor}
+                </span>
+            )
+        },
+        {
+            header: 'Jabatan / Role',
+            accessorKey: 'actor_role',
+            cell: (row: AuditLog) => (
+                <span className="text-text-muted text-xs whitespace-nowrap">
+                    {row.actor_role || '—'}
+                </span>
+            )
+        },
+        {
+            header: 'Departemen',
+            accessorKey: 'actor_department',
+            cell: (row: AuditLog) => (
+                <span className="text-text-muted text-xs whitespace-nowrap">
+                    {row.actor_department || '—'}
+                </span>
+            )
+        },
+        {
+            header: 'Deskripsi / Catatan',
+            accessorKey: 'description',
+            cell: (row: AuditLog) => (
+                <span className="text-text-main text-xs truncate max-w-[300px] block" title={row.description}>
+                    {row.description}
+                </span>
+            )
+        },
+        {
+            header: 'IP Address',
+            accessorKey: 'ip_address',
+            cell: (row: AuditLog) => (
+                <span className="font-mono text-[11px] text-text-muted whitespace-nowrap">
+                    {row.ip_address || '—'}
+                </span>
+            )
+        },
+        {
+            header: 'Detail',
+            accessorKey: 'id',
+            cell: (row: AuditLog) => (
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        handleRowClick(row);
+                    }}
+                    className="h-7 w-7 p-0 rounded-md text-text-muted hover:text-primary hover:bg-primary/10"
+                    title="Buka detail jejak audit"
+                >
+                    <Eye size={14} />
+                </Button>
+            )
         }
     ];
 
@@ -178,7 +370,7 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
             <Head title="Jejak Audit Sistem" />
             <PageTable
                 title="Jejak Audit Sistem"
-                subtitle="Daftar rekam jejak aktivitas transaksi dan perubahan data sistem"
+                subtitle="Rekam jejak forensik transaksi data, perubahan status, dan riwayat aktivitas pengguna"
                 icon={History}
                 filters={filterCategories}
                 activeFilters={filters}
@@ -187,102 +379,14 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
                 totalResults={pagination.total}
                 actions={
                     <div className="flex items-center gap-2">
-                        {/* Shadcn UI Date Range Popover */}
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className={cn(
-                                        "h-9 px-3 rounded-lg text-xs font-medium border transition-all duration-150 gap-2 cursor-pointer shadow-none",
-                                        hasDateFilter
-                                            ? "border-primary/40 bg-primary/5 text-primary hover:bg-primary/10 hover:border-primary dark:border-primary/50 dark:bg-primary/10 dark:text-primary-foreground"
-                                            : "border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-zinc-800"
-                                    )}
-                                >
-                                    <CalendarIcon size={14} className={cn(hasDateFilter ? "text-primary" : "text-slate-500 dark:text-slate-400")} />
-                                    <span className="truncate max-w-[200px]">{dateDisplayText}</span>
-                                    {hasDateFilter ? (
-                                        <span
-                                            role="button"
-                                            tabIndex={0}
-                                            onClick={(e) => {
-                                                e.preventDefault();
-                                                e.stopPropagation();
-                                                handleFilterChange({ date_from: '', date_to: '' });
-                                            }}
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter' || e.key === ' ') {
-                                                    e.preventDefault();
-                                                    e.stopPropagation();
-                                                    handleFilterChange({ date_from: '', date_to: '' });
-                                                }
-                                            }}
-                                            className="ml-1 p-0.5 rounded-full hover:bg-primary/20 text-primary dark:text-primary transition-colors cursor-pointer"
-                                            title="Hapus filter tanggal"
-                                        >
-                                            <X size={12} />
-                                        </span>
-                                    ) : (
-                                        <ChevronDown size={13} className="text-slate-400 shrink-0" />
-                                    )}
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent
-                                align="end"
-                                className="w-[340px] sm:w-[380px] p-3.5 bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 shadow-2xl rounded-xl z-[9999]"
-                            >
-                                <div className="space-y-3">
-                                    {/* Popover Header */}
-                                    <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-zinc-800">
-                                        <div className="flex items-center gap-1.5">
-                                            <CalendarIcon size={14} className="text-primary" />
-                                            <span className="text-xs font-bold text-slate-900 dark:text-slate-100">
-                                                Pilih Rentang Tanggal
-                                            </span>
-                                        </div>
-                                        {hasDateFilter && (
-                                            <button
-                                                type="button"
-                                                onClick={() => handleFilterChange({ date_from: '', date_to: '' })}
-                                                className="flex items-center gap-1 text-[11px] font-semibold text-rose-500 hover:text-rose-600 transition-colors"
-                                            >
-                                                <RotateCcw size={11} />
-                                                <span>Reset</span>
-                                            </button>
-                                        )}
-                                    </div>
-
-                                    {/* Preset Quick Buttons */}
-                                    <div className="flex flex-wrap gap-1.5">
-                                        {DATE_RANGE_PRESETS.map((preset) => (
-                                            <button
-                                                key={preset.type}
-                                                type="button"
-                                                onClick={() => {
-                                                    const range = getPresetDateRange(preset.type);
-                                                    handleFilterChange(range);
-                                                }}
-                                                className="px-2.5 py-1 text-[11px] font-medium rounded-md border border-slate-200 dark:border-zinc-800 bg-slate-50/80 hover:bg-slate-100 text-slate-700 dark:bg-zinc-900 dark:hover:bg-zinc-800 dark:text-zinc-300 transition-colors cursor-pointer"
-                                            >
-                                                {preset.label}
-                                            </button>
-                                        ))}
-                                    </div>
-
-                                    {/* Interactive Range Calendar */}
-                                    <div className="rounded-lg border border-slate-100 dark:border-zinc-800/80 p-2 bg-slate-50/40 dark:bg-zinc-900/40">
-                                        <DateRangeCalendar
-                                            from={filters.date_from}
-                                            to={filters.date_to}
-                                            onChange={(from, to) => {
-                                                handleFilterChange({ date_from: from, date_to: to });
-                                            }}
-                                        />
-                                    </div>
-                                </div>
-                            </PopoverContent>
-                        </Popover>
+                        {/* Unified Date Range Picker */}
+                        <DateRangePicker
+                            from={filters.date_from}
+                            to={filters.date_to}
+                            variant="action-button"
+                            align="end"
+                            onChange={(from, to) => handleFilterChange({ date_from: from, date_to: to })}
+                        />
 
                         {/* Export Button */}
                         <Button
@@ -306,9 +410,9 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
                     currentPage: pagination.current_page || 1,
                     lastPage: pagination.last_page || 1,
                     total: pagination.total || 0,
-                    from: (pagination.current_page - 1) * (pagination.per_page || 10) + 1,
-                    to: Math.min(pagination.current_page * (pagination.per_page || 10), pagination.total || 0),
-                    perPage: pagination.per_page || 10,
+                    from: (pagination.current_page - 1) * (pagination.per_page || 25) + 1,
+                    to: Math.min(pagination.current_page * (pagination.per_page || 25), pagination.total || 0),
+                    perPage: pagination.per_page || 25,
                     onPageChange: (page) => {
                         const nextFilters = { ...filters, audit_page: page };
                         setFilters(nextFilters);
@@ -326,8 +430,166 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
                     data={data?.histories || []}
                     loading={loading}
                     borderless={true}
+                    onRowClick={(row: AuditLog) => handleRowClick(row)}
                 />
             </PageTable>
+
+            {/* Audit Inspector Side Drawer */}
+            <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+                <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto p-6 bg-surface border-l border-border">
+                    {selectedLog && (
+                        <div className="space-y-6">
+                            {/* Drawer Header */}
+                            <SheetHeader className="text-left border-b border-border pb-4">
+                                <div className="flex items-center justify-between gap-2">
+                                    {renderActionBadge(selectedLog.action)}
+                                    <span className="text-[11px] text-text-muted font-mono">
+                                        ID: {selectedLog.id ? selectedLog.id.substring(0, 8) : '—'}
+                                    </span>
+                                </div>
+                                <SheetTitle className="text-base font-bold text-text-main mt-2">
+                                    Detail Jejak Audit
+                                </SheetTitle>
+                                <SheetDescription className="text-xs text-text-muted flex items-center gap-1">
+                                    <Clock size={12} />
+                                    {formatDateTime(selectedLog.created_at)} ({formatDate(selectedLog.created_at)})
+                                </SheetDescription>
+                            </SheetHeader>
+
+                            {/* Section 1: Dokumen Terkait */}
+                            <div className="space-y-2 p-3.5 rounded-lg border border-border bg-surface-muted/50">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-[11px] font-bold text-text-muted uppercase tracking-wider flex items-center gap-1.5">
+                                        <FileText size={13} className="text-primary" /> Dokumen Kontrak
+                                    </span>
+                                    {selectedLog.contract_id && (
+                                        <Link
+                                            href={`/admin/contracts/${selectedLog.contract_id}`}
+                                            className="text-xs font-semibold text-primary hover:underline flex items-center gap-1"
+                                        >
+                                            Buka Kontrak <ExternalLink size={11} />
+                                        </Link>
+                                    )}
+                                </div>
+                                <div className="text-sm font-semibold text-text-main mt-1">
+                                    {selectedLog.contract_title || '—'}
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-border/50 text-text-muted">
+                                    <div>
+                                        <span className="text-[10px] text-text-muted block">No. Form / Ref:</span>
+                                        <span className="font-mono font-medium text-text-main">
+                                            {selectedLog.form_no || selectedLog.contract_no || '—'}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <span className="text-[10px] text-text-muted block">Tipe Kontrak:</span>
+                                        <span className="font-medium text-text-main">
+                                            {selectedLog.contract_type || '—'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Section 2: Tahap Alur Kerja */}
+                            <div className="space-y-2 p-3.5 rounded-lg border border-border bg-surface-muted/50">
+                                <span className="text-[11px] font-bold text-text-muted uppercase tracking-wider flex items-center gap-1.5">
+                                    <Layers size={13} className="text-primary" /> Tahap Alur Kerja Saat Aksi
+                                </span>
+                                <div className="flex items-center gap-2 mt-1">
+                                    {selectedLog.step_number ? (
+                                        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0">
+                                            {selectedLog.step_number}
+                                        </span>
+                                    ) : null}
+                                    <span className="text-sm font-medium text-text-main">
+                                        {selectedLog.step_name || 'Tidak terkait tahap spesifik'}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Section 3: Pelaksana / Aktor */}
+                            <div className="space-y-2 p-3.5 rounded-lg border border-border bg-surface-muted/50">
+                                <span className="text-[11px] font-bold text-text-muted uppercase tracking-wider flex items-center gap-1.5">
+                                    <User size={13} className="text-primary" /> Informasi Pelaksana
+                                </span>
+                                <div className="space-y-1 mt-1">
+                                    <div className="text-sm font-semibold text-text-main">
+                                        {selectedLog.actor}
+                                    </div>
+                                    {selectedLog.actor_email && (
+                                        <div className="text-xs text-text-muted">
+                                            {selectedLog.actor_email}
+                                        </div>
+                                    )}
+                                    <div className="flex flex-wrap gap-1.5 pt-1">
+                                        {selectedLog.actor_role && (
+                                            <span className="text-[11px] px-2 py-0.5 rounded bg-primary/10 text-primary font-medium">
+                                                {selectedLog.actor_role}
+                                            </span>
+                                        )}
+                                        {selectedLog.actor_department && (
+                                            <span className="text-[11px] px-2 py-0.5 rounded bg-surface border border-border text-text-muted">
+                                                {selectedLog.actor_department}
+                                            </span>
+                                        )}
+                                        {selectedLog.actor_division && (
+                                            <span className="text-[11px] px-2 py-0.5 rounded bg-surface border border-border text-text-muted">
+                                                {selectedLog.actor_division}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Section 4: Deskripsi & Catatan Lengkap */}
+                            <div className="space-y-1.5">
+                                <span className="text-xs font-bold text-text-muted uppercase tracking-wider">
+                                    Deskripsi / Catatan Transaksi
+                                </span>
+                                <div className="p-3.5 rounded-lg border border-border bg-surface text-xs text-text-main leading-relaxed whitespace-pre-wrap">
+                                    {selectedLog.description || 'Tidak ada catatan tambahan.'}
+                                </div>
+                            </div>
+
+                            {/* Section 5: Metadata & Snapshot Perubahan (jika ada) */}
+                            {selectedLog.metadata && Object.keys(selectedLog.metadata).length > 0 && (
+                                <div className="space-y-1.5">
+                                    <span className="text-xs font-bold text-text-muted uppercase tracking-wider">
+                                        Payload & Metadata Perubahan
+                                    </span>
+                                    <pre className="p-3 rounded-lg border border-border bg-zinc-950 text-zinc-100 text-[11px] font-mono overflow-x-auto max-h-48">
+                                        {JSON.stringify(selectedLog.metadata, null, 2)}
+                                    </pre>
+                                </div>
+                            )}
+
+                            {/* Section 6: Informasi Teknis & Forensik */}
+                            <div className="space-y-2 p-3.5 rounded-lg border border-border/70 bg-surface-muted/30 text-xs text-text-muted">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted flex items-center gap-1.5">
+                                    <Shield size={12} className="text-emerald-500" /> Informasi Teknis & Jaringan
+                                </span>
+                                <div className="grid grid-cols-1 gap-1.5 pt-1 text-[11px]">
+                                    <div className="flex items-center gap-2">
+                                        <Globe size={12} className="text-text-muted shrink-0" />
+                                        <span>IP Address:</span>
+                                        <span className="font-mono text-text-main font-semibold">
+                                            {selectedLog.ip_address || '127.0.0.1 (Local/System)'}
+                                        </span>
+                                    </div>
+                                    {selectedLog.user_agent && (
+                                        <div className="flex items-start gap-2">
+                                            <Laptop size={12} className="text-text-muted shrink-0 mt-0.5" />
+                                            <span className="truncate text-text-muted" title={selectedLog.user_agent}>
+                                                {selectedLog.user_agent}
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </SheetContent>
+            </Sheet>
         </>
     );
 }

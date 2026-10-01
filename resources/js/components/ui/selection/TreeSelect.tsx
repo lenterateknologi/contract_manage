@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { createPortal } from 'react-dom';
-import { Search, ChevronDown, ChevronRight, Check } from 'lucide-react';
+import { Search, ChevronDown, ChevronRight, Check, Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface TreeSelectItem {
@@ -528,7 +528,7 @@ export function TreeSelect({
                         'flex w-full items-center justify-between rounded-lg border border-border bg-surface-base font-normal ring-offset-background transition-all outline-hidden text-left',
                         isSmall ? 'h-9 px-3 text-xs' : 'h-10 px-3.5 py-2 text-sm',
                         !disabled && 'cursor-pointer hover:border-primary/50 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary',
-                        disabled && 'cursor-not-allowed opacity-50 bg-slate-50 dark:bg-slate-900 border-slate-200 text-slate-500',
+                        disabled && 'cursor-not-allowed bg-slate-100/70 dark:bg-zinc-900/80 border-slate-200 dark:border-zinc-800 text-slate-500 dark:text-zinc-400 shadow-none',
                         open && 'border-primary ring-1 ring-primary',
                         triggerClassName
                     )}
@@ -536,7 +536,11 @@ export function TreeSelect({
                     <span className={cn('truncate', isSmall ? 'text-xs' : 'text-sm', selectedDisplay ? 'text-foreground font-normal' : 'text-muted-foreground font-normal')}>
                         {selectedDisplay || placeholder}
                     </span>
-                    <ChevronDown size={15} className={cn('text-muted-foreground shrink-0 ml-2 transition-transform duration-200', open && 'rotate-180')} />
+                    {disabled ? (
+                        <Lock size={isSmall ? 13 : 14} className="text-slate-400 dark:text-zinc-500 shrink-0 ml-2 opacity-70" />
+                    ) : (
+                        <ChevronDown size={15} className={cn('text-muted-foreground shrink-0 ml-2 transition-transform duration-200', open && 'rotate-180')} />
+                    )}
                 </button>
             )}
 

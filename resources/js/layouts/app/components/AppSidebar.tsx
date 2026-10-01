@@ -2,22 +2,13 @@ import { HeaderNotifications } from '@/layouts/app/components/header/HeaderNotif
 import { HeaderUserMenu } from '@/layouts/app/components/header/HeaderUserMenu';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialogs/Dialog';
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from '@/components/ui/selection/DropdownMenu';
-import {
     Sidebar,
-    SidebarContent,
-    SidebarFooter,
-    SidebarHeader,
     useSidebar,
 } from '@/components/ui/navigation/Sidebar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/feedback/Tooltip';
 import { HighlightingCell } from '@/components/ui/utilities/Highlighter';
 import { cn } from '@/lib/utils';
-import { type NavGroup, type NavItem, type SharedData } from '@/types';
+import { type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import { useDetailSidebar, type DetailSidebarTabItem } from '@/stores/useDetailSidebarStore';
 import {
@@ -26,13 +17,10 @@ import {
     ArrowRightLeft,
     BarChart3,
     Building2,
-    Check,
-    ChevronLeft,
     ChevronRight,
     ChevronDown,
     Clock,
     Database,
-    Eye,
     FileCheck,
     FileCode,
     FileEdit,
@@ -45,9 +33,6 @@ import {
     Layers,
     LayoutDashboard,
     LayoutGrid,
-    PanelLeftClose,
-    PanelLeftOpen,
-    RotateCcw,
     ScanEye,
     ScanLine,
     Search,
@@ -56,7 +41,6 @@ import {
     ShieldCheck,
     Tags,
     Truck,
-    User,
     UserCheck,
     UserCog,
     Users,
@@ -67,7 +51,9 @@ import {
     MessageSquare,
     type LucideIcon,
 } from 'lucide-react';
-import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useState, useEffect, useRef, useMemo } from 'react';
+import { UserSwitchModal } from '@/components/impersonation/UserSwitchModal';
+import { usePov } from '@/stores/usePovStore';
 
 const iconMap: Record<string, LucideIcon> = {
     Archive,
@@ -137,36 +123,48 @@ const NavTreeItem = memo(function NavTreeItem({
                         if (isMobile) setOpenMobile(false);
                         onNavigate?.();
                     }}
-                    className="group relative flex flex-1 items-center gap-3 rounded-lg px-2 py-1.5 text-[13px] font-medium transition-all duration-150 min-w-0 hover:bg-sidebar-accent/50"
+                    className={cn(
+                        'group relative flex flex-1 items-center gap-3 rounded-lg px-2 py-1.5 text-[13px] transition-all duration-150 min-w-0',
+                        isSelfActive
+                            ? 'bg-primary/10 dark:bg-primary/20 font-semibold text-primary dark:text-primary'
+                            : 'font-medium text-sidebar-foreground/80 dark:text-zinc-300 hover:bg-sidebar-accent/50 dark:hover:bg-zinc-800/60 hover:text-sidebar-foreground dark:hover:text-white',
+                    )}
                 >
-                    {/* Active Icon Card (Hanya icon yang memiliki card aktif) */}
+                    {/* Active Icon Card (Card on selected icon) */}
                     <div
                         className={cn(
                             'flex size-7 shrink-0 items-center justify-center rounded-lg transition-all duration-200',
                             isSelfActive
-                                ? 'bg-primary text-primary-foreground shadow-xs'
+                                ? 'bg-primary text-primary-foreground dark:bg-primary dark:text-primary-foreground shadow-xs'
                                 : isChildActive
-                                    ? 'bg-primary/15 text-primary'
-                                    : 'bg-sidebar-accent/60 text-sidebar-foreground/60 group-hover:bg-sidebar-accent group-hover:text-sidebar-foreground',
+                                    ? 'bg-primary/15 dark:bg-primary/25 text-primary dark:text-primary'
+                                    : 'text-sidebar-foreground/60 dark:text-zinc-400 group-hover:text-sidebar-foreground dark:group-hover:text-white',
                         )}
                     >
                         <ItemIcon
                             className={cn(
                                 'size-4 transition-colors',
                                 isSelfActive
-                                    ? 'text-primary-foreground'
+                                    ? 'text-primary-foreground dark:text-primary-foreground'
                                     : isChildActive
-                                        ? 'text-primary'
-                                        : 'text-sidebar-foreground/70 group-hover:text-sidebar-foreground',
+                                        ? 'text-primary dark:text-primary'
+                                        : 'text-sidebar-foreground/70 dark:text-zinc-400 group-hover:text-sidebar-foreground dark:group-hover:text-white',
                             )}
                         />
                     </div>
                     <div className="flex flex-col flex-1 min-w-0 justify-center">
-                        <span className="truncate tracking-tight leading-snug font-medium text-sidebar-foreground">
+                        <span
+                            className={cn(
+                                'truncate tracking-tight leading-snug',
+                                isSelfActive
+                                    ? 'font-bold text-primary dark:text-primary'
+                                    : 'font-medium text-sidebar-foreground dark:text-zinc-200 group-hover:text-sidebar-foreground dark:group-hover:text-white',
+                            )}
+                        >
                             {item.title}
                         </span>
                         {item.description && (
-                            <span className="text-[10.5px] leading-tight truncate mt-0.5 font-normal text-sidebar-foreground/50 group-hover:text-sidebar-foreground/70">
+                            <span className="text-[10.5px] leading-tight truncate mt-0.5 font-normal text-sidebar-foreground/50 dark:text-zinc-400 group-hover:text-sidebar-foreground/70 dark:group-hover:text-zinc-300">
                                 {item.description}
                             </span>
                         )}
@@ -176,8 +174,8 @@ const NavTreeItem = memo(function NavTreeItem({
                             className={cn(
                                 'ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full tabular-nums shrink-0 transition-colors',
                                 isSelfActive
-                                    ? 'bg-primary text-primary-foreground'
-                                    : 'bg-sidebar-accent/80 text-sidebar-foreground/70 group-hover:bg-sidebar-accent group-hover:text-sidebar-foreground',
+                                    ? 'bg-primary text-primary-foreground dark:bg-primary dark:text-primary-foreground'
+                                    : 'bg-sidebar-accent/80 dark:bg-zinc-800 text-sidebar-foreground/70 dark:text-zinc-300 group-hover:text-sidebar-foreground dark:group-hover:text-white',
                             )}
                             title={`${item.badge} data sistem aktif`}
                         >
@@ -191,7 +189,7 @@ const NavTreeItem = memo(function NavTreeItem({
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
-                    className="p-1.5 rounded-lg text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent/70 transition-colors opacity-0 group-hover/nav:opacity-100 focus:opacity-100 shrink-0 cursor-pointer"
+                    className="p-1.5 rounded-lg text-sidebar-foreground/40 dark:text-zinc-500 hover:text-sidebar-foreground dark:hover:text-white hover:bg-sidebar-accent/70 dark:hover:bg-zinc-800 transition-colors opacity-0 group-hover/nav:opacity-100 focus:opacity-100 shrink-0 cursor-pointer"
                     title="Buka di tab/jendela baru"
                 >
                     <ExternalLink size={13} />
@@ -205,7 +203,7 @@ const NavTreeItem = memo(function NavTreeItem({
                             e.stopPropagation();
                             setIsExpanded((prev) => !prev);
                         }}
-                        className="ml-1 p-1.5 rounded-lg text-sidebar-foreground/45 hover:text-sidebar-foreground hover:bg-sidebar-accent/60 transition-colors cursor-pointer shrink-0"
+                        className="ml-1 p-1.5 rounded-lg text-sidebar-foreground/45 dark:text-zinc-400 hover:text-sidebar-foreground dark:hover:text-white hover:bg-sidebar-accent/60 dark:hover:bg-zinc-800 transition-colors cursor-pointer shrink-0"
                         title={isExpanded ? 'Sembunyikan sub-menu' : 'Buka sub-menu'}
                     >
                         <ChevronRight
@@ -217,7 +215,7 @@ const NavTreeItem = memo(function NavTreeItem({
             </div>
 
             {hasChildren && isExpanded && (
-                <div className="relative ml-4.5 pl-3.5 my-1 space-y-1 border-l-2 border-sidebar-border/70">
+                <div className="relative ml-4.5 pl-3.5 my-1 space-y-1 border-l-2 border-sidebar-border/70 dark:border-zinc-800">
                     {item.children!.map((child) => {
                         const isSubActive = checkActive(child.url);
                         const ChildIcon = child.icon ?? FileText;
@@ -231,34 +229,43 @@ const NavTreeItem = memo(function NavTreeItem({
                                         onNavigate?.();
                                     }}
                                     className={cn(
-                                        'relative group flex flex-1 items-center gap-2.5 rounded-lg px-2 py-1.5 text-[12px] font-medium transition-all duration-150 min-w-0 hover:bg-sidebar-accent/40',
-                                        'before:absolute before:-left-[15px] before:top-1/2 before:-translate-y-1/2 before:w-2.5 before:h-[2px] before:bg-sidebar-border/80 before:rounded-full',
-                                        isSubActive && 'before:!bg-primary',
+                                        'relative group flex flex-1 items-center gap-2.5 rounded-lg px-2 py-1.5 text-[12px] transition-all duration-150 min-w-0',
+                                        'before:absolute before:-left-[15px] before:top-1/2 before:-translate-y-1/2 before:w-2.5 before:h-[2px] before:bg-sidebar-border/80 dark:before:bg-zinc-700 before:rounded-full',
+                                        isSubActive
+                                            ? 'bg-primary/10 dark:bg-primary/20 font-bold text-primary dark:text-primary before:!bg-primary dark:before:!bg-primary'
+                                            : 'font-medium text-sidebar-foreground/75 dark:text-zinc-300 hover:bg-sidebar-accent/40 dark:hover:bg-zinc-800/50 hover:text-sidebar-foreground dark:hover:text-white',
                                     )}
                                 >
                                     <div
                                         className={cn(
                                             'flex size-5.5 shrink-0 items-center justify-center rounded-md transition-all',
                                             isSubActive
-                                                ? 'bg-primary text-primary-foreground shadow-xs'
-                                                : 'bg-sidebar-accent/60 text-sidebar-foreground/60 group-hover:bg-sidebar-accent group-hover:text-sidebar-foreground',
+                                                ? 'bg-primary text-primary-foreground dark:bg-primary dark:text-primary-foreground shadow-xs'
+                                                : 'text-sidebar-foreground/60 dark:text-zinc-400 group-hover:text-sidebar-foreground dark:group-hover:text-white',
                                         )}
                                     >
                                         <ChildIcon
                                             className={cn(
                                                 'size-3 transition-colors',
                                                 isSubActive
-                                                    ? 'text-primary-foreground'
-                                                    : 'text-sidebar-foreground/60 group-hover:text-sidebar-foreground',
+                                                    ? 'text-primary-foreground dark:text-primary-foreground'
+                                                    : 'text-sidebar-foreground/60 dark:text-zinc-400 group-hover:text-sidebar-foreground dark:group-hover:text-white',
                                             )}
                                         />
                                     </div>
                                     <div className="flex flex-col flex-1 min-w-0 justify-center">
-                                        <span className="truncate tracking-tight leading-snug text-sidebar-foreground/80 group-hover:text-sidebar-foreground font-medium">
+                                        <span
+                                            className={cn(
+                                                'truncate tracking-tight leading-snug',
+                                                isSubActive
+                                                    ? 'font-bold text-primary dark:text-primary'
+                                                    : 'font-medium text-sidebar-foreground/80 dark:text-zinc-300 group-hover:text-sidebar-foreground dark:group-hover:text-white',
+                                            )}
+                                        >
                                             {child.title}
                                         </span>
                                         {child.description && (
-                                            <span className="text-[10px] leading-tight truncate mt-0.5 font-normal text-sidebar-foreground/50 group-hover:text-sidebar-foreground/70">
+                                            <span className="text-[10px] leading-tight truncate mt-0.5 font-normal text-sidebar-foreground/50 dark:text-zinc-400 group-hover:text-sidebar-foreground/70 dark:group-hover:text-zinc-300">
                                                 {child.description}
                                             </span>
                                         )}
@@ -268,8 +275,8 @@ const NavTreeItem = memo(function NavTreeItem({
                                             className={cn(
                                                 'ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full tabular-nums shrink-0 transition-colors',
                                                 isSubActive
-                                                    ? 'bg-primary text-primary-foreground'
-                                                    : 'bg-sidebar-accent/80 text-sidebar-foreground/70 group-hover:bg-sidebar-accent group-hover:text-sidebar-foreground',
+                                                    ? 'bg-primary text-primary-foreground dark:bg-primary dark:text-primary-foreground'
+                                                    : 'bg-sidebar-accent/80 dark:bg-zinc-800 text-sidebar-foreground/70 dark:text-zinc-300 group-hover:bg-sidebar-accent group-hover:text-sidebar-foreground dark:group-hover:text-white',
                                             )}
                                             title={`${child.badge} data aktif`}
                                         >
@@ -283,7 +290,7 @@ const NavTreeItem = memo(function NavTreeItem({
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     onClick={(e) => e.stopPropagation()}
-                                    className="p-1 rounded-md text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent/70 transition-colors opacity-0 group-hover/subnav:opacity-100 focus:opacity-100 shrink-0 ml-1 cursor-pointer"
+                                    className="p-1 rounded-md text-sidebar-foreground/40 dark:text-zinc-500 hover:text-sidebar-foreground dark:hover:text-white hover:bg-sidebar-accent/70 dark:hover:bg-zinc-800 transition-colors opacity-0 group-hover/subnav:opacity-100 focus:opacity-100 shrink-0 ml-1 cursor-pointer"
                                     title="Buka di tab/jendela baru"
                                 >
                                     <ExternalLink size={12} />
@@ -349,31 +356,47 @@ const DetailNavTreeItem = memo(function DetailNavTreeItem({
                             onSelectTab(tab.id);
                         }
                     }}
-                    className="group relative flex flex-1 items-center justify-between gap-2.5 rounded-lg px-2 py-1.5 text-xs font-semibold transition-all duration-150 cursor-pointer select-none hover:bg-sidebar-accent/50 min-w-0"
+                    className={cn(
+                        'group relative flex flex-1 items-center justify-between gap-2.5 rounded-lg px-2 py-1.5 text-xs transition-all duration-150 cursor-pointer select-none min-w-0',
+                        isParentActive && !isChildActive
+                            ? 'bg-primary/10 dark:bg-primary/20 font-bold text-primary dark:text-primary'
+                            : isChildActive
+                              ? 'font-bold text-primary dark:text-primary'
+                              : 'font-semibold text-sidebar-foreground/80 dark:text-zinc-300 hover:bg-sidebar-accent/50 dark:hover:bg-zinc-800/50 hover:text-sidebar-foreground dark:hover:text-white',
+                    )}
                 >
                     <div className="flex items-center gap-2.5 min-w-0">
                         <div
                             className={cn(
                                 'flex size-7 shrink-0 items-center justify-center rounded-lg transition-all',
                                 isParentActive && !isChildActive
-                                    ? 'bg-primary text-primary-foreground shadow-xs'
+                                    ? 'bg-primary text-primary-foreground dark:bg-primary dark:text-primary-foreground shadow-xs'
                                     : isParentActive
-                                      ? 'bg-primary/15 text-primary'
-                                      : 'bg-sidebar-accent/70 text-sidebar-foreground/60 group-hover:bg-sidebar-accent group-hover:text-sidebar-foreground',
+                                      ? 'bg-primary/15 dark:bg-primary/25 text-primary dark:text-primary'
+                                      : 'text-sidebar-foreground/60 dark:text-zinc-400 group-hover:text-sidebar-foreground dark:group-hover:text-white',
                             )}
                         >
                             <TabIcon
                                 className={cn(
                                     'size-4 transition-colors',
                                     isParentActive && !isChildActive
-                                        ? 'text-primary-foreground'
+                                        ? 'text-primary-foreground dark:text-primary-foreground'
                                         : isParentActive
-                                          ? 'text-primary'
-                                          : 'text-sidebar-foreground/70 group-hover:text-sidebar-foreground',
+                                          ? 'text-primary dark:text-primary'
+                                          : 'text-sidebar-foreground/70 dark:text-zinc-400 group-hover:text-sidebar-foreground dark:group-hover:text-white',
                                 )}
                             />
                         </div>
-                        <span className="truncate text-sidebar-foreground/80 group-hover:text-sidebar-foreground font-semibold">{tab.label}</span>
+                        <span
+                            className={cn(
+                                'truncate',
+                                isParentActive
+                                    ? 'font-bold text-primary dark:text-primary'
+                                    : 'text-sidebar-foreground/80 dark:text-zinc-300 group-hover:text-sidebar-foreground dark:group-hover:text-white font-semibold',
+                            )}
+                        >
+                            {tab.label}
+                        </span>
                     </div>
 
                     {hasChildren && (
@@ -383,7 +406,7 @@ const DetailNavTreeItem = memo(function DetailNavTreeItem({
                                 e.stopPropagation();
                                 setIsOpen(!isOpen);
                             }}
-                            className="p-0.5 rounded text-sidebar-foreground/50 hover:text-sidebar-foreground transition-transform shrink-0"
+                            className="p-0.5 rounded text-sidebar-foreground/50 dark:text-zinc-400 hover:text-sidebar-foreground dark:hover:text-white transition-transform shrink-0"
                             title={isOpen ? 'Sembunyikan sub-menu' : 'Buka sub-menu'}
                         >
                             <ChevronDown
@@ -398,7 +421,7 @@ const DetailNavTreeItem = memo(function DetailNavTreeItem({
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
-                    className="p-1.5 rounded-lg text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent/70 transition-colors opacity-0 group-hover/detailparent:opacity-100 focus:opacity-100 shrink-0 cursor-pointer"
+                    className="p-1.5 rounded-lg text-sidebar-foreground/40 dark:text-zinc-500 hover:text-sidebar-foreground dark:hover:text-white hover:bg-sidebar-accent/70 dark:hover:bg-zinc-800 transition-colors opacity-0 group-hover/detailparent:opacity-100 focus:opacity-100 shrink-0 cursor-pointer"
                     title="Buka di tab/jendela baru"
                 >
                     <ExternalLink size={13} />
@@ -407,7 +430,7 @@ const DetailNavTreeItem = memo(function DetailNavTreeItem({
 
             {/* Tree Branch for Children */}
             {hasChildren && isOpen && (
-                <div className="relative ml-4 mt-1 flex flex-col space-y-1 pl-3 border-l-2 border-sidebar-border/70">
+                <div className="relative ml-4 mt-1 flex flex-col space-y-1 pl-3 border-l-2 border-sidebar-border/70 dark:border-zinc-800">
                     {tab.children!.map((child) => {
                         const isThisChildActive =
                             isParentActive &&
@@ -421,15 +444,35 @@ const DetailNavTreeItem = memo(function DetailNavTreeItem({
                                     type="button"
                                     onClick={() => onSelectTab(tab.id, child.id)}
                                     className={cn(
-                                        'relative flex flex-1 items-center gap-2 rounded-lg px-2.5 py-1.5 text-[11.5px] font-medium transition-all duration-150 cursor-pointer text-left min-w-0',
-                                        'before:absolute before:-left-[14px] before:top-1/2 before:-translate-y-1/2 before:w-2.5 before:h-[2px] before:bg-sidebar-border/70 before:rounded-full',
+                                        'relative flex flex-1 items-center gap-2 rounded-lg px-2.5 py-1.5 text-[11.5px] transition-all duration-150 cursor-pointer text-left min-w-0',
+                                        'before:absolute before:-left-[14px] before:top-1/2 before:-translate-y-1/2 before:w-2.5 before:h-[2px] before:bg-sidebar-border/70 dark:before:bg-zinc-700 before:rounded-full',
                                         isThisChildActive
-                                            ? 'bg-primary text-primary-foreground font-bold shadow-2xs before:!bg-primary'
-                                            : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/40 hover:text-sidebar-foreground',
+                                            ? 'bg-primary/10 dark:bg-primary/20 font-bold text-primary dark:text-primary before:!bg-primary dark:before:!bg-primary'
+                                            : 'font-medium text-sidebar-foreground/70 dark:text-zinc-300 hover:bg-sidebar-accent/40 dark:hover:bg-zinc-800/50 hover:text-sidebar-foreground dark:hover:text-white',
                                     )}
                                 >
-                                    {ChildIcon && <ChildIcon className="size-3.5 shrink-0" />}
-                                    <span className="truncate">{child.label}</span>
+                                    {ChildIcon && (
+                                        <div
+                                            className={cn(
+                                                'flex size-5 shrink-0 items-center justify-center rounded-md transition-all',
+                                                isThisChildActive
+                                                    ? 'bg-primary text-primary-foreground dark:bg-primary dark:text-primary-foreground shadow-xs'
+                                                    : 'text-sidebar-foreground/60 dark:text-zinc-400 group-hover/detailchild:text-sidebar-foreground dark:group-hover/detailchild:text-white',
+                                            )}
+                                        >
+                                            <ChildIcon className="size-3" />
+                                        </div>
+                                    )}
+                                    <span
+                                        className={cn(
+                                            'truncate',
+                                            isThisChildActive
+                                                ? 'font-bold text-primary dark:text-primary'
+                                                : 'text-sidebar-foreground/70 dark:text-zinc-300 group-hover/detailchild:text-sidebar-foreground dark:group-hover/detailchild:text-white',
+                                        )}
+                                    >
+                                        {child.label}
+                                    </span>
                                     {child.badge && (
                                         <span
                                             className={cn(
@@ -443,8 +486,8 @@ const DetailNavTreeItem = memo(function DetailNavTreeItem({
                                                           ? 'bg-amber-400 text-amber-950 font-bold'
                                                           : 'bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold'
                                                       : isThisChildActive
-                                                        ? 'bg-primary-foreground/20 text-primary-foreground'
-                                                        : 'bg-sidebar-accent/80 text-sidebar-foreground/70'
+                                                        ? 'bg-primary text-primary-foreground dark:bg-primary dark:text-primary-foreground font-bold'
+                                                        : 'bg-sidebar-accent/80 dark:bg-zinc-800 text-sidebar-foreground/70 dark:text-zinc-300',
                                             )}
                                             title={child.isReviewed ? 'Sudah direview' : 'Perlu direview'}
                                         >
@@ -458,7 +501,7 @@ const DetailNavTreeItem = memo(function DetailNavTreeItem({
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     onClick={(e) => e.stopPropagation()}
-                                    className="p-1 rounded-md text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent/70 transition-colors opacity-0 group-hover/detailchild:opacity-100 focus:opacity-100 shrink-0 ml-1 cursor-pointer"
+                                    className="p-1 rounded-md text-sidebar-foreground/40 dark:text-zinc-500 hover:text-sidebar-foreground dark:hover:text-white hover:bg-sidebar-accent/70 dark:hover:bg-zinc-800 transition-colors opacity-0 group-hover/detailchild:opacity-100 focus:opacity-100 shrink-0 ml-1 cursor-pointer"
                                     title="Buka di tab/jendela baru"
                                 >
                                     <ExternalLink size={12} />
@@ -471,9 +514,6 @@ const DetailNavTreeItem = memo(function DetailNavTreeItem({
         </div>
     );
 });
-
-import { usePov } from '@/stores/usePovStore';
-import { UserSwitchModal } from '@/components/impersonation/UserSwitchModal';
 
 export const AppSidebar = memo(function AppSidebar() {
     const detailSidebar = useDetailSidebar();
@@ -764,10 +804,10 @@ export const AppSidebar = memo(function AppSidebar() {
                     {/* ========================================================================= */}
                     <div
                         style={{ width: `${PRIMARY_WIDTH}px` }}
-                        className="bg-primary text-primary-foreground flex h-full max-h-full shrink-0 flex-col items-center justify-between border-r border-primary/20 z-20 overflow-hidden shadow-xs"
+                        className="bg-primary dark:bg-[#101216] text-primary-foreground flex h-full max-h-full shrink-0 flex-col items-center justify-between border-r border-primary/20 dark:border-zinc-800 z-20 overflow-hidden shadow-xs"
                     >
                         {/* Top: Logo with matching h-16 Header and border-b divider */}
-                        <div className="flex h-16 w-full shrink-0 items-center justify-center border-b border-white/15">
+                        <div className="flex h-16 w-full shrink-0 items-center justify-center border-b border-white/15 dark:border-zinc-800">
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Link
@@ -796,14 +836,28 @@ export const AppSidebar = memo(function AppSidebar() {
                                         type="button"
                                         onClick={() => setIsSearchOpen(true)}
                                         className={cn(
-                                            'group relative flex w-[64px] flex-col items-center justify-center rounded-xl py-2 px-1 transition-all duration-200 cursor-pointer',
-                                            isSearchOpen
-                                                ? 'bg-white text-primary font-bold shadow-xs'
-                                                : 'text-white/80 hover:bg-white/15 hover:text-white',
+                                            'group relative flex w-[64px] flex-col items-center justify-center rounded-xl py-1 px-1 transition-all duration-200 cursor-pointer',
+                                            isSearchOpen && 'before:absolute before:-left-1 before:top-1 before:h-9 before:w-2.5 before:bg-white dark:before:bg-primary before:rounded-r-full after:absolute after:-right-1 after:top-1 after:h-9 after:w-2.5 after:bg-white dark:after:bg-primary after:rounded-l-full'
                                         )}
                                     >
-                                        <Search className={cn('size-5 shrink-0 transition-transform duration-200 group-hover:scale-110', isSearchOpen ? 'text-primary' : 'text-white/80 group-hover:text-white')} />
-                                        <span className={cn('mt-1 max-w-[58px] truncate text-[10px] leading-tight tracking-tight text-center', isSearchOpen ? 'text-primary font-bold' : 'text-white/80 group-hover:text-white')}>
+                                        <div
+                                            className={cn(
+                                                'flex size-9 items-center justify-center rounded-xl transition-all duration-200',
+                                                isSearchOpen
+                                                    ? 'bg-white text-primary dark:bg-primary dark:text-white shadow-md'
+                                                    : 'text-white/75 group-hover:bg-white/15 group-hover:text-white',
+                                            )}
+                                        >
+                                            <Search className="size-5 shrink-0" />
+                                        </div>
+                                        <span
+                                            className={cn(
+                                                'mt-1 max-w-[58px] truncate text-[10px] leading-tight tracking-tight text-center transition-colors',
+                                                isSearchOpen
+                                                    ? 'font-bold text-white dark:text-white'
+                                                    : 'font-medium text-white/70 group-hover:text-white',
+                                            )}
+                                        >
                                             Cari
                                         </span>
                                     </button>
@@ -813,7 +867,7 @@ export const AppSidebar = memo(function AppSidebar() {
                                 </TooltipContent>
                             </Tooltip>
 
-                            <div className="h-px w-8 shrink-0 bg-white/20 my-0.5" />
+                            <div className="h-px w-8 shrink-0 bg-white/20 dark:bg-zinc-800 my-0.5" />
 
                             {/* If contract detail is active, show the "Detail Kontrak" icon on top of the module list */}
                             {detailSidebar?.isActive && (
@@ -830,20 +884,30 @@ export const AppSidebar = memo(function AppSidebar() {
                                                         setIsSubOpen(true);
                                                     }
                                                 }}
-                                                className="group relative flex w-[64px] flex-col items-center justify-center rounded-xl py-1 px-1 transition-all duration-200 cursor-pointer"
+                                                className={cn(
+                                                    'group relative flex w-[64px] flex-col items-center justify-center rounded-xl py-1 px-1 transition-all duration-200 cursor-pointer',
+                                                    subMode === 'detail' && 'before:absolute before:-left-1 before:top-1 before:h-9 before:w-2.5 before:bg-white dark:before:bg-primary before:rounded-r-full after:absolute after:-right-1 after:top-1 after:h-9 after:w-2.5 after:bg-white dark:after:bg-primary after:rounded-l-full'
+                                                )}
                                             >
                                                 {/* Icon Card (Active Card on Icon only) */}
                                                 <div
                                                     className={cn(
                                                         'flex size-9 items-center justify-center rounded-xl transition-all duration-200',
                                                         subMode === 'detail'
-                                                            ? 'bg-white text-primary shadow-xs ring-2 ring-white/50'
-                                                            : 'bg-white/10 text-white/80 group-hover:bg-white/20 group-hover:text-white',
+                                                            ? 'bg-white text-primary dark:bg-primary dark:text-white shadow-md'
+                                                            : 'text-white/75 group-hover:bg-white/15 group-hover:text-white',
                                                     )}
                                                 >
                                                     <FileText className="size-5 shrink-0" />
                                                 </div>
-                                                <span className="mt-1 max-w-[58px] truncate text-[9.5px] leading-tight tracking-tight text-center font-medium text-white/90 group-hover:text-white">
+                                                <span
+                                                    className={cn(
+                                                        'mt-1 max-w-[58px] truncate text-[9.5px] leading-tight tracking-tight text-center transition-colors',
+                                                        subMode === 'detail'
+                                                            ? 'font-bold text-white dark:text-white'
+                                                            : 'font-medium text-white/70 group-hover:text-white',
+                                                    )}
+                                                >
                                                     Pengajuan
                                                 </span>
                                             </button>
@@ -853,7 +917,7 @@ export const AppSidebar = memo(function AppSidebar() {
                                         </TooltipContent>
                                     </Tooltip>
 
-                                    <div className="h-px w-8 shrink-0 bg-white/20 my-0.5" />
+                                    <div className="h-px w-8 shrink-0 bg-white/20 dark:bg-zinc-800 my-0.5" />
                                 </>
                             )}
 
@@ -890,20 +954,30 @@ export const AppSidebar = memo(function AppSidebar() {
                                                             }
                                                         }
                                                     }}
-                                                    className="group relative flex w-[64px] flex-col items-center justify-center rounded-xl py-1 px-1 transition-all duration-200 cursor-pointer"
+                                                    className={cn(
+                                                        'group relative flex w-[64px] flex-col items-center justify-center rounded-xl py-1 px-1 transition-all duration-200 cursor-pointer',
+                                                        isSelected && 'before:absolute before:-left-1 before:top-1 before:h-9 before:w-2.5 before:bg-white dark:before:bg-primary before:rounded-r-full after:absolute after:-right-1 after:top-1 after:h-9 after:w-2.5 after:bg-white dark:after:bg-primary after:rounded-l-full'
+                                                    )}
                                                 >
                                                     {/* Icon Card (Active Card on Icon only) */}
                                                     <div
                                                         className={cn(
                                                             'flex size-9 items-center justify-center rounded-xl transition-all duration-200',
                                                             isSelected
-                                                                ? 'bg-white text-primary shadow-xs'
-                                                                : 'bg-white/10 text-white/80 group-hover:bg-white/20 group-hover:text-white',
+                                                                ? 'bg-white text-primary dark:bg-primary dark:text-white shadow-md'
+                                                                : 'text-white/75 group-hover:bg-white/15 group-hover:text-white',
                                                         )}
                                                     >
                                                         <GroupIcon className="size-5 shrink-0" />
                                                     </div>
-                                                    <span className="mt-1 max-w-[58px] truncate text-[10px] leading-tight tracking-tight text-center font-medium text-white/90 group-hover:text-white">
+                                                    <span
+                                                        className={cn(
+                                                            'mt-1 max-w-[58px] truncate text-[10px] leading-tight tracking-tight text-center transition-colors',
+                                                            isSelected
+                                                                ? 'font-bold text-white dark:text-white'
+                                                                : 'font-medium text-white/70 group-hover:text-white',
+                                                        )}
+                                                    >
                                                         {group.title}
                                                     </span>
                                                 </button>
@@ -917,28 +991,8 @@ export const AppSidebar = memo(function AppSidebar() {
                             </div>
                         </div>
 
-                        {/* Bottom: Sub Sidebar Toggle, POV Switcher, Notifications & HeaderUserMenu */}
-                        <div className="flex w-full shrink-0 flex-col items-center gap-2 pt-2 pb-3 border-t border-white/15">
-                            {/* Toggle Sub-Sidebar Expand/Collapse */}
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <button
-                                        type="button"
-                                        onClick={toggleSubSidebar}
-                                        className="flex h-8 w-8 items-center justify-center rounded-lg text-white/80 transition-colors hover:bg-white/15 hover:text-white cursor-pointer"
-                                    >
-                                        {isSubOpen ? (
-                                            <PanelLeftClose className="size-4" />
-                                        ) : (
-                                            <PanelLeftOpen className="size-4" />
-                                        )}
-                                    </button>
-                                </TooltipTrigger>
-                                <TooltipContent side="right" sideOffset={10}>
-                                    {isSubOpen ? 'Sembunyikan Sub-Menu' : 'Tampilkan Sub-Menu'}
-                                </TooltipContent>
-                            </Tooltip>
-
+                        {/* Bottom: Switch User, Notifications & HeaderUserMenu */}
+                        <div className="flex w-full shrink-0 flex-col items-center gap-2 pt-2 pb-3 border-t border-white/15 dark:border-zinc-800">
                             {/* Switch User Button - Khusus Super Admin / Admin */}
                             {canImpersonate && (
                                 <Tooltip>
@@ -947,14 +1001,14 @@ export const AppSidebar = memo(function AppSidebar() {
                                             type="button"
                                             onClick={() => setIsUserSwitchOpen(true)}
                                             className={cn(
-                                                'relative flex h-8 w-8 items-center justify-center rounded-lg transition-all cursor-pointer',
+                                                'relative flex size-9 items-center justify-center rounded-xl transition-all cursor-pointer',
                                                 auth?.impersonation?.is_impersonating
                                                     ? 'bg-amber-500 text-white font-bold shadow-xs ring-2 ring-amber-300'
-                                                    : 'text-white/80 hover:bg-white/15 hover:text-white'
+                                                    : 'text-white/75 hover:bg-white/15 hover:text-white'
                                             )}
                                             aria-label="Ganti User Login (Switch User)"
                                         >
-                                            <ArrowRightLeft className="size-4" />
+                                            <ArrowRightLeft className="size-4.5" />
                                             {auth?.impersonation?.is_impersonating && (
                                                 <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
                                                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
@@ -976,141 +1030,11 @@ export const AppSidebar = memo(function AppSidebar() {
                                 </Tooltip>
                             )}
 
-                            {/* POV Navigation Switcher Button (Above Notification) - Khusus Role Super Admin / Admin */}
-                            {isSuperAdmin && (
-                                <DropdownMenu>
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <DropdownMenuTrigger asChild>
-                                                <button
-                                                    type="button"
-                                                    className={cn(
-                                                        'relative flex h-8 w-8 items-center justify-center rounded-lg transition-all cursor-pointer',
-                                                        pov.isSimulatingAny
-                                                            ? 'bg-amber-400 text-amber-950 font-bold shadow-xs ring-2 ring-amber-300 animate-pulse'
-                                                            : 'text-white/80 hover:bg-white/15 hover:text-white'
-                                                    )}
-                                                    aria-label="Ubah Sudut Pandang (POV)"
-                                                >
-                                                    <ScanEye className="size-4" />
-                                                    {pov.isSimulatingAny && (
-                                                        <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
-                                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                                                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
-                                                        </span>
-                                                    )}
-                                                </button>
-                                            </DropdownMenuTrigger>
-                                        </TooltipTrigger>
-                                        <TooltipContent side="right" sideOffset={10}>
-                                            <div className="flex flex-col gap-0.5">
-                                                <span className="font-semibold">Simulasi POV (Super Admin)</span>
-                                                <span className="text-[11px] text-muted-foreground">
-                                                    {pov.isSimulatingAny ? `Simulasi navigasi: ${pov.activeNavPov.label} (${pov.activeNavPov.badge})` : 'Klik untuk ubah simulasi sudut pandang navigasi role'}
-                                                </span>
-                                            </div>
-                                        </TooltipContent>
-                                    </Tooltip>
-
-                                    <DropdownMenuContent
-                                        side="right"
-                                        align="end"
-                                        sideOffset={14}
-                                        className="w-80 p-2.5 bg-popover text-popover-foreground rounded-2xl shadow-2xl border border-border/80 z-[100]"
-                                    >
-                                        {/* Header */}
-                                        <div className="px-2 py-1.5 border-b border-border/50">
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-1.5 font-bold text-xs">
-                                                    <ScanEye className="size-4 text-primary" />
-                                                    <span>Simulasi Sudut Pandang (POV)</span>
-                                                </div>
-                                                {pov.isSimulatingAny && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={pov.resetAll}
-                                                        className="text-[10.5px] text-primary hover:underline font-bold cursor-pointer"
-                                                    >
-                                                        Reset
-                                                    </button>
-                                                )}
-                                            </div>
-                                            <p className="text-[11px] text-muted-foreground mt-0.5">
-                                                Pratinjau antarmuka & menu navigasi berdasarkan sudut pandang role.
-                                            </p>
-
-                                            {/* Quick Switch User Link */}
-                                            <button
-                                                type="button"
-                                                onClick={() => setIsUserSwitchOpen(true)}
-                                                className="w-full mt-2 flex items-center justify-between p-2 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary transition-colors cursor-pointer text-xs font-semibold"
-                                            >
-                                                <div className="flex items-center gap-1.5">
-                                                    <ArrowRightLeft className="size-3.5 shrink-0" />
-                                                    <span>Ganti User Nyata (Switch User)</span>
-                                                </div>
-                                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary text-primary-foreground font-medium">
-                                                    Login Nyata
-                                                </span>
-                                            </button>
-                                        </div>
-
-                                        {/* POV Navigasi Menu List */}
-                                        <div className="py-1.5 space-y-0.5 max-h-[320px] overflow-y-auto custom-scrollbar">
-                                            {pov.navOptions.map((item) => {
-                                                const isSelected = item.id === pov.navPovId;
-                                                return (
-                                                    <DropdownMenuItem
-                                                        key={item.id}
-                                                        onClick={() => pov.setNavPov(item.id)}
-                                                        className={cn(
-                                                            'flex flex-col items-start gap-1 p-2 rounded-xl cursor-pointer transition-colors',
-                                                            isSelected
-                                                                ? 'bg-primary/10 text-primary font-medium'
-                                                                : 'hover:bg-accent'
-                                                        )}
-                                                    >
-                                                        <div className="flex items-center justify-between w-full">
-                                                            <div className="flex items-center gap-2">
-                                                                <span className={cn('text-xs font-semibold', isSelected ? 'text-primary' : 'text-foreground')}>
-                                                                    {item.label}
-                                                                </span>
-                                                                <span className="text-[9px] px-1.5 py-0.2 rounded-md bg-muted text-muted-foreground font-medium">
-                                                                    {item.badge}
-                                                                </span>
-                                                            </div>
-                                                            {isSelected && <Check className="size-3.5 text-primary shrink-0" />}
-                                                        </div>
-                                                        <span className="text-[10.5px] text-muted-foreground leading-tight">
-                                                            {item.description}
-                                                        </span>
-                                                    </DropdownMenuItem>
-                                                );
-                                            })}
-                                        </div>
-
-                                        {/* Bottom Action */}
-                                        {pov.isSimulatingAny && (
-                                            <div className="pt-2 mt-1 border-t border-border/50">
-                                                <button
-                                                    type="button"
-                                                    onClick={pov.resetAll}
-                                                    className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-destructive bg-destructive/10 hover:bg-destructive/20 rounded-lg transition-colors cursor-pointer"
-                                                >
-                                                    <RotateCcw className="size-3.5" />
-                                                    <span>Kembalikan POV ke Semula</span>
-                                                </button>
-                                            </div>
-                                        )}
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            )}
-
                             {/* Notification Bell (Above Profile) */}
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <div className="flex items-center justify-center">
-                                        <HeaderNotifications />
+                                        <HeaderNotifications variant="sidebar" />
                                     </div>
                                 </TooltipTrigger>
                                 <TooltipContent side="right" sideOffset={10}>
@@ -1129,7 +1053,7 @@ export const AppSidebar = memo(function AppSidebar() {
                     <div
                         style={{ width: isSubOpen ? `${SUB_WIDTH}px` : '0px' }}
                         className={cn(
-                            'bg-sidebar/20 flex h-full max-h-full flex-col border-r border-sidebar-border/60 transition-all duration-200 ease-linear backdrop-blur-xs overflow-hidden', // ponytail: lighter background for sub-sidebar
+                            'bg-sidebar/20 dark:bg-[#141518] flex h-full max-h-full flex-col border-r border-sidebar-border/60 dark:border-zinc-800 transition-all duration-200 ease-linear backdrop-blur-xs overflow-hidden',
                             isSubOpen ? 'opacity-100' : 'overflow-hidden border-r-0 opacity-0 pointer-events-none',
                         )}
                     >
@@ -1164,11 +1088,11 @@ export const AppSidebar = memo(function AppSidebar() {
                         {detailSidebar?.isActive && subMode === 'detail' ? (
                             <>
                                 {/* Detail Header Top: Back button + Switch to main menu button */}
-                                <div className="flex h-16 items-center justify-between px-3 border-b border-sidebar-border/40 shrink-0 gap-2">
+                                <div className="flex h-16 items-center justify-between px-3 border-b border-sidebar-border/40 dark:border-zinc-800 shrink-0 gap-2">
                                     <button
                                         type="button"
                                         onClick={detailSidebar.onClose}
-                                        className="flex h-9 items-center gap-1.5 px-2.5 rounded-lg text-xs font-semibold text-sidebar-foreground bg-sidebar-accent/40 hover:bg-sidebar-accent/70 cursor-pointer transition-all shrink-0 hover:scale-102"
+                                        className="flex h-9 items-center gap-1.5 px-2.5 rounded-lg text-xs font-semibold text-sidebar-foreground dark:text-zinc-200 bg-sidebar-accent/40 dark:bg-zinc-800/70 hover:bg-sidebar-accent/70 dark:hover:bg-zinc-800 cursor-pointer transition-all shrink-0 hover:scale-102"
                                         title="Kembali ke Daftar Pengajuan"
                                     >
                                         <ArrowLeft size={14} strokeWidth={2.5} className="text-primary" />
@@ -1178,20 +1102,20 @@ export const AppSidebar = memo(function AppSidebar() {
                                     <button
                                         type="button"
                                         onClick={() => setSubMode('main')}
-                                        className="flex h-9 items-center gap-1.5 px-2.5 rounded-lg text-xs font-semibold text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/40 cursor-pointer transition-all shrink-0"
+                                        className="flex h-9 items-center gap-1.5 px-2.5 rounded-lg text-xs font-semibold text-sidebar-foreground/70 dark:text-zinc-300 hover:text-sidebar-foreground dark:hover:text-white hover:bg-sidebar-accent/40 dark:hover:bg-zinc-800/50 cursor-pointer transition-all shrink-0"
                                         title="Buka Sub-side Menu Utama"
                                     >
-                                        <LayoutGrid size={13} className="text-sidebar-foreground/60" />
+                                        <LayoutGrid size={13} className="text-sidebar-foreground/60 dark:text-zinc-400" />
                                         <span className="text-[10.5px] font-medium">Menu Utama</span>
                                     </button>
                                 </div>
 
                                 {/* Sub Header: Tabs Pengajuan */}
-                                <div className="flex h-11 items-center justify-between px-4 border-b border-primary/20 shrink-0 bg-primary text-primary-foreground shadow-xs">
+                                <div className="flex h-11 items-center justify-between px-4 border-b border-primary/20 dark:border-zinc-800 shrink-0 bg-primary dark:bg-zinc-900 text-primary-foreground shadow-xs">
                                     <span className="text-[11.5px] font-bold uppercase tracking-wider text-white truncate">
                                         Menu Pengajuan
                                     </span>
-                                    <span className="text-[10px] text-white font-semibold bg-white/20 px-2 py-0.5 rounded-full tabular-nums">
+                                    <span className="text-[10px] text-white font-semibold bg-white/20 dark:bg-white/10 px-2 py-0.5 rounded-full tabular-nums">
                                         {detailSidebar.tabs.length} tabs
                                     </span>
                                 </div>
@@ -1214,7 +1138,7 @@ export const AppSidebar = memo(function AppSidebar() {
                             <>
                                 {/* When viewing main menu while contract detail is active, show top button to return to contract tabs */}
                                 {detailSidebar?.isActive && (
-                                    <div className="p-2 border-b border-sidebar-border/50 bg-primary/5 shrink-0">
+                                    <div className="p-2 border-b border-sidebar-border/50 dark:border-zinc-800 bg-primary/5 dark:bg-zinc-900/40 shrink-0">
                                         <button
                                             type="button"
                                             onClick={() => setSubMode('detail')}
@@ -1231,23 +1155,23 @@ export const AppSidebar = memo(function AppSidebar() {
                                 )}
 
                                 {/* Sub Header Top: App Name & Tagline (Height h-16 perfectly matching main navbar) */}
-                                <div className="flex h-16 items-center px-4 border-b border-sidebar-border/40 shrink-0">
+                                <div className="flex h-16 items-center px-4 border-b border-sidebar-border/40 dark:border-zinc-800 shrink-0">
                                     <div className="flex flex-col justify-center truncate">
-                                        <span className="text-sidebar-foreground text-[15px] leading-tight font-bold tracking-tight">
+                                        <span className="text-sidebar-foreground dark:text-white text-[15px] leading-tight font-bold tracking-tight">
                                             {appName}
                                         </span>
-                                        <span className="text-sidebar-foreground/50 text-[10px] leading-tight font-medium truncate mt-0.5">
+                                        <span className="text-sidebar-foreground/50 dark:text-zinc-400 text-[10px] leading-tight font-medium truncate mt-0.5">
                                             {appTagline}
                                         </span>
                                     </div>
                                 </div>
 
                                 {/* Sub Header: Group Title (Colored Primary with h-11 matching table header proportion) */}
-                                <div className="flex h-11 items-center justify-between px-4 border-b border-primary/20 shrink-0 bg-primary text-primary-foreground shadow-xs">
+                                <div className="flex h-11 items-center justify-between px-4 border-b border-primary/20 dark:border-zinc-800 shrink-0 bg-primary dark:bg-zinc-900 text-primary-foreground shadow-xs">
                                     <span className="text-[11.5px] font-bold uppercase tracking-wider text-white truncate">
                                         {currentGroup?.title ?? 'Menu'}
                                     </span>
-                                    <span className="text-[10px] text-white font-semibold bg-white/20 px-2 py-0.5 rounded-full tabular-nums">
+                                    <span className="text-[10px] text-white font-semibold bg-white/20 dark:bg-white/10 px-2 py-0.5 rounded-full tabular-nums">
                                         {currentGroup?.items.length ?? 0} menu
                                     </span>
                                 </div>

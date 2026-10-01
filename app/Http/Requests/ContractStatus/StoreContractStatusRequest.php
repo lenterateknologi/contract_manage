@@ -17,7 +17,7 @@ class StoreContractStatusRequest extends FormRequest
             'code' => 'required|string|max:50|unique:m_contract_statuses,code',
             'label' => 'required|string|max:255',
             'color' => 'required|string|max:20',
-            'bg_color' => 'required|string|max:20',
+            'bg_color' => 'nullable|string|max:20',
             'icon' => 'nullable|string|max:50',
             'description' => 'nullable|string',
             'is_active' => 'boolean',

@@ -76,7 +76,7 @@ function MonthGrid({ year, month, from, to, hovered, selecting, onDayClick, onDa
             {/* Day headers */}
             <div className="grid grid-cols-7 mb-1">
                 {DAYS.map(day => (
-                    <div key={day} className="text-center text-[10px] font-bold text-text-desc py-1 uppercase">
+                    <div key={day} className="text-center text-[10px] font-bold text-slate-400 dark:text-zinc-400 py-1 uppercase">
                         {day}
                     </div>
                 ))}
@@ -85,7 +85,7 @@ function MonthGrid({ year, month, from, to, hovered, selecting, onDayClick, onDa
             {/* Day cells */}
             <div className="grid grid-cols-7">
                 {cells.map((d, idx) => {
-                    if (!d) return <div key={`e-${idx}`} className="h-9" />;
+                    if (!d) return <div key={`e-${idx}`} className="h-8" />;
 
                     const inRange = isInRange(d);
                     const start = isStart(d);
@@ -94,7 +94,6 @@ function MonthGrid({ year, month, from, to, hovered, selecting, onDayClick, onDa
                     const highlighted = start || end;
                     const colIdx = idx % 7; // 0=Mon..6=Sun
 
-                    // Determine whether range bg should be capped on edges
                     const rangeCapLeft = (start && rangeEnd && !isSameDay(d, rangeEnd ?? new Date(0))) || (inRange && colIdx === 0);
                     const rangeCapRight = (end) || (inRange && colIdx === 6);
                     const isSingleDay = start && end;
@@ -103,11 +102,11 @@ function MonthGrid({ year, month, from, to, hovered, selecting, onDayClick, onDa
                         <div
                             key={`d-${idx}`}
                             className={cn(
-                                'relative h-9 flex items-center justify-center',
+                                'relative h-8 flex items-center justify-center',
                                 // Range fill strip
-                                (inRange) && 'bg-primary/10 dark:bg-primary/15',
-                                (start && hi && !isSameDay(d, hi)) && 'bg-primary/10 dark:bg-primary/15 rounded-l-full',
-                                (end) && 'bg-primary/10 dark:bg-primary/15 rounded-r-full',
+                                inRange && 'bg-primary/10 dark:bg-primary/20',
+                                (start && hi && !isSameDay(d, hi)) && 'bg-primary/10 dark:bg-primary/20 rounded-l-full',
+                                end && 'bg-primary/10 dark:bg-primary/20 rounded-r-full',
                                 (inRange && colIdx === 0) && 'rounded-l-full',
                                 (inRange && colIdx === 6) && 'rounded-r-full',
                                 isSingleDay && 'rounded-full',
@@ -116,13 +115,14 @@ function MonthGrid({ year, month, from, to, hovered, selecting, onDayClick, onDa
                             onMouseLeave={() => onDayHover(null)}
                         >
                             <button
+                                type="button"
                                 onClick={() => onDayClick(d)}
                                 className={cn(
-                                    'relative z-10 w-8 h-8 rounded-full text-[12px] font-medium transition-all duration-150 cursor-pointer flex items-center justify-center',
+                                    'relative z-10 w-7 h-7 rounded-full text-xs font-medium transition-all duration-150 cursor-pointer flex items-center justify-center',
                                     highlighted
-                                        ? 'bg-primary text-white font-bold shadow-lg scale-105'
-                                        : 'text-text-main hover:bg-primary/15 dark:hover:bg-primary/25',
-                                    today && !highlighted && 'ring-2 ring-primary/40 font-semibold text-primary',
+                                        ? 'bg-primary text-white font-bold shadow-md scale-105'
+                                        : 'text-slate-800 dark:text-zinc-100 hover:bg-primary/15 dark:hover:bg-primary/30',
+                                    today && !highlighted && 'ring-1.5 ring-primary font-semibold text-primary dark:text-primary',
                                 )}
                             >
                                 {d.getDate()}
@@ -193,17 +193,17 @@ export function DateRangeCalendar({ from, to, onChange }: DateRangeCalendarProps
                 <button
                     type="button"
                     onClick={goLeft}
-                    className="h-7 w-7 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer text-slate-500"
+                    className="h-7 w-7 flex items-center justify-center rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-700 transition-all cursor-pointer text-slate-600 dark:text-zinc-300"
                 >
                     <ChevronLeft size={13} />
                 </button>
-                <span className="text-xs font-bold text-slate-900 dark:text-slate-100 text-center">
+                <span className="text-xs font-bold text-slate-900 dark:text-zinc-100 text-center">
                     {MONTHS[currentMonth.month]} {currentMonth.year}
                 </span>
                 <button
                     type="button"
                     onClick={goRight}
-                    className="h-7 w-7 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer text-slate-500"
+                    className="h-7 w-7 flex items-center justify-center rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-700 transition-all cursor-pointer text-slate-600 dark:text-zinc-300"
                 >
                     <ChevronRight size={13} />
                 </button>
@@ -224,33 +224,33 @@ export function DateRangeCalendar({ from, to, onChange }: DateRangeCalendarProps
             </div>
 
             {/* Status bar */}
-            <div className="border-t border-slate-200 dark:border-slate-800 pt-2 mt-0.5">
-                <div className="flex items-stretch gap-0 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800 text-xs">
+            <div className="border-t border-slate-200 dark:border-zinc-800 pt-2 mt-0.5">
+                <div className="flex items-stretch gap-0 rounded-lg overflow-hidden border border-slate-200 dark:border-zinc-700 text-xs">
                     <div className={cn(
                         'flex-1 flex flex-col px-2.5 py-1.5 transition-colors',
-                        selecting ? 'bg-primary/5' : 'bg-slate-50 dark:bg-slate-900',
+                        selecting ? 'bg-primary/10 dark:bg-primary/20' : 'bg-slate-50 dark:bg-zinc-800/60',
                     )}>
                         <span className="text-[8px] font-bold uppercase tracking-wider mb-0.5 text-primary">
                             Mulai
                         </span>
                         <span className={cn(
                             'text-[11px] font-semibold truncate',
-                            displayFrom ? 'text-slate-900 dark:text-slate-100' : 'text-slate-400'
+                            displayFrom ? 'text-slate-900 dark:text-zinc-100' : 'text-slate-400 dark:text-zinc-500'
                         )}>
                             {formatDisplay(displayFrom)}
                         </span>
                     </div>
-                    <div className="w-px bg-slate-200 dark:bg-slate-800" />
+                    <div className="w-px bg-slate-200 dark:border-zinc-700" />
                     <div className={cn(
                         'flex-1 flex flex-col px-2.5 py-1.5 transition-colors',
-                        !selecting && toDate ? 'bg-primary/5' : 'bg-slate-50 dark:bg-slate-900',
+                        !selecting && toDate ? 'bg-primary/10 dark:bg-primary/20' : 'bg-slate-50 dark:bg-zinc-800/60',
                     )}>
                         <span className="text-[8px] font-bold uppercase tracking-wider mb-0.5 text-primary">
                             Sampai
                         </span>
                         <span className={cn(
                             'text-[11px] font-semibold truncate',
-                            toDate && !selecting ? 'text-slate-900 dark:text-slate-100' : 'text-slate-400'
+                            toDate && !selecting ? 'text-slate-900 dark:text-zinc-100' : 'text-slate-400 dark:text-zinc-500'
                         )}>
                             {toDate && !selecting ? formatDisplay(toDate) : selecting ? 'Pilih...' : '—'}
                         </span>

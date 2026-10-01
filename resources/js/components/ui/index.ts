@@ -32,6 +32,8 @@ export * from './forms/Label';
 // Inputs
 export * from './inputs/CompactInput';
 export * from './inputs/DatePicker';
+export * from './inputs/DateRangeCalendar';
+export * from './inputs/DateRangePicker';
 export * from './inputs/FormInput';
 export * from './inputs/FormTextarea';
 export * from './inputs/Input';

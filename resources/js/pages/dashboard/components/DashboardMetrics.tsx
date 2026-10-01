@@ -263,13 +263,13 @@ export function DashboardTab({ active, onClick, label, icon: Icon }: { active: b
             className={cn(
                 'group relative flex cursor-pointer items-center gap-2 rounded-lg border px-3.5 py-1.5 text-[10px] font-bold tracking-[0.1em] whitespace-nowrap uppercase transition-all duration-300 outline-none',
                 active
-                    ? 'bg-primary text-primary-foreground border-primary'
-                    : 'bg-transparent text-primary border-primary/50 hover:bg-primary/10 hover:border-primary',
+                    ? 'bg-primary text-primary-foreground border-primary dark:bg-white dark:text-zinc-950 dark:border-white'
+                    : 'bg-transparent text-primary border-primary/50 hover:bg-primary/10 hover:border-primary dark:bg-transparent dark:text-white dark:border-white dark:hover:bg-white/10 dark:hover:border-white',
             )}
         >
             <Icon
                 size={12}
-                className={cn('transition-colors', active ? 'text-primary-foreground' : 'text-primary opacity-70 group-hover:opacity-100')}
+                className={cn('transition-colors', active ? 'text-primary-foreground dark:text-zinc-950' : 'text-primary opacity-70 group-hover:opacity-100 dark:text-white dark:opacity-100')}
             />
             {label}
         </button>

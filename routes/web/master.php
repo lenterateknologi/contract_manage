@@ -147,7 +147,9 @@ Route::middleware(['admin'])->prefix('admin')->group(function () {
         })->name('admin.reports.audit');
 
         Route::controller(ReportController::class)->prefix('api')->group(function () {
-            Route::post('/data', 'index');
+            Route::match(['get', 'post'], '/analytics', 'analytics');
+            Route::match(['get', 'post'], '/audit', 'audit');
+            Route::match(['get', 'post'], '/data', 'index');
             Route::get('/export', 'exportCsv');
             Route::get('/audit/export', 'exportAuditCsv');
         });

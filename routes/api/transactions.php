@@ -21,6 +21,17 @@ Route::prefix('contracts')->group(function () {
         Route::get('/workflows', 'getWorkflows');
         Route::get('/users', 'getUsers');
         Route::get('/roles', 'getRoles');
+        Route::get('/dashboard-metrics', 'getDashboardMetrics');
+        Route::prefix('dashboard')->group(function () {
+            Route::get('/summary', 'getDashboardSummary');
+            Route::get('/overview', 'getDashboardOverview');
+            Route::get('/distributions', 'getDashboardDistributions');
+            Route::get('/trends', 'getDashboardTrends');
+            Route::get('/analysis', 'getDashboardAnalysis');
+            Route::get('/workload', 'getDashboardWorkload');
+            Route::get('/master-data', 'getDashboardMasterData');
+            Route::get('/recent-activity', 'getDashboardRecentActivity');
+        });
         Route::get('/{id}', 'show');
         Route::patch('/{id}', 'update');
         Route::post('/{id}/review-doc', 'reviewDoc');

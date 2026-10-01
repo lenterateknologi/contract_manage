@@ -1,14 +1,13 @@
 import { DataTable } from '@/components/ui/tables/DataTable';
 import { PageTable } from '@/components/ui/navigation/PageTable';
 import { Button } from '@/components/ui/buttons/Button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/dialogs/Popover';
-import { DateRangeCalendar } from '@/components/ui/inputs/DateRangeCalendar';
+import { DateRangePicker } from '@/components/ui/inputs/DateRangePicker';
 import { useToast } from '@/components/ui/feedback/Toast';
 import { StatusBadge } from '@/components/ui/feedback/StatusBadge';
-import { cn, formatDate, formatDateRange, getPresetDateRange, DATE_RANGE_PRESETS } from '@/lib/utils';
+import { cn, formatDate, formatDateTime, formatDateRange } from '@/lib/utils';
 import { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
-import axios from 'axios';
+import { reportsApi } from '@/api';
 import { Loader2, BarChart3, Calendar as CalendarIcon, X, ChevronDown, RotateCcw, FileSpreadsheet } from 'lucide-react';
 import React, { useEffect, useMemo, useState } from 'react';
 
@@ -16,6 +15,7 @@ interface AnalyticsData {
     recentContracts: any[];
     types: { id: string; name: string }[];
     users: { id: string; name: string }[];
+    workflows?: { id: string; name: string }[];
 }
 
 export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem[] }) {
@@ -23,11 +23,25 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
     const [data, setData] = useState<AnalyticsData | null>(null);
     const [loading, setLoading] = useState(true);
     const [exportLoading, setExportLoading] = useState(false);
-    const [filters, setFilters] = useState({
+    const [filters, setFilters] = useState<{
+        date_from: string;
+        date_to: string;
+        contract_type_ids: string[];
+        workflow_ids: string[];
+        creator_ids: string[];
+        involved_ids: string[];
+        statuses: string[];
+        search: string;
+        contracts_page: number;
+    }>({
         date_from: '',
         date_to: '',
         contract_type_ids: [],
+        workflow_ids: [],
         creator_ids: [],
+        involved_ids: [],
+        statuses: [],
+        search: '',
         contracts_page: 1,
     });
 
@@ -35,25 +49,24 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
         current_page: 1,
         last_page: 1,
         total: 0,
-        per_page: 15,
+        per_page: 25,
     });
 
     const fetchData = (currentFilters = filters) => {
         setLoading(true);
-        axios
-            .post('/admin/reports/api/data', currentFilters)
-            .then((res) => {
-                const raw = res.data;
+        reportsApi.getAnalytics(currentFilters)
+            .then((raw: any) => {
                 setData({
-                    recentContracts: raw.contracts.data || [],
-                    types: raw.types,
-                    users: raw.users,
+                    recentContracts: raw.contracts?.data || [],
+                    types: raw.types || [],
+                    users: raw.users || [],
+                    workflows: raw.workflows || [],
                 });
                 setPagination({
-                    current_page: raw.contracts.current_page || 1,
-                    last_page: raw.contracts.last_page || 1,
-                    total: raw.contracts.total || 0,
-                    per_page: raw.contracts.per_page || 15,
+                    current_page: raw.contracts?.current_page || 1,
+                    last_page: raw.contracts?.last_page || 1,
+                    total: raw.contracts?.total || 0,
+                    per_page: raw.contracts?.per_page || 25,
                 });
                 setLoading(false);
             })
@@ -80,7 +93,11 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
             date_from: '',
             date_to: '',
             contract_type_ids: [],
+            workflow_ids: [],
             creator_ids: [],
+            involved_ids: [],
+            statuses: [],
+            search: '',
             contracts_page: 1,
         };
         setFilters(clear);
@@ -90,13 +107,9 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
     const handleExport = () => {
         setExportLoading(true);
         showToast('Menyiapkan dan mengunduh berkas Excel Analitik Kontrak...', 'info');
-        const params = new URLSearchParams();
-        if (filters.date_from) params.append('date_from', filters.date_from);
-        if (filters.date_to) params.append('date_to', filters.date_to);
-        filters.contract_type_ids.forEach((id: string) => params.append('contract_type_ids[]', id));
-        filters.creator_ids.forEach((id: string) => params.append('creator_ids[]', id));
+        const url = reportsApi.getExportAnalyticsUrl(filters);
         setTimeout(() => setExportLoading(false), 2000);
-        window.location.href = `/admin/reports/api/export?${params.toString()}`;
+        window.location.href = url;
     };
 
     const filterCategories = useMemo(
@@ -109,10 +122,38 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
                 options: data?.types.map((t) => ({ label: t.name, value: t.id })) || [],
             },
             {
-                label: 'Pembuat',
+                label: 'Alur Kerja (Workflow)',
+                key: 'workflow_ids',
+                type: 'searchable',
+                options: data?.workflows?.map((w) => ({ label: w.name, value: w.id })) || [],
+            },
+            {
+                label: 'Pembuat (Pengaju)',
                 key: 'creator_ids',
                 type: 'searchable',
                 options: data?.users.map((u) => ({ label: u.name, value: u.id })) || [],
+            },
+            {
+                label: 'Pihak Terkait (Person)',
+                key: 'involved_ids',
+                type: 'searchable',
+                options: data?.users.map((u) => ({ label: u.name, value: u.id })) || [],
+            },
+            {
+                label: 'Status Pengajuan',
+                key: 'statuses',
+                type: 'searchable',
+                options: [
+                    { label: 'Draft', value: 'draft' },
+                    { label: 'In Process', value: 'in_process' },
+                    { label: 'Pending Approval', value: 'pending_approval' },
+                    { label: 'Approved', value: 'approved' },
+                    { label: 'Rejected', value: 'rejected' },
+                    { label: 'Revision', value: 'revision' },
+                    { label: 'Active', value: 'active' },
+                    { label: 'Completed', value: 'completed' },
+                    { label: 'Terminated', value: 'terminated' },
+                ],
             },
         ],
         [data],
@@ -127,38 +168,102 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
 
     const columns = [
         {
-            header: 'Pengajuan / Kontrak',
+            header: 'No. Form / Kontrak',
+            accessorKey: 'form_no',
+            cell: (row: any) => (
+                <span className="text-xs font-mono font-bold text-primary whitespace-nowrap">
+                    {row.form_no || row.contract_no || '—'}
+                </span>
+            )
+        },
+        {
+            header: 'Judul Pengajuan / Kontrak',
             accessorKey: 'title',
             cell: (row: any) => (
-                <div className="flex flex-col gap-1 min-w-[200px]">
-                    <span className="text-[10px] text-text-muted font-normal uppercase tracking-wider">
-                        {row.form_no || row.contract_no || '—'}
-                    </span>
-                    <span className="text-text-main font-normal text-xs truncate max-w-[280px] block">
-                        {row.title}
-                    </span>
-                </div>
+                <span className="text-text-main font-medium text-xs truncate max-w-[260px] block" title={row.title}>
+                    {row.title}
+                </span>
             )
         },
         {
             header: 'Tipe Kontrak',
             accessorKey: 'type',
-            cell: (row: any) => <span className="text-text-main font-normal text-xs">{row.type || '—'}</span>
+            cell: (row: any) => <span className="text-text-main text-xs whitespace-nowrap">{row.type || '—'}</span>
         },
         {
             header: 'Tipe Pengajuan',
             accessorKey: 'submission_type',
-            cell: (row: any) => <span className="text-text-main font-normal text-xs">{row.submission_type || '—'}</span>
+            cell: (row: any) => <span className="text-text-main text-xs whitespace-nowrap">{row.submission_type || '—'}</span>
         },
         {
-            header: 'Pembuat',
-            accessorKey: 'creator',
-            cell: (row: any) => <span className="text-text-main font-normal text-xs">{row.creator || '—'}</span>
+            header: 'Alur Kerja (Workflow)',
+            accessorKey: 'current_workflow',
+            cell: (row: any) => (
+                <span className="text-text-main text-xs truncate max-w-[180px] block" title={row.current_workflow}>
+                    {row.current_workflow || '—'}
+                </span>
+            )
         },
         {
             header: 'Tahap Saat Ini',
             accessorKey: 'current_step',
-            cell: (row: any) => <span className="text-text-main font-normal text-xs">{row.current_step || '—'}</span>
+            cell: (row: any) => (
+                <span className="text-text-main text-xs truncate max-w-[160px] block" title={row.current_step}>
+                    {row.current_step || '—'}
+                </span>
+            )
+        },
+        {
+            header: 'No. Tahap',
+            accessorKey: 'current_step_number',
+            cell: (row: any) => (
+                row.current_step_number ? (
+                    <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[11px] font-bold">
+                        Tahap {row.current_step_number}
+                    </span>
+                ) : <span className="text-text-muted text-xs">—</span>
+            )
+        },
+        {
+            header: 'Aktor / Approver Saat Ini',
+            accessorKey: 'current_actor',
+            cell: (row: any) => (
+                <span className="text-text-main text-xs truncate max-w-[180px] block" title={row.current_actor}>
+                    {row.current_actor || '—'}
+                </span>
+            )
+        },
+        {
+            header: 'Aksi Terakhir',
+            accessorKey: 'last_action',
+            cell: (row: any) => (
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-surface-muted text-text-muted border border-border/50">
+                    {row.last_action || 'CREATE'}
+                </span>
+            )
+        },
+        {
+            header: 'Aksi Oleh',
+            accessorKey: 'last_action_by',
+            cell: (row: any) => (
+                <span className="text-text-main font-medium text-xs whitespace-nowrap" title={row.last_action_by}>
+                    {row.last_action_by || '—'}
+                </span>
+            )
+        },
+        {
+            header: 'Waktu Aksi Terakhir',
+            accessorKey: 'last_action_at',
+            cell: (row: any) => (
+                <span className="text-text-muted text-xs whitespace-nowrap">
+                    {row.last_action_at ? formatDateTime(row.last_action_at) : '—'}
+                </span>
+            )
+        },
+        {
+            header: 'Pembuat',
+            accessorKey: 'creator',
+            cell: (row: any) => <span className="text-text-main text-xs whitespace-nowrap">{row.creator || '—'}</span>
         },
         {
             header: 'Status',
@@ -169,7 +274,7 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
             header: 'Tanggal Registrasi',
             accessorKey: 'created_at',
             cell: (row: any) => (
-                <span className="text-text-main font-normal text-xs">
+                <span className="text-text-main text-xs whitespace-nowrap">
                     {formatDate(row.created_at)}
                 </span>
             )
@@ -190,102 +295,14 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
                 totalResults={pagination.total}
                 actions={
                     <div className="flex items-center gap-2">
-                        {/* Shadcn UI Date Range Popover */}
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className={cn(
-                                        "h-9 px-3 rounded-lg text-xs font-medium border transition-all duration-150 gap-2 cursor-pointer shadow-none",
-                                        hasDateFilter
-                                            ? "border-primary/40 bg-primary/5 text-primary hover:bg-primary/10 hover:border-primary dark:border-primary/50 dark:bg-primary/10 dark:text-primary-foreground"
-                                            : "border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-zinc-800"
-                                    )}
-                                >
-                                    <CalendarIcon size={14} className={cn(hasDateFilter ? "text-primary" : "text-slate-500 dark:text-slate-400")} />
-                                    <span className="truncate max-w-[200px]">{dateDisplayText}</span>
-                                    {hasDateFilter ? (
-                                        <span
-                                            role="button"
-                                            tabIndex={0}
-                                            onClick={(e) => {
-                                                e.preventDefault();
-                                                e.stopPropagation();
-                                                handleFilterChange({ date_from: '', date_to: '' });
-                                            }}
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter' || e.key === ' ') {
-                                                    e.preventDefault();
-                                                    e.stopPropagation();
-                                                    handleFilterChange({ date_from: '', date_to: '' });
-                                                }
-                                            }}
-                                            className="ml-1 p-0.5 rounded-full hover:bg-primary/20 text-primary dark:text-primary transition-colors cursor-pointer"
-                                            title="Hapus filter tanggal"
-                                        >
-                                            <X size={12} />
-                                        </span>
-                                    ) : (
-                                        <ChevronDown size={13} className="text-slate-400 shrink-0" />
-                                    )}
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent
-                                align="end"
-                                className="w-[340px] sm:w-[380px] p-3.5 bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 shadow-2xl rounded-xl z-[9999]"
-                            >
-                                <div className="space-y-3">
-                                    {/* Popover Header */}
-                                    <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-zinc-800">
-                                        <div className="flex items-center gap-1.5">
-                                            <CalendarIcon size={14} className="text-primary" />
-                                            <span className="text-xs font-bold text-slate-900 dark:text-slate-100">
-                                                Pilih Rentang Tanggal
-                                            </span>
-                                        </div>
-                                        {hasDateFilter && (
-                                            <button
-                                                type="button"
-                                                onClick={() => handleFilterChange({ date_from: '', date_to: '' })}
-                                                className="flex items-center gap-1 text-[11px] font-semibold text-rose-500 hover:text-rose-600 transition-colors"
-                                            >
-                                                <RotateCcw size={11} />
-                                                <span>Reset</span>
-                                            </button>
-                                        )}
-                                    </div>
-
-                                    {/* Preset Quick Buttons */}
-                                    <div className="flex flex-wrap gap-1.5">
-                                        {DATE_RANGE_PRESETS.map((preset) => (
-                                            <button
-                                                key={preset.type}
-                                                type="button"
-                                                onClick={() => {
-                                                    const range = getPresetDateRange(preset.type);
-                                                    handleFilterChange(range);
-                                                }}
-                                                className="px-2.5 py-1 text-[11px] font-medium rounded-md border border-slate-200 dark:border-zinc-800 bg-slate-50/80 hover:bg-slate-100 text-slate-700 dark:bg-zinc-900 dark:hover:bg-zinc-800 dark:text-zinc-300 transition-colors cursor-pointer"
-                                            >
-                                                {preset.label}
-                                            </button>
-                                        ))}
-                                    </div>
-
-                                    {/* Interactive Range Calendar */}
-                                    <div className="rounded-lg border border-slate-100 dark:border-zinc-800/80 p-2 bg-slate-50/40 dark:bg-zinc-900/40">
-                                        <DateRangeCalendar
-                                            from={filters.date_from}
-                                            to={filters.date_to}
-                                            onChange={(from, to) => {
-                                                handleFilterChange({ date_from: from, date_to: to });
-                                            }}
-                                        />
-                                    </div>
-                                </div>
-                            </PopoverContent>
-                        </Popover>
+                        {/* Unified Date Range Picker */}
+                        <DateRangePicker
+                            from={filters.date_from}
+                            to={filters.date_to}
+                            variant="action-button"
+                            align="end"
+                            onChange={(from, to) => handleFilterChange({ date_from: from, date_to: to })}
+                        />
 
                         {/* Export Button */}
                         <Button
@@ -309,9 +326,9 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
                     currentPage: pagination.current_page || 1,
                     lastPage: pagination.last_page || 1,
                     total: pagination.total || 0,
-                    from: (pagination.current_page - 1) * (pagination.per_page || 10) + 1,
-                    to: Math.min(pagination.current_page * (pagination.per_page || 10), pagination.total || 0),
-                    perPage: pagination.per_page || 10,
+                    from: (pagination.current_page - 1) * (pagination.per_page || 25) + 1,
+                    to: Math.min(pagination.current_page * (pagination.per_page || 25), pagination.total || 0),
+                    perPage: pagination.per_page || 25,
                     onPageChange: (page) => {
                         const nextFilters = { ...filters, contracts_page: page };
                         setFilters(nextFilters);

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Search, ChevronsUpDown, Check, X } from 'lucide-react';
+import { Search, ChevronsUpDown, Check, X, Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface SearchableSelectOption {
@@ -71,7 +71,7 @@ export function SearchableSelect({
                         isSmall ? 'h-9 px-3 text-xs' : 'h-10 px-3.5 py-2 text-sm',
                         'placeholder:text-muted-foreground',
                         !disabled && 'cursor-pointer hover:border-primary/50 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary',
-                        disabled && 'cursor-not-allowed opacity-50 bg-slate-50 dark:bg-slate-900 border-slate-200 text-slate-500',
+                        disabled && 'cursor-not-allowed bg-slate-100/70 dark:bg-zinc-900/80 border-slate-200 dark:border-zinc-800 text-slate-500 dark:text-zinc-400 shadow-none',
                         open && 'border-primary ring-1 ring-primary',
                         triggerClassName
                     )}
@@ -79,7 +79,11 @@ export function SearchableSelect({
                     <span className={cn('block truncate', isSmall ? 'text-xs' : 'text-sm', selected ? 'text-foreground font-normal' : 'text-muted-foreground font-normal')}>
                         {selected ? selected.label : placeholder}
                     </span>
-                    <ChevronsUpDown size={15} className="text-muted-foreground shrink-0 ml-2" />
+                    {disabled ? (
+                        <Lock size={isSmall ? 12 : 13} className="text-slate-400 dark:text-zinc-500 shrink-0 ml-2 opacity-70" />
+                    ) : (
+                        <ChevronsUpDown size={15} className="text-muted-foreground shrink-0 ml-2" />
+                    )}
                 </button>
 
                 {allowClear && value && !disabled && (

@@ -23,6 +23,7 @@ import { useToast } from '@/components/ui/feedback/Toast';
 import { ColumnVisibilityDropdown } from '@/components/ui/selection/ColumnVisibilityDropdown';
 import { SlaSimulationModal } from '@/pages/contracts/components/parts/SlaSimulationModal';
 import { parseDateInput } from '@/lib/formatters';
+import { StatusBadge } from '@/components/ui/feedback/StatusBadge';
 
 interface Props {
     resourceSlug: string;
@@ -956,21 +957,15 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
 
                 // Contract status custom badge
                 if (col.name === 'label' && resourceSlug === 'contract-statuses') {
-                    const IconComp = row.icon && (LucideIcons as any)[row.icon]
-                        ? (LucideIcons as any)[row.icon]
-                        : null;
                     return (
-                        <span 
-                            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-normal uppercase tracking-wider shadow-xs border whitespace-nowrap"
-                            style={{ 
-                                color: row.color || '#ffffff', 
-                                backgroundColor: row.bg_color || '#4f46e5',
-                                borderColor: `${row.color || '#ffffff'}22`
+                        <StatusBadge
+                            status={row.code || row.label || ''}
+                            statusInfo={{
+                                label: row.label || val,
+                                color: row.color,
+                                icon: row.icon,
                             }}
-                        >
-                            {IconComp && <IconComp className="h-3 w-3 mr-1.5 shrink-0" />}
-                            {val || '—'}
-                        </span>
+                        />
                     );
                 }
 
@@ -1753,24 +1748,26 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                                                             />
                                                         );
                                                     })()}
-                                                    {field.type === 'switch' && (
+                                                    {(field.type === 'switch' || field.type === 'toggle') && (
                                                         <div className="flex items-center gap-3 h-10">
                                                             <button
                                                                 type="button"
                                                                 role="switch"
                                                                 aria-checked={!!bulkFieldValues[field.name]}
                                                                 onClick={() => setBulkFieldValues(prev => ({ ...prev, [field.name]: !prev[field.name] }))}
-                                                                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-all duration-300 outline-hidden ${
-                                                                    bulkFieldValues[field.name] ? 'bg-primary dark:bg-white' : 'bg-slate-200 dark:bg-slate-800'
-                                                                }`}
+                                                                className={cn(
+                                                                    "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+                                                                    bulkFieldValues[field.name] ? "bg-primary" : "bg-slate-200 dark:bg-zinc-700"
+                                                                )}
                                                             >
                                                                 <span
-                                                                    className={`pointer-events-none block h-4 w-4 rounded-full shadow-lg transition-transform duration-300 ring-0 ${
-                                                                        bulkFieldValues[field.name] ? 'translate-x-6 bg-white dark:bg-primary' : 'translate-x-1 bg-white dark:bg-white/50'
-                                                                    }`}
+                                                                    className={cn(
+                                                                        "pointer-events-none block h-3.5 w-3.5 rounded-full bg-white dark:bg-zinc-100 shadow-sm transition-transform duration-200",
+                                                                        bulkFieldValues[field.name] ? "translate-x-4.5" : "translate-x-1"
+                                                                    )}
                                                                 />
                                                             </button>
-                                                            <span className="text-xs font-medium text-text-main">
+                                                            <span className="text-xs font-semibold text-text-main">
                                                                 {bulkFieldValues[field.name] ? 'Ya (Aktif)' : 'Tidak (Nonaktif)'}
                                                             </span>
                                                         </div>

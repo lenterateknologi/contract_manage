@@ -2,7 +2,22 @@ import { Button } from '@/components/ui/buttons/Button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/selection/DropdownMenu';
 import { Link, usePage } from '@inertiajs/react';
 import { notificationsApi, discussionsApi } from '@/api';
-import { AtSign, Bell, BellRing, CheckCircle2, Clock, FileCheck, FileText, MessageSquare, RefreshCw, UserCheck, XCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import {
+    AtSign,
+    Bell,
+    BellRing,
+    CheckCheck,
+    CheckCircle2,
+    Clock,
+    FileCheck,
+    FileText,
+    Inbox,
+    MessageSquare,
+    RefreshCw,
+    UserCheck,
+    XCircle,
+} from 'lucide-react';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 
 interface NotificationItem {
@@ -20,7 +35,15 @@ interface NotificationItem {
     created_at_exact?: string;
 }
 
-export const HeaderNotifications = memo(function HeaderNotifications() {
+interface HeaderNotificationsProps {
+    variant?: 'header' | 'sidebar';
+    className?: string;
+}
+
+export const HeaderNotifications = memo(function HeaderNotifications({
+    variant = 'header',
+    className,
+}: HeaderNotificationsProps) {
     const pageProps = usePage().props;
     const currentUserId = (pageProps.auth as any)?.user?.id || 'guest';
     const storageKey = `read_notifications_${currentUserId}`;
@@ -86,7 +109,7 @@ export const HeaderNotifications = memo(function HeaderNotifications() {
             const permission = await Notification.requestPermission();
             setPushPermission(permission);
             if (permission === 'granted') {
-                new Notification('🔔 Notifikasi Desktop Aktif', {
+                new Notification('Notifikasi Desktop Aktif', {
                     body: 'Anda akan menerima pemberitahuan otomatis saat ada persetujuan atau pesan baru.',
                     icon: '/favicon.ico',
                 });
@@ -192,9 +215,9 @@ export const HeaderNotifications = memo(function HeaderNotifications() {
     const getItemConfig = (item: NotificationItem) => {
         if (item.type === 'approval_required') {
             return {
-                icon: <FileCheck className="h-4 w-4 text-amber-600 dark:text-amber-400" />,
-                bg: 'bg-amber-500/10 border-amber-500/20 text-amber-700 dark:text-amber-300',
-                badgeBg: 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20',
+                icon: <FileCheck className="size-3.5 text-amber-600 dark:text-amber-400" />,
+                bg: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
+                badgeBg: 'text-amber-700 dark:text-amber-300 bg-amber-500/10',
                 label: item.badge || 'Perlu Respon',
             };
         }
@@ -202,17 +225,17 @@ export const HeaderNotifications = memo(function HeaderNotifications() {
             const isMention = item.category === 'MENTION';
             return {
                 icon: isMention ? (
-                    <AtSign className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                    <AtSign className="size-3.5 text-purple-600 dark:text-purple-400" />
                 ) : (
-                    <MessageSquare className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    <MessageSquare className="size-3.5 text-blue-600 dark:text-blue-400" />
                 ),
                 bg: isMention
-                    ? 'bg-purple-500/10 border-purple-500/20 text-purple-700 dark:text-purple-300'
-                    : 'bg-blue-500/10 border-blue-500/20 text-blue-700 dark:text-blue-300',
+                    ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400'
+                    : 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
                 badgeBg: isMention
-                    ? 'bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/20'
-                    : 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20',
-                label: item.badge || (isMention ? 'Menandai Anda (@Mention)' : 'Pesan Diskusi'),
+                    ? 'text-purple-700 dark:text-purple-300 bg-purple-500/10'
+                    : 'text-blue-700 dark:text-blue-300 bg-blue-500/10',
+                label: item.badge || (isMention ? 'Mention' : 'Diskusi'),
             };
         }
 
@@ -220,30 +243,30 @@ export const HeaderNotifications = memo(function HeaderNotifications() {
             case 'APPROVAL_APPROVED':
             case 'CONTRACT_APPROVED':
                 return {
-                    icon: <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />,
-                    bg: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-700 dark:text-emerald-300',
-                    badgeBg: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20',
+                    icon: <CheckCircle2 className="size-3.5 text-emerald-600 dark:text-emerald-400" />,
+                    bg: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
+                    badgeBg: 'text-emerald-700 dark:text-emerald-300 bg-emerald-500/10',
                     label: item.badge || 'Disetujui',
                 };
             case 'APPROVAL_REJECTED':
                 return {
-                    icon: <XCircle className="h-4 w-4 text-rose-600 dark:text-rose-400" />,
-                    bg: 'bg-rose-500/10 border-rose-500/20 text-rose-700 dark:text-rose-300',
-                    badgeBg: 'bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/20',
-                    label: item.badge || 'Perlu Revisi',
+                    icon: <XCircle className="size-3.5 text-rose-600 dark:text-rose-400" />,
+                    bg: 'bg-rose-500/10 text-rose-600 dark:text-rose-400',
+                    badgeBg: 'text-rose-700 dark:text-rose-300 bg-rose-500/10',
+                    label: item.badge || 'Revisi',
                 };
             case 'WORKFLOW_ASSIGNED':
                 return {
-                    icon: <UserCheck className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />,
-                    bg: 'bg-indigo-500/10 border-indigo-500/20 text-indigo-700 dark:text-indigo-300',
-                    badgeBg: 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-500/20',
+                    icon: <UserCheck className="size-3.5 text-indigo-600 dark:text-indigo-400" />,
+                    bg: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400',
+                    badgeBg: 'text-indigo-700 dark:text-indigo-300 bg-indigo-500/10',
                     label: item.badge || 'PIC Baru',
                 };
             default:
                 return {
-                    icon: <RefreshCw className="text-primary h-4 w-4" />,
-                    bg: 'bg-primary/10 border-primary/20 text-primary',
-                    badgeBg: 'bg-primary/10 text-primary border-primary/20',
+                    icon: <RefreshCw className="size-3.5 text-primary" />,
+                    bg: 'bg-primary/10 text-primary',
+                    badgeBg: 'text-primary bg-primary/10',
                     label: item.badge || 'Update',
                 };
         }
@@ -271,57 +294,65 @@ export const HeaderNotifications = memo(function HeaderNotifications() {
                 <Button
                     variant="ghost"
                     size="icon"
-                    className="group relative h-8 w-8 cursor-pointer rounded-lg text-white/80 transition-all hover:bg-white/15 hover:text-white"
+                    className={cn(
+                        'group relative flex cursor-pointer transition-all active:scale-95',
+                        variant === 'sidebar'
+                            ? 'size-9 rounded-xl text-white/75 hover:bg-white/15 hover:text-white'
+                            : 'ml-2 size-8 rounded-lg text-foreground/75 hover:bg-muted hover:text-foreground',
+                        className,
+                    )}
+                    aria-label="Buka Notifikasi"
                 >
-                    <Bell className="size-4.5 text-white/80 transition-transform group-hover:rotate-12 group-hover:text-white" />
+                    <Bell className={cn('transition-transform group-hover:rotate-12', variant === 'sidebar' ? 'size-4.5' : 'size-4')} />
                     {unreadNotifications.length > 0 && (
-                        <span className="ring-primary absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] leading-none font-bold text-white shadow-xs ring-2">
+                        <span className="ring-background absolute -top-0.5 -right-0.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-rose-500 px-1 text-[8.5px] font-bold leading-none text-white ring-1.5">
                             {unreadNotifications.length > 99 ? '99+' : unreadNotifications.length}
                         </span>
                     )}
-                    <span className="sr-only">Notifications</span>
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
-                className="border-border/80 bg-card z-[99999] w-[380px] overflow-hidden rounded-2xl border p-0 shadow-2xl sm:w-[440px]"
-                side="right"
+                className="bg-popover/95 text-popover-foreground backdrop-blur-md z-[99999] w-[340px] sm:w-[380px] max-w-[calc(100vw-1.5rem)] rounded-2xl p-0 border border-border/70 shadow-xl dark:shadow-2xl dark:shadow-black/60 animate-in fade-in-50 zoom-in-95 duration-100"
+                side={variant === 'sidebar' ? 'right' : 'bottom'}
                 align="end"
-                sideOffset={14}
+                sideOffset={variant === 'sidebar' ? 14 : 8}
             >
                 {/* Header with quick stats and filter tabs */}
-                <div className="bg-muted/40 border-border/60 border-b p-3.5">
-                    <div className="mb-2.5 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <span className="text-foreground text-xs font-semibold tracking-wider uppercase">Notifikasi</span>
+                <div className="p-2.5 pb-2 space-y-2">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                            <h3 className="text-foreground text-[11px] font-bold uppercase tracking-wide">Notifikasi</h3>
                             {unreadNotifications.length > 0 ? (
-                                <span className="rounded-full border border-red-500/30 bg-red-500/15 px-2 py-0.5 text-[10px] leading-none font-bold text-red-600 dark:text-red-400">
+                                <span className="rounded bg-rose-500/10 px-1.5 py-0.2 text-[9.5px] font-bold text-rose-600 dark:text-rose-400">
                                     {unreadNotifications.length} Baru
                                 </span>
                             ) : (
-                                <span className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-[10px] leading-none font-medium">
+                                <span className="bg-muted text-muted-foreground rounded px-1.5 py-0.2 text-[9.5px] font-medium">
                                     {notifications.length} Total
                                 </span>
                             )}
                         </div>
                         {unreadNotifications.length > 0 && (
                             <button
+                                type="button"
                                 onClick={markAllRead}
-                                className="text-primary hover:text-primary/80 cursor-pointer text-[11px] font-medium transition-colors"
+                                className="text-primary hover:text-primary/80 inline-flex items-center gap-1 cursor-pointer text-[10.5px] font-medium transition-colors"
                             >
-                                Tandai dibaca
+                                <CheckCheck className="size-3" />
+                                <span>Tandai dibaca</span>
                             </button>
                         )}
                     </div>
 
-                    {/* Filter Pills & Push Notification Banner */}
-                    <div className="flex items-center gap-1.5 pt-1">
+                    {/* Filter Pills */}
+                    <div className="flex items-center gap-1 text-[10.5px]">
                         <button
                             type="button"
                             onClick={() => setFilter('all')}
-                            className={`cursor-pointer rounded-lg px-2.5 py-1 text-[11px] font-medium transition-all ${
+                            className={`cursor-pointer rounded-md px-2 py-0.5 text-center transition-all ${
                                 filter === 'all'
-                                    ? 'bg-primary text-primary-foreground shadow-xs'
-                                    : 'bg-background hover:bg-muted text-muted-foreground'
+                                    ? 'bg-muted text-foreground font-semibold'
+                                    : 'text-muted-foreground hover:text-foreground'
                             }`}
                         >
                             Semua ({notifications.length})
@@ -329,10 +360,10 @@ export const HeaderNotifications = memo(function HeaderNotifications() {
                         <button
                             type="button"
                             onClick={() => setFilter('unread')}
-                            className={`cursor-pointer rounded-lg px-2.5 py-1 text-[11px] font-medium transition-all ${
+                            className={`cursor-pointer rounded-md px-2 py-0.5 text-center transition-all ${
                                 filter === 'unread'
-                                    ? 'bg-primary text-primary-foreground shadow-xs'
-                                    : 'bg-background hover:bg-muted text-muted-foreground'
+                                    ? 'bg-muted text-foreground font-semibold'
+                                    : 'text-muted-foreground hover:text-foreground'
                             }`}
                         >
                             Belum Dibaca ({unreadNotifications.length})
@@ -341,59 +372,57 @@ export const HeaderNotifications = memo(function HeaderNotifications() {
                             <button
                                 type="button"
                                 onClick={() => setFilter('approvals')}
-                                className={`flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-medium transition-all ${
+                                className={`flex cursor-pointer items-center gap-1 rounded-md px-2 py-0.5 transition-all ${
                                     filter === 'approvals'
-                                        ? 'bg-amber-600 text-white shadow-xs'
-                                        : 'border border-amber-500/30 bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 dark:text-amber-400'
+                                        ? 'bg-amber-500 text-white font-semibold'
+                                        : 'text-amber-700 dark:text-amber-400 hover:bg-amber-500/10'
                                 }`}
                             >
                                 <span>Persetujuan</span>
-                                <span className="py-0.2 rounded-full bg-white/20 px-1 text-[9px] font-bold">{pendingApprovalCount}</span>
+                                <span className="rounded bg-black/10 dark:bg-white/20 px-1 text-[8.5px] font-bold">
+                                    {pendingApprovalCount}
+                                </span>
                             </button>
                         )}
                     </div>
 
                     {/* Push Notification Opt-in Banner */}
                     {pushPermission === 'default' && (
-                        <div className="mt-2.5 flex items-center justify-between rounded-lg border border-indigo-200/80 bg-indigo-50/80 px-2.5 py-1.5 text-[11px] dark:border-indigo-800/60 dark:bg-indigo-950/40">
+                        <div className="flex items-center justify-between rounded-lg bg-indigo-50/70 p-1.5 text-[10.5px] dark:bg-indigo-950/30">
                             <div className="flex items-center gap-1.5 font-medium text-indigo-900 dark:text-indigo-200">
-                                <BellRing className="size-3.5 shrink-0 text-indigo-600 dark:text-indigo-400" />
-                                <span>Aktifkan notifikasi desktop</span>
+                                <BellRing className="size-3 shrink-0 text-indigo-600 dark:text-indigo-400" />
+                                <span>Aktifkan notifikasi</span>
                             </div>
                             <Button
                                 size="sm"
-                                variant="outline"
+                                variant="ghost"
                                 onClick={requestPushPermission}
-                                className="h-6 cursor-pointer border-0 bg-indigo-600 px-2 text-[10px] font-semibold text-white hover:bg-indigo-700 hover:text-white"
+                                className="h-5 cursor-pointer bg-indigo-600 px-2 text-[9.5px] font-semibold text-white hover:bg-indigo-700 rounded"
                             >
                                 Izinkan
                             </Button>
                         </div>
                     )}
-                    {pushPermission === 'granted' && (
-                        <div className="mt-2 flex items-center gap-1 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
-                            <CheckCircle2 className="size-3 shrink-0" />
-                            <span>Push notifikasi browser aktif</span>
-                        </div>
-                    )}
                 </div>
 
                 {/* Notifications List */}
-                <div className="divide-border/40 max-h-[88vh] max-h-[880px] min-h-[480px] divide-y overflow-y-auto">
+                <div className="max-h-[320px] overflow-y-auto scrollbar-thin">
                     {loading ? (
-                        <div className="text-muted-foreground flex flex-col items-center justify-center gap-2 px-4 py-12 text-center text-xs">
-                            <RefreshCw className="text-primary h-4 w-4 animate-spin" />
+                        <div className="text-muted-foreground flex flex-col items-center justify-center gap-2 px-4 py-8 text-center text-[11px]">
+                            <RefreshCw className="text-primary size-4 animate-spin" />
                             <span>Memuat notifikasi...</span>
                         </div>
                     ) : filteredNotifications.length === 0 ? (
-                        <div className="px-4 py-12 text-center">
-                            <FileText className="text-muted-foreground/40 mx-auto mb-2 h-8 w-8" />
-                            <p className="text-foreground text-xs font-medium">Tidak ada notifikasi</p>
-                            <p className="text-muted-foreground mt-0.5 text-[11px]">
+                        <div className="flex flex-col items-center justify-center px-4 py-8 text-center">
+                            <div className="flex size-8 items-center justify-center rounded-lg bg-muted text-muted-foreground/50 mb-2">
+                                <Inbox className="size-4" />
+                            </div>
+                            <p className="text-foreground text-[11px] font-medium">Tidak ada notifikasi</p>
+                            <p className="text-muted-foreground mt-0.5 text-[10px]">
                                 {filter === 'unread'
-                                    ? 'Semua notifikasi telah Anda baca'
+                                    ? 'Semua notifikasi telah dibaca'
                                     : filter === 'approvals'
-                                      ? 'Tidak ada persetujuan yang menunggu tindakan'
+                                      ? 'Tidak ada persetujuan yang tertunda'
                                       : 'Belum ada aktivitas baru'}
                             </p>
                         </div>
@@ -407,16 +436,20 @@ export const HeaderNotifications = memo(function HeaderNotifications() {
                                     key={item.id}
                                     href={getLink(item)}
                                     onClick={() => handleNotificationClick(item)}
-                                    className={`group relative flex items-start gap-3 p-3.5 transition-all ${
-                                        isUnread ? 'bg-primary/5 hover:bg-primary/10' : 'hover:bg-muted/50 bg-background'
+                                    className={`group relative flex items-start gap-2.5 px-3 py-2 transition-colors ${
+                                        isUnread
+                                            ? 'bg-primary/5 hover:bg-primary/10 dark:bg-primary/10 dark:hover:bg-primary/15'
+                                            : 'hover:bg-muted/40 bg-transparent'
                                     }`}
                                 >
                                     {/* Unread Left Border Indicator */}
-                                    {isUnread && <div className="bg-primary absolute top-0 bottom-0 left-0 w-1 rounded-r" />}
+                                    {isUnread && (
+                                        <div className="bg-primary absolute top-1.5 bottom-1.5 left-0.5 w-0.5 rounded-full" />
+                                    )}
 
                                     {/* Icon Avatar */}
                                     <div
-                                        className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border ${config.bg} shadow-xs transition-transform group-hover:scale-105`}
+                                        className={`mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg ${config.bg}`}
                                     >
                                         {config.icon}
                                     </div>
@@ -424,40 +457,41 @@ export const HeaderNotifications = memo(function HeaderNotifications() {
                                     {/* Content */}
                                     <div className="min-w-0 flex-1">
                                         {/* Top row: Badge & Time */}
-                                        <div className="mb-1 flex items-center justify-between gap-2">
+                                        <div className="mb-0.5 flex items-center justify-between gap-1.5">
                                             <span
-                                                className={`rounded-md border px-2 py-0.5 text-[9px] font-semibold tracking-wider uppercase ${config.badgeBg}`}
+                                                className={`rounded px-1 py-0.2 text-[8.5px] font-bold uppercase ${config.badgeBg}`}
                                             >
                                                 {config.label}
                                             </span>
                                             <span
-                                                className="text-muted-foreground flex shrink-0 items-center gap-1 text-[10px] font-medium tabular-nums"
+                                                className="text-muted-foreground flex shrink-0 items-center gap-1 text-[9.5px] font-medium tabular-nums"
                                                 title={item.created_at_exact}
                                             >
-                                                <Clock className="h-2.5 w-2.5 opacity-60" />
+                                                <Clock className="size-2.5 opacity-60" />
                                                 {item.created_at_formatted}
                                             </span>
                                         </div>
 
-                                        {/* Contract Title (Bold & Distinct) */}
-                                        <h4 className="text-foreground group-hover:text-primary truncate text-[12px] font-semibold transition-colors">
+                                        {/* Contract Title */}
+                                        <h4 className="text-foreground group-hover:text-primary truncate text-[11px] font-semibold transition-colors">
                                             {item.contract_title}
                                         </h4>
 
                                         {/* Action Summary / Message Description */}
-                                        <p className="text-muted-foreground mt-0.5 line-clamp-2 text-[11px] leading-snug">{item.description}</p>
+                                        <p className="text-muted-foreground mt-0.5 line-clamp-2 text-[10.5px] leading-tight">
+                                            {item.description}
+                                        </p>
 
                                         {/* Footer Actor / Sub-info */}
                                         {item.actor_name && (
-                                            <div className="text-muted-foreground/80 mt-1.5 flex items-center gap-1.5 text-[10px] font-medium">
-                                                <span className="bg-border h-1.5 w-1.5 rounded-full" />
+                                            <div className="text-muted-foreground/80 mt-1 flex items-center gap-1 text-[9.5px]">
                                                 <span>
-                                                    Oleh: <strong className="text-foreground/80 font-medium">{item.actor_name}</strong>
+                                                    Oleh: <strong className="text-foreground/85 font-medium">{item.actor_name}</strong>
                                                 </span>
                                                 {item.contract_no && (
                                                     <>
                                                         <span className="text-border">•</span>
-                                                        <span className="text-muted-foreground font-mono text-[9px]">{item.contract_no}</span>
+                                                        <span className="font-mono text-[9px]">{item.contract_no}</span>
                                                     </>
                                                 )}
                                             </div>
@@ -470,10 +504,10 @@ export const HeaderNotifications = memo(function HeaderNotifications() {
                 </div>
 
                 {/* Footer Quick Action */}
-                <div className="bg-muted/20 border-border/60 border-t p-2.5 text-center">
+                <div className="p-2 text-center">
                     <Link
                         href="/contracts"
-                        className="text-primary inline-flex items-center justify-center gap-1 text-[11px] font-medium hover:underline"
+                        className="text-primary hover:text-primary/80 inline-flex items-center justify-center gap-1 text-[10.5px] font-medium transition-colors"
                     >
                         <span>Buka Daftar Kontrak</span>
                         <span aria-hidden="true">→</span>
@@ -483,3 +517,4 @@ export const HeaderNotifications = memo(function HeaderNotifications() {
         </DropdownMenu>
     );
 });
+

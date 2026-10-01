@@ -467,15 +467,17 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false,
             {a.comment && (
                 <div className="mt-0.5 w-full pl-0.5">
                     <div className={cn(
-                        "rounded-md border text-black dark:bg-white dark:text-black",
-                        isLite ? "p-1.5 bg-slate-50/90 border-slate-200/80 text-[10px]" : "p-2 bg-white border-slate-200 text-[11px] shadow-xs"
+                        "rounded-md border",
+                        isLite 
+                            ? "p-1.5 bg-slate-50/90 dark:bg-zinc-900/80 border-slate-200/80 dark:border-zinc-800 text-[10px]" 
+                            : "p-2 bg-white dark:bg-zinc-900/90 border-slate-200 dark:border-zinc-800 text-[11px] shadow-xs"
                     )}>
                         {!isLite && (
-                            <div className="text-[8.5px] font-bold uppercase tracking-wider text-slate-500 mb-0.5">
+                            <div className="text-[8.5px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 mb-0.5">
                                 Catatan:
                             </div>
                         )}
-                        <div className="leading-relaxed font-normal whitespace-pre-wrap">
+                        <div className="leading-relaxed font-normal whitespace-pre-wrap text-slate-800 dark:text-zinc-200">
                             {isLite ? `“${a.comment}”` : a.comment}
                         </div>
                     </div>

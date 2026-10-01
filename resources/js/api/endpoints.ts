@@ -26,6 +26,17 @@ export const API_ENDPOINTS = {
         USERS: '/api/contracts/users',
         ROLES: '/api/contracts/roles',
         DASHBOARD_METRICS: '/api/contracts/dashboard-metrics',
+        DASHBOARD: {
+            METRICS: '/api/contracts/dashboard-metrics',
+            SUMMARY: '/api/contracts/dashboard/summary',
+            OVERVIEW: '/api/contracts/dashboard/overview',
+            DISTRIBUTIONS: '/api/contracts/dashboard/distributions',
+            TRENDS: '/api/contracts/dashboard/trends',
+            ANALYSIS: '/api/contracts/dashboard/analysis',
+            WORKLOAD: '/api/contracts/dashboard/workload',
+            MASTER_DATA: '/api/contracts/dashboard/master-data',
+            RECENT_ACTIVITY: '/api/contracts/dashboard/recent-activity',
+        },
     },
 
     // 3. Approval & Workflow Execution
@@ -129,5 +140,14 @@ export const API_ENDPOINTS = {
         BASE: '/api/form-templates',
         DETAIL: (id: string) => `/api/form-templates/${id}`,
         FIELDS: (id: string) => `/api/form-templates/${id}/fields`,
+    },
+
+    // 9. Reports & Audit Trail
+    REPORTS: {
+        ANALYTICS: '/api/admin/reports/analytics',
+        AUDIT: '/api/admin/reports/audit',
+        EXPORT_ANALYTICS: '/api/admin/reports/analytics/export',
+        EXPORT_AUDIT: '/api/admin/reports/audit/export',
+        DATA: '/api/admin/reports/data',
     },
 } as const;

@@ -18,13 +18,13 @@ export function CompactSwitch({
     containerClassName,
 }: CompactSwitchProps) {
     return (
-        <div className={cn("flex items-center justify-between gap-4 rounded-2xl border border-primary/5 dark:border-white/5 bg-primary/[0.02] dark:bg-white/[0.02] p-4 transition-all hover:bg-primary/[0.04] dark:hover:bg-white/[0.04]", containerClassName)}>
+        <div className={cn("flex items-center justify-between gap-4 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 p-3.5 transition-all hover:border-slate-300 dark:hover:border-zinc-700", containerClassName)}>
             <div className="space-y-0.5">
-                <Label className="text-[11px] font-semibold uppercase  text-primary dark:text-white leading-none block">
+                <Label className="text-xs font-semibold text-slate-800 dark:text-zinc-200 leading-none block">
                     {label}
                 </Label>
                 {description && (
-                    <p className="text-[9px] font-bold text-primary/30 dark:text-white/30 uppercase  leading-none">
+                    <p className="text-[11px] text-muted-foreground leading-normal mt-0.5">
                         {description}
                     </p>
                 )}
@@ -36,16 +36,16 @@ export function CompactSwitch({
                 aria-checked={checked}
                 onClick={() => onCheckedChange(!checked)}
                 className={cn(
-                    "relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-all duration-300 outline-none active:scale-95",
-                    checked ? "bg-primary dark:bg-white" : "bg-primary/10 dark:bg-white/10"
+                    "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 outline-none focus-visible:ring-2 focus-visible:ring-primary/40 active:scale-95",
+                    checked ? "bg-primary" : "bg-slate-200 dark:bg-zinc-700"
                 )}
             >
                 <span
                     className={cn(
-                        "pointer-events-none block h-4 w-4 rounded-full shadow-lg transition-transform duration-300 ring-0",
+                        "pointer-events-none block h-3.5 w-3.5 rounded-full bg-white dark:bg-zinc-100 shadow-sm transition-transform duration-200",
                         checked
-                            ? "translate-x-6 bg-white dark:bg-primary"
-                            : "translate-x-1 bg-white dark:bg-white/50"
+                            ? "translate-x-4.5"
+                            : "translate-x-1"
                     )}
                 />
             </button>

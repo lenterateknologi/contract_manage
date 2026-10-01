@@ -85,7 +85,7 @@ class ContractController extends Controller
         $view = $request->query('view', 'contracts');
         $contracts = (new ContractListQuery)
             ->build($request, $view)
-            ->paginate($request->integer('per_page', 15))
+            ->paginate($request->integer('per_page', 25))
             ->through(fn ($c) => ContractFormatter::formatContract($c, false));
 
         return $this->successResponse($contracts, 'Contracts retrieved successfully');
@@ -97,10 +97,10 @@ class ContractController extends Controller
     public function contractsView(Request $request, string $view = 'contracts'): Response|JsonResponse
     {
         $contracts = in_array($view, ['dashboard', 'profile'])
-            ? new LengthAwarePaginator([], 0, 15)
+            ? new LengthAwarePaginator([], 0, 25)
             : $this->contractListQuery
                 ->build($request, $view)
-                ->paginate($request->integer('per_page', 15))
+                ->paginate($request->integer('per_page', 25))
                 ->withQueryString()
                 ->through(fn ($c) => ContractFormatter::formatContract($c, false));
 
@@ -308,7 +308,7 @@ class ContractController extends Controller
 
         $contracts = $this->contractListQuery
             ->build($request, 'contracts')
-            ->paginate($request->integer('per_page', 15))
+            ->paginate($request->integer('per_page', 25))
             ->withQueryString()
             ->through(fn ($c) => ContractFormatter::formatContract($c, false));
 
@@ -322,7 +322,7 @@ class ContractController extends Controller
             'vendors' => Inertia::defer($loaders['vendors']),
             'formTemplates' => Inertia::defer($loaders['formTemplates']),
             'filters' => array_merge($request->only(['search', 'status', 'contract_type_id']), [
-                'per_page' => $request->integer('per_page', 15),
+                'per_page' => $request->integer('per_page', 25),
             ]),
             'breadcrumbs' => [
                 ['title' => 'Manajemen Kontrak', 'href' => route('contracts'), 'icon' => 'FileText'],
@@ -350,6 +350,46 @@ class ContractController extends Controller
     public function getDashboardMetrics(Request $request): JsonResponse
     {
         return $this->successResponse((new ContractDashboardQuery)->getMetrics($request), 'Dashboard metrics retrieved successfully');
+    }
+
+    public function getDashboardSummary(Request $request): JsonResponse
+    {
+        return $this->successResponse((new ContractDashboardQuery)->getSummaryMetrics($request), 'Dashboard summary retrieved successfully');
+    }
+
+    public function getDashboardOverview(Request $request): JsonResponse
+    {
+        return $this->successResponse((new ContractDashboardQuery)->getOverviewMetrics($request), 'Dashboard overview retrieved successfully');
+    }
+
+    public function getDashboardDistributions(Request $request): JsonResponse
+    {
+        return $this->successResponse((new ContractDashboardQuery)->getDistributions($request), 'Dashboard distributions retrieved successfully');
+    }
+
+    public function getDashboardTrends(Request $request): JsonResponse
+    {
+        return $this->successResponse((new ContractDashboardQuery)->getTrends($request), 'Dashboard trends retrieved successfully');
+    }
+
+    public function getDashboardAnalysis(Request $request): JsonResponse
+    {
+        return $this->successResponse((new ContractDashboardQuery)->getAnalysis($request), 'Dashboard analysis retrieved successfully');
+    }
+
+    public function getDashboardWorkload(Request $request): JsonResponse
+    {
+        return $this->successResponse((new ContractDashboardQuery)->getWorkloads($request), 'Dashboard workload retrieved successfully');
+    }
+
+    public function getDashboardMasterData(Request $request): JsonResponse
+    {
+        return $this->successResponse((new ContractDashboardQuery)->getMasterData($request), 'Dashboard master data retrieved successfully');
+    }
+
+    public function getDashboardRecentActivity(Request $request): JsonResponse
+    {
+        return $this->successResponse((new ContractDashboardQuery)->getRecentActivityMetrics($request), 'Dashboard recent activity retrieved successfully');
     }
 
     #[OA\Get(

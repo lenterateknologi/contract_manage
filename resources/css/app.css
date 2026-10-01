@@ -327,3 +327,16 @@
 #nprogress .peg {
     box-shadow: 0 0 10px var(--primary), 0 0 5px var(--primary) !important;
 }
+
+/* Dark mode primary text and accent clarity */
+.dark .text-primary {
+    color: #ffffff !important;
+}
+
+.dark .hover\:text-primary:hover {
+    color: #ffffff !important;
+}
+
+.dark .group:hover .group-hover\:text-primary {
+    color: #ffffff !important;
+}

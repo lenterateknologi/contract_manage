@@ -5,9 +5,12 @@ export type Appearance = 'light' | 'dark' | 'system';
 const prefersDark = () => window.matchMedia('(prefers-color-scheme: dark)').matches;
 
 const applyTheme = (appearance: Appearance) => {
+    if (typeof document === 'undefined') return;
     const isDark = appearance === 'dark' || (appearance === 'system' && prefersDark());
-
-    document.documentElement.classList.toggle('dark', isDark);
+    const currentlyDark = document.documentElement.classList.contains('dark');
+    if (currentlyDark !== isDark) {
+        document.documentElement.classList.toggle('dark', isDark);
+    }
 };
 
 const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Search, ChevronsUpDown, Check, X } from 'lucide-react';
+import { Search, ChevronsUpDown, Check, X, Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 import type { SearchableSelectOption } from './SearchableSelect';
@@ -107,7 +107,7 @@ export function SearchableMultiSelect({
     return (
         <div
             ref={containerRef}
-            className={cn('relative w-full', open ? 'z-50' : 'z-auto', disabled && 'opacity-60 cursor-not-allowed', className)}
+            className={cn('relative w-full', open ? 'z-50' : 'z-auto', disabled && 'cursor-not-allowed', className)}
         >
             {/* Trigger Button (shadcn style) */}
             <div
@@ -123,7 +123,7 @@ export function SearchableMultiSelect({
                     'flex min-h-[38px] w-full items-center justify-between rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-1.5 text-left text-xs font-medium text-slate-800 dark:text-zinc-100 transition-all outline-none select-none shadow-2xs',
                     !disabled && 'cursor-pointer hover:border-slate-300 dark:hover:border-zinc-600 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary',
                     open && 'border-primary ring-2 ring-primary/20 dark:border-primary',
-                    disabled && 'bg-slate-50 border-slate-100 dark:bg-zinc-950 dark:border-zinc-800 dark:text-zinc-500 opacity-60 cursor-not-allowed',
+                    disabled && 'bg-slate-100/70 dark:bg-zinc-900/80 border-slate-200 dark:border-zinc-800 text-slate-500 dark:text-zinc-400 cursor-not-allowed shadow-none',
                     triggerClassName
                 )}
             >
@@ -146,20 +146,26 @@ export function SearchableMultiSelect({
                                     <span className="truncate max-w-[180px]">
                                         {showOrder ? `${idx + 1}. ${displayLabel}` : displayLabel}
                                     </span>
-                                    <button
-                                        type="button"
-                                        onMouseDown={(e) => removeOption(e, val)}
-                                        onClick={(e) => removeOption(e, val)}
-                                        className="text-slate-400 hover:text-slate-700 dark:text-zinc-400 dark:hover:text-zinc-100 transition-colors focus:outline-none ml-0.5 cursor-pointer rounded-sm"
-                                    >
-                                        <X size={11} />
-                                    </button>
+                                    {!disabled && (
+                                        <button
+                                            type="button"
+                                            onMouseDown={(e) => removeOption(e, val)}
+                                            onClick={(e) => removeOption(e, val)}
+                                            className="text-slate-400 hover:text-slate-700 dark:text-zinc-400 dark:hover:text-zinc-100 transition-colors focus:outline-none ml-0.5 cursor-pointer rounded-sm"
+                                        >
+                                            <X size={11} />
+                                        </button>
+                                    )}
                                 </span>
                             );
                         })
                     )}
                 </div>
-                <ChevronsUpDown size={14} className="text-slate-400 dark:text-zinc-500 shrink-0 ml-1.5 opacity-60" />
+                {disabled ? (
+                    <Lock size={13} className="text-slate-400 dark:text-zinc-500 shrink-0 ml-1.5 opacity-70" />
+                ) : (
+                    <ChevronsUpDown size={14} className="text-slate-400 dark:text-zinc-500 shrink-0 ml-1.5 opacity-60" />
+                )}
             </div>
 
             {/* Dropdown Panel (Inline relative/absolute) */}

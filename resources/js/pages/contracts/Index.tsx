@@ -328,7 +328,7 @@ interface IndexProps {
 }
 
 function ContractPage({
-    contracts: contractsPaged = { data: [], links: [], current_page: 1, last_page: 1, total: 0, from: 0, to: 0, per_page: 15 },
+    contracts: contractsPaged = { data: [], links: [], current_page: 1, last_page: 1, total: 0, from: 0, to: 0, per_page: 25 },
     meId = '',
     meUser,
     initialSelected,
@@ -1863,7 +1863,7 @@ function ContractPage({
 
 export default function ContractsIndex({
     currentView = 'dashboard',
-    contracts: initialContractsPaged = { data: [], links: [], current_page: 1, last_page: 1, total: 0, from: 0, to: 0, per_page: 15 },
+    contracts: initialContractsPaged = { data: [], links: [], current_page: 1, last_page: 1, total: 0, from: 0, to: 0, per_page: 25 },
     types: initialTypes = [],
     submissionTypes: initialSubmissionTypes = [],
     formTemplates: initialFormTemplates = [],

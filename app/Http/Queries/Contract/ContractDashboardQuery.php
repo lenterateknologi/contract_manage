@@ -25,18 +25,18 @@ use Illuminate\Support\Facades\DB;
 class ContractDashboardQuery
 {
     /**
-     * Get all dashboard metrics for the given request context.
+     * Resolve common context, filters, and base query builder from the request.
      *
      * @return array<string, mixed>
      */
-    public function getMetrics(Request $request): array
+    public function resolveContext(Request $request): array
     {
         $user = Auth::user();
         if ($user) {
             (new ContractFilterScopeService)->applyToRequest($request, $user);
         }
 
-        $roleName = $user->role;
+        $roleName = $user?->role;
         $hasFullAccess = in_array($roleName, ['Admin', 'Super Admin', 'Director', 'CEO', 'VP']);
         $isAdmin = $hasFullAccess;
         $isManager = $roleName === 'Manager';
@@ -72,7 +72,127 @@ class ContractDashboardQuery
             $companyIds,
         );
 
-        // KPI Cards - Single pass conditional aggregation for instant calculation
+        return compact(
+            'user',
+            'hasFullAccess',
+            'isAdmin',
+            'isManager',
+            'hasDepartmentAccess',
+            'createdFrom',
+            'createdTo',
+            'period',
+            'regionIds',
+            'companyGroupIds',
+            'companyIds',
+            'vendorIds',
+            'statuses',
+            'contractTypeIds',
+            'picIds',
+            'departmentIds',
+            'baseQuery'
+        );
+    }
+
+    /**
+     * Resolve dashboard layout and view configuration for the user.
+     *
+     * @return array<string, mixed>
+     */
+    public function resolveDashboardConfig(?User $user): array
+    {
+        $dashboardConfig = null;
+        if ($user && $user->role_id) {
+            $userRole = $user->roleRelation;
+            $roleDashboardTypeId = data_get($userRole?->getAttributes(), 'dashboard_type_id');
+            if ($roleDashboardTypeId) {
+                $dashboardConfig = DashboardType::find($roleDashboardTypeId);
+            }
+        }
+
+        if (! $dashboardConfig && $user) {
+            $dashboardConfig = DashboardType::all()->filter(function ($dt) use ($user) {
+                $rawRoles = $dt->role_ids ?? data_get($dt->getAttributes(), 'role_ids');
+                $roleIds = DashboardType::normalizeIds($rawRoles);
+                if ($rawRoles === null && ! empty($dt->role_id)) {
+                    $roleIds = [$dt->role_id];
+                }
+
+                $rawDivisions = $dt->division_ids ?? data_get($dt->getAttributes(), 'division_ids');
+                $divisionIds = DashboardType::normalizeIds($rawDivisions);
+                if ($rawDivisions === null && ! empty($dt->division_id)) {
+                    $divisionIds = [$dt->division_id];
+                }
+
+                $rawDepartments = $dt->department_ids ?? data_get($dt->getAttributes(), 'department_ids');
+                $departmentIds = DashboardType::normalizeIds($rawDepartments);
+                if ($rawDepartments === null && ! empty($dt->department_id)) {
+                    $departmentIds = [$dt->department_id];
+                }
+
+                $roleMatch = empty($roleIds) || in_array((string) $user->role_id, array_map('strval', $roleIds));
+                $divisionMatch = empty($divisionIds) || in_array((string) $user->division_id, array_map('strval', $divisionIds));
+                $departmentMatch = empty($departmentIds) || in_array((string) $user->department_id, array_map('strval', $departmentIds));
+
+                return $roleMatch && $divisionMatch && $departmentMatch;
+            })->sortByDesc(function ($dt) {
+                $rawRoles = $dt->role_ids ?? data_get($dt->getAttributes(), 'role_ids');
+                $roleIds = DashboardType::normalizeIds($rawRoles);
+                if ($rawRoles === null && ! empty($dt->role_id)) {
+                    $roleIds = [$dt->role_id];
+                }
+
+                $rawDivisions = $dt->division_ids ?? data_get($dt->getAttributes(), 'division_ids');
+                $divisionIds = DashboardType::normalizeIds($rawDivisions);
+                if ($rawDivisions === null && ! empty($dt->division_id)) {
+                    $divisionIds = [$dt->division_id];
+                }
+
+                $rawDepartments = $dt->department_ids ?? data_get($dt->getAttributes(), 'department_ids');
+                $departmentIds = DashboardType::normalizeIds($rawDepartments);
+                if ($rawDepartments === null && ! empty($dt->department_id)) {
+                    $departmentIds = [$dt->department_id];
+                }
+
+                $score = 0;
+                if (! empty($roleIds)) {
+                    $score += 4;
+                }
+                if (! empty($divisionIds)) {
+                    $score += 2;
+                }
+                if (! empty($departmentIds)) {
+                    $score += 1;
+                }
+
+                return $score;
+            })->first();
+        }
+
+        return [
+            'has_setting' => (bool) $dashboardConfig,
+            'name' => $dashboardConfig ? $dashboardConfig->name : null,
+            'show_overview' => $dashboardConfig ? (bool) $dashboardConfig->show_overview : false,
+            'show_overview_contract' => $dashboardConfig ? (bool) $dashboardConfig->show_overview_contract : false,
+            'show_overview_non_contract' => $dashboardConfig ? (bool) $dashboardConfig->show_overview_non_contract : false,
+            'show_overview_nda' => $dashboardConfig ? (bool) $dashboardConfig->show_overview_nda : false,
+            'show_workload' => $dashboardConfig ? (bool) $dashboardConfig->show_workload : false,
+            'show_master_data' => $dashboardConfig ? (bool) $dashboardConfig->show_master_data : false,
+        ];
+    }
+
+    /**
+     * Get KPI summary cards and key metric counters.
+     *
+     * @return array<string, mixed>
+     */
+    public function getSummaryMetrics(Request $request): array
+    {
+        $ctx = $this->resolveContext($request);
+        $baseQuery = $ctx['baseQuery'];
+        $user = $ctx['user'];
+        $statuses = $ctx['statuses'];
+        $contractTypeIds = $ctx['contractTypeIds'];
+
         $todayStr = now()->toDateString();
         $inProcessStatuses = array_map(fn ($s) => "'{$s->value}'", ContractStatusEnum::inProcess());
         $inProcessStatusesSql = implode(',', $inProcessStatuses);
@@ -156,48 +276,177 @@ class ContractDashboardQuery
             $avgDays = round($totalDays / $approvedContracts->count(), 1);
         }
 
-        // Distributions
-        $submissionTypeDistribution = $this->getSubmissionTypeDistribution($baseQuery);
-        $contractTypeDistribution = $this->getContractTypeDistribution($baseQuery);
-        $statusDistribution = $this->getStatusDistribution($baseQuery);
-        $expiryTimeline = $this->getExpiryTimeline($baseQuery);
-        $approvalStatusCounts = [
-            'approved' => (int) ($kpiAggregates->approved_count ?? 0),
-            'pending' => $inProcessContracts,
-            'revision' => (int) ($kpiAggregates->revision_count ?? 0),
-            'rejected' => (int) ($kpiAggregates->rejected_count ?? 0),
+        $todayTotal = (int) ($kpiAggregates->today_total ?? 0);
+        $todayCompleted = (int) ($kpiAggregates->today_completed ?? 0);
+        $todayRejected = (int) ($kpiAggregates->today_rejected ?? 0);
+        $todayApproved = (int) ($kpiAggregates->today_approved ?? 0);
+
+        return [
+            'dashboardConfig' => $this->resolveDashboardConfig($user),
+            'activePeriod' => $ctx['period'],
+            'metrics' => [
+                'totalContracts' => $totalContracts,
+                'activeContracts' => $activeContracts,
+                'expiringContracts' => $expiringSoonContracts,
+                'expiredContracts' => $expiredContracts,
+                'pendingContracts' => $inProcessContracts,
+                'pendingApprovals' => $pendingApprovalsForMe,
+                'renewalRate' => $renewalRate,
+                'totalValue' => $totalValue,
+                'avgCycleTime' => $avgDays,
+            ],
+            'summary' => [
+                'total' => $todayTotal,
+                'my_total' => $myTotalContracts,
+                'archived_total' => $archivedTotalContracts,
+                'in_process' => $inProcessContracts,
+                'pending_for_me' => $pendingApprovalsForMe,
+                'completed' => $todayCompleted,
+                'rejected' => $todayRejected,
+                'approved' => $todayApproved,
+            ],
         ];
+    }
 
-        // Lists
-        $recentContracts = $this->getRecentContracts($baseQuery);
-        $upcomingRenewals = $this->getUpcomingRenewals($baseQuery);
-        $pendingApprovalsList = $this->getPendingApprovalsList();
-        $recentActivity = $this->getRecentActivity($user, $isAdmin);
+    /**
+     * Get overview daily trend and category breakdown (Contract, Non-Contract, NDA).
+     *
+     * @return array<string, mixed>
+     */
+    public function getOverviewMetrics(Request $request): array
+    {
+        $ctx = $this->resolveContext($request);
+        $baseQuery = $ctx['baseQuery'];
 
-        // Trends
-        $monthlyTrend = $this->getMonthlyTrend($baseQuery);
-        $renewalVsExpiredTrend = $this->getRenewalVsExpiredTrend($baseQuery);
-        $monthlyApprovalTrend = $this->getMonthlyApprovalTrend($baseQuery);
-        $topVendors = $this->getTopVendors($baseQuery);
-        $categoryTrend = $this->getCategoryTrend($baseQuery);
+        return [
+            'activePeriod' => $ctx['period'],
+            'overviewDailyTrend' => $this->getOverviewDailyTrend($baseQuery),
+            'overviewCategoryDistribution' => $this->getOverviewCategoryDistribution($baseQuery),
+            'contractData' => $this->getCategoryScopedOverview($baseQuery, 'contract'),
+            'nonContractData' => $this->getCategoryScopedOverview($baseQuery, 'non_contract'),
+            'ndaData' => $this->getCategoryScopedOverview($baseQuery, 'nda'),
+        ];
+    }
 
-        // Analysis
-        $expiryRiskHeatmap = $this->getExpiryRiskHeatmap($baseQuery);
+    /**
+     * Get document distributions, submission types, and status breakdowns.
+     *
+     * @return array<string, mixed>
+     */
+    public function getDistributions(Request $request): array
+    {
+        $ctx = $this->resolveContext($request);
+        $baseQuery = $ctx['baseQuery'];
+
+        $inProcessStatuses = array_map(fn ($s) => "'{$s->value}'", ContractStatusEnum::inProcess());
+        $inProcessStatusesSql = implode(',', $inProcessStatuses);
+
+        $kpiAggregates = (clone $baseQuery)
+            ->selectRaw("
+                COUNT(*) FILTER (WHERE status IN ({$inProcessStatusesSql}) AND closed_at IS NULL) as in_process,
+                COUNT(*) FILTER (WHERE status = 'approved') as approved_count,
+                COUNT(*) FILTER (WHERE status = 'revision') as revision_count,
+                COUNT(*) FILTER (WHERE status = 'rejected') as rejected_count
+            ")
+            ->first();
+
+        return [
+            'activePeriod' => $ctx['period'],
+            'submissionTypeDistribution' => $this->getSubmissionTypeDistribution($baseQuery),
+            'contractTypeDistribution' => $this->getContractTypeDistribution($baseQuery),
+            'statusDistribution' => $this->getStatusDistribution($baseQuery),
+            'expiryTimeline' => $this->getExpiryTimeline($baseQuery),
+            'approvalStatusCounts' => [
+                'approved' => (int) ($kpiAggregates->approved_count ?? 0),
+                'pending' => (int) ($kpiAggregates->in_process ?? 0),
+                'revision' => (int) ($kpiAggregates->revision_count ?? 0),
+                'rejected' => (int) ($kpiAggregates->rejected_count ?? 0),
+            ],
+        ];
+    }
+
+    /**
+     * Get monthly, daily, approval, and category trends.
+     *
+     * @return array<string, mixed>
+     */
+    public function getTrends(Request $request): array
+    {
+        $ctx = $this->resolveContext($request);
+        $baseQuery = $ctx['baseQuery'];
+
+        return [
+            'activePeriod' => $ctx['period'],
+            'monthlyTrend' => $this->getMonthlyTrend($baseQuery),
+            'dailyTrend' => $this->getDailyTrend($baseQuery),
+            'renewalVsExpiredTrend' => $this->getRenewalVsExpiredTrend($baseQuery),
+            'monthlyApprovalTrend' => $this->getMonthlyApprovalTrend($baseQuery),
+            'topVendors' => $this->getTopVendors($baseQuery),
+            'categoryTrend' => $this->getCategoryTrend($baseQuery),
+        ];
+    }
+
+    /**
+     * Get advanced analytical metrics (expiry risk, vendor performance, budget allocation, etc.).
+     *
+     * @return array<string, mixed>
+     */
+    public function getAnalysis(Request $request): array
+    {
+        $ctx = $this->resolveContext($request);
+        $baseQuery = $ctx['baseQuery'];
+
+        $kpiAggregates = (clone $baseQuery)
+            ->selectRaw("
+                COUNT(*) FILTER (WHERE status = 'approved' AND closed_at IS NULL AND end_date < CURRENT_DATE) as expired,
+                COUNT(*) FILTER (WHERE parent_id IS NOT NULL) as renewed
+            ")
+            ->first();
+
+        $expiredContracts = (int) ($kpiAggregates->expired ?? 0);
+        $renewedContractsCount = (int) ($kpiAggregates->renewed ?? 0);
+        $renewalCompletionRate = $expiredContracts > 0
+            ? round(($renewedContractsCount / $expiredContracts) * 100, 1)
+            : 100;
+
         // ponytail: Query materialized view directly to get id and parent_id of all active contracts
         $renewedIds = DB::table('mv_dashboard_contracts')
             ->whereNotNull('parent_id')
             ->pluck('parent_id')
             ->all();
-        $renewalFailureByCategory = $this->getRenewalFailureByCategory($baseQuery, $renewedIds);
-        $vendorPerformance = $this->getVendorPerformance($baseQuery, $renewedIds);
-        $valueDistribution = $this->getValueDistribution($baseQuery);
-        $budgetAllocation = $this->getBudgetAllocation($baseQuery);
-        $approvalDurationByDept = $this->getApprovalDurationByDept($baseQuery);
 
-        // Workload
-        [$startOfMonth, $endOfMonth] = $this->resolveWorkloadPeriod($createdFrom, $createdTo);
+        return [
+            'activePeriod' => $ctx['period'],
+            'expiryRiskHeatmap' => $this->getExpiryRiskHeatmap($baseQuery),
+            'renewalFailureByCategory' => $this->getRenewalFailureByCategory($baseQuery, $renewedIds),
+            'vendorPerformance' => $this->getVendorPerformance($baseQuery, $renewedIds),
+            'valueDistribution' => $this->getValueDistribution($baseQuery),
+            'budgetAllocation' => $this->getBudgetAllocation($baseQuery),
+            'approvalDurationByDept' => $this->getApprovalDurationByDept($baseQuery),
+            'renewalCompletionRate' => $renewalCompletionRate,
+        ];
+    }
 
-        // ponytail: Pre-load active/pending workload counts to prevent N+1 queries in loop
+    /**
+     * Get workload metrics across users and departments.
+     *
+     * @return array<string, mixed>
+     */
+    public function getWorkloads(Request $request): array
+    {
+        $ctx = $this->resolveContext($request);
+        $baseQuery = $ctx['baseQuery'];
+        $user = $ctx['user'];
+        $hasFullAccess = $ctx['hasFullAccess'];
+        $isManager = $ctx['isManager'];
+        $hasDepartmentAccess = $ctx['hasDepartmentAccess'];
+        $regionIds = $ctx['regionIds'];
+        $companyGroupIds = $ctx['companyGroupIds'];
+        $companyIds = $ctx['companyIds'];
+        $departmentIds = $ctx['departmentIds'];
+
+        [$startOfMonth, $endOfMonth] = $this->resolveWorkloadPeriod($ctx['createdFrom'], $ctx['createdTo']);
+
         $activeCounts = DB::table('mv_dashboard_contracts')
             ->whereIn('status', [ContractStatusEnum::InReview->value, ContractStatusEnum::Revision->value])
             ->select('assigned_pic_id', DB::raw('count(*) as count'))
@@ -264,159 +513,95 @@ class ContractDashboardQuery
             $pendingThisMonth, $activeThisMonth, $completedApprovalsThisMonth, $completedContractsThisMonth
         );
 
-        $departmentWorkload = $this->getDepartmentWorkload($activeCounts, $pendingCounts);
-        $categoryTraffic = $this->getCategoryTraffic($baseQuery);
-        $departmentTraffic = $this->getDepartmentTraffic($baseQuery);
-
-        $totalRenewed = $renewedContractsCount;
-        $renewalCompletionRate = $expiredContracts > 0
-            ? round(($totalRenewed / $expiredContracts) * 100, 1)
-            : 100;
-
-        $todayTotal = (int) ($kpiAggregates->today_total ?? 0);
-        $todayInProcess = (int) ($kpiAggregates->today_in_process ?? 0);
-        $todayCompleted = (int) ($kpiAggregates->today_completed ?? 0);
-        $todayRejected = (int) ($kpiAggregates->today_rejected ?? 0);
-        $todayApproved = (int) ($kpiAggregates->today_approved ?? 0);
-
-        // Resolve matching dashboard type configuration:
-        // 1. Direct role relation dashboard_type_id (if present)
-        // 2. Matching rules from m_dashboard_types table
-        $dashboardConfig = null;
-        if ($user && $user->role_id) {
-            $userRole = $user->roleRelation;
-            $roleDashboardTypeId = data_get($userRole?->getAttributes(), 'dashboard_type_id');
-            if ($roleDashboardTypeId) {
-                $dashboardConfig = DashboardType::find($roleDashboardTypeId);
-            }
-        }
-
-        if (! $dashboardConfig) {
-            $dashboardConfig = DashboardType::all()->filter(function ($dt) use ($user) {
-                $rawRoles = $dt->role_ids ?? data_get($dt->getAttributes(), 'role_ids');
-                $roleIds = DashboardType::normalizeIds($rawRoles);
-                if ($rawRoles === null && ! empty($dt->role_id)) {
-                    $roleIds = [$dt->role_id];
-                }
-
-                $rawDivisions = $dt->division_ids ?? data_get($dt->getAttributes(), 'division_ids');
-                $divisionIds = DashboardType::normalizeIds($rawDivisions);
-                if ($rawDivisions === null && ! empty($dt->division_id)) {
-                    $divisionIds = [$dt->division_id];
-                }
-
-                $rawDepartments = $dt->department_ids ?? data_get($dt->getAttributes(), 'department_ids');
-                $departmentIds = DashboardType::normalizeIds($rawDepartments);
-                if ($rawDepartments === null && ! empty($dt->department_id)) {
-                    $departmentIds = [$dt->department_id];
-                }
-
-                $roleMatch = empty($roleIds) || in_array((string) $user->role_id, array_map('strval', $roleIds));
-                $divisionMatch = empty($divisionIds) || in_array((string) $user->division_id, array_map('strval', $divisionIds));
-                $departmentMatch = empty($departmentIds) || in_array((string) $user->department_id, array_map('strval', $departmentIds));
-
-                return $roleMatch && $divisionMatch && $departmentMatch;
-            })->sortByDesc(function ($dt) {
-                $rawRoles = $dt->role_ids ?? data_get($dt->getAttributes(), 'role_ids');
-                $roleIds = DashboardType::normalizeIds($rawRoles);
-                if ($rawRoles === null && ! empty($dt->role_id)) {
-                    $roleIds = [$dt->role_id];
-                }
-
-                $rawDivisions = $dt->division_ids ?? data_get($dt->getAttributes(), 'division_ids');
-                $divisionIds = DashboardType::normalizeIds($rawDivisions);
-                if ($rawDivisions === null && ! empty($dt->division_id)) {
-                    $divisionIds = [$dt->division_id];
-                }
-
-                $rawDepartments = $dt->department_ids ?? data_get($dt->getAttributes(), 'department_ids');
-                $departmentIds = DashboardType::normalizeIds($rawDepartments);
-                if ($rawDepartments === null && ! empty($dt->department_id)) {
-                    $departmentIds = [$dt->department_id];
-                }
-
-                $score = 0;
-                if (! empty($roleIds)) $score += 4;
-                if (! empty($divisionIds)) $score += 2;
-                if (! empty($departmentIds)) $score += 1;
-
-                return $score;
-            })->first();
-        }
-
         return [
-            'dashboardConfig' => [
-                'has_setting' => (bool) $dashboardConfig,
-                'name' => $dashboardConfig ? $dashboardConfig->name : null,
-                'show_overview' => $dashboardConfig ? (bool) $dashboardConfig->show_overview : false,
-                'show_overview_contract' => $dashboardConfig ? (bool) $dashboardConfig->show_overview_contract : false,
-                'show_overview_non_contract' => $dashboardConfig ? (bool) $dashboardConfig->show_overview_non_contract : false,
-                'show_overview_nda' => $dashboardConfig ? (bool) $dashboardConfig->show_overview_nda : false,
-                'show_workload' => $dashboardConfig ? (bool) $dashboardConfig->show_workload : false,
-                'show_master_data' => $dashboardConfig ? (bool) $dashboardConfig->show_master_data : false,
-            ],
-            'metrics' => [
-                'totalContracts' => $totalContracts,
-                'activeContracts' => $activeContracts,
-                'expiringContracts' => $expiringSoonContracts,
-                'expiredContracts' => $expiredContracts,
-                'pendingContracts' => $inProcessContracts,
-                'pendingApprovals' => $pendingApprovalsForMe,
-                'renewalRate' => $renewalRate,
-                'totalValue' => $totalValue,
-                'avgCycleTime' => $avgDays,
-            ],
-            'summary' => [
-                'total' => $todayTotal,
-                'my_total' => $myTotalContracts,
-                'archived_total' => $archivedTotalContracts,
-                'in_process' => $inProcessContracts,
-                'pending_for_me' => $pendingApprovalsForMe,
-                'completed' => $todayCompleted,
-                'rejected' => $todayRejected,
-                'approved' => $todayApproved,
-            ],
-            'activePeriod' => $period,
-            'submissionTypeDistribution' => $submissionTypeDistribution,
-            'contractTypeDistribution' => $contractTypeDistribution,
-            'statusDistribution' => $statusDistribution,
-            'expiryTimeline' => $expiryTimeline,
-            'approvalStatusCounts' => $approvalStatusCounts,
-            'recentContracts' => $recentContracts,
-            'upcomingRenewals' => $upcomingRenewals,
-            'pendingApprovalsList' => $pendingApprovalsList,
-            'recentActivity' => $recentActivity,
-            'monthlyTrend' => $monthlyTrend,
-            'renewalVsExpiredTrend' => $renewalVsExpiredTrend,
-            'monthlyApprovalTrend' => $monthlyApprovalTrend,
-            'topVendors' => $topVendors,
-            'categoryTrend' => $categoryTrend,
-            'expiryRiskHeatmap' => $expiryRiskHeatmap,
-            'renewalFailureByCategory' => $renewalFailureByCategory,
-            'vendorPerformance' => $vendorPerformance,
-            'valueDistribution' => $valueDistribution,
-            'budgetAllocation' => $budgetAllocation,
-            'approvalDurationByDept' => $approvalDurationByDept,
+            'activePeriod' => $ctx['period'],
             'userWorkloads' => $userWorkloads,
-            'departmentWorkload' => $departmentWorkload,
-            'categoryTraffic' => $categoryTraffic,
-            'renewalCompletionRate' => $renewalCompletionRate,
-            'departmentTraffic' => $departmentTraffic,
-            'dailyTrend' => $this->getDailyTrend($baseQuery),
-            'overviewDailyTrend' => $this->getOverviewDailyTrend($baseQuery),
-            'overviewCategoryDistribution' => $this->getOverviewCategoryDistribution($baseQuery),
-            'contractData' => $this->getCategoryScopedOverview($baseQuery, 'contract'),
-            'nonContractData' => $this->getCategoryScopedOverview($baseQuery, 'non_contract'),
-            'ndaData' => $this->getCategoryScopedOverview($baseQuery, 'nda'),
-            'masterDataCounts' => $this->getScopedMasterDataCounts($user, $hasFullAccess),
+            'departmentWorkload' => $this->getDepartmentWorkload($activeCounts, $pendingCounts),
+            'categoryTraffic' => $this->getCategoryTraffic($baseQuery),
+            'departmentTraffic' => $this->getDepartmentTraffic($baseQuery),
         ];
     }
 
-    private function getScopedMasterDataCounts(User $user, bool $hasFullAccess): array
+    /**
+     * Get master data counts and organization hierarchy breakdown.
+     *
+     * @return array<string, mixed>
+     */
+    public function getMasterData(Request $request): array
     {
-        $settings = $user->getContractFilterSettings();
+        $ctx = $this->resolveContext($request);
+
+        return [
+            'masterDataCounts' => $this->getScopedMasterDataCounts($ctx['user'], $ctx['hasFullAccess']),
+        ];
+    }
+
+    /**
+     * Get recent activity lists (recent contracts, upcoming renewals, pending approvals, timeline activity).
+     *
+     * @return array<string, mixed>
+     */
+    public function getRecentActivityMetrics(Request $request): array
+    {
+        $ctx = $this->resolveContext($request);
+        $baseQuery = $ctx['baseQuery'];
+
+        return [
+            'recentContracts' => $this->getRecentContracts($baseQuery),
+            'upcomingRenewals' => $this->getUpcomingRenewals($baseQuery),
+            'pendingApprovalsList' => $this->getPendingApprovalsList(),
+            'recentActivity' => $this->getRecentActivity($ctx['user'], $ctx['isAdmin']),
+        ];
+    }
+
+    /**
+     * Get all dashboard metrics for the given request context, or filtered by section.
+     *
+     * @return array<string, mixed>
+     */
+    public function getMetrics(Request $request): array
+    {
+        $section = $request->query('section');
+        if ($section) {
+            $sections = is_array($section) ? $section : explode(',', $section);
+            $result = [];
+            foreach ($sections as $s) {
+                $s = trim(strtolower($s));
+                $sectionData = match ($s) {
+                    'summary', 'kpi' => $this->getSummaryMetrics($request),
+                    'overview' => $this->getOverviewMetrics($request),
+                    'distributions', 'distribution' => $this->getDistributions($request),
+                    'trends', 'trend' => $this->getTrends($request),
+                    'analysis' => $this->getAnalysis($request),
+                    'workload', 'workloads' => $this->getWorkloads($request),
+                    'master-data', 'master_data', 'masterdata' => $this->getMasterData($request),
+                    'recent-activity', 'recent_activity', 'activity', 'recent' => $this->getRecentActivityMetrics($request),
+                    default => [],
+                };
+                $result = array_merge($result, $sectionData);
+            }
+            if (! empty($result)) {
+                return $result;
+            }
+        }
+
+        return array_merge(
+            $this->getSummaryMetrics($request),
+            $this->getOverviewMetrics($request),
+            $this->getDistributions($request),
+            $this->getTrends($request),
+            $this->getAnalysis($request),
+            $this->getWorkloads($request),
+            $this->getMasterData($request),
+            $this->getRecentActivityMetrics($request)
+        );
+    }
+
+    private function getScopedMasterDataCounts(?User $user, bool $hasFullAccess): array
+    {
+        $settings = $user?->getContractFilterSettings() ?? [];
         $groupFull = $hasFullAccess || ($settings['can_change_company_group'] ?? false);
-        $companyGroupIds = $groupFull ? null : (array_filter([$user->company_group_id], fn ($v) => ! empty($v)));
+        $companyGroupIds = $groupFull ? null : (array_filter([$user?->company_group_id], fn ($v) => ! empty($v)));
 
         // ponytail: filter master data yang is_used = true
         $userQuery = User::query()->where('is_used', true);

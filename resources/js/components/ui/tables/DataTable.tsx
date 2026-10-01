@@ -98,7 +98,7 @@ export function DataTable<T extends { id?: any } = Record<string, unknown>>({
     renderSubHeader,
 }: DataTableProps<T>) {
 
-    const [localPerPage, setLocalPerPage] = React.useState(pagination?.perPage || 15);
+    const [localPerPage, setLocalPerPage] = React.useState(pagination?.perPage || 25);
     const [localSearch, setLocalSearch] = React.useState(searchValue);
     const debouncedSearch = useDebounce(localSearch, 500);
     const [internalSelectedRows, setInternalSelectedRows] = React.useState<T[]>([]);
