@@ -11,6 +11,8 @@ export interface ContractPermissionResult {
     isCreator: boolean;
     isApprover: boolean;
     isSigner: boolean;
+    isAssignedPic: boolean;
+    isAdmin: boolean;
     isTerminal: boolean;
     isClosed: boolean;
     activeSignerApproval: any | null;
@@ -35,14 +37,18 @@ export function useContractPermissions(
                 isCreator: false,
                 isApprover: false,
                 isSigner: false,
+                isAssignedPic: false,
+                isAdmin: false,
                 isTerminal: true,
                 isClosed: true,
                 activeSignerApproval: null,
             };
         }
 
-        const isCreator = Boolean(meId && contract.created_by === meId);
-        const isApprover = Boolean((contract as any).can_approve);
+        const isCreator = Boolean(meId && (contract.created_by === meId || contract.initiated_by_id === meId));
+        const isApprover = Boolean((contract as any).can_approve || (contract as any).is_current_actor);
+        const isAssignedPic = Boolean(meId && contract.assigned_pic_id === meId);
+        const isAdmin = Boolean(authUser?.is_admin || authUser?.role === 'Admin' || authUser?.role === 'Super Admin');
         const isTerminal = (TERMINAL_STATUSES as readonly string[]).includes(contract.status);
         const isClosed = (CLOSED_STATUSES as readonly string[]).includes(contract.status);
 
@@ -54,10 +60,11 @@ export function useContractPermissions(
         ) || null;
 
         const isSigner = Boolean(activeSignerApproval);
+        const isParticipant = isApprover || isCreator || isAssignedPic || isSigner || isAdmin;
 
         // Calculate edit permissions based on docType and workflow metadata flags
         let canEdit = false;
-        if (!isTerminal && (isApprover || (docType === 'agreement' && (isCreator || isSigner)))) {
+        if (!isClosed && !isTerminal) {
             const stepMeta = (contract.workflow_step as any)?.meta;
             const flagMap: Record<string, boolean | undefined> = {
                 f1: contract.allow?.f1_edit ?? contract.allow_f1_edit ?? stepMeta?.allow_f1_edit,
@@ -67,7 +74,7 @@ export function useContractPermissions(
             };
 
             const flag = flagMap[docType] ?? contract.allow?.info_edit ?? contract.allow_info_edit ?? stepMeta?.allow_info_edit;
-            canEdit = flag !== false;
+            canEdit = (flag === true || flag !== false) && isParticipant;
         }
 
         return {
@@ -78,9 +85,11 @@ export function useContractPermissions(
             isCreator,
             isApprover,
             isSigner,
+            isAssignedPic,
+            isAdmin,
             isTerminal,
             isClosed,
             activeSignerApproval,
         };
-    }, [contract, docType, meId]);
+    }, [contract, docType, meId, authUser]);
 }

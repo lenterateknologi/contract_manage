@@ -286,7 +286,9 @@ class ContractController extends Controller
     {
         $contract = $this->contractDetailQuery->find($id);
 
-        Gate::authorize('view', $contract);
+        if (! Gate::allows('view', $contract)) {
+            abort(404, 'Kontrak tidak ditemukan.');
+        }
 
         if ($request->wantsJson() && ! $request->header('X-Inertia')) {
             $formatted = ContractFormatter::formatContract($contract, true);
@@ -485,7 +487,9 @@ class ContractController extends Controller
     public function reviewDoc(Request $request, string $id): JsonResponse
     {
         $contract = $this->contractDetailQuery->find($id);
-        Gate::authorize('view', $contract);
+        if (! Gate::allows('view', $contract)) {
+            abort(404, 'Kontrak tidak ditemukan.');
+        }
 
         $doc = $request->input('doc'); // 'f1' | 'f2' | 'agreement'
         if (! in_array($doc, ['f1', 'f2', 'agreement'])) {

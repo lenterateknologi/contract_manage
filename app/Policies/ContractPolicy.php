@@ -90,7 +90,8 @@ class ContractPolicy
         // Category restriction
         if (! empty($settings['categories'])) {
             $allowedCats = (array) $settings['categories'];
-            if ($contract->category && ! in_array($contract->category, $allowedCats)) {
+            $contractCategory = data_get($contract->metadata, 'category') ?? $contract->contractType?->name;
+            if ($contractCategory && ! in_array($contractCategory, $allowedCats)) {
                 return false;
             }
         }
