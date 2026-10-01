@@ -43,41 +43,31 @@ class ForgotPasswordController extends Controller
             ? User::where('email', $identifier)->first()
             : User::where('username', $identifier)->orWhere('nik', $identifier)->first();
 
-        if (! $user) {
-            return back()->withErrors([
-                'email' => 'Akun dengan email atau username tersebut tidak ditemukan.',
+        if ($user && ! empty($user->email) && filter_var($user->email, FILTER_VALIDATE_EMAIL)) {
+            // Create forgot password token
+            $token = hash('sha256', Str::random(40));
+            $expireAt = now()->addMinutes(60); // 1 hour expiry
+
+            ForgotPassword::create([
+                'email' => $user->email,
+                'user_id' => $user->id,
+                'token' => $token,
+                'expire_at' => $expireAt,
             ]);
-        }
 
-        if (empty($user->email) || ! filter_var($user->email, FILTER_VALIDATE_EMAIL)) {
-            return back()->withErrors([
-                'email' => 'Akun ditemukan tetapi belum memiliki alamat email yang valid. Silakan hubungi administrator.',
-            ]);
-        }
+            $resetUrl = route('password.reset', ['token' => $token]);
 
-        // Create forgot password token
-        $token = hash('sha256', Str::random(40));
-        $expireAt = now()->addMinutes(60); // 1 hour expiry
-
-        ForgotPassword::create([
-            'email' => $user->email,
-            'user_id' => $user->id,
-            'token' => $token,
-            'expire_at' => $expireAt,
-        ]);
-
-        $resetUrl = route('password.reset', ['token' => $token]);
-
-        if (config('notifications.email.enabled', true)) {
-            try {
-                Mail::to($user->email)
-                    ->send(new ForgotPasswordResetMail($user, $resetUrl, $expireAt));
-            } catch (\Throwable $e) {
-                \Illuminate\Support\Facades\Log::error('Failed sending forgot password reset email: '.$e->getMessage());
+            if (config('notifications.email.enabled', true)) {
+                try {
+                    Mail::to($user->email)
+                        ->send(new ForgotPasswordResetMail($user, $resetUrl, $expireAt));
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::error('Failed sending forgot password reset email: '.$e->getMessage());
+                }
             }
         }
 
-        return back()->with('status', 'Tautan atur ulang kata sandi telah dikirim ke email terdaftar Anda ('.$user->email.').');
+        return back()->with('status', 'Tautan atur ulang kata sandi telah dikirim. Silakan periksa kotak masuk atau spam email Anda.');
     }
 
     /**
