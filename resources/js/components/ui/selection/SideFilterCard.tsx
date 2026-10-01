@@ -365,7 +365,7 @@ export function SideFilterCard({
                             const dateFromKey = `${category.key}_from`;
                             const dateToKey = `${category.key}_to`;
                             const hasDateVal = Boolean(draftFilters[dateFromKey] || draftFilters[dateToKey]);
-                            const activeCountForCat = isDateRange ? (hasDateVal ? 1 : 0) : currentVals.length;
+                            const activeCountForCat = isDateRange ? Number(hasDateVal) : currentVals.length;
 
                             return (
                                 <CategoryAccordion

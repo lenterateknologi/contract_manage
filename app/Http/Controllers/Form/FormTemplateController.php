@@ -22,8 +22,12 @@ class FormTemplateController extends Controller
     /**
      * Display a listing of form templates.
      */
-    public function index()
+    public function index(Request $request)
     {
+        if ($request->wantsJson() || $request->expectsJson() || $request->is('api/*')) {
+            return $this->apiIndex($request);
+        }
+
         return Inertia::render('form-management/Templates', [
             'templates' => FormTemplate::withCount('fields')->get(),
             'contract_types' => ContractType::all(),
@@ -31,6 +35,67 @@ class FormTemplateController extends Controller
                 ['title' => 'Administrasi', 'href' => '#'],
                 ['title' => 'Form Template', 'href' => route('admin.form-templates.index')],
             ],
+        ]);
+    }
+
+    /**
+     * API: Get list of form templates.
+     */
+    public function apiIndex(Request $request)
+    {
+        $query = FormTemplate::withCount('fields')->with(['fields' => fn ($q) => $q->orderBy('order')]);
+
+        if ($request->filled('contract_type_id')) {
+            $query->where('contract_type_id', $request->query('contract_type_id'));
+        }
+
+        if ($request->filled('document_type')) {
+            $query->where('document_type', $request->query('document_type'));
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->query('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        $templates = $query->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Form templates retrieved successfully',
+            'data' => $templates,
+        ]);
+    }
+
+    /**
+     * API: Get single form template detail with fields.
+     */
+    public function show(string $id)
+    {
+        $template = FormTemplate::withCount('fields')->with(['fields' => fn ($q) => $q->orderBy('order')])->findOrFail($id);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Form template retrieved successfully',
+            'data' => $template,
+        ]);
+    }
+
+    /**
+     * API: Get fields for a form template.
+     */
+    public function getFields(string $id)
+    {
+        $template = FormTemplate::with(['fields' => fn ($q) => $q->orderBy('order')])->findOrFail($id);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Fields retrieved successfully',
+            'fields' => $template->fields,
+            'data' => $template,
         ]);
     }
 

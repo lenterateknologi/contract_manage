@@ -41,6 +41,7 @@ Route::prefix('contracts')->group(function () {
 
     Route::controller(ContractApprovalController::class)->prefix('{id}')->group(function () {
         Route::get('/workflow', 'getWorkflow');
+        Route::get('/current-step', 'getCurrentStep');
         Route::get('/timeline', 'getTimeline');
         Route::get('/requirements', 'getRequirements');
         Route::get('/actions', 'getAvailableActions');
@@ -59,6 +60,8 @@ Route::prefix('contracts')->group(function () {
     });
 
     Route::controller(ContractFileController::class)->prefix('{id}')->group(function () {
+        Route::get('/document-types', 'getDocumentTypes');
+        Route::get('/document-types/{type}', 'getDocumentTypes');
         Route::post('/revision', 'uploadRevision');
         Route::get('/revision/versions', 'getRevisionVersions');
         Route::post('/version', 'changeVersion');

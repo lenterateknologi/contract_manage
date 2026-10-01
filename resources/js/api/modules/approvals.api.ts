@@ -150,4 +150,10 @@ export const approvalsApi = {
      */
     getWorkflow: (id: string): Promise<any> =>
         unwrapResponse(apiClient.get(API_ENDPOINTS.APPROVALS.WORKFLOW(id))),
+
+    /**
+     * Get current workflow step details
+     */
+    getCurrentStep: (id: string): Promise<any> =>
+        unwrapResponse(apiClient.get(API_ENDPOINTS.APPROVALS.CURRENT_STEP(id))),
 };

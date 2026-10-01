@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\VendorAdminController;
 use App\Http\Controllers\Admin\WorkflowAdminController;
+use App\Http\Controllers\Form\FormTemplateController;
 use App\Http\Controllers\Report\ReportController;
 use App\Http\Controllers\Template\TemplateController;
 use Illuminate\Support\Facades\Route;
@@ -126,4 +127,18 @@ Route::prefix('admin')->group(function () {
         Route::get('/{workflow}/steps', 'steps');
         Route::post('/{workflow}/steps', 'updateSteps');
     });
+
+    // Form Templates (Admin REST API)
+    Route::controller(FormTemplateController::class)->prefix('form-templates')->group(function () {
+        Route::get('/', 'apiIndex');
+        Route::get('/{id}', 'show');
+        Route::get('/{id}/fields', 'getFields');
+    });
+});
+
+// Form Templates (Direct API)
+Route::controller(FormTemplateController::class)->prefix('form-templates')->group(function () {
+    Route::get('/', 'apiIndex');
+    Route::get('/{id}', 'show');
+    Route::get('/{id}/fields', 'getFields');
 });

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Contract;
 
+use App\Http\Actions\Contract\GetContractDocumentTypesAction;
 use App\Http\Actions\File\AttachmentFileAction;
 use App\Http\Actions\File\AttachmentPdfPreviewAction;
 use App\Http\Actions\File\ChangeVersionAction;
@@ -290,5 +291,12 @@ class ContractFileController extends Controller
         $type = $request->query('type', 'agreement');
 
         return $action->execute($contract, $type, $request);
+    }
+
+    public function getDocumentTypes(Request $request, string $id, GetContractDocumentTypesAction $action, ?string $type = null): JsonResponse
+    {
+        $contract = $this->contractDetailQuery->find($id);
+
+        return $action->execute($contract, $request, $type);
     }
 }

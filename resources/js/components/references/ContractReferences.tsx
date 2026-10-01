@@ -23,8 +23,12 @@ export default function ContractReferences({
     meId,
 }: ContractReferencesProps) {
     const parent = contract.parent;
-    const isActor = (contract as any).can_approve || contract.created_by === meId || (contract as any).initiated_by_id === meId;
-    const canModifyRef = contract.allow_reference !== false && (isActor || canUpdate);
+    // ponytail: workflow configuration is the strict source of truth for references
+    const allowReference =
+        contract.allow?.reference ??
+        (contract as any).allow_reference ??
+        (contract.workflow_step as any)?.meta?.allow_reference;
+    const canModifyRef = allowReference === true && (isActor || canUpdate);
 
     const [isEditing, setIsEditing] = useState(false);
     const [search, setSearch] = useState('');

@@ -5,8 +5,9 @@ import { useToast } from '@/components/ui/feedback/Toast';
 import { SearchInput } from '@/components/ui/inputs/SearchInput';
 import { useDebounce } from '@/hooks/use-debounce';
 import { cn } from '@/lib/utils';
-import { Contract } from '@/pages/contracts/types';
+import { Contract, CLOSED_STATUSES } from '@/pages/contracts/types';
 import { contractsApi, approvalsApi, subresourcesApi } from '@/api';
+import { useContractPermissions } from '@/hooks/use-contract-permissions';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 const { ArrowRight, Diff, Download, ExternalLink, FileText, History, Loader2, Maximize2, Minimize2, MoreVertical, PenTool, RefreshCw, Upload } =
@@ -146,17 +147,11 @@ export default function AgreementView({
         }
     }, [contractVersionsCount]);
 
-    const isCreator = contract.created_by === meId;
-    const isApprover = (contract as any).can_approve;
-
-    // --- SIGNING LOGIC ---
-    const activeSignerApproval = React.useMemo(() => {
-        return (contract.approvals || []).find(
-            (a: any) => a.status === 'pending' && a.user_id === meId && (a.role === 'Pihak 1' || a.role === 'Pihak 2' || a.role === 'Penandatangan'),
-        );
-    }, [contract.approvals, meId]);
-
-    const isSigner = !!activeSignerApproval;
+    const { canEdit, isCreator, isApprover, isSigner, activeSignerApproval } = useContractPermissions(
+        contract,
+        effectiveDocType,
+        meId,
+    );
     const stepDownloaded = activeSignerApproval ? contract.metadata?.[`downloaded_step_${activeSignerApproval.id}`] : null;
 
     const handleDownload = async (vId?: string) => {
@@ -183,11 +178,9 @@ export default function AgreementView({
         if (isSigner && activeSignerApproval) {
             const newMeta = { ...contract.metadata };
 
-            // Track globally for legacy P1/P2
             if (activeSignerApproval?.role === 'Pihak 1') newMeta['p1_downloaded_at'] = new Date().toISOString();
             if (activeSignerApproval?.role === 'Pihak 2') newMeta['p2_downloaded_at'] = new Date().toISOString();
 
-            // Track specifically for this approval step
             newMeta[`downloaded_step_${activeSignerApproval.id}`] = new Date().toISOString();
 
             try {
@@ -198,14 +191,6 @@ export default function AgreementView({
             }
         }
     };
-    // ---------------------
-
-    const allowFlag =
-        effectiveDocType === 'f1' ? contract.allow_f1_edit : effectiveDocType === 'f2' ? contract.allow_f2_edit : contract.allow_agreement_edit;
-
-    // We allow edit if user is Creator or Approver, AND the flag is not explicitly false.
-    // (Admins who are neither will be read-only on frontend unless we pass their role)
-    const canEdit = (isCreator || isApprover || isSigner) && allowFlag !== false;
 
     const formatSize = (bytes: number): string => {
         if (bytes < 1024) return `${bytes} B`;

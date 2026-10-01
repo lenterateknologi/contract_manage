@@ -370,7 +370,8 @@ export function TreeSelect({
                                                 ? "border-primary bg-primary/20 text-primary"
                                                 : "border-border bg-transparent group-hover:border-foreground/30"
                                     )}>
-                                        {fullySelected ? <Check size={10} /> : partiallySelected ? <div className="h-1 w-1.5 rounded-sm bg-current" /> : null}
+                                        {fullySelected && <Check size={10} />}
+                                        {!fullySelected && partiallySelected && <div className="h-1 w-1.5 rounded-sm bg-current" />}
                                     </div>
                                 ) : (
                                     <div className={cn(

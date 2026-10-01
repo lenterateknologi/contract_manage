@@ -191,26 +191,36 @@ class ContractPolicy
 
     /**
      * Centralized workflow-driven authorization.
-     * No hardcoded status checks here. Everything depends on:
-     * 1. Is the action allowed in the current workflow step?
-     * 2. Is the user an authorized actor for this step?
+     * The workflow step configuration is the strict source of truth.
      */
     private function canPerformEdit(User $user, Contract $contract, string $metaKey): bool
     {
-        // Admin, Super Admin, Creator, and Initiator always have upload/edit permission for contract files
-        if ($user->isAdmin() || $user->isSuperAdmin() || $contract->created_by === $user->id || $contract->initiated_by_id === $user->id) {
+        $currentStep = $contract->workflowStep;
+
+        // 1. If contract has an active workflow step, the step configuration is the strict source of truth.
+        // If the step is configured as Read Only (allow_*_edit = false), no one can edit/upload.
+        if ($currentStep) {
+            $isAllowedInStep = (bool) data_get($currentStep->meta, $metaKey, true);
+            if (! $isAllowedInStep) {
+                return false;
+            }
+        } elseif (in_array($contract->status, ['approved', 'rejected', 'closed', 'archived'])) {
+            // Finalized contract without an active step is strictly immutable
+            return false;
+        }
+
+        // 2. Admin & Super Admin have override only IF the workflow step permits the action
+        if ($user->isAdmin() || $user->isSuperAdmin()) {
             return true;
         }
 
-        // If contract is still in initial state (no step), allow creator or admin
+        // 3. Initial draft state before workflow submission (allow creator)
         if (! $contract->workflow_step_id) {
-            return $contract->created_by === $user->id || $user->isAdmin();
+            return $contract->created_by === $user->id;
         }
 
-        // Check permission from workflow configuration (JSON meta)
-        $isAllowedInStep = (bool) data_get($contract->workflowStep?->meta, $metaKey, true);
-
-        return $isAllowedInStep && $this->isActor($user, $contract);
+        // 4. In active workflow step, verify that user is an authorized actor for this step
+        return $this->isActor($user, $contract);
     }
 
     /**

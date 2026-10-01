@@ -120,7 +120,8 @@ export function getActionConfig(
             case 'approve':
                 return isStep1 ? 'Kirim Persetujuan' : 'Setujui Kontrak';
             default:
-                return isStep1 ? 'Kirim Persetujuan' : (cleanCode ? cleanCode.toUpperCase() : 'Setujui Kontrak');
+                if (isStep1) return 'Kirim Persetujuan';
+                return cleanCode ? cleanCode.toUpperCase() : 'Setujui Kontrak';
         }
     };
     const defaultLabel = resolveDefaultLabel();

@@ -22,6 +22,8 @@ export const contractApi = {
     getRoles: (): Promise<any[]> => unwrap(api.get('/api/contracts/roles')),
 
     // 2. Approval & Workflow Actions
+    currentStep: (id: string): Promise<any> => unwrap(api.get(`/api/contracts/${id}/current-step`)),
+    documentTypes: (id: string, type?: string): Promise<any> => unwrap(api.get(`/api/contracts/${id}/document-types${type ? `?type=${type}` : ''}`)),
     send: (id: string, data?: { workflow_id?: string; custom_steps?: any[] }): Promise<Contract> =>
         unwrap(api.post(`/api/contracts/${id}/send`, data)),
 

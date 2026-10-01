@@ -1,3 +1,12 @@
+export const DOCUMENT_TYPES = ['f1', 'f2', 'agreement', 'contract'] as const;
+export type DocumentType = (typeof DOCUMENT_TYPES)[number];
+
+export const TERMINAL_STATUSES = ['rejected', 'cancelled', 'completed', 'approved'] as const;
+export type TerminalStatus = (typeof TERMINAL_STATUSES)[number];
+
+export const CLOSED_STATUSES = ['rejected', 'cancelled', 'completed'] as const;
+export type ClosedStatus = (typeof CLOSED_STATUSES)[number];
+
 export interface UserFilterSettings {
     categories?: string[];
     contract_type_ids?: (string | number)[];

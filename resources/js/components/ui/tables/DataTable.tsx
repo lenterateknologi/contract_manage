@@ -217,7 +217,11 @@ export function DataTable<T extends { id?: any } = Record<string, unknown>>({
                                                 }
                                             }}
                                         >
-                                            <div className={cn("flex items-center gap-1.5", (col.align === 'right' || col.className?.includes('text-right') || col.className?.includes('text-center')) ? ((col.align === 'center' || col.className?.includes('text-center')) ? "justify-center" : "justify-end") : "justify-start")}>
+                                            <div className={cn(
+                                                "flex items-center gap-1.5",
+                                                (col.align === 'center' || col.className?.includes('text-center')) ? "justify-center" :
+                                                (col.align === 'right' || col.className?.includes('text-right')) ? "justify-end" : "justify-start"
+                                            )}>
                                                 <span className="text-white dark:text-zinc-200 font-bold">{col.header}</span>
                                                 {isSortable && (
                                                     <span className="flex flex-col text-[8px] leading-[6px] opacity-80">

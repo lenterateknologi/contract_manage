@@ -29,8 +29,12 @@ export default function ContractPurchaseOrders({
     processing,
     meId,
 }: ContractPurchaseOrdersProps) {
-    const isActor = (contract as any).can_approve || contract.created_by === meId || (contract as any).initiated_by_id === meId;
-    const canModify = isActor || canUpdate;
+    // ponytail: workflow configuration is the strict source of truth for PO references
+    const allowReference =
+        contract.allow?.reference ??
+        (contract as any).allow_reference ??
+        (contract.workflow_step as any)?.meta?.allow_reference;
+    const canModify = allowReference === true && (isActor || canUpdate);
 
     const purchaseOrders = (contract.purchase_orders || []) as ContractPurchaseOrder[];
 

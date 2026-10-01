@@ -54,8 +54,13 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
     const [confirmDelete, setConfirmDelete] = useState<{ id: string; label: string } | null>(null);
     const [search, setSearch] = useState('');
 
+    // ponytail: workflow configuration is the strict source of truth for attachments
     const isActor = (contract as any).can_approve || contract.created_by === meId || (contract as any).initiated_by_id === meId;
-    const canEdit = (isActor || canUpdate) && (contract as any).allow_attachment_edit !== false;
+    const allowAttachment =
+        contract.allow?.attachment_edit ??
+        (contract as any).allow_attachment_edit ??
+        (contract.workflow_step as any)?.meta?.allow_attachment_edit;
+    const canEdit = allowAttachment === true && (isActor || canUpdate);
 
     // Reactive Preview Logic
     useEffect(() => {

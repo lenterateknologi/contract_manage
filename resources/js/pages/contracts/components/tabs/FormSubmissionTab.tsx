@@ -7,8 +7,9 @@ import { SearchInput } from '@/components/ui/inputs/SearchInput';
 import { Modal } from '@/components/ui/dialogs/Modal';
 import { contractApi } from '@/pages/contracts/utils';
 import { cn } from '@/lib/utils';
-import { Contract } from '@/pages/contracts/types';
+import { Contract, TERMINAL_STATUSES } from '@/pages/contracts/types';
 import { subresourcesApi, formTemplatesApi } from '@/api';
+import { useContractPermissions } from '@/hooks/use-contract-permissions';
 import { ArrowRight, Check, Columns, Download, FileText, FolderOpen, History, Loader2, MoreVertical, PlusCircle } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getAutofillValue } from '../parts/autofill';
@@ -127,20 +128,25 @@ function GenericFormTab({
     const [pdfJobId, setPdfJobId] = useState<string | null>(null);
     const [pdfJobStatus, setPdfJobStatus] = useState<any>(null);
     const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
+    const [fetchedTemplate, setFetchedTemplate] = useState<FormTemplateInfo | null>(null);
 
-    const templateId =
-        docType === 'f1'
-            ? (selected as any).f1_form_template_id
-            : docType === 'f2'
-                ? (selected as any).f2_form_template_id
-                : (selected as any).contract_form_template_id;
+    const templateIdMap: Record<string, string | undefined> = {
+        f1: selected.f1_form_template_id || selected.modes?.f1_form_template_id,
+        f2: selected.f2_form_template_id || selected.modes?.f2_form_template_id,
+        contract: selected.contract_form_template_id || selected.agreement_form_template_id || selected.modes?.contract_form_template_id,
+        agreement: selected.contract_form_template_id || selected.agreement_form_template_id || selected.modes?.contract_form_template_id,
+    };
+    const templateId = templateIdMap[docType];
 
     const matchingTemplate =
+        fetchedTemplate ??
         formTemplates.find((ft) => templateId && ft.id === templateId) ??
         formTemplates.find((ft) => selected.contract_type_id && ft.contract_type_id === selected.contract_type_id && ft.document_type === docType) ??
         formTemplates.find((ft) => ft.contract_type_name === selected.contract_type && ft.document_type === docType) ??
-        formTemplates.find((ft) => ft.name.includes('FORMULIR PERMINTAAN PERJANJIAN') && ft.document_type === docType) ??
+        formTemplates.find((ft) => ft.name?.includes('FORMULIR PERMINTAAN PERJANJIAN') && ft.document_type === docType) ??
         formTemplates.find((ft) => !ft.contract_type_id && ft.document_type === docType);
+
+    const { canEdit, isCreator, isApprover } = useContractPermissions(selected, docType, meUser?.id);
 
     const filteredVersions = versions.filter((v) => {
         if (!searchQuery) return true;
@@ -235,17 +241,41 @@ function GenericFormTab({
     }, [selected, loading, fields.length, handleSync]);
 
     const loadData = useCallback(async () => {
-        if (!matchingTemplate) {
-            // Only stop loading if formTemplates is actually populated and definitely no template matches
-            if (formTemplates && formTemplates.length > 0) {
-                setLoading(false);
+        let activeTemplate = matchingTemplate;
+        if (!activeTemplate && templateId) {
+            try {
+                const res: any = await formTemplatesApi.detail(templateId);
+                const tpl = res?.data ?? res;
+                if (tpl?.id) {
+                    activeTemplate = tpl;
+                    setFetchedTemplate(tpl);
+                }
+            } catch (err) {
+                console.warn('[FormSubmissionTab] Failed to fetch template detail by templateId:', err);
             }
+        }
+        if (!activeTemplate && selected?.id) {
+            try {
+                const docRes: any = await contractApi.documentTypes(selected.id, docType);
+                const tpl = docRes?.data?.document?.form_template ?? docRes?.data?.documents?.[docType]?.form_template;
+                if (tpl?.id) {
+                    activeTemplate = tpl;
+                    setFetchedTemplate(tpl);
+                }
+            } catch (err) {
+                console.warn('[FormSubmissionTab] Failed to fetch document types config:', err);
+            }
+        }
+
+        if (!activeTemplate) {
+            setLoading(false);
             return;
         }
+
         setLoading(true);
         try {
             const [tplRes, subRes]: [any, any] = await Promise.all([
-                formTemplatesApi.getFields(matchingTemplate.id),
+                formTemplatesApi.getFields(activeTemplate.id),
                 contractApi.formSubmissions.get(selected.id, docType),
             ]);
             const tplFields: FormField[] = tplRes?.fields ?? tplRes?.data?.fields ?? [];
@@ -330,7 +360,7 @@ function GenericFormTab({
                 if (canEdit) {
                     try {
                         const firstVersion = await contractApi.formSubmissions.save(selected.id, {
-                            form_template_id: matchingTemplate.id,
+                            form_template_id: activeTemplate.id,
                             document_type: docType,
                             form_data: finalInitial,
                             is_new_version: true,
@@ -349,39 +379,11 @@ function GenericFormTab({
         } finally {
             setLoading(false);
         }
-    }, [matchingTemplate?.id, selected.id, docType, formTemplates?.length]);
+    }, [matchingTemplate?.id, templateId, selected.id, docType, formTemplates?.length, canEdit]);
 
     useEffect(() => {
         loadData();
     }, [loadData]);
-
-    const isCreator = selected.created_by === meUser?.id;
-    const isApprover = (selected as any).can_approve;
-
-    const allowFlag =
-        docType === 'f1'
-            ? selected.allow_f1_edit
-            : docType === 'f2'
-                ? selected.allow_f2_edit
-                : docType === 'contract'
-                    ? selected.allow_agreement_edit
-                    : selected.allow_info_edit;
-
-    // Strict enforcement: permissions follow workflow flags and participant status ONLY.
-    // User must be the current active actor (isApprover) AND the step must allow editing.
-    const canEdit = allowFlag !== false && isApprover;
-
-    // DEBUG LOG
-    console.log(`[FormSubmissionTab] Debug for ${docType}:`, {
-        docType,
-        allowFlag,
-        isCreator,
-        isApprover,
-        canEdit,
-        meUserId: meUser?.id,
-        contractCreatorId: selected.created_by,
-        workflowStepId: selected.workflow_step_id,
-    });
 
     const isDirty = useMemo(() => {
         const allKeys = new Set([...Object.keys(formData || {}), ...Object.keys(originalData || {})]);
@@ -906,19 +908,6 @@ function GenericFormTab({
             </div>
 
             <div className="dark:bg-sidebar force-light custom-scrollbar relative flex-1 overflow-y-auto bg-white/50 rounded-xl border border-surface-border">
-                {/* Visual Debug Banner */}
-                {/* <div className="flex justify-center pt-6 px-6">
-                    <div className={cn(
-                        "flex items-center gap-3 px-4 py-2 rounded-full border text-[10px] font-bold uppercase  shadow-sm",
-                        canEdit ? "bg-green-50 border-green-200 text-green-700" : "bg-amber-50 border-amber-200 text-amber-700"
-                    )}>
-                        <div className={cn("h-2 w-2 rounded-full animate-pulse", canEdit ? "bg-green-500" : "bg-amber-500")} />
-                        MODE: {canEdit ? "EDIT (Interactive Form)" : "VIEW (PDF Preview)"}
-                        <span className="opacity-30">|</span>
-                        REASON: {allowFlag === false ? "Workflow Locked" : (!isCreator && !isApprover ? "Not Your Turn" : "Allowed")}
-                    </div>
-                </div> */}
-
                 <div className="flex justify-center px-6 py-12">
                     <UnifiedFormViewer
                         template={templateForRenderer}

@@ -34,17 +34,21 @@ class ContractOptionsQuery
     public function getLoaders(): array
     {
         $user = Auth::user();
-        $hasFullAccess = $user ? in_array($user->role, ['Admin', 'Super Admin', 'Director', 'CEO', 'VP']) : false;
-        $isManager = $user?->role === 'Manager';
         $userCompany = $user?->company;
         $settings = $user ? $user->getContractFilterSettings() : [];
 
-        // Bangun whitelist per dimensi — satu aturan via service
-        $allowedGroups = $user ? $this->scope->buildAllowed($user->company_group_id, $settings['allowed_company_groups'] ?? [], $hasFullAccess) : null;
-        $allowedRegions = $user ? $this->scope->buildAllowed($user->region_id ?? $userCompany?->region_id, $settings['allowed_regions'] ?? [], $hasFullAccess) : null;
-        $allowedCompanies = $user ? $this->scope->buildAllowed($user->company_id, $settings['allowed_companies'] ?? [], $hasFullAccess) : null;
-        $allowedDivisions = $user ? $this->scope->buildAllowed($user->division_id, $settings['allowed_divisions'] ?? [], $hasFullAccess) : null;
-        $allowedDepts = $user ? $this->scope->buildAllowed($user->department_id, $settings['allowed_departments'] ?? [], $hasFullAccess) : null;
+        $canChangeGroup = (bool) ($settings['can_change_company_group'] ?? false);
+        $canChangeRegion = (bool) ($settings['can_change_region'] ?? false);
+        $canChangeCompany = (bool) ($settings['can_change_company'] ?? false);
+        $canChangeDivision = (bool) ($settings['can_change_division'] ?? false);
+        $canChangeDept = (bool) ($settings['can_change_department'] ?? false);
+
+        // Bangun whitelist per dimensi secara dinamis dari tabel konfigurasi
+        $allowedGroups = $user ? $this->scope->buildAllowed($user->company_group_id, $settings['allowed_company_groups'] ?? [], $canChangeGroup) : null;
+        $allowedRegions = $user ? $this->scope->buildAllowed($user->region_id ?? $userCompany?->region_id, $settings['allowed_regions'] ?? [], $canChangeRegion) : null;
+        $allowedCompanies = $user ? $this->scope->buildAllowed($user->company_id, $settings['allowed_companies'] ?? [], $canChangeCompany) : null;
+        $allowedDivisions = $user ? $this->scope->buildAllowed($user->division_id, $settings['allowed_divisions'] ?? [], $canChangeDivision) : null;
+        $allowedDepts = $user ? $this->scope->buildAllowed($user->department_id, $settings['allowed_departments'] ?? [], $canChangeDept) : null;
 
         return [
 
@@ -82,15 +86,13 @@ class ContractOptionsQuery
                 });
             },
 
-            'companies' => function () use ($allowedCompanies, $isManager, $userCompany) {
-                $cacheKey = 'contract_opts_companies_'.($allowedCompanies ? md5(json_encode($allowedCompanies)) : ($isManager ? 'mgr_'.$userCompany?->company_group_id : 'all'));
+            'companies' => function () use ($allowedCompanies) {
+                $cacheKey = 'contract_opts_companies_'.($allowedCompanies ? md5(json_encode($allowedCompanies)) : 'all');
 
-                return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($allowedCompanies, $isManager, $userCompany) {
+                return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($allowedCompanies) {
                     $q = Company::query()->where('is_used', true);
                     if ($allowedCompanies !== null) {
                         $q->whereIn('id', $allowedCompanies);
-                    } elseif ($isManager && $userCompany) {
-                        $q->where('company_group_id', $userCompany->company_group_id);
                     }
 
                     return $q->orderBy('name')->get();
@@ -110,15 +112,13 @@ class ContractOptionsQuery
                 });
             },
 
-            'departments' => function () use ($allowedDepts, $isManager, $user) {
-                $cacheKey = 'contract_opts_depts_'.($allowedDepts ? md5(json_encode($allowedDepts)) : ($isManager ? 'mgr_'.$user?->company_id : 'all'));
+            'departments' => function () use ($allowedDepts) {
+                $cacheKey = 'contract_opts_depts_'.($allowedDepts ? md5(json_encode($allowedDepts)) : 'all');
 
-                return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($allowedDepts, $isManager, $user) {
+                return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($allowedDepts) {
                     $q = Department::query()->where('is_used', true);
                     if ($allowedDepts !== null) {
                         $q->whereIn('id', $allowedDepts);
-                    } elseif ($isManager && $user) {
-                        $q->where('company_id', $user->company_id);
                     }
 
                     return $q->orderBy('name')->get();
@@ -127,17 +127,17 @@ class ContractOptionsQuery
 
             // ── Users & Vendors ──────────────────────────────────────────────
 
-            'users' => function () use ($isManager, $user) {
-                $cacheKey = 'contract_opts_users_'.($isManager && ! request()->boolean('all') ? 'div_'.$user?->division_id : 'all');
+            'users' => function () use ($allowedDivisions) {
+                $cacheKey = 'contract_opts_users_'.($allowedDivisions && ! request()->boolean('all') ? md5(json_encode($allowedDivisions)) : 'all');
 
-                return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($isManager, $user) {
+                return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($allowedDivisions) {
                     $orgGroupMap = OrganizationGroup::pluck('id', 'idorg_group')->toArray();
 
                     return User::query()
                         ->select(['id', 'name', 'email', 'role_id', 'department_id', 'division_id', 'location_id', 'company_id', 'company_group_id', 'region_id', 'idlocation', 'location_name', 'org_name', 'company_name', 'is_used', 'is_active'])
                         ->with(['department:id,name,idorg_group,org_group_name', 'roleRelation:id,name'])
                         ->where('is_used', true)
-                        ->when($isManager && ! request()->boolean('all') && $user?->division_id, fn ($q) => $q->where('division_id', $user->division_id))
+                        ->when($allowedDivisions !== null && ! request()->boolean('all'), fn ($q) => $q->whereIn('division_id', $allowedDivisions))
                         ->orderBy('name')
                         ->get()
                         ->map(function ($u) use ($orgGroupMap) {

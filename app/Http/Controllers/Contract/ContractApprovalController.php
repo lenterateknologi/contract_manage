@@ -860,6 +860,58 @@ class ContractApprovalController extends Controller
         ], 'Contract workflow details retrieved successfully');
     }
 
+    public function getCurrentStep(Request $request, string $id): JsonResponse
+    {
+        $contract = $this->contractDetailQuery->find($id);
+
+        $contract->loadMissing([
+            'workflowStep.actions',
+            'workflowStep.approverAuthorities',
+            'approvals.approver.department',
+            'approvals.workflowStep',
+        ]);
+
+        $formatted = ContractFormatter::formatContract($contract, true);
+        $step = $contract->workflowStep;
+
+        $pendingApprovals = $contract->approvals
+            ->where('status', 'pending')
+            ->values()
+            ->map(fn ($a) => [
+                'id' => $a->id,
+                'user_id' => $a->user_id,
+                'user_name' => $a->approver?->name ?? $a->approver_name,
+                'department' => $a->approver?->department?->name ?? $a->department_name,
+                'role' => $a->role,
+                'sequence' => $a->sequence,
+                'status' => $a->status,
+            ]);
+
+        return $this->successResponse([
+            'contract_id' => $contract->id,
+            'contract_no' => $contract->contract_no,
+            'title' => $contract->title,
+            'status' => $contract->status,
+            'current_step_number' => $contract->current_step_number ?? $step?->step,
+            'workflow_id' => $contract->workflow_id,
+            'workflow_step_id' => $contract->workflow_step_id,
+            'step' => $formatted['workflow_step'] ?? ($step ? [
+                'id' => $step->id,
+                'name' => $step->name,
+                'label' => $step->label,
+                'step' => $step->step,
+                'phase' => $step->phase,
+                'approver_type' => $step->approver_type,
+                'meta' => $step->meta,
+            ] : null),
+            'allow' => $formatted['allow'] ?? [],
+            'pending_approvals' => $pendingApprovals,
+            'is_current_actor' => $formatted['is_current_actor'] ?? $formatted['can_approve'] ?? false,
+            'can_approve' => $formatted['can_approve'] ?? false,
+            'pending_approval_id' => $formatted['pending_approval_id'] ?? null,
+        ], 'Current workflow step retrieved successfully');
+    }
+
     public function getRequirements(Request $request, string $id): JsonResponse
     {
         $contract = $this->contractDetailQuery->find($id);

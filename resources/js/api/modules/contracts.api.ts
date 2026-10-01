@@ -128,4 +128,10 @@ export const contractsApi = {
      */
     getDashboardRecentActivity: (params?: any): Promise<any> =>
         unwrapResponse(apiClient.get(API_ENDPOINTS.CONTRACTS.DASHBOARD.RECENT_ACTIVITY, { params })),
+
+    /**
+     * Get document types & mechanisms configuration for a contract submission
+     */
+    getDocumentTypes: (id: string, type?: string): Promise<any> =>
+        unwrapResponse(apiClient.get(API_ENDPOINTS.SUBRESOURCES.DOCUMENT_TYPES(id, type))),
 };

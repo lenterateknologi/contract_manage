@@ -51,10 +51,12 @@ export const API_ENDPOINTS = {
         REMOVE_ADHOC: (id: string, approvalId: string) => `/api/contracts/${id}/approver/${approvalId}`,
         TIMELINE: (id: string) => `/api/contracts/${id}/timeline`,
         WORKFLOW: (id: string) => `/api/contracts/${id}/workflow`,
+        CURRENT_STEP: (id: string) => `/api/contracts/${id}/current-step`,
     },
 
-    // 4. Sub-Resources (Requirements, Actions, PO, Members, References, Forms, Files)
+    // 4. Sub-Resources (Requirements, Actions, PO, Members, References, Forms, Files, Document Types)
     SUBRESOURCES: {
+        DOCUMENT_TYPES: (id: string, type?: string) => type ? `/api/contracts/${id}/document-types?type=${type}` : `/api/contracts/${id}/document-types`,
         REQUIREMENTS: (id: string) => `/api/contracts/${id}/requirements`,
         ACTIONS: (id: string) => `/api/contracts/${id}/actions`,
         MEMBERS: (id: string) => `/api/contracts/${id}/members`,

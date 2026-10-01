@@ -13,7 +13,8 @@ interface F2TabProps {
 }
 
 export const F2Tab = ({ contract, formTemplates, vendors, meUser, onUpdate, onFormDirty, onFormSave }: F2TabProps) => {
-    if ((contract as any).f2_mode === 'interactive') {
+    const isInteractive = (contract as any)?.f2_mode === 'interactive' || (contract as any)?.modes?.f2 === 'interactive';
+    if (isInteractive) {
         return (
             <FormSubmissionTab
                 docType="f2"
