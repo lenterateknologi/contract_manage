@@ -8,10 +8,11 @@ interface AuthSplitLayoutProps {
     title?: string;
     description?: string;
     isSuccess?: boolean;
+    successText?: string;
     image?: string;
 }
 
-export default function AuthSplitLayout({ children, title, description, isSuccess = false, image }: Readonly<AuthSplitLayoutProps>) {
+export default function AuthSplitLayout({ children, title, description, isSuccess = false, successText = 'BERHASIL MASUK', image }: Readonly<AuthSplitLayoutProps>) {
     const { name, tagline, logo } = usePage<SharedData>().props;
     const appName = name || import.meta.env.VITE_APP_NAME || 'corixa';
     const appTagline = tagline || import.meta.env.VITE_APP_TAGLINE || 'Legal Management System';
@@ -75,7 +76,7 @@ export default function AuthSplitLayout({ children, title, description, isSucces
                 <div className="bg-background/60 pointer-events-none fixed inset-0 z-[100] flex items-center justify-center backdrop-blur-xs">
                     <div className="animate-in zoom-in fade-in flex flex-col items-center gap-4 transition-all duration-300">
                         <Loader2 className="text-primary size-10 animate-spin" />
-                        <span className="text-text-main text-xs font-bold tracking-[0.3em] uppercase">BERHASIL MASUK</span>
+                        <span className="text-text-main text-xs font-bold tracking-[0.3em] uppercase">{successText}</span>
                     </div>
                 </div>
             )}

@@ -9,7 +9,7 @@ import AuthSplitLayout from '@/layouts/auth/auth-split-layout';
 import { AuthErrorAlert } from './components/AuthErrorAlert';
 
 export default function ForgotPassword({ status }: Readonly<{ status?: string }>) {
-    const { data, setData, post, processing, errors, wasSuccessful } = useForm({
+    const { data, setData, post, processing, errors } = useForm({
         email: '',
     });
 
@@ -23,7 +23,6 @@ export default function ForgotPassword({ status }: Readonly<{ status?: string }>
             title="Lupa Kata Sandi"
             description="Masukkan email atau username terdaftar Anda untuk tautan atur ulang."
             image="https://images.unsplash.com/photo-1512314889357-e157c22f938d?auto=format&fit=crop&q=80&w=1200"
-            isSuccess={wasSuccessful}
         >
             <Head title="Lupa Kata Sandi" />
 
