@@ -290,6 +290,8 @@ class ContractFormatter
             'finished_at_formatted' => $c->finished_at ? $c->finished_at->translatedFormat('j M Y, H:i') : (! empty($c->metadata['finished_at']) ? Carbon::parse($c->metadata['finished_at'])->translatedFormat('j M Y, H:i') : (! empty($c->metadata['finish_at']) ? Carbon::parse($c->metadata['finish_at'])->translatedFormat('j M Y, H:i') : null)),
             'closed_at' => $c->closed_at ? $c->closed_at->toIso8601String() : ($c->metadata['closed_at'] ?? null),
             'closed_at_formatted' => $c->closed_at ? $c->closed_at->translatedFormat('j M Y, H:i') : (! empty($c->metadata['closed_at']) ? Carbon::parse($c->metadata['closed_at'])->translatedFormat('j M Y, H:i') : null),
+            'submission_age' => $c->created_at ? ($c->closed_at ? $c->created_at->locale('id')->diffForHumans($c->closed_at, ['syntax' => \Carbon\CarbonInterface::DIFF_ABSOLUTE, 'parts' => 2]) : $c->created_at->locale('id')->diffForHumans(now(), ['syntax' => \Carbon\CarbonInterface::DIFF_ABSOLUTE, 'parts' => 2])) : null,
+            'pic_age' => $c->assigned_at ? ($c->finished_at ? $c->assigned_at->locale('id')->diffForHumans($c->finished_at, ['syntax' => \Carbon\CarbonInterface::DIFF_ABSOLUTE, 'parts' => 2]) : $c->assigned_at->locale('id')->diffForHumans(now(), ['syntax' => \Carbon\CarbonInterface::DIFF_ABSOLUTE, 'parts' => 2])) : null,
             'assigned_by' => ($c->relationLoaded('assignedBy') && $c->assignedBy)
                 ? self::formatUser($c->assignedBy)
                 : (($c->relationLoaded('approvals') && $c->approvals->where('sequence', 3)->where('status', 'approved')->first())

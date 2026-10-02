@@ -20,12 +20,21 @@ class PdfPreviewAction
     public function execute(Contract $contract, int $versionNo, Request $request): mixed
     {
         $type = $request->query('type', 'contract');
+        $types = in_array(strtolower($type), ['agreement', 'contract'])
+            ? ['agreement', 'contract']
+            : [$type];
 
         /** @var ContractVersion|null $version */
         $version = $contract->versions()
-            ->where('document_type', $type)
+            ->whereIn('document_type', $types)
             ->where('version_no', $versionNo)
             ->first();
+
+        if (! $version) {
+            $version = $contract->versions()
+                ->where('version_no', $versionNo)
+                ->first();
+        }
 
         if (! $version && ($type === 'f1' || $type === 'f2')) {
             return $this->exportAction->execute($contract, $type, 'inline', $versionNo);
@@ -58,6 +67,19 @@ class PdfPreviewAction
         }
 
         $sourcePath = Storage::disk('local')->path($version->file_path);
+        $ext = strtolower(pathinfo($sourcePath, PATHINFO_EXTENSION));
+
+        // If the source file is already a PDF, serve it directly with injected metadata
+        if ($ext === 'pdf') {
+            $user = auth()->user();
+            $rawContent = file_get_contents($sourcePath);
+            $processedContent = PdfMetadataService::injectMetadata($rawContent, $user?->name, $user?->id, $docNumber);
+
+            return response($processedContent)
+                ->header('Content-Type', 'application/pdf')
+                ->header('Content-Disposition', 'inline; filename="'.basename($sourcePath).'"');
+        }
+
         $pdfDir = Storage::disk('local')->path("contracts/{$contract->id}/pdfs");
         $pdfPath = $pdfDir.'/'.pathinfo($version->file_path, PATHINFO_FILENAME).'.pdf';
 
@@ -89,4 +111,3 @@ class PdfPreviewAction
         ], 500);
     }
 }
-

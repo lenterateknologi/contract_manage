@@ -122,11 +122,6 @@ class ContractSlaConfig extends Model
         return $this->belongsTo(Workflow::class, 'workflow_id');
     }
 
-    public function stepItems(): HasMany
-    {
-        return $this->hasMany(ContractSlaStepItem::class, 'sla_config_id');
-    }
-
     public function overdueAuthorities(): HasMany
     {
         return $this->hasMany(Authority::class, 'context_id')

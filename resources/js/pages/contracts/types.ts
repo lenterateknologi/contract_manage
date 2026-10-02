@@ -354,6 +354,8 @@ export interface Contract {
     finished_at_formatted?: string | null;
     closed_at?: string | null;
     closed_at_formatted?: string | null;
+    submission_age?: string | null;
+    pic_age?: string | null;
     creator: UserProfile;
     metadata?: {
         tax_required?: boolean;

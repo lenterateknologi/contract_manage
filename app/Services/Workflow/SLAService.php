@@ -260,7 +260,7 @@ class SLAService
 
         // 2. Default Mon-Fri if workingDays is not configured
         if (empty($workingDays)) {
-            return $date->isSaturday() || $date->isSunday();
+            return $date->isWeekend();
         }
 
         // 3. Match against configured working days
@@ -284,7 +284,7 @@ class SLAService
      */
     public function isWeekend(Carbon $date): bool
     {
-        return $date->isSaturday() || $date->isSunday();
+        return $date->isWeekend();
     }
 
     /**

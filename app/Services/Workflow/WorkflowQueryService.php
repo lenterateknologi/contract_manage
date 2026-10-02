@@ -90,14 +90,6 @@ class WorkflowQueryService
                 return $w;
             }
 
-            // Admins & Super Admins are always eligible
-            if ($user->isAdmin() || $user->isSuperAdmin()) {
-                $w->setAttribute('is_eligible', true);
-                $w->setAttribute('ineligible_reason', null);
-
-                return $w;
-            }
-
             if ($w->initiatorAuthorities->isEmpty()) {
                 $w->setAttribute('is_eligible', false);
                 $w->setAttribute('ineligible_reason', 'Otoritas inisiator belum dikonfigurasi');
@@ -179,7 +171,7 @@ class WorkflowQueryService
             $w->setAttribute('ineligible_reason', $reason);
 
             return $w;
-        })->values();
+        })->filter(fn ($w) => $w->is_eligible !== false)->values();
     }
 
     /**

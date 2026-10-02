@@ -45,14 +45,23 @@ export function DraftEditableInfoCard({
     types,
     submissionTypes = [],
     vendors = [],
+    canUpdate = true,
     onUpdate,
     meId,
     onStateChange,
     saveRef,
     resetRef,
 }: DraftEditableInfoCardProps) {
+    // ponytail: Full read-only if user has no active action on the current step / draft ownership
+    const hasAction = Boolean(
+        selected.can_approve ||
+        (selected.status === 'draft' && (selected.created_by === meId || selected.initiated_by_id === meId))
+    );
     const is_readonly =
-        selected.allow_info_edit === false || (!selected.can_approve && selected.created_by !== meId && selected.initiated_by_id !== meId);
+        !hasAction ||
+        selected.allow_info_edit === false ||
+        selected.allow?.info_edit === false ||
+        (selected.workflow_step?.meta as any)?.allow_info_edit === false;
     const [title, setTitle] = useState(selected.title);
     const [description, setDescription] = useState(selected.description || '');
     const [typeId, setTypeId] = useState(() => {
@@ -345,7 +354,11 @@ export function DraftEditableInfoCard({
     const inputCls =
         'w-full bg-surface-base border-surface-border rounded-lg px-3 py-2 text-sm font-medium text-text-main outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all shadow-xs placeholder:text-text-soft/30';
 
-    const canEditCategory = !is_readonly && selected.allow_category_edit !== false;
+    const canEditCategory =
+        !is_readonly &&
+        selected.allow_category_edit !== false &&
+        selected.allow?.category_edit !== false &&
+        (selected.workflow_step?.meta as any)?.allow_category_edit !== false;
 
     return (
         <div className="relative flex flex-col gap-4">
@@ -397,12 +410,12 @@ export function DraftEditableInfoCard({
                             onTaxRequiredChange={(newVal) => {
                                 setTaxRequired(newVal);
                             }}
-                            canEditFirstParty={selected.allow?.first_party_edit !== false && selected.allow_first_party_edit !== false}
-                            canEditVendor={selected.allow?.vendor_edit !== false && selected.allow_vendor_edit !== false}
-                            canEditCategory={selected.allow?.category_edit !== false && selected.allow_category_edit !== false}
-                            canEditPrice={selected.allow?.price_edit !== false && selected.allow_price_edit !== false}
-                            canEditPeriod={selected.allow?.period_edit !== false && selected.allow_period_edit !== false}
-                            canEditTaxToggle={selected.allow?.tax_toggle_edit !== false && selected.allow_tax_toggle_edit !== false}
+                            canEditFirstParty={!is_readonly && selected.allow?.first_party_edit !== false && selected.allow_first_party_edit !== false}
+                            canEditVendor={!is_readonly && selected.allow?.vendor_edit !== false && selected.allow_vendor_edit !== false}
+                            canEditCategory={canEditCategory}
+                            canEditPrice={!is_readonly && selected.allow?.price_edit !== false && selected.allow_price_edit !== false}
+                            canEditPeriod={!is_readonly && selected.allow?.period_edit !== false && selected.allow_period_edit !== false}
+                            canEditTaxToggle={!is_readonly && selected.allow?.tax_toggle_edit !== false && selected.allow_tax_toggle_edit !== false}
                         />
                     </div>
                 )}

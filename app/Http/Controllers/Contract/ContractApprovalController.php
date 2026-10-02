@@ -905,6 +905,8 @@ class ContractApprovalController extends Controller
                 'meta' => $step->meta,
             ] : null),
             'allow' => $formatted['allow'] ?? [],
+            'show' => $formatted['show'] ?? [],
+            'required' => $formatted['required'] ?? [],
             'pending_approvals' => $pendingApprovals,
             'is_current_actor' => $formatted['is_current_actor'] ?? $formatted['can_approve'] ?? false,
             'can_approve' => $formatted['can_approve'] ?? false,

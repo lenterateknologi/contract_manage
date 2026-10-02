@@ -16,10 +16,13 @@ class GetRevisionVersionsAction
     public function execute(Contract $contract, Request $request): JsonResponse
     {
         $type = $request->query('type', 'f1');
+        $types = in_array(strtolower($type), ['agreement', 'contract'])
+            ? ['agreement', 'contract']
+            : [$type];
 
         /** @var Collection<int, ContractVersion> $versionsCollection */
         $versionsCollection = $contract->versions()
-            ->where('document_type', $type)
+            ->whereIn('document_type', $types)
             ->orderByDesc('version_no')
             ->with('uploader')
             ->get();

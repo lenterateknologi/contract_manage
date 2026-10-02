@@ -137,7 +137,14 @@ class WorkflowTransitionService
             $nextStep = $this->findNextValidStep($contract, $nextStep);
         }
 
-        if (! $nextStep && ! $hasExplicitTransition) {
+        $isReject = in_array(strtolower((string) $actionCode), ['reject', 'rejection', 'tolak', 'revisi']);
+        $statusStr = null;
+
+        if ($isReject && ! $hasExplicitTransition) {
+            $step1 = WorkflowStep::where('workflow_id', $contract->workflow_id)->orderBy('step')->first();
+            $nextStep = $step1 ?: $approval->workflowStep;
+            $statusStr = $stepAction?->target_status ?: 'revision';
+        } elseif (! $nextStep && ! $hasExplicitTransition) {
             if ($contract->is_in_sub_workflow || ($contract->origin_workflow_id && $contract->workflow_id !== $contract->origin_workflow_id) || $contract->current_sub_workflow_id) {
                 // Sub-workflow completed its steps, return to origin workflow at next step (branch_from_step_num + 1)
                 $metadata = $contract->metadata ?? [];
@@ -190,12 +197,12 @@ class WorkflowTransitionService
         }
 
         if ($nextStep) {
-            $statusStr = $stepAction?->target_status
+            $statusStr = $statusStr ?? ($stepAction?->target_status
                 ?: ($nextStep->id === $approval->workflow_step_id 
                     ? $contract->status 
                     : ($nextStep->meta['target_status'] 
                         ?? $nextStep->actions()->where('action_code', 'approve')->value('target_status') 
-                        ?? ($contract->status === 'draft' ? 'in_review' : $contract->status)));
+                        ?? ($contract->status === 'draft' ? 'in_review' : $contract->status))));
             $nextStatus = ContractStatus::where('code', $statusStr)->first();
 
             $isSameStep = $nextStep->id === $approval->workflow_step_id;

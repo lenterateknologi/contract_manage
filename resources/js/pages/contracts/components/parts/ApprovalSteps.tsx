@@ -27,7 +27,8 @@ interface Props {
 type ViewTab = 'lite' | 'pro';
 type SortBy = 'time' | 'step';
 
-export default function ApprovalSteps({ contract, approvals, creator, submittedAt, meId, onApprove }: Props) {
+export default function ApprovalSteps({ contract, approvals = [], creator, submittedAt, meId, onApprove }: Props) {
+    const safeApprovals = useMemo(() => (Array.isArray(approvals) ? approvals : []), [approvals]);
     const [viewTab, setViewTab] = useState<ViewTab>('lite');
     const [sortBy, setSortBy] = useState<SortBy>('time');
     const [search, setSearch] = useState('');
@@ -46,7 +47,7 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
 
         // 1. If contract has workflow_step_id, find approval matching current active step
         if (contract.workflow_step_id) {
-            const match = approvals.find(
+            const match = safeApprovals.find(
                 (a) => a.workflow_step_id === contract.workflow_step_id && a.status !== 'approved' && a.status !== 'rejected',
             );
             if (match) return match;
@@ -54,11 +55,11 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
 
         // 2. Otherwise find the first unapproved/unrejected step in workflow order
         return (
-            approvals.find(
+            safeApprovals.find(
                 (a) => a.status !== 'approved' && a.status !== 'rejected' && (a.status as string) !== 'SKIPPED',
             ) || null
         );
-    }, [approvals, contract.workflow_step_id, isContractCompleted]);
+    }, [safeApprovals, contract.workflow_step_id, isContractCompleted]);
 
     const pendingApproverList = useMemo(() => {
         if (!activePendingApproval) return [];
@@ -76,7 +77,7 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
     }, [activePendingApproval]);
 
     const filteredSteps = useMemo(() => {
-        let result = [...approvals];
+        let result = [...safeApprovals];
 
         // Tab: Lite (Sederhana - Hanya yang sudah dieksekusi atau step aktif sekarang)
         if (viewTab === 'lite') {
@@ -263,7 +264,7 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
         return blocks;
     }, [filteredSteps, sortBy, contract.workflow_id, contract.origin_workflow_id, contract.workflow?.name]);
 
-    const showProjectedManager = approvals.length === 0 && creator.role?.toLowerCase() === 'staff';
+    const showProjectedManager = safeApprovals.length === 0 && creator.role?.toLowerCase() === 'staff';
 
     const handleExportPdf = () => {
         window.open(`/api/contracts/${contract.id}/approval/pdf`, '_blank');
@@ -276,9 +277,9 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
 
     // ── Current Step Information Details ──
     const totalStepsCount = useMemo(() => {
-        const uniqueSeqs = new Set(approvals.map((a) => a.sequence));
+        const uniqueSeqs = new Set(safeApprovals.map((a) => a.sequence));
         return Math.max(uniqueSeqs.size, contract.workflow?.steps?.length || 0);
-    }, [approvals, contract.workflow]);
+    }, [safeApprovals, contract.workflow]);
 
     const currentStepInfo = useMemo(() => {
         if (isContractApproved) {
@@ -334,7 +335,7 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
             const stepCat = s.step_category;
             
             // Check matching approvals
-            const stepApprovals = approvals.filter((a) => (a.workflow_step_id && a.workflow_step_id === s.id) || a.sequence === stepNum);
+            const stepApprovals = safeApprovals.filter((a) => (a.workflow_step_id && a.workflow_step_id === s.id) || a.sequence === stepNum);
             const isApproved = stepApprovals.length > 0 && stepApprovals.every((a) => a.status === 'approved');
             const isRejected = stepApprovals.some((a) => a.status === 'rejected');
             const isCurrent = (contract.workflow_step_id && contract.workflow_step_id === s.id) || (!isApproved && !isRejected && activePendingApproval?.sequence === stepNum);
@@ -355,7 +356,7 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                 approvals: stepApprovals,
             };
         });
-    }, [contract.origin_workflow, contract.workflow, contract.workflow_step_id, approvals, activePendingApproval]);
+    }, [contract.origin_workflow, contract.workflow, contract.workflow_step_id, safeApprovals, activePendingApproval]);
 
     return (
         <div className="animate-in fade-in flex flex-col flex-1 min-h-0 h-full overflow-hidden duration-300 p-2.5 lg:p-3 gap-2">
@@ -636,7 +637,7 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                 {viewTab === 'lite' ? (
                     <ApprovalStepsLite
                         contract={contract}
-                        approvals={approvals}
+                        approvals={safeApprovals}
                         creator={creator}
                         submittedAt={submittedAt}
                         meId={meId}
@@ -649,7 +650,7 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                 ) : (
                     <div className="relative">
                         <Timeline>
-                    {!search && !approvals.some((a) => a.sequence === 1) && (
+                    {!search && !safeApprovals.some((a) => a.sequence === 1) && (
                         <TimelineItem status="completed">
                             <TimelineIcon status="completed">
                                 ✓

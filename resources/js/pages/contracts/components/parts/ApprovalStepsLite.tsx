@@ -22,7 +22,7 @@ interface ApprovalStepsLiteProps {
 
 export function ApprovalStepsLite({
     contract,
-    approvals,
+    approvals = [],
     creator,
     submittedAt,
     search = '',
@@ -30,11 +30,12 @@ export function ApprovalStepsLite({
     expandedGroups,
     setExpandedGroups,
 }: ApprovalStepsLiteProps) {
+    const safeApprovals = useMemo(() => (Array.isArray(approvals) ? approvals : []), [approvals]);
     const rootWorkflowId = contract.origin_workflow_id || contract.workflow_id;
 
     // Filter approvals for Lite mode (only executed steps or current pending step)
     const filteredSteps = useMemo(() => {
-        let result = [...approvals];
+        let result = [...safeApprovals];
         const currentStepId = contract.workflow_step_id;
         const currentWorkflowId = contract.workflow_id;
         const pendingSeq = activePendingApproval?.sequence;
@@ -85,7 +86,7 @@ export function ApprovalStepsLite({
             }
             return a.id.localeCompare(b.id);
         });
-    }, [approvals, activePendingApproval, contract.workflow_step_id, contract.workflow_id, search]);
+    }, [safeApprovals, activePendingApproval, contract.workflow_step_id, contract.workflow_id, search]);
 
     // Group filtered steps into flat chronological step items (unifying main and sub-workflow)
     const stepGroups = useMemo(() => {
@@ -141,13 +142,13 @@ export function ApprovalStepsLite({
         return groups;
     }, [filteredSteps, contract.workflow_id, contract.workflow?.name, rootWorkflowId]);
 
-    const showProjectedManager = approvals.length === 0 && creator.role?.toLowerCase() === 'staff';
+    const showProjectedManager = safeApprovals.length === 0 && creator.role?.toLowerCase() === 'staff';
 
     return (
         <div className="relative">
             <Timeline>
                 {/* Initiator initial step */}
-                {!search && !approvals.some((a) => a.sequence === 1) && (
+                {!search && !safeApprovals.some((a) => a.sequence === 1) && (
                     <TimelineItem status="completed">
                         <TimelineIcon status="completed">
                             <Check size={11} strokeWidth={3} className="text-white" />

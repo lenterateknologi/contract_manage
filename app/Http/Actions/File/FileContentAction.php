@@ -13,16 +13,15 @@ class FileContentAction
     public function execute(Contract $contract, int $versionNo, Request $request): mixed
     {
         $type = $request->query('type', 'contract');
-        $effectiveType = $type === 'contract' ? 'agreement' : $type;
+        $types = in_array(strtolower($type), ['agreement', 'contract'])
+            ? ['agreement', 'contract']
+            : [$type];
 
         /** @var ContractVersion $version */
         $version = $contract->versions()
-            ->where(function ($q) use ($type, $effectiveType) {
-                $q->where('document_type', $type)
-                    ->orWhere('document_type', $effectiveType);
-            })
+            ->whereIn('document_type', $types)
             ->where('version_no', $versionNo)
-            ->firstOrFail();
+            ->first() ?? $contract->versions()->where('version_no', $versionNo)->firstOrFail();
 
         if ($version->file_path && Storage::disk('local')->exists($version->file_path)) {
             $fullPath = Storage::disk('local')->path($version->file_path);

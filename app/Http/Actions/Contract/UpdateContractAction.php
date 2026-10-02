@@ -22,6 +22,37 @@ class UpdateContractAction
 
     public function execute(Contract $contract, array $validated): Contract
     {
+        // Enforce granular field edit permissions configured in active workflow step
+        $user = Auth::user();
+        $isAdmin = $user && ($user->isAdmin() || $user->isSuperAdmin());
+        $currentStep = $contract->workflowStep;
+
+        if ($currentStep && ! $isAdmin && $contract->status !== 'draft') {
+            $stepMeta = $currentStep->meta ?? [];
+
+            if (data_get($stepMeta, 'allow_category_edit') === false) {
+                unset($validated['contract_type_id'], $validated['contract_type_parent_id']);
+            }
+            if (data_get($stepMeta, 'allow_title_edit') === false) {
+                unset($validated['title']);
+            }
+            if (data_get($stepMeta, 'allow_vendor_edit') === false) {
+                unset($validated['vendor_id']);
+            }
+            if (data_get($stepMeta, 'allow_first_party_edit') === false) {
+                unset($validated['p1_entity'], $validated['p1_signer'], $validated['p1_signer_position'], $validated['p1_address']);
+            }
+            if (data_get($stepMeta, 'allow_f2_contract_no_edit') === false) {
+                unset($validated['contract_no']);
+            }
+            if (data_get($stepMeta, 'allow_period_edit') === false) {
+                unset($validated['contract_date'], $validated['end_date']);
+            }
+            if (data_get($stepMeta, 'allow_tax_toggle_edit') === false) {
+                unset($validated['tax_required']);
+            }
+        }
+
         // Capture old values before updating
         $oldContract = $contract->replicate();
         $oldContract->id = $contract->id;

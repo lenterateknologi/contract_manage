@@ -230,9 +230,16 @@ export const ContractDetailView = ({
     const [assignOpen, setAssignOpen] = useState(false);
     const [addhocOpen, setAddhocOpen] = useState(false);
     const [showSpecialActions, setShowSpecialActions] = useState(false);
+    const hasContractAction = Boolean(
+        contract.can_approve ||
+        (contract.status === 'draft' && (contract.created_by === meId || contract.initiated_by_id === meId))
+    );
     const canEditTitle =
+        hasContractAction &&
         contract.workflow_step?.meta?.allow_info_edit !== false &&
-        (contract.can_approve || contract.created_by === meId || contract.initiated_by_id === meId);
+        (contract.workflow_step?.meta as any)?.allow_title_edit !== false &&
+        contract.allow?.title_edit !== false &&
+        contract.allow_title_edit !== false;
 
     const [hasInfoChanges, setHasInfoChanges] = useState(false);
     const [infoSaving, setInfoSaving] = useState(false);

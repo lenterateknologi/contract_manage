@@ -199,21 +199,21 @@ class ContractDashboardQuery
 
         $kpiAggregates = (clone $baseQuery)
             ->selectRaw("
-                COUNT(*) FILTER (WHERE UPPER(status) != 'ARCHIVED' AND closed_at IS NULL) as total_contracts,
-                COUNT(*) FILTER (WHERE status = 'archived' OR closed_at IS NOT NULL) as archived_total,
-                COUNT(*) FILTER (WHERE status IN ({$inProcessStatusesSql}) AND closed_at IS NULL) as in_process,
-                COUNT(*) FILTER (WHERE status = 'approved' AND closed_at IS NULL AND (end_date IS NULL OR end_date >= CURRENT_DATE)) as active_contracts,
-                COUNT(*) FILTER (WHERE status = 'approved' AND closed_at IS NULL AND end_date >= CURRENT_DATE AND end_date <= (CURRENT_DATE + INTERVAL '30 days')) as expiring_soon,
-                COUNT(*) FILTER (WHERE status = 'approved' AND closed_at IS NULL AND end_date < CURRENT_DATE) as expired,
-                COUNT(*) FILTER (WHERE parent_id IS NOT NULL) as renewed,
-                COUNT(*) FILTER (WHERE status = 'approved') as approved_count,
-                COUNT(*) FILTER (WHERE status = 'revision') as revision_count,
-                COUNT(*) FILTER (WHERE status = 'rejected') as rejected_count,
-                COUNT(*) FILTER (WHERE DATE(created_at) = ?) as today_total,
-                COUNT(*) FILTER (WHERE DATE(created_at) = ? AND status IN ('draft', 'in_review', 'pending', 'revision')) as today_in_process,
-                COUNT(*) FILTER (WHERE DATE(updated_at) = ? AND status IN ('approved', 'locked')) as today_completed,
-                COUNT(*) FILTER (WHERE DATE(updated_at) = ? AND status = 'rejected') as today_rejected,
-                COUNT(*) FILTER (WHERE DATE(updated_at) = ? AND status = 'approved') as today_approved
+                COUNT(CASE WHEN UPPER(status) != 'ARCHIVED' AND closed_at IS NULL THEN 1 END) as total_contracts,
+                COUNT(CASE WHEN status = 'archived' OR closed_at IS NOT NULL THEN 1 END) as archived_total,
+                COUNT(CASE WHEN status IN ({$inProcessStatusesSql}) AND closed_at IS NULL THEN 1 END) as in_process,
+                COUNT(CASE WHEN status = 'approved' AND closed_at IS NULL AND (end_date IS NULL OR end_date >= CURRENT_DATE) THEN 1 END) as active_contracts,
+                COUNT(CASE WHEN status = 'approved' AND closed_at IS NULL AND end_date >= CURRENT_DATE AND end_date <= (CURRENT_DATE + INTERVAL '30 days') THEN 1 END) as expiring_soon,
+                COUNT(CASE WHEN status = 'approved' AND closed_at IS NULL AND end_date < CURRENT_DATE THEN 1 END) as expired,
+                COUNT(CASE WHEN parent_id IS NOT NULL THEN 1 END) as renewed,
+                COUNT(CASE WHEN status = 'approved' THEN 1 END) as approved_count,
+                COUNT(CASE WHEN status = 'revision' THEN 1 END) as revision_count,
+                COUNT(CASE WHEN status = 'rejected' THEN 1 END) as rejected_count,
+                COUNT(CASE WHEN DATE(created_at) = ? THEN 1 END) as today_total,
+                COUNT(CASE WHEN DATE(created_at) = ? AND status IN ('draft', 'in_review', 'pending', 'revision') THEN 1 END) as today_in_process,
+                COUNT(CASE WHEN DATE(updated_at) = ? AND status IN ('approved', 'locked') THEN 1 END) as today_completed,
+                COUNT(CASE WHEN DATE(updated_at) = ? AND status = 'rejected' THEN 1 END) as today_rejected,
+                COUNT(CASE WHEN DATE(updated_at) = ? AND status = 'approved' THEN 1 END) as today_approved
             ", [$todayStr, $todayStr, $todayStr, $todayStr, $todayStr])
             ->first();
 
@@ -343,10 +343,10 @@ class ContractDashboardQuery
 
         $kpiAggregates = (clone $baseQuery)
             ->selectRaw("
-                COUNT(*) FILTER (WHERE status IN ({$inProcessStatusesSql}) AND closed_at IS NULL) as in_process,
-                COUNT(*) FILTER (WHERE status = 'approved') as approved_count,
-                COUNT(*) FILTER (WHERE status = 'revision') as revision_count,
-                COUNT(*) FILTER (WHERE status = 'rejected') as rejected_count
+                COUNT(CASE WHEN status IN ({$inProcessStatusesSql}) AND closed_at IS NULL THEN 1 END) as in_process,
+                COUNT(CASE WHEN status = 'approved' THEN 1 END) as approved_count,
+                COUNT(CASE WHEN status = 'revision' THEN 1 END) as revision_count,
+                COUNT(CASE WHEN status = 'rejected' THEN 1 END) as rejected_count
             ")
             ->first();
 
@@ -398,8 +398,8 @@ class ContractDashboardQuery
 
         $kpiAggregates = (clone $baseQuery)
             ->selectRaw("
-                COUNT(*) FILTER (WHERE status = 'approved' AND closed_at IS NULL AND end_date < CURRENT_DATE) as expired,
-                COUNT(*) FILTER (WHERE parent_id IS NOT NULL) as renewed
+                COUNT(CASE WHEN status = 'approved' AND closed_at IS NULL AND end_date < CURRENT_DATE THEN 1 END) as expired,
+                COUNT(CASE WHEN parent_id IS NOT NULL THEN 1 END) as renewed
             ")
             ->first();
 
@@ -1938,7 +1938,10 @@ class ContractDashboardQuery
                     'location_id' => $u->location_id,
                     'location_name' => $u->location?->name,
                     'company_id' => $u->company_id,
+                    'company_name' => $u->company?->name,
                     'company_group_id' => $u->company_group_id ?? $u->company?->company_group_id,
+                    'company_group_name' => $u->company_group_name ?? $u->company?->companyGroup?->name,
+                    'org_group_name' => $u->org_group_name ?? $u->department?->org_group_name,
                     'region_id' => $u->region_id ?? $u->company?->region_id,
                     'active_contracts_count' => $activeCount,
                     'pending_tasks_count' => $pendingCount,

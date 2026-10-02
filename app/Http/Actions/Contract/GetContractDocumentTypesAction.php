@@ -7,6 +7,7 @@ use App\Models\FormTemplate;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class GetContractDocumentTypesAction
 {
@@ -137,8 +138,12 @@ class GetContractDocumentTypesAction
                 'id' => $latestVersion->id,
                 'version_no' => $latestVersion->version_no,
                 'file_name' => $latestVersion->file_name,
-                'file_size' => $latestVersion->file_size,
-                'mime_type' => $latestVersion->mime_type,
+                'file_size' => $latestVersion->file_path && Storage::disk('local')->exists($latestVersion->file_path)
+                    ? Storage::disk('local')->size($latestVersion->file_path)
+                    : null,
+                'mime_type' => $latestVersion->file_path && Storage::disk('local')->exists($latestVersion->file_path)
+                    ? Storage::disk('local')->mimeType($latestVersion->file_path)
+                    : null,
                 'created_at' => $latestVersion->created_at?->toIso8601String(),
             ] : null,
         ];

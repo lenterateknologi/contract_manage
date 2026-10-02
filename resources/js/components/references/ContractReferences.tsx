@@ -28,6 +28,11 @@ export default function ContractReferences({
         contract.allow?.reference ??
         (contract as any).allow_reference ??
         (contract.workflow_step as any)?.meta?.allow_reference;
+    const isActor =
+        (contract as any).can_approve ||
+        (contract as any).is_current_actor ||
+        contract.created_by === meId ||
+        (contract as any).initiated_by_id === meId;
     const canModifyRef = allowReference === true && (isActor || canUpdate);
 
     const [isEditing, setIsEditing] = useState(false);

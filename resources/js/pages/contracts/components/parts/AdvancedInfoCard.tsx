@@ -19,7 +19,7 @@ export function AdvancedInfoCard({ selected, isTabView = false }: { selected: Co
             <div className="flex flex-col flex-1 p-3 lg:p-4 gap-3 h-full min-h-0 overflow-y-auto custom-scrollbar">
                 <div className="bg-primary text-primary-foreground flex h-9.5 min-h-[38px] max-h-[38px] shrink-0 items-center justify-between px-4 rounded-xl">
                     <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-tight text-primary-foreground">
-                        <Clock size={15} className="text-primary-foreground/90" /> Timeline & Kalender SLA
+                        <Clock size={15} className="text-primary-foreground/90" /> Durasi & SLA Pengajuan
                     </div>
                 </div>
                 <div className="flex-1 min-h-0">

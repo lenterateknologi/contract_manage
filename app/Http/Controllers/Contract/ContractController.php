@@ -434,7 +434,7 @@ class ContractController extends Controller
         $contractType = $request->query('contract_type');
         $workflows = $this->workflowService->getAvailableWorkflows($user, $contractType);
 
-        return $this->successResponse($workflows, 'Workflows retrieved successfully');
+        return response()->json($workflows);
     }
 
     public function getUsers(Request $request): JsonResponse
