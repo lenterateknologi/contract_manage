@@ -27,17 +27,6 @@ class RoleAccessAction
                            ($accessData['can_bulk_approve'] ?? false) ||
                            ($accessData['can_bulk_delete'] ?? false);
 
-                $existingAccess = AccessModule::where('role_id', $role->id)
-                    ->where('module_id', $accessData['module_id'])
-                    ->first();
-
-                // Auto-assign module_group_id if it's new read access and group is empty
-                $targetGroupId = $existingAccess?->module_group_id;
-                if ($canRead && ! $targetGroupId) {
-                    $module = Module::find($accessData['module_id']);
-                    $targetGroupId = $module?->module_group_id;
-                }
-
                 AccessModule::updateOrCreate(
                     [
                         'role_id' => $role->id,
@@ -51,25 +40,8 @@ class RoleAccessAction
                         'can_approve' => $accessData['can_approve'] ?? false,
                         'can_bulk_approve' => $accessData['can_bulk_approve'] ?? false,
                         'can_bulk_delete' => $accessData['can_bulk_delete'] ?? false,
-                        'module_group_id' => $targetGroupId,
                     ],
                 );
-
-                // Auto-provision RoleModuleGroup if group not mapped yet for this role
-                if ($canRead && $targetGroupId) {
-                    $hasRmg = RoleModuleGroup::where('role_id', $role->id)
-                        ->where('module_group_id', $targetGroupId)
-                        ->exists();
-
-                    if (! $hasRmg) {
-                        $maxSeq = (int) RoleModuleGroup::where('role_id', $role->id)->max('sequence') ?: 0;
-                        RoleModuleGroup::create([
-                            'role_id' => $role->id,
-                            'module_group_id' => $targetGroupId,
-                            'sequence' => $maxSeq + 1,
-                        ]);
-                    }
-                }
             }
         });
     }
@@ -82,8 +54,11 @@ class RoleAccessAction
         DB::transaction(function () use ($role, $groups) {
             $roleId = $role->id;
             $activeModuleIds = [];
+            $activeGroupIds = [];
 
             foreach ($groups as $gIdx => $groupData) {
+                $activeGroupIds[] = $groupData['id'];
+
                 // Ensure group exists for this role with the updated sequence
                 RoleModuleGroup::updateOrCreate(
                     [
@@ -110,26 +85,19 @@ class RoleAccessAction
                                 'sequence' => $mIdx + 1,
                             ],
                         );
-
-                        // ponytail: Sync group ID ke m_modules agar form edit konsisten
-                        Module::where('id', $moduleData['id'])->update([
-                            'module_group_id' => $groupData['id'],
-                        ]);
                     }
                 }
             }
 
-            // Deactivate (remove from nav) any modules that are no longer in any group
+            // Remove groups that are no longer part of this role's navigation
+            RoleModuleGroup::where('role_id', $roleId)
+                ->whereNotIn('module_group_id', $activeGroupIds)
+                ->delete();
+
+            // Clear module_group_id and sequence for modules that are no longer in any navigation group for this role
             AccessModule::where('role_id', $roleId)
                 ->whereNotIn('module_id', $activeModuleIds)
                 ->update([
-                    'can_read' => false,
-                    'can_create' => false,
-                    'can_update' => false,
-                    'can_delete' => false,
-                    'can_approve' => false,
-                    'can_bulk_approve' => false,
-                    'can_bulk_delete' => false,
                     'module_group_id' => null,
                     'sequence' => null,
                 ]);
@@ -158,32 +126,6 @@ class RoleAccessAction
         });
 
         // 2. Get Navigation Structure for the Drag & Drop Tab
-        // Auto-reconcile any groups that have active access but are missing from m_role_module_groups
-        $activeGroupIds = AccessModule::where('role_id', $role->id)
-            ->where('can_read', true)
-            ->whereNotNull('module_group_id')
-            ->distinct()
-            ->pluck('module_group_id');
-
-        $existingGroupIds = RoleModuleGroup::where('role_id', $role->id)
-            ->pluck('module_group_id')
-            ->all();
-
-        $missingGroupIds = array_diff($activeGroupIds->all(), $existingGroupIds);
-        if (! empty($missingGroupIds)) {
-            $maxSeq = (int) RoleModuleGroup::where('role_id', $role->id)->max('sequence') ?: 0;
-            foreach ($missingGroupIds as $gId) {
-                if (ModuleGroup::where('id', $gId)->exists()) {
-                    $maxSeq++;
-                    RoleModuleGroup::create([
-                        'role_id' => $role->id,
-                        'module_group_id' => $gId,
-                        'sequence' => $maxSeq,
-                    ]);
-                }
-            }
-        }
-
         $groups = ModuleGroup::select('m_module_groups.*')
             ->join('m_role_module_groups', function ($join) use ($role) {
                 $join->on('m_module_groups.id', '=', 'm_role_module_groups.module_group_id')
@@ -202,9 +144,11 @@ class RoleAccessAction
                     ->get();
 
                 return $group;
-            })->values();
+            })
+            ->filter(fn ($group) => $group->modules->isNotEmpty())
+            ->values();
 
-        $allModules = Module::where('is_active', true)->orderBy('name')->get();
+        $allModules = Module::where('is_active', true)->with('moduleGroup')->orderBy('name')->get();
         $allRoles = Role::orderBy('name')->get();
 
         return [

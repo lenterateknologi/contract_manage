@@ -358,11 +358,13 @@ export function ContractInfoForm({
                         canEdit={allowF2ContractNoEdit}
                         isVisible={true}
                     />
-                    {allowF2ContractNoEdit ? (
-                        <Input value={contractNo} onChange={(e) => setContractNo(e.target.value)} placeholder="Nomor dokumen / F2..." size="sm" />
-                    ) : (
-                        <span className="text-foreground font-mono text-xs font-bold">{selected.contract_no || 'Belum diterbitkan'}</span>
-                    )}
+                    <Input
+                        value={contractNo || selected.contract_no || ''}
+                        onChange={(e) => setContractNo(e.target.value)}
+                        placeholder={allowF2ContractNoEdit ? 'Nomor dokumen / F2...' : 'Belum diterbitkan'}
+                        size="sm"
+                        disabled={!allowF2ContractNoEdit}
+                    />
                 </div>
             )}
 
@@ -370,18 +372,15 @@ export function ContractInfoForm({
             {showFirstParty && (
                 <div className="flex flex-col gap-1.5">
                     <FieldConfigHeader icon={Building2} label="Pihak Pertama" required={reqFirstParty} canEdit={canEditFirstParty} isVisible={true} />
-                    {canEditFirstParty ? (
-                        <SearchableSelect
-                            value={firstPartyId}
-                            onValueChange={(val) => setFirstPartyId?.(val)}
-                            options={partyOptions}
-                            placeholder="Pilih Pihak Pertama"
-                            searchPlaceholder="Cari pihak pertama..."
-                            size="sm"
-                        />
-                    ) : (
-                        <span className="text-foreground truncate text-xs font-semibold">{firstPartyDisplayName}</span>
-                    )}
+                    <SearchableSelect
+                        value={firstPartyId || ''}
+                        onValueChange={(val) => setFirstPartyId?.(val)}
+                        options={partyOptions}
+                        placeholder="Pilih Pihak Pertama"
+                        searchPlaceholder="Cari pihak pertama..."
+                        size="sm"
+                        disabled={!canEditFirstParty}
+                    />
                 </div>
             )}
 
@@ -389,18 +388,15 @@ export function ContractInfoForm({
             {showVendor && (
                 <div className="flex flex-col gap-1.5">
                     <FieldConfigHeader icon={Building2} label="Pihak Kedua" required={reqVendor} canEdit={canEditVendor} isVisible={true} />
-                    {canEditVendor ? (
-                        <SearchableSelect
-                            value={vendorId}
-                            onValueChange={setVendorId}
-                            options={partyOptions}
-                            placeholder="Pilih Pihak Kedua"
-                            searchPlaceholder="Cari pihak kedua..."
-                            size="sm"
-                        />
-                    ) : (
-                        <span className="text-foreground truncate text-xs font-semibold">{secondPartyDisplayName}</span>
-                    )}
+                    <SearchableSelect
+                        value={vendorId || ''}
+                        onValueChange={setVendorId}
+                        options={partyOptions}
+                        placeholder="Pilih Pihak Kedua"
+                        searchPlaceholder="Cari pihak kedua..."
+                        size="sm"
+                        disabled={!canEditVendor}
+                    />
                 </div>
             )}
 
@@ -408,22 +404,28 @@ export function ContractInfoForm({
             {showPeriod && (
                 <div className="flex flex-col gap-1.5">
                     <FieldConfigHeader icon={Calendar} label="Masa Berlaku" required={reqPeriod} canEdit={canEditPeriod} isVisible={true} />
-                    {canEditPeriod ? (
-                        <div className="grid grid-cols-2 gap-2">
-                            <div className="flex flex-col gap-1">
-                                <span className="text-muted-foreground text-[10px] font-medium">Tanggal Mulai</span>
-                                <Input type="date" value={contractDate} onChange={(e) => setContractDate(e.target.value)} size="sm" />
-                            </div>
-                            <div className="flex flex-col gap-1">
-                                <span className="text-muted-foreground text-[10px] font-medium">Tanggal Selesai</span>
-                                <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} size="sm" />
-                            </div>
+                    <div className="grid grid-cols-2 gap-2">
+                        <div className="flex flex-col gap-1">
+                            <span className="text-muted-foreground text-[10px] font-medium">Tanggal Mulai</span>
+                            <Input
+                                type="date"
+                                value={contractDate}
+                                onChange={(e) => setContractDate(e.target.value)}
+                                size="sm"
+                                disabled={!canEditPeriod}
+                            />
                         </div>
-                    ) : (
-                        <span className="text-foreground text-xs font-medium">
-                            {contractDate || endDate ? `${contractDate || '—'} s/d ${endDate || '—'}` : '—'}
-                        </span>
-                    )}
+                        <div className="flex flex-col gap-1">
+                            <span className="text-muted-foreground text-[10px] font-medium">Tanggal Selesai</span>
+                            <Input
+                                type="date"
+                                value={endDate}
+                                onChange={(e) => setEndDate(e.target.value)}
+                                size="sm"
+                                disabled={!canEditPeriod}
+                            />
+                        </div>
+                    </div>
                 </div>
             )}
 
@@ -431,19 +433,16 @@ export function ContractInfoForm({
             {showPrice && (
                 <div className="flex flex-col gap-1.5">
                     <FieldConfigHeader icon={Coins} label="Nilai / Estimasi Biaya" required={reqPrice} canEdit={canEditPrice} isVisible={true} />
-                    {canEditPrice ? (
-                        <Input
-                            value={formatNumber(price)}
-                            onChange={(e) => {
-                                const raw = e.target.value.replace(/\D/g, '');
-                                setPrice(raw);
-                            }}
-                            placeholder="Contoh: 510.000.000..."
-                            size="sm"
-                        />
-                    ) : (
-                        <span className="text-foreground font-mono text-xs font-bold">{price ? formatCurrency(price) : '—'}</span>
-                    )}
+                    <Input
+                        value={price ? formatNumber(price) : ''}
+                        onChange={(e) => {
+                            const raw = e.target.value.replace(/\D/g, '');
+                            setPrice(raw);
+                        }}
+                        placeholder={canEditPrice ? 'Contoh: 510.000.000...' : '—'}
+                        size="sm"
+                        disabled={!canEditPrice}
+                    />
                 </div>
             )}
 
@@ -451,23 +450,18 @@ export function ContractInfoForm({
             {showTaxToggle && (
                 <div className="flex flex-col gap-1.5">
                     <FieldConfigHeader icon={Receipt} label="Penentuan Pajak" required={reqTaxToggle} canEdit={canEditTaxToggle} isVisible={true} />
-                    {canEditTaxToggle ? (
-                        <SearchableSelect
-                            value={taxRequired ? 'p1' : 'p2'}
-                            onValueChange={(val) => onTaxRequiredChange(val === 'p1')}
-                            options={[
-                                { value: 'p1', label: `Pihak I (${firstPartyDisplayName})` },
-                                { value: 'p2', label: `Pihak II (${secondPartyDisplayName})` },
-                            ]}
-                            placeholder="Pilih Penanggung / Ketentuan Pajak"
-                            searchPlaceholder="Cari pihak penanggung pajak..."
-                            size="sm"
-                        />
-                    ) : (
-                        <span className="text-foreground text-xs font-semibold">
-                            {taxRequired ? `Pihak I (${firstPartyDisplayName})` : `Pihak II (${secondPartyDisplayName})`}
-                        </span>
-                    )}
+                    <SearchableSelect
+                        value={taxRequired ? 'p1' : 'p2'}
+                        onValueChange={(val) => onTaxRequiredChange(val === 'p1')}
+                        options={[
+                            { value: 'p1', label: `Pihak I (${firstPartyDisplayName})` },
+                            { value: 'p2', label: `Pihak II (${secondPartyDisplayName})` },
+                        ]}
+                        placeholder="Pilih Penanggung / Ketentuan Pajak"
+                        searchPlaceholder="Cari pihak penanggung pajak..."
+                        size="sm"
+                        disabled={!canEditTaxToggle}
+                    />
                     <div className="mt-0.5 flex items-center gap-2">
                         <span
                             className={cn(

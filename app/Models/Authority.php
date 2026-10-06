@@ -294,26 +294,79 @@ class Authority extends Model
     }
 
     /**
+     * Check whether a creator is allowed to submit a contract on-behalf of a specific initiator.
+     */
+    public static function checkCreatorCanRepresentInitiator(User $creator, User $initiator): bool
+    {
+        if ($creator->id === $initiator->id) {
+            return true;
+        }
+
+        if ($creator->isAdmin() || $creator->isSuperAdmin()) {
+            return true;
+        }
+
+        if (! $creator->can_create_on_behalf) {
+            return false;
+        }
+
+        $dashboardType = DashboardType::resolveForUser($creator);
+        if (! $dashboardType) {
+            return true;
+        }
+
+        $rules = static::where('context_type', self::CONTEXT_ON_BEHALF_CREATE)
+            ->where('context_id', $dashboardType->id)
+            ->where('is_active', true)
+            ->get();
+
+        if ($rules->isEmpty()) {
+            return true; // No restriction in matrix -> all users allowed
+        }
+
+        foreach ($rules as $rule) {
+            if (static::ruleMatchesUser($rule, $initiator)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Universal matching logic for any authority rule against a user.
      */
     public static function ruleMatchesUser(self $rule, User $user): bool
     {
+        $userId = $user->getAttributeFromArray('id') ?? $user->id;
+
         // 1. Direct User Match
-        if ($rule->user_id && (string) $rule->user_id === (string) $user->id) {
+        if ($rule->user_id && (string) $rule->user_id === (string) $userId) {
             return true;
         }
 
-        if ($rule->user_id && (string) $rule->user_id !== (string) $user->id) {
+        if ($rule->user_id && (string) $rule->user_id !== (string) $userId) {
             return false;
         }
 
         $matches = true;
         $criteriaCount = 0;
 
+        $userRoleId = $user->getAttributeFromArray('role_id');
+        $userJobLevelId = $user->getAttributeFromArray('job_level_id');
+        $userJobPositionId = $user->getAttributeFromArray('job_position_id');
+        $userDeptId = $user->getAttributeFromArray('department_id');
+        $userDivId = $user->getAttributeFromArray('division_id');
+        $userLocId = $user->getAttributeFromArray('location_id');
+        $userCompGroupId = $user->getAttributeFromArray('company_group_id');
+        $userCompId = $user->getAttributeFromArray('company_id');
+        $userRegionId = $user->getAttributeFromArray('region_id');
+        $userOrgGroupId = $user->getAttributeFromArray('organization_group_id') ?? $user->getAttributeFromArray('idorg_group');
+
         // Role check
         if ($rule->role_id) {
             $criteriaCount++;
-            if ((string) $rule->role_id !== (string) $user->role_id) {
+            if ((string) $rule->role_id !== (string) $userRoleId) {
                 $matches = false;
             }
         }
@@ -321,7 +374,7 @@ class Authority extends Model
         // Job Level check
         if ($rule->job_level_id) {
             $criteriaCount++;
-            if ((string) $rule->job_level_id !== (string) $user->job_level_id) {
+            if ((string) $rule->job_level_id !== (string) $userJobLevelId) {
                 $matches = false;
             }
         }
@@ -329,7 +382,7 @@ class Authority extends Model
         // Job Title / Position check
         if ($rule->job_position_id) {
             $criteriaCount++;
-            if ((string) $rule->job_position_id !== (string) $user->job_position_id) {
+            if ((string) $rule->job_position_id !== (string) $userJobPositionId) {
                 $matches = false;
             }
         }
@@ -337,7 +390,7 @@ class Authority extends Model
         // Department check
         if ($rule->department_id) {
             $criteriaCount++;
-            if ((string) $rule->department_id !== (string) $user->department_id) {
+            if ((string) $rule->department_id !== (string) $userDeptId) {
                 $matches = false;
             }
         }
@@ -345,7 +398,6 @@ class Authority extends Model
         // Division check
         if ($rule->division_id) {
             $criteriaCount++;
-            $userDivId = $user->division_id;
             if (! $userDivId && $user->relationLoaded('department') && $user->getRelation('department')) {
                 $userDivId = $user->getRelation('department')->division_id;
             }
@@ -357,7 +409,7 @@ class Authority extends Model
         // Location check
         if ($rule->location_id) {
             $criteriaCount++;
-            if ((string) $rule->location_id !== (string) $user->location_id) {
+            if ((string) $rule->location_id !== (string) $userLocId) {
                 $matches = false;
             }
         }
@@ -365,7 +417,7 @@ class Authority extends Model
         // Company Group check
         if ($rule->company_group_id) {
             $criteriaCount++;
-            if ((string) $rule->company_group_id !== (string) $user->company_group_id) {
+            if ((string) $rule->company_group_id !== (string) $userCompGroupId) {
                 $matches = false;
             }
         }
@@ -373,7 +425,7 @@ class Authority extends Model
         // Company check
         if ($rule->company_id) {
             $criteriaCount++;
-            if ((string) $rule->company_id !== (string) $user->company_id) {
+            if ((string) $rule->company_id !== (string) $userCompId) {
                 $matches = false;
             }
         }
@@ -381,7 +433,7 @@ class Authority extends Model
         // Region check
         if ($rule->region_id) {
             $criteriaCount++;
-            if ((string) $rule->region_id !== (string) $user->region_id) {
+            if ((string) $rule->region_id !== (string) $userRegionId) {
                 $matches = false;
             }
         }
@@ -389,7 +441,6 @@ class Authority extends Model
         // Organization Group check
         if ($rule->organization_group_id) {
             $criteriaCount++;
-            $userOrgGroupId = $user->idorg_group ?? null;
             if (! $userOrgGroupId && $user->relationLoaded('department') && $user->getRelation('department')) {
                 $userOrgGroupId = $user->getRelation('department')->idorg_group;
             }

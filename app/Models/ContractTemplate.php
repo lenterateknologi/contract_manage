@@ -22,8 +22,13 @@ class ContractTemplate extends Model
         'file_name',
         'file_size',
         'file_type',
+        'is_visible',
         'created_by',
         'updated_by',
+    ];
+
+    protected $casts = [
+        'is_visible' => 'boolean',
     ];
 
     public function folder(): BelongsTo

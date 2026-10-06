@@ -198,11 +198,6 @@ class UserResource extends Resource
                     ->options(fn () => Role::orderBy('name')->pluck('name', 'id')->toArray())
                     ->placeholder('Pilih Role Kewenangan...')
                     ->helperText('Menentukan hak akses modul dan matriks kebijakan sistem.'),
-                SelectInput::make('dashboard_type_id', 'Tipe Profil Dashboard & Scope Dokumen')
-                    ->options(fn () => DashboardType::orderBy('name')->pluck('name', 'id')->toArray())
-                    ->searchable()
-                    ->placeholder('Pilih Profil Dashboard (Default Otomatis)...')
-                    ->helperText('Menentukan batasan kategori dokumen (misal: hanya Non-Kontrak), visibilitas tab ringkasan & beban kerja.'),
                 TextInput::make('username', 'Username Login')
                     ->required()
                     ->rules(['string', 'max:50'])

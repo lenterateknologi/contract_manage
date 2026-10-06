@@ -1,3 +1,4 @@
+import { usePage } from '@inertiajs/react';
 import { type PovOptions } from '@/types';
 import { useMemo, useSyncExternalStore } from 'react';
 
@@ -137,6 +138,9 @@ export const FALLBACK_DASHBOARD_OPTIONS: DashboardTypePovOption[] = [
         description: 'Menampilkan seluruh tab: Ringkasan, Beban Kerja, dan Master Data',
         config: {
             show_overview: true,
+            show_overview_contract: true,
+            show_overview_non_contract: true,
+            show_overview_nda: true,
             show_workload: true,
             show_master_data: true,
         },
@@ -148,6 +152,9 @@ export const FALLBACK_DASHBOARD_OPTIONS: DashboardTypePovOption[] = [
         description: 'Menampilkan tab Ringkasan Metrik dan tab Beban Kerja Tim',
         config: {
             show_overview: true,
+            show_overview_contract: true,
+            show_overview_non_contract: true,
+            show_overview_nda: true,
             show_workload: true,
             show_master_data: false,
         },
@@ -159,6 +166,9 @@ export const FALLBACK_DASHBOARD_OPTIONS: DashboardTypePovOption[] = [
         description: 'Hanya menampilkan tab Ringkasan metriks status kontrak',
         config: {
             show_overview: true,
+            show_overview_contract: true,
+            show_overview_non_contract: true,
+            show_overview_nda: true,
             show_workload: false,
             show_master_data: false,
         },
@@ -271,8 +281,16 @@ export const povStore = {
     },
 };
 
-export function usePov(povOptions?: PovOptions | null) {
+export function usePov(povOptionsArg?: PovOptions | null) {
     const state = useSyncExternalStore(povStore.subscribe, povStore.getState, povStore.getState);
+    let pagePovOptions: PovOptions | undefined;
+    try {
+        const page = usePage<{ povOptions?: PovOptions }>();
+        pagePovOptions = page?.props?.povOptions;
+    } catch {
+        // Safe fallback when called outside Inertia page context
+    }
+    const povOptions = povOptionsArg ?? pagePovOptions;
 
     // 1. Resolve Navigation POV options (Database Roles or Fallback)
     const navOptions = useMemo<NavPovOption[]>(() => {
@@ -308,6 +326,9 @@ export function usePov(povOptions?: PovOptions | null) {
                 description: dt.description || `Konfigurasi tab untuk ${dt.name}`,
                 config: {
                     show_overview: !!dt.show_overview,
+                    show_overview_contract: dt.show_overview_contract !== undefined ? !!dt.show_overview_contract : true,
+                    show_overview_non_contract: dt.show_overview_non_contract !== undefined ? !!dt.show_overview_non_contract : true,
+                    show_overview_nda: dt.show_overview_nda !== undefined ? !!dt.show_overview_nda : true,
                     show_workload: !!dt.show_workload,
                     show_master_data: !!dt.show_master_data,
                 },

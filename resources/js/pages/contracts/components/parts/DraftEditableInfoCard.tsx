@@ -481,18 +481,15 @@ export function DraftEditableInfoCard({
                                         )}
                                     </div>
                                 </div>
-                                {canEditCategory ? (
-                                    <TreeSelect
-                                        value={typeId}
-                                        onValueChange={(val) => setTypeId(val)}
-                                        items={types}
-                                        placeholder="Pilih Kategori"
-                                        disableParentSelection={true}
-                                        size="sm"
-                                    />
-                                ) : (
-                                    <span className="text-foreground text-xs font-semibold">{categoryDisplayName}</span>
-                                )}
+                                <TreeSelect
+                                    value={typeId}
+                                    onValueChange={(val) => setTypeId(val)}
+                                    items={types}
+                                    placeholder="Pilih Kategori"
+                                    disableParentSelection={true}
+                                    size="sm"
+                                    disabled={!canEditCategory}
+                                />
                             </div>
                         )}
 

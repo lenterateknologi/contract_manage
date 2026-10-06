@@ -261,6 +261,7 @@ interface IndexProps {
         dashboardConfig?: DashboardConfig;
         [key: string]: unknown;
     } | null;
+    dashboardConfig?: DashboardConfig;
     userFilterSettings?: UserFilterSettings | null;
     mineCounts?: {
         all: number;
@@ -375,6 +376,7 @@ function ContractPage({
     currentView = 'dashboard',
     currentDashboardTab,
     metrics,
+    dashboardConfig,
     filters = {},
     formTemplates = [],
     users = [],
@@ -457,24 +459,58 @@ function ContractPage({
     }, [currentDashboardTab]);
 
     const effectiveDashboardConfig = useMemo(() => {
-        const baseConfig = metrics?.dashboardConfig || {
-            show_overview: false,
-            show_overview_contract: true,
-            show_overview_non_contract: true,
-            show_overview_nda: true,
-            show_workload: true,
-            show_master_data: true,
-            has_setting: true,
-        };
-        if (pov.activeDashboardPov.config !== undefined) {
+        // 1. Simulation POV
+        if (pov.isSimulatingDashboard && pov.activeDashboardPov?.config !== undefined) {
             return {
-                ...baseConfig,
-                ...pov.activeDashboardPov.config,
+                show_overview: !!pov.activeDashboardPov.config.show_overview,
+                show_overview_contract: pov.activeDashboardPov.config.show_overview_contract !== false,
+                show_overview_non_contract: pov.activeDashboardPov.config.show_overview_non_contract !== false,
+                show_overview_nda: pov.activeDashboardPov.config.show_overview_nda !== false,
+                show_workload: !!pov.activeDashboardPov.config.show_workload,
+                show_master_data: !!pov.activeDashboardPov.config.show_master_data,
                 has_setting: true,
             };
         }
-        return baseConfig;
-    }, [metrics?.dashboardConfig, pov.activeDashboardPov]);
+
+        // 2. Direct dashboard config or metrics
+        const cfg = dashboardConfig || metrics?.dashboardConfig;
+
+        // 3. User filter settings
+        const ufs = userFilterSettings;
+        const ufsCats = Array.isArray(ufs?.categories) ? ufs.categories : [];
+        const hasUfsCategories = ufsCats.length > 0;
+        const hasNonContractFromUfs = !hasUfsCategories || ufsCats.includes('non-contract') || ufsCats.includes('non_kontrak');
+        const hasContractFromUfs = !hasUfsCategories || ufsCats.includes('contract') || ufsCats.includes('kontrak');
+        const hasNdaFromUfs = !hasUfsCategories || ufsCats.includes('nda');
+
+        const showContract = cfg?.show_overview_contract !== undefined
+            ? Boolean(cfg.show_overview_contract)
+            : ufs?.show_overview_contract !== undefined
+              ? Boolean(ufs.show_overview_contract)
+              : hasContractFromUfs;
+
+        const showNonContract = cfg?.show_overview_non_contract !== undefined
+            ? Boolean(cfg.show_overview_non_contract)
+            : ufs?.show_overview_non_contract !== undefined
+              ? Boolean(ufs.show_overview_non_contract)
+              : hasNonContractFromUfs;
+
+        const showNda = cfg?.show_overview_nda !== undefined
+            ? Boolean(cfg.show_overview_nda)
+            : ufs?.show_overview_nda !== undefined
+              ? Boolean(ufs.show_overview_nda)
+              : hasNdaFromUfs;
+
+        return {
+            show_overview: Boolean(cfg?.show_overview ?? true),
+            show_overview_contract: showContract,
+            show_overview_non_contract: showNonContract,
+            show_overview_nda: showNda,
+            show_workload: Boolean(cfg?.show_workload ?? true),
+            show_master_data: Boolean(cfg?.show_master_data ?? false),
+            has_setting: Boolean(cfg?.has_setting ?? true),
+        };
+    }, [metrics?.dashboardConfig, dashboardConfig, userFilterSettings, pov.isSimulatingDashboard, pov.activeDashboardPov]);
 
     useEffect(() => {
         const config = effectiveDashboardConfig;
@@ -909,11 +945,39 @@ function ContractPage({
         }
 
         if (types && types.length > 0) {
+            const showContract = effectiveDashboardConfig?.show_overview_contract !== false;
+            const showNonContract = effectiveDashboardConfig?.show_overview_non_contract !== false;
+            const showNda = effectiveDashboardConfig?.show_overview_nda !== false;
+
+            const parents = (types as DBContractType[]).filter((t) => !t.parent_id);
+            const kontrakParent = parents.find((p) => {
+                const code = (p.code || '').toUpperCase();
+                const name = (p.name || '').toLowerCase();
+                return code === 'A-1' || (!name.includes('non') && name.includes('kontrak'));
+            });
+            const nonKontrakParent = parents.find((p) => {
+                const code = (p.code || '').toUpperCase();
+                const name = (p.name || '').toLowerCase();
+                return code === 'A-2' || name.includes('non');
+            });
+            const ndaParent = parents.find((p) => {
+                const code = (p.code || '').toUpperCase();
+                const name = (p.name || '').toLowerCase();
+                return code === 'NDA' || name.includes('nda') || name.includes('kerahasiaan');
+            });
+
+            const visibleTypes = types.filter((t) => {
+                if (!showContract && kontrakParent && isDescendantOrSelf(t.id, kontrakParent.id)) return false;
+                if (!showNonContract && nonKontrakParent && isDescendantOrSelf(t.id, nonKontrakParent.id)) return false;
+                if (!showNda && ndaParent && isDescendantOrSelf(t.id, ndaParent.id)) return false;
+                return true;
+            });
+
             list.push({
                 label: 'Kategori Kontrak',
                 key: 'contract_type_id',
                 type: 'searchable',
-                options: types.map((t) => ({
+                options: visibleTypes.map((t) => ({
                     label: t.name,
                     value: t.id,
                 })),
@@ -952,11 +1016,36 @@ function ContractPage({
         masterContractStatuses,
     ]);
 
+    // ponytail: derive active tab category for filtering creation modal types
+    const activeCategoryTab = useMemo(() => {
+        switch (view) {
+            case 'contracts':
+            case 'admin.contracts':
+            case 'admin/contracts':
+                return filters?.parent_tab || '';
+            case 'mine':
+                return filters?.mine_tab || '';
+            case 'organization':
+            case 'contracts.organization':
+            case 'contracts/organization':
+                return filters?.org_tab || filters?.parent_tab || '';
+            case 'expiry':
+                return filters?.expiry_tab || '';
+            case 'dashboard':
+                if (dashboardTab === 'overview_contract') return 'kontrak';
+                if (dashboardTab === 'overview_non_contract') return 'non_kontrak';
+                if (dashboardTab === 'overview_nda') return 'nda';
+                return '';
+            default:
+                return '';
+        }
+    }, [view, filters?.parent_tab, filters?.mine_tab, filters?.org_tab, filters?.expiry_tab, dashboardTab]);
+
     const handleCreate = async (data: Parameters<typeof contractApi.create>[0]) => {
         setProcessing(true);
         try {
             const newContract = await contractApi.create(data);
-            showToast('Kontrak baru berhasil dibuat.', 'success');
+            showToast('Pengajuan baru berhasil dibuat.', 'success');
             setCreateOpen(false);
             if (newContract && newContract.id) {
                 openDetail(newContract);
@@ -964,7 +1053,7 @@ function ContractPage({
                 router.reload();
             }
         } catch {
-            showToast('Gagal membuat kontrak.', 'danger');
+            showToast('Gagal membuat pengajuan.', 'danger');
         } finally {
             setProcessing(false);
         }
@@ -1215,30 +1304,45 @@ function ContractPage({
                 ];
             }
 
-            return [
+            const showContract = effectiveDashboardConfig?.show_overview_contract !== false;
+            const showNonContract = effectiveDashboardConfig?.show_overview_non_contract !== false;
+            const showNda = effectiveDashboardConfig?.show_overview_nda !== false;
+
+            const tabsList = [
                 { key: '', label: 'Semua', count: counts?.all ?? 0, icon: LayoutGrid, isActive: !activeKey },
-                {
+            ];
+
+            if (showContract) {
+                tabsList.push({
                     key: 'kontrak',
                     label: 'Kontrak',
                     count: counts?.kontrak ?? 0,
                     icon: FileText,
                     isActive: activeKey === 'kontrak',
-                },
-                {
+                });
+            }
+
+            if (showNonContract) {
+                tabsList.push({
                     key: 'non_kontrak',
                     label: 'Non Kontrak',
                     count: counts?.non_kontrak ?? 0,
                     icon: FileCheck,
                     isActive: activeKey === 'non_kontrak',
-                },
-                {
+                });
+            }
+
+            if (showNda) {
+                tabsList.push({
                     key: 'nda',
                     label: 'NDA',
                     count: counts?.nda ?? 0,
                     icon: Zap,
                     isActive: activeKey === 'nda',
-                },
-            ];
+                });
+            }
+
+            return tabsList;
         };
 
         switch (activeView) {
@@ -1856,6 +1960,9 @@ function ContractPage({
                     submissionTypes={submissionTypes}
                     users={users}
                     vendors={vendors}
+                    activeTab={activeCategoryTab}
+                    activeContractTypeId={filters?.contract_type_id}
+                    dashboardConfig={effectiveDashboardConfig}
                 />
             </Suspense>
             <Suspense fallback={null}>
@@ -1941,6 +2048,7 @@ export default function ContractsIndex({
     submissionTypes: initialSubmissionTypes = [],
     formTemplates: initialFormTemplates = [],
     metrics: initialMetrics = null,
+    dashboardConfig,
     initialSelected: initialSelectedProp = null,
     filters = {},
     users = [],
@@ -1978,6 +2086,7 @@ export default function ContractsIndex({
                     formTemplates={initialFormTemplates}
                     currentView={currentView}
                     metrics={initialMetrics}
+                    dashboardConfig={dashboardConfig}
                     filters={filters}
                     users={users}
                     departments={departments}

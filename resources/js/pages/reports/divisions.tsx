@@ -14,6 +14,9 @@ import {
     Search,
     Users,
     FileText,
+    ArrowUpDown,
+    ArrowUp,
+    ArrowDown,
 } from 'lucide-react';
 import React, { useEffect, useMemo, useState } from 'react';
 
@@ -41,6 +44,23 @@ export default function DivisionReportsPage({ breadcrumbs }: { breadcrumbs?: Bre
     // Filters state
     const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
     const [searchQuery, setSearchQuery] = useState<string>('');
+
+    // Sorting state (field can be 'name', 'total', or month index 1..12)
+    const [sortField, setSortField] = useState<string | number>('total');
+    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+
+    const handleSort = (field: string | number) => {
+        if (sortField === field) {
+            setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+        } else {
+            setSortField(field);
+            if (typeof field === 'number' || field === 'total') {
+                setSortDirection('desc');
+            } else {
+                setSortDirection('asc');
+            }
+        }
+    };
 
     const fetchData = () => {
         setLoading(true);
@@ -88,17 +108,58 @@ export default function DivisionReportsPage({ breadcrumbs }: { breadcrumbs?: Bre
         }
     };
 
-    // Active matrix items filtered by local search
+    // Active matrix items filtered by local search and sorted
     const activeMatrixList = useMemo(() => {
         if (!data?.matrix) return [];
-        if (!searchQuery.trim()) return data.matrix;
-        const q = searchQuery.toLowerCase();
-        return data.matrix.filter(
-            (item: any) =>
-                (item.org_group_name || item.division_name || '').toLowerCase().includes(q) ||
-                (item.org_group_code || item.division_code || '').toLowerCase().includes(q),
+        let list = [...data.matrix];
+
+        if (searchQuery.trim()) {
+            const q = searchQuery.toLowerCase();
+            list = list.filter(
+                (item: any) =>
+                    (item.org_group_name || item.division_name || '').toLowerCase().includes(q) ||
+                    (item.org_group_code || item.division_code || '').toLowerCase().includes(q),
+            );
+        }
+
+        if (sortField !== null) {
+            list.sort((a, b) => {
+                let comparison = 0;
+                if (typeof sortField === 'number') {
+                    const valA = a.months?.[sortField] ?? 0;
+                    const valB = b.months?.[sortField] ?? 0;
+                    comparison = valA - valB;
+                } else if (sortField === 'total') {
+                    comparison = (a.total ?? 0) - (b.total ?? 0);
+                } else {
+                    const nameA = a.org_group_name || a.division_name || '';
+                    const nameB = b.org_group_name || b.division_name || '';
+                    comparison = String(nameA).localeCompare(String(nameB), undefined, { sensitivity: 'base', numeric: true });
+                }
+
+                if (comparison !== 0) {
+                    return sortDirection === 'asc' ? comparison : -comparison;
+                }
+                const fallbackA = a.org_group_name || a.division_name || '';
+                const fallbackB = b.org_group_name || b.division_name || '';
+                return String(fallbackA).localeCompare(String(fallbackB));
+            });
+        }
+
+        return list;
+    }, [data?.matrix, searchQuery, sortField, sortDirection]);
+
+    const renderSortIcon = (field: string | number) => {
+        const isActive = sortField === field;
+        if (!isActive) {
+            return <ArrowUpDown size={11} className="text-zinc-400 opacity-40 group-hover:opacity-100 transition-opacity shrink-0" />;
+        }
+        return sortDirection === 'asc' ? (
+            <ArrowUp size={11} className="text-primary shrink-0" />
+        ) : (
+            <ArrowDown size={11} className="text-primary shrink-0" />
         );
-    }, [data?.matrix, searchQuery]);
+    };
 
     return (
         <>
@@ -201,16 +262,47 @@ export default function DivisionReportsPage({ breadcrumbs }: { breadcrumbs?: Bre
                                             <th className="sticky left-0 z-20 w-10 border-r border-surface-border bg-zinc-50 px-3 py-2.5 text-center dark:bg-zinc-800">
                                                 No
                                             </th>
-                                            <th className="sticky left-10 z-20 min-w-[240px] border-r border-surface-border bg-zinc-50 px-3 py-2.5 dark:bg-zinc-800">
-                                                Organization Group
+                                            <th
+                                                onClick={() => handleSort('name')}
+                                                className={cn(
+                                                    'sticky left-10 z-20 min-w-[240px] border-r border-surface-border bg-zinc-50 px-3 py-2.5 dark:bg-zinc-800 cursor-pointer select-none group transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-700/60',
+                                                    sortField === 'name' && 'text-primary dark:text-primary',
+                                                )}
+                                                title="Urutkan berdasarkan Organization Group"
+                                            >
+                                                <div className="flex items-center justify-between gap-1.5">
+                                                    <span>Organization Group</span>
+                                                    {renderSortIcon('name')}
+                                                </div>
                                             </th>
                                             {MONTH_NAMES.map((m) => (
-                                                <th key={m.num} className="min-w-[56px] border-r border-surface-border px-2 py-2.5 text-center">
-                                                    {m.short}
+                                                <th
+                                                    key={m.num}
+                                                    onClick={() => handleSort(m.num)}
+                                                    className={cn(
+                                                        'min-w-[56px] border-r border-surface-border px-2 py-2.5 text-center cursor-pointer select-none group transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-700/60',
+                                                        sortField === m.num && 'text-primary dark:text-primary bg-zinc-100/80 dark:bg-zinc-700/40',
+                                                    )}
+                                                    title={`Urutkan berdasarkan bulan ${m.full}`}
+                                                >
+                                                    <div className="flex items-center justify-center gap-1">
+                                                        <span>{m.short}</span>
+                                                        {renderSortIcon(m.num)}
+                                                    </div>
                                                 </th>
                                             ))}
-                                            <th className="sticky right-0 z-20 min-w-[80px] border-l border-surface-border bg-zinc-100 px-3 py-2.5 text-center font-black dark:bg-zinc-800">
-                                                Total
+                                            <th
+                                                onClick={() => handleSort('total')}
+                                                className={cn(
+                                                    'sticky right-0 z-20 min-w-[80px] border-l border-surface-border bg-zinc-100 px-3 py-2.5 text-center font-black dark:bg-zinc-800 cursor-pointer select-none group transition-colors hover:bg-zinc-200/80 dark:hover:bg-zinc-700/80',
+                                                    sortField === 'total' && 'text-primary dark:text-primary',
+                                                )}
+                                                title="Urutkan berdasarkan Total"
+                                            >
+                                                <div className="flex items-center justify-center gap-1">
+                                                    <span>Total</span>
+                                                    {renderSortIcon('total')}
+                                                </div>
                                             </th>
                                         </tr>
                                     </thead>

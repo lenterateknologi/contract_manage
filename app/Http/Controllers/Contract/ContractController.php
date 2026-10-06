@@ -16,6 +16,7 @@ use App\Http\Requests\Contract\UpdateContractRequest;
 use App\Imports\ContractImport;
 use App\Models\AccessModule;
 use App\Models\Contract;
+use App\Models\DashboardType;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\ContractFilterScopeService;
@@ -98,7 +99,7 @@ class ContractController extends Controller
     {
         if ($view === 'contracts' || $view === 'all') {
             $user = Auth::user();
-            $canViewGlobal = $user && ($user->isAdmin() || $user->isSuperAdmin() || $user->isLegal());
+            $canViewGlobal = $user && $user->canViewGlobalContracts();
             if (! $canViewGlobal) {
                 return redirect()->route('contracts.organization', $request->query());
             }
@@ -151,6 +152,7 @@ class ContractController extends Controller
             )),
             'contractStatuses' => $loaders['contractStatuses'](),
             'userFilterSettings' => Auth::user()?->getContractFilterSettings() ?? [],
+            'dashboardConfig' => (new ContractDashboardQuery)->resolveDashboardConfig(Auth::user()),
             'filters' => array_merge($request->only([
                 'search', 'status', 'contract_type_id', 'role_id', 'department_id',
                 'created_from', 'created_to', 'region_ids', 'vendor_ids', 'statuses',
@@ -250,21 +252,16 @@ class ContractController extends Controller
                 'archived' => (clone $scopedOrgQuery)->where(fn ($q) => $q->whereRaw('UPPER(status) = ?', ['ARCHIVED'])->orWhereNotNull('closed_at'))->count(),
             ];
 
-            $myBaseQuery = DB::table('t_contracts')
-                ->whereNull('deleted_at')
-                ->where(function ($q) use ($userId) {
-                    $q->where('created_by', $userId)
-                        ->orWhere('initiated_by_id', $userId);
-                });
-            $myActiveQuery = (clone $myBaseQuery)->whereRaw('UPPER(status) != ?', ['ARCHIVED'])->whereNull('closed_at');
+            $scopedMineQuery = $this->contractListQuery->build(new Request(), 'mine', false);
+            $myActiveQuery = (clone $scopedMineQuery)->whereRaw('UPPER(status) != ?', ['ARCHIVED'])->whereNull('closed_at');
 
             $mineCounts = [
                 'all' => (clone $myActiveQuery)->count(),
                 'kontrak' => (clone $myActiveQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $kontrakIds)->orWhereIn('contract_type_parent_id', $kontrakIds))->count(),
                 'non_kontrak' => (clone $myActiveQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $nonKontrakIds)->orWhereIn('contract_type_parent_id', $nonKontrakIds))->count(),
                 'nda' => (clone $myActiveQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $ndaIds)->orWhereIn('contract_type_parent_id', $ndaIds))->count(),
-                'in_progress' => (clone $myBaseQuery)->whereIn('status', ['in_review', 'pending', 'locked'])->whereNull('closed_at')->count(),
-                'archived' => (clone $myBaseQuery)->where(fn ($q) => $q->whereRaw('UPPER(status) = ?', ['ARCHIVED'])->orWhereNotNull('closed_at'))->count(),
+                'in_progress' => (clone $scopedMineQuery)->whereIn('status', ['in_review', 'pending', 'locked'])->whereNull('closed_at')->count(),
+                'archived' => (clone $scopedMineQuery)->where(fn ($q) => $q->whereRaw('UPPER(status) = ?', ['ARCHIVED'])->orWhereNotNull('closed_at'))->count(),
             ];
 
             $pendingCounts = [
@@ -372,6 +369,78 @@ class ContractController extends Controller
         $loaders = $this->contractOptionsQuery->getLoaders();
 
         return $this->successResponse($loaders['submissionTypes'](), 'Submission types retrieved successfully');
+    }
+
+    public function getDashboardVisibility(Request $request): JsonResponse
+    {
+        $userId = $request->query('user_id');
+        $dashboardTypeId = $request->query('dashboard_type_id');
+
+        $user = null;
+        if (! empty($userId)) {
+            $user = User::with(['roleRelation', 'division', 'department'])->find($userId);
+        }
+
+        if (! $user) {
+            $user = $request->user();
+            if ($user && ! $user->relationLoaded('roleRelation')) {
+                $user->load(['roleRelation', 'division', 'department']);
+            }
+        }
+
+        $resolvedType = null;
+        if (! empty($dashboardTypeId)) {
+            $resolvedType = DashboardType::find($dashboardTypeId);
+        }
+
+        if (! $resolvedType && $user) {
+            $resolvedType = DashboardType::resolveForUser($user);
+        }
+
+        $filterSettings = $user ? $user->getContractFilterSettings() : [];
+
+        $data = [
+            'user' => $user ? [
+                'id' => (string) $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+                'division_id' => $user->division_id,
+                'division_name' => $user->division?->name,
+                'department_id' => $user->department_id,
+                'department_name' => $user->department?->name,
+            ] : null,
+            'profile' => [
+                'id' => $resolvedType ? (string) $resolvedType->id : null,
+                'name' => $resolvedType?->name ?? 'Default (Fallback)',
+                'priority' => $resolvedType?->priority ?? null,
+                'description' => $resolvedType?->description ?? 'Tidak ada profil spesifik, menggunakan konfigurasi default sistem.',
+            ],
+            'visibility' => [
+                'show_overview' => (bool) ($resolvedType?->show_overview ?? true),
+                'show_overview_contract' => (bool) ($resolvedType?->show_overview_contract ?? true),
+                'show_overview_non_contract' => (bool) ($resolvedType?->show_overview_non_contract ?? true),
+                'show_overview_nda' => (bool) ($resolvedType?->show_overview_nda ?? true),
+                'show_workload' => (bool) ($resolvedType?->show_workload ?? false),
+                'show_master_data' => (bool) ($resolvedType?->show_master_data ?? false),
+            ],
+            'template_authority' => [
+                'template_can_read' => (bool) ($resolvedType?->template_can_read ?? true),
+                'template_can_download' => (bool) ($resolvedType?->template_can_download ?? true),
+                'template_can_upload' => (bool) ($resolvedType?->template_can_upload ?? false),
+                'template_can_create_folder' => (bool) ($resolvedType?->template_can_create_folder ?? false),
+                'template_can_edit' => (bool) ($resolvedType?->template_can_edit ?? false),
+                'template_can_toggle_visibility' => (bool) ($resolvedType?->template_can_toggle_visibility ?? false),
+                'template_can_delete' => (bool) ($resolvedType?->template_can_delete ?? false),
+            ],
+            'on_behalf_authority' => [
+                'can_create_on_behalf' => (bool) ($resolvedType?->can_create_on_behalf ?? false),
+                'allowed_on_behalf_user_ids' => $user ? $user->allowed_on_behalf_user_ids : null,
+            ],
+            'filter_settings' => $filterSettings,
+        ];
+
+        return $this->successResponse($data, 'Dashboard visibility configuration retrieved successfully');
     }
 
     public function getDashboardMetrics(Request $request): JsonResponse

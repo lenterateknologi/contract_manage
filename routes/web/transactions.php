@@ -42,6 +42,7 @@ Route::controller(ContractController::class)->group(function () {
         Route::get('/in-progress', 'contractsView')->defaults('view', 'in_progress')->name('contracts.in_progress');
         Route::get('/dashboard-metrics', 'getDashboardMetrics')->name('contracts.dashboard-metrics');
         Route::prefix('dashboard')->group(function () {
+            Route::get('/visibility', 'getDashboardVisibility')->name('contracts.dashboard.visibility');
             Route::get('/summary', 'getDashboardSummary')->name('contracts.dashboard.summary');
             Route::get('/overview', 'getDashboardOverview')->name('contracts.dashboard.overview');
             Route::get('/distributions', 'getDashboardDistributions')->name('contracts.dashboard.distributions');

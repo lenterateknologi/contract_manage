@@ -105,6 +105,7 @@ export interface User {
     initials?: string;
     role?: string;
     can_create_on_behalf?: boolean;
+    allowed_on_behalf_user_ids?: string[] | null;
     bg_color?: string;
     text_color?: string;
     avatar?: string;

@@ -36,6 +36,7 @@ const {
     Edit3,
     ExternalLink,
     Eye,
+    EyeOff,
     FileSpreadsheet,
     FileText,
     Folder,
@@ -55,6 +56,7 @@ interface TemplateFolder {
     id: string;
     parent_id: string | null;
     name: string;
+    is_visible?: boolean;
     templates_count?: number;
     creator?: { name: string };
     created_at?: string;
@@ -70,6 +72,7 @@ interface ContractTemplate {
     file_name: string;
     file_size: number;
     file_type: string;
+    is_visible?: boolean;
     creator?: { name: string };
     folder?: { name: string };
     created_at?: string;
@@ -79,6 +82,15 @@ interface ContractTemplate {
 interface Props {
     folders: TemplateFolder[];
     templates: ContractTemplate[];
+    permissions?: {
+        canRead?: boolean;
+        canDownload?: boolean;
+        canUpload?: boolean;
+        canCreateFolder?: boolean;
+        canEdit?: boolean;
+        canToggleVisibility?: boolean;
+        canDelete?: boolean;
+    };
 }
 
 interface TableRowItem {
@@ -89,6 +101,7 @@ interface TableRowItem {
     file_type: string;
     file_size?: number;
     file_name?: string;
+    is_visible?: boolean;
     templates_count?: number;
     creator_name?: string;
     folder_name?: string;
@@ -102,12 +115,23 @@ interface FolderTreeNode extends TemplateFolder {
     totalTemplatesCount: number;
 }
 
-export default function Templates({ folders = [], templates = [] }: Props) {
-    const { canRead, canCreate, canUpdate, canDelete, canBulkDelete } = usePermissions('ADMIN_TEMPLATES');
+export default function Templates({ folders = [], templates = [], permissions }: Props) {
+    const systemPerms = usePermissions('ADMIN_TEMPLATES');
+    const canRead = permissions?.canRead ?? systemPerms.canRead;
+    const canDownload = permissions?.canDownload ?? systemPerms.canRead;
+    const canUpload = permissions?.canUpload ?? systemPerms.canCreate;
+    const canCreateFolder = permissions?.canCreateFolder ?? systemPerms.canCreate;
+    const canCreate = canUpload || canCreateFolder;
+    const canEdit = permissions?.canEdit ?? systemPerms.canUpdate;
+    const canUpdate = canEdit;
+    const canToggleVisibility = permissions?.canToggleVisibility ?? canUpdate;
+    const canDelete = permissions?.canDelete ?? systemPerms.canDelete;
+    const canBulkDelete = canDelete && systemPerms.canBulkDelete;
 
     const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [fileTypeFilter, setFileTypeFilter] = useState<string[]>([]);
+    const [visibilityFilter, setVisibilityFilter] = useState<string[]>([]);
     const [treeSearch, setTreeSearch] = useState('');
     const [expandedFolderIds, setExpandedFolderIds] = useState<Set<string>>(new Set());
 
@@ -301,6 +325,15 @@ export default function Templates({ folders = [], templates = [] }: Props) {
                     })),
                 ],
             },
+            {
+                key: 'visibility',
+                label: 'Status Visibilitas',
+                type: 'multiselect',
+                options: [
+                    { label: 'TAMPIL (VISIBLE)', value: 'visible' },
+                    { label: 'TERSEMBUNYI (HIDDEN)', value: 'hidden' },
+                ],
+            },
         ],
         [availableFileTypes],
     );
@@ -323,6 +356,7 @@ export default function Templates({ folders = [], templates = [] }: Props) {
                     itemType: 'folder',
                     name: f.name,
                     file_type: 'folder',
+                    is_visible: f.is_visible !== false,
                     templates_count: directCount,
                     creator_name: f.creator?.name || '-',
                     created_at: f.created_at,
@@ -351,6 +385,7 @@ export default function Templates({ folders = [], templates = [] }: Props) {
                     file_type: t.file_type?.toLowerCase() || 'docx',
                     file_size: t.file_size,
                     file_name: t.file_name,
+                    is_visible: t.is_visible !== false,
                     creator_name: t.creator?.name || '-',
                     folder_name: parentFolder ? parentFolder.name : 'Root Repository',
                     created_at: t.created_at,
@@ -365,8 +400,17 @@ export default function Templates({ folders = [], templates = [] }: Props) {
             all = all.filter((r) => fileTypeFilter.includes(r.file_type));
         }
 
+        if (visibilityFilter.length > 0) {
+            all = all.filter((r) => {
+                const isVisible = r.is_visible !== false;
+                if (visibilityFilter.includes('visible') && isVisible) return true;
+                if (visibilityFilter.includes('hidden') && !isVisible) return true;
+                return false;
+            });
+        }
+
         return all;
-    }, [folders, templates, currentFolderId, searchQuery, fileTypeFilter, folderMap, templatesByFolder]);
+    }, [folders, templates, currentFolderId, searchQuery, fileTypeFilter, visibilityFilter, folderMap, templatesByFolder]);
 
     // Actions
     const handleCreateFolder = (e?: React.FormEvent) => {
@@ -577,6 +621,23 @@ export default function Templates({ folders = [], templates = [] }: Props) {
         );
     };
 
+    const handleToggleVisibility = (item: TableRowItem) => {
+        if (!canToggleVisibility) return;
+        const url =
+            item.itemType === 'folder'
+                ? route('admin.templates.folders.toggle-visibility', item.id)
+                : route('admin.templates.toggle-visibility', item.id);
+
+        router.patch(
+            url,
+            {},
+            {
+                preserveScroll: true,
+                preserveState: true,
+            },
+        );
+    };
+
     // Table Columns Configuration
     const columns: Column<TableRowItem>[] = [
         {
@@ -688,6 +749,57 @@ export default function Templates({ folders = [], templates = [] }: Props) {
             },
         },
         {
+            header: 'Status',
+            accessorKey: 'is_visible',
+            className: 'w-32 text-center',
+            cell: (row) => {
+                const isVisible = row.is_visible !== false;
+                return (
+                    <div className="flex items-center justify-center">
+                        {canToggleVisibility ? (
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleToggleVisibility(row);
+                                }}
+                                className={cn(
+                                    'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all cursor-pointer border',
+                                    isVisible
+                                        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20'
+                                        : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 hover:bg-rose-500/20',
+                                )}
+                                title={`Klik untuk mengubah status menjadi ${isVisible ? 'Tersembunyi' : 'Tampil'}`}
+                            >
+                                {isVisible ? (
+                                    <>
+                                        <Eye size={12} className="shrink-0" />
+                                        <span>Tampil</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <EyeOff size={12} className="shrink-0" />
+                                        <span>Tersembunyi</span>
+                                    </>
+                                )}
+                            </button>
+                        ) : (
+                            <span
+                                className={cn(
+                                    'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border',
+                                    isVisible
+                                        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                                        : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20',
+                                )}
+                            >
+                                {isVisible ? 'Tampil' : 'Tersembunyi'}
+                            </span>
+                        )}
+                    </div>
+                );
+            },
+        },
+        {
             header: 'Aksi',
             accessorKey: 'id',
             className: 'w-20 text-center',
@@ -711,7 +823,7 @@ export default function Templates({ folders = [], templates = [] }: Props) {
                                 <MoreHorizontal size={15} />
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-44 p-1.5 shadow-xl border-surface-border z-[9999]">
+                        <DropdownMenuContent align="end" className="w-48 p-1.5 shadow-xl border-surface-border z-[9999]">
                             {row.itemType === 'template' ? (
                                 <>
                                     <DropdownMenuItem
@@ -724,7 +836,7 @@ export default function Templates({ folders = [], templates = [] }: Props) {
                                         <Eye size={13} className="text-primary" />
                                         <span>Buka / Pratinjau</span>
                                     </DropdownMenuItem>
-                                    {canRead && (
+                                    {canDownload && (
                                         <DropdownMenuItem
                                             onClick={(e) => {
                                                 e.stopPropagation();
@@ -749,7 +861,28 @@ export default function Templates({ folders = [], templates = [] }: Props) {
                                     <span>Buka Folder</span>
                                 </DropdownMenuItem>
                             )}
-                            {canUpdate && (
+                            {canToggleVisibility && (
+                                <DropdownMenuItem
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleToggleVisibility(row);
+                                    }}
+                                    className="flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted rounded-md transition-colors cursor-pointer"
+                                >
+                                    {row.is_visible !== false ? (
+                                        <>
+                                            <EyeOff size={13} className="text-amber-500" />
+                                            <span>Sembunyikan {row.itemType === 'folder' ? 'Folder' : 'Dokumen'}</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Eye size={13} className="text-emerald-500" />
+                                            <span>Tampilkan {row.itemType === 'folder' ? 'Folder' : 'Dokumen'}</span>
+                                        </>
+                                    )}
+                                </DropdownMenuItem>
+                            )}
+                            {canEdit && (
                                 <>
                                     <DropdownMenuItem
                                         onClick={(e) => {
@@ -1112,49 +1245,65 @@ export default function Templates({ folders = [], templates = [] }: Props) {
                         onSearchChange={setSearchQuery}
                         searchPlaceholder="Cari nama template, folder, atau berkas..."
                         filters={filterCategories}
-                        activeFilters={{ file_type: fileTypeFilter }}
+                        activeFilters={{ file_type: fileTypeFilter, visibility: visibilityFilter }}
                         onFilterChange={(keyOrObj, val) => {
-                            if (typeof keyOrObj === 'string' && keyOrObj === 'file_type') {
-                                setFileTypeFilter(Array.isArray(val) ? val : [val]);
-                            } else if (typeof keyOrObj === 'object' && keyOrObj.file_type) {
-                                setFileTypeFilter(Array.isArray(keyOrObj.file_type) ? keyOrObj.file_type : [keyOrObj.file_type]);
+                            if (typeof keyOrObj === 'string') {
+                                if (keyOrObj === 'file_type') {
+                                    setFileTypeFilter(Array.isArray(val) ? val : [val]);
+                                } else if (keyOrObj === 'visibility') {
+                                    setVisibilityFilter(Array.isArray(val) ? val : [val]);
+                                }
+                            } else if (typeof keyOrObj === 'object') {
+                                if (keyOrObj.file_type !== undefined) {
+                                    setFileTypeFilter(Array.isArray(keyOrObj.file_type) ? keyOrObj.file_type : [keyOrObj.file_type]);
+                                }
+                                if (keyOrObj.visibility !== undefined) {
+                                    setVisibilityFilter(Array.isArray(keyOrObj.visibility) ? keyOrObj.visibility : [keyOrObj.visibility]);
+                                }
                             }
                         }}
-                        onResetFilters={() => setFileTypeFilter([])}
+                        onResetFilters={() => {
+                            setFileTypeFilter([]);
+                            setVisibilityFilter([]);
+                        }}
                         totalResults={processedRows.length}
                         actions={
-                            canCreate ? (
+                            (canCreateFolder || canUpload) ? (
                                 <div className="flex items-center gap-2">
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => {
-                                            setFolderFormParentId(currentFolderId);
-                                            setNewFolderName('');
-                                            setIsFolderModalOpen(true);
-                                        }}
-                                        className="h-9 gap-1.5 px-3 rounded-lg text-xs font-semibold cursor-pointer"
-                                    >
-                                        <FolderPlus size={15} className="text-amber-500" />
-                                        <span>{currentFolderId ? 'Buat Sub-Folder' : 'Buat Folder'}</span>
-                                    </Button>
-                                    <Button
-                                        type="button"
-                                        variant="primary"
-                                        size="sm"
-                                        onClick={() => {
-                                            setDragDropTargetFolder({
-                                                id: currentFolderId,
-                                                name: currentFolder ? currentFolder.name : 'Repository Root',
-                                            });
-                                            setIsUploadModalOpen(true);
-                                        }}
-                                        className="h-9 gap-1.5 px-3 rounded-lg text-xs font-semibold cursor-pointer"
-                                    >
-                                        <Upload size={15} />
-                                        <span>Upload Dokumen</span>
-                                    </Button>
+                                    {canCreateFolder && (
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => {
+                                                setFolderFormParentId(currentFolderId);
+                                                setNewFolderName('');
+                                                setIsFolderModalOpen(true);
+                                            }}
+                                            className="h-9 gap-1.5 px-3 rounded-lg text-xs font-semibold cursor-pointer"
+                                        >
+                                            <FolderPlus size={15} className="text-amber-500" />
+                                            <span>{currentFolderId ? 'Buat Sub-Folder' : 'Buat Folder'}</span>
+                                        </Button>
+                                    )}
+                                    {canUpload && (
+                                        <Button
+                                            type="button"
+                                            variant="primary"
+                                            size="sm"
+                                            onClick={() => {
+                                                setDragDropTargetFolder({
+                                                    id: currentFolderId,
+                                                    name: currentFolder ? currentFolder.name : 'Repository Root',
+                                                });
+                                                setIsUploadModalOpen(true);
+                                            }}
+                                            className="h-9 gap-1.5 px-3 rounded-lg text-xs font-semibold cursor-pointer"
+                                        >
+                                            <Upload size={15} />
+                                            <span>Upload Dokumen</span>
+                                        </Button>
+                                    )}
                                 </div>
                             ) : undefined
                         }
@@ -1811,49 +1960,50 @@ export default function Templates({ folders = [], templates = [] }: Props) {
             {contextMenu && (
                 <div
                     style={{
-                        top: `${Math.min(contextMenu.y, window.innerHeight - 220)}px`,
+                        top: `${Math.min(contextMenu.y, window.innerHeight - 260)}px`,
                         left: `${Math.min(contextMenu.x, window.innerWidth - 200)}px`,
                     }}
                     onClick={(e) => e.stopPropagation()}
-                    className="fixed z-50 min-w-[190px] overflow-hidden rounded-xl border border-surface-border bg-surface-base/95 backdrop-blur-md p-1.5 shadow-2xl animate-in fade-in zoom-in-95 duration-100 select-none"
+                    className="fixed z-50 min-w-[200px] overflow-hidden rounded-xl border border-surface-border bg-surface-base/95 backdrop-blur-md p-1.5 shadow-2xl animate-in fade-in zoom-in-95 duration-100 select-none"
                 >
                     {contextMenu.target.type === 'root' ? (
                         <>
                             <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-text-desc border-b border-surface-border/50 mb-1">
                                 Repository Root
                             </div>
-                            {canCreate ? (
-                                <>
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setContextMenu(null);
-                                            setFolderFormParentId(null);
-                                            setNewFolderName('');
-                                            setIsFolderModalOpen(true);
-                                        }}
-                                        className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted transition-colors cursor-pointer text-left"
-                                    >
-                                        <FolderPlus size={14} className="text-amber-500" />
-                                        <span>Buat Folder Baru</span>
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setContextMenu(null);
-                                            setDragDropTargetFolder({
-                                                id: null,
-                                                name: 'Repository Root',
-                                            });
-                                            setIsUploadModalOpen(true);
-                                        }}
-                                        className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10 transition-colors cursor-pointer text-left"
-                                    >
-                                        <Upload size={14} className="text-primary" />
-                                        <span>Upload Dokumen di Sini</span>
-                                    </button>
-                                </>
-                            ) : (
+                            {canCreateFolder && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setContextMenu(null);
+                                        setFolderFormParentId(null);
+                                        setNewFolderName('');
+                                        setIsFolderModalOpen(true);
+                                    }}
+                                    className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted transition-colors cursor-pointer text-left"
+                                >
+                                    <FolderPlus size={14} className="text-amber-500" />
+                                    <span>Buat Folder Baru</span>
+                                </button>
+                            )}
+                            {canUpload && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setContextMenu(null);
+                                        setDragDropTargetFolder({
+                                            id: null,
+                                            name: 'Repository Root',
+                                        });
+                                        setIsUploadModalOpen(true);
+                                    }}
+                                    className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10 transition-colors cursor-pointer text-left"
+                                >
+                                    <Upload size={14} className="text-primary" />
+                                    <span>Upload Dokumen di Sini</span>
+                                </button>
+                            )}
+                            {!canCreateFolder && !canUpload && (
                                 <div className="px-2.5 py-1 text-xs text-text-desc italic">Hanya mode baca</div>
                             )}
                         </>
@@ -1874,41 +2024,71 @@ export default function Templates({ folders = [], templates = [] }: Props) {
                                 <FolderOpen size={14} className="text-amber-500" />
                                 <span>Buka Folder</span>
                             </button>
-                            {canCreate && (
-                                <>
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            const folder = (contextMenu.target as any).folder;
-                                            setContextMenu(null);
-                                            setFolderFormParentId(folder.id);
-                                            setNewFolderName('');
-                                            setIsFolderModalOpen(true);
-                                        }}
-                                        className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted transition-colors cursor-pointer text-left"
-                                    >
-                                        <FolderPlus size={14} className="text-amber-500" />
-                                        <span>Buat Sub-Folder</span>
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            const folder = (contextMenu.target as any).folder;
-                                            setContextMenu(null);
-                                            setDragDropTargetFolder({
-                                                id: folder.id,
-                                                name: folder.name,
-                                            });
-                                            setIsUploadModalOpen(true);
-                                        }}
-                                        className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10 transition-colors cursor-pointer text-left"
-                                    >
-                                        <Upload size={14} className="text-primary" />
-                                        <span>Upload Dokumen ke Folder Ini</span>
-                                    </button>
-                                </>
+                            {canCreateFolder && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        const folder = (contextMenu.target as any).folder;
+                                        setContextMenu(null);
+                                        setFolderFormParentId(folder.id);
+                                        setNewFolderName('');
+                                        setIsFolderModalOpen(true);
+                                    }}
+                                    className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted transition-colors cursor-pointer text-left"
+                                >
+                                    <FolderPlus size={14} className="text-amber-500" />
+                                    <span>Buat Sub-Folder</span>
+                                </button>
                             )}
-                            {canUpdate && (
+                            {canUpload && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        const folder = (contextMenu.target as any).folder;
+                                        setContextMenu(null);
+                                        setDragDropTargetFolder({
+                                            id: folder.id,
+                                            name: folder.name,
+                                        });
+                                        setIsUploadModalOpen(true);
+                                    }}
+                                    className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10 transition-colors cursor-pointer text-left"
+                                >
+                                    <Upload size={14} className="text-primary" />
+                                    <span>Upload Dokumen ke Folder Ini</span>
+                                </button>
+                            )}
+                            {canToggleVisibility && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        const folder = (contextMenu.target as any).folder;
+                                        setContextMenu(null);
+                                        handleToggleVisibility({
+                                            id: folder.id,
+                                            itemType: 'folder',
+                                            name: folder.name,
+                                            file_type: 'folder',
+                                            is_visible: folder.is_visible !== false,
+                                            raw: folder,
+                                        });
+                                    }}
+                                    className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted transition-colors cursor-pointer text-left"
+                                >
+                                    {(contextMenu.target as any).folder.is_visible !== false ? (
+                                        <>
+                                            <EyeOff size={14} className="text-amber-500" />
+                                            <span>Sembunyikan Folder</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Eye size={14} className="text-emerald-500" />
+                                            <span>Tampilkan Folder</span>
+                                        </>
+                                    )}
+                                </button>
+                            )}
+                            {canEdit && (
                                 <>
                                     <div className="my-1 border-t border-surface-border/50" />
                                     <button
@@ -1974,7 +2154,7 @@ export default function Templates({ folders = [], templates = [] }: Props) {
                                 <Eye size={14} className="text-primary" />
                                 <span>Buka / Pratinjau</span>
                             </button>
-                            {canRead && (
+                            {canDownload && (
                                 <a
                                     href={route('admin.templates.download', (contextMenu.target as any).template.id)}
                                     onClick={() => setContextMenu(null)}
@@ -1984,8 +2164,39 @@ export default function Templates({ folders = [], templates = [] }: Props) {
                                     <span>Download Dokumen</span>
                                 </a>
                             )}
-                            {canUpdate && (
+                            {canToggleVisibility && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        const tpl = (contextMenu.target as any).template;
+                                        setContextMenu(null);
+                                        handleToggleVisibility({
+                                            id: tpl.id,
+                                            itemType: 'template',
+                                            name: tpl.name,
+                                            file_type: tpl.file_type || 'docx',
+                                            is_visible: tpl.is_visible !== false,
+                                            raw: tpl,
+                                        });
+                                    }}
+                                    className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted transition-colors cursor-pointer text-left"
+                                >
+                                    {(contextMenu.target as any).template.is_visible !== false ? (
+                                        <>
+                                            <EyeOff size={14} className="text-amber-500" />
+                                            <span>Sembunyikan Dokumen</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Eye size={14} className="text-emerald-500" />
+                                            <span>Tampilkan Dokumen</span>
+                                        </>
+                                    )}
+                                </button>
+                            )}
+                            {canEdit && (
                                 <>
+                                    <div className="my-1 border-t border-surface-border/50" />
                                     <button
                                         type="button"
                                         onClick={() => {

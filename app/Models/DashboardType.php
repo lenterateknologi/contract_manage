@@ -47,6 +47,14 @@ class DashboardType extends Model
         'show_overview_nda',
         'show_workload',
         'show_master_data',
+        'template_can_read',
+        'template_can_download',
+        'template_can_upload',
+        'template_can_create_folder',
+        'template_can_edit',
+        'template_can_toggle_visibility',
+        'template_can_delete',
+        'can_create_on_behalf',
         'created_by',
         'updated_by',
     ];
@@ -139,6 +147,14 @@ class DashboardType extends Model
         'show_overview_nda' => 'boolean',
         'show_workload' => 'boolean',
         'show_master_data' => 'boolean',
+        'template_can_read' => 'boolean',
+        'template_can_download' => 'boolean',
+        'template_can_upload' => 'boolean',
+        'template_can_create_folder' => 'boolean',
+        'template_can_edit' => 'boolean',
+        'template_can_toggle_visibility' => 'boolean',
+        'template_can_delete' => 'boolean',
+        'can_create_on_behalf' => 'boolean',
     ];
 
     protected $appends = [
@@ -367,12 +383,12 @@ class DashboardType extends Model
             return null;
         }
 
-        $userId = $user->id;
-        $userRoleId = $user->role_id;
-        $userDivId = $user->division_id;
-        $userDeptId = $user->department_id;
-        $userJobLevelId = $user->job_level_id;
-        $userJobTitleId = $user->job_position_id;
+        $userId = $user->getAttributeFromArray('id') ?? $user->id;
+        $userRoleId = $user->getAttributeFromArray('role_id');
+        $userDivId = $user->getAttributeFromArray('division_id');
+        $userDeptId = $user->getAttributeFromArray('department_id');
+        $userJobLevelId = $user->getAttributeFromArray('job_level_id');
+        $userJobTitleId = $user->getAttributeFromArray('job_position_id');
 
         $bestMatch = null;
         $highestScore = -1;
@@ -505,6 +521,24 @@ class DashboardType extends Model
             }
         }
 
+        $allowedCategories = self::normalizeIds($this->categories);
+        // ponytail: derive allowed categories from dashboard toggles if not explicitly set
+        if (empty($allowedCategories)) {
+            $cats = [];
+            if ($this->show_overview_contract) {
+                $cats[] = 'contract';
+            }
+            if ($this->show_overview_non_contract) {
+                $cats[] = 'non-contract';
+            }
+            if ($this->show_overview_nda) {
+                $cats[] = 'nda';
+            }
+            if (! empty($cats) && count($cats) < 3) {
+                $allowedCategories = $cats;
+            }
+        }
+
         return [
             'can_change_company_group' => ! $this->scope_to_user_company_group,
             'allowed_company_groups' => self::normalizeIds($this->company_group_ids),
@@ -521,7 +555,44 @@ class DashboardType extends Model
             'org_group_ids' => $orgGroupIds,
             'location_ids' => self::normalizeIds($this->location_ids),
             'contract_type_ids' => self::normalizeIds($this->contract_type_ids),
-            'categories' => self::normalizeIds($this->categories),
+            'categories' => $allowedCategories,
+            'show_overview_contract' => (bool) $this->show_overview_contract,
+            'show_overview_non_contract' => (bool) $this->show_overview_non_contract,
+            'show_overview_nda' => (bool) $this->show_overview_nda,
         ];
+    }
+
+    /**
+     * Resolves the list of user IDs that the creator is allowed to represent on-behalf.
+     * Returns null if unrestricted (all users allowed), or an array of UUIDs.
+     */
+    public function getAllowedOnBehalfUserIds(User $creator): ?array
+    {
+        if (! $this->can_create_on_behalf) {
+            return [];
+        }
+
+        $rules = Authority::where('context_type', Authority::CONTEXT_ON_BEHALF_CREATE)
+            ->where('context_id', $this->id)
+            ->where('is_active', true)
+            ->get();
+
+        if ($rules->isEmpty()) {
+            return null; // Unrestricted -> all active users allowed
+        }
+
+        $allowedUserIds = [];
+        $activeUsers = User::where('is_used', true)->where('is_active', true)->get();
+
+        foreach ($activeUsers as $user) {
+            foreach ($rules as $rule) {
+                if (Authority::ruleMatchesUser($rule, $user)) {
+                    $allowedUserIds[] = (string) $user->id;
+                    break;
+                }
+            }
+        }
+
+        return array_values(array_unique($allowedUserIds));
     }
 }

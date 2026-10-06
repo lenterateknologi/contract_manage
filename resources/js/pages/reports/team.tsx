@@ -15,6 +15,9 @@ import {
     UserCheck,
     Send,
     Network,
+    ArrowUpDown,
+    ArrowUp,
+    ArrowDown,
 } from 'lucide-react';
 import React, { useEffect, useMemo, useState } from 'react';
 
@@ -44,6 +47,23 @@ export default function TeamReportsPage({ breadcrumbs }: { breadcrumbs?: Breadcr
     const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
     const [selectedOrgGroupId, setSelectedOrgGroupId] = useState<string>('');
     const [searchQuery, setSearchQuery] = useState<string>('');
+
+    // Sorting state (field can be 'user_name', 'department_name', 'org_group_name', 'total', or month index 1..12)
+    const [sortField, setSortField] = useState<string | number>('total');
+    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+
+    const handleSort = (field: string | number) => {
+        if (sortField === field) {
+            setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+        } else {
+            setSortField(field);
+            if (typeof field === 'number' || field === 'total') {
+                setSortDirection('desc');
+            } else {
+                setSortDirection('asc');
+            }
+        }
+    };
 
     const fetchData = (overrideParams: Record<string, any> = {}) => {
         setLoading(true);
@@ -109,20 +129,60 @@ export default function TeamReportsPage({ breadcrumbs }: { breadcrumbs?: Breadcr
         }
     };
 
-    // Active matrix items filtered by local search
+    // Active matrix items filtered by local search and sorted
     const activeMatrixList = useMemo(() => {
         if (!data?.matrix) return [];
-        if (!searchQuery.trim()) return data.matrix;
-        const q = searchQuery.toLowerCase();
-        return data.matrix.filter(
-            (item: TeamMatrixItem) =>
-                (item.user_name || '').toLowerCase().includes(q) ||
-                (item.user_email || '').toLowerCase().includes(q) ||
-                (item.user_nik || '').toLowerCase().includes(q) ||
-                (item.division_name || '').toLowerCase().includes(q) ||
-                (item.org_group_name || '').toLowerCase().includes(q),
+        let list = [...data.matrix];
+
+        if (searchQuery.trim()) {
+            const q = searchQuery.toLowerCase();
+            list = list.filter(
+                (item: TeamMatrixItem) =>
+                    (item.user_name || '').toLowerCase().includes(q) ||
+                    (item.user_email || '').toLowerCase().includes(q) ||
+                    (item.user_nik || '').toLowerCase().includes(q) ||
+                    (item.department_name || '').toLowerCase().includes(q) ||
+                    (item.division_name || '').toLowerCase().includes(q) ||
+                    (item.org_group_name || '').toLowerCase().includes(q),
+            );
+        }
+
+        if (sortField !== null) {
+            list.sort((a, b) => {
+                let comparison = 0;
+                if (typeof sortField === 'number') {
+                    const valA = a.months?.[sortField] ?? 0;
+                    const valB = b.months?.[sortField] ?? 0;
+                    comparison = valA - valB;
+                } else if (sortField === 'total') {
+                    comparison = (a.total ?? 0) - (b.total ?? 0);
+                } else {
+                    const strA = String((a as any)[sortField] ?? '');
+                    const strB = String((b as any)[sortField] ?? '');
+                    comparison = strA.localeCompare(strB, undefined, { sensitivity: 'base', numeric: true });
+                }
+
+                if (comparison !== 0) {
+                    return sortDirection === 'asc' ? comparison : -comparison;
+                }
+                return (a.user_name || '').localeCompare(b.user_name || '');
+            });
+        }
+
+        return list;
+    }, [data?.matrix, searchQuery, sortField, sortDirection]);
+
+    const renderSortIcon = (field: string | number) => {
+        const isActive = sortField === field;
+        if (!isActive) {
+            return <ArrowUpDown size={11} className="text-zinc-400 opacity-40 group-hover:opacity-100 transition-opacity shrink-0" />;
+        }
+        return sortDirection === 'asc' ? (
+            <ArrowUp size={11} className="text-primary shrink-0" />
+        ) : (
+            <ArrowDown size={11} className="text-primary shrink-0" />
         );
-    }, [data?.matrix, searchQuery]);
+    };
 
     const roleLabel = roleType === 'pic' ? 'Sebagai PIC' : 'Sebagai Pengaju';
     const currentOrgGroupName = data?.currentOrgGroup?.name || 'Organization Group';
@@ -155,24 +215,6 @@ export default function TeamReportsPage({ breadcrumbs }: { breadcrumbs?: Breadcr
 
                     {/* Header Controls */}
                     <div className="flex flex-wrap items-center gap-2">
-                        {/* Org Group Selector (Commented out)
-                        <div className="flex items-center gap-1.5 rounded-[4px] border border-surface-border bg-surface-muted/30 px-2.5 py-1 text-xs">
-                            <Network size={13} className="text-zinc-500 dark:text-zinc-400" />
-                            <span className="font-semibold text-black dark:text-white">Org Group:</span>
-                            <select
-                                value={selectedOrgGroupId}
-                                onChange={(e) => handleOrgGroupChange(e.target.value)}
-                                className="max-w-[200px] cursor-pointer bg-transparent text-xs font-bold text-primary outline-none"
-                            >
-                                {(data?.organizationGroups || []).map((og) => (
-                                    <option key={og.id} value={og.id} className="bg-white text-black dark:bg-zinc-800 dark:text-white">
-                                        {og.name} ({og.user_count || 0})
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                        */}
-
                         {/* Year Selector */}
                         <div className="w-28">
                             <Select
@@ -281,22 +323,73 @@ export default function TeamReportsPage({ breadcrumbs }: { breadcrumbs?: Breadcr
                                             <th className="sticky left-0 z-20 w-10 border-r border-surface-border bg-zinc-50 px-3 py-2.5 text-center dark:bg-zinc-800">
                                                 No
                                             </th>
-                                            <th className="sticky left-10 z-20 min-w-[220px] border-r border-surface-border bg-zinc-50 px-3 py-2.5 dark:bg-zinc-800">
-                                                Nama Anggota Tim
+                                            <th
+                                                onClick={() => handleSort('user_name')}
+                                                className={cn(
+                                                    'sticky left-10 z-20 min-w-[220px] border-r border-surface-border bg-zinc-50 px-3 py-2.5 dark:bg-zinc-800 cursor-pointer select-none group transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-700/60',
+                                                    sortField === 'user_name' && 'text-primary dark:text-primary',
+                                                )}
+                                                title="Urutkan berdasarkan Nama Anggota"
+                                            >
+                                                <div className="flex items-center justify-between gap-1.5">
+                                                    <span>Nama Anggota Tim</span>
+                                                    {renderSortIcon('user_name')}
+                                                </div>
                                             </th>
-                                            <th className="min-w-[140px] border-r border-surface-border px-3 py-2.5">
-                                                Divisi
+                                            <th
+                                                onClick={() => handleSort('department_name')}
+                                                className={cn(
+                                                    'min-w-[140px] border-r border-surface-border px-3 py-2.5 cursor-pointer select-none group transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-700/60',
+                                                    sortField === 'department_name' && 'text-primary dark:text-primary bg-zinc-100/80 dark:bg-zinc-700/40',
+                                                )}
+                                                title="Urutkan berdasarkan Departemen"
+                                            >
+                                                <div className="flex items-center justify-between gap-1.5">
+                                                    <span>Departemen</span>
+                                                    {renderSortIcon('department_name')}
+                                                </div>
                                             </th>
-                                            <th className="min-w-[160px] border-r border-surface-border px-3 py-2.5">
-                                                Organization Group
+                                            <th
+                                                onClick={() => handleSort('org_group_name')}
+                                                className={cn(
+                                                    'min-w-[160px] border-r border-surface-border px-3 py-2.5 cursor-pointer select-none group transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-700/60',
+                                                    sortField === 'org_group_name' && 'text-primary dark:text-primary bg-zinc-100/80 dark:bg-zinc-700/40',
+                                                )}
+                                                title="Urutkan berdasarkan Organization Group"
+                                            >
+                                                <div className="flex items-center justify-between gap-1.5">
+                                                    <span>Organization Group</span>
+                                                    {renderSortIcon('org_group_name')}
+                                                </div>
                                             </th>
                                             {MONTH_NAMES.map((m) => (
-                                                <th key={m.num} className="min-w-[56px] border-r border-surface-border px-2 py-2.5 text-center">
-                                                    {m.short}
+                                                <th
+                                                    key={m.num}
+                                                    onClick={() => handleSort(m.num)}
+                                                    className={cn(
+                                                        'min-w-[56px] border-r border-surface-border px-2 py-2.5 text-center cursor-pointer select-none group transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-700/60',
+                                                        sortField === m.num && 'text-primary dark:text-primary bg-zinc-100/80 dark:bg-zinc-700/40',
+                                                    )}
+                                                    title={`Urutkan berdasarkan bulan ${m.full}`}
+                                                >
+                                                    <div className="flex items-center justify-center gap-1">
+                                                        <span>{m.short}</span>
+                                                        {renderSortIcon(m.num)}
+                                                    </div>
                                                 </th>
                                             ))}
-                                            <th className="sticky right-0 z-20 min-w-[80px] border-l border-surface-border bg-zinc-100 px-3 py-2.5 text-center font-black dark:bg-zinc-800">
-                                                Total
+                                            <th
+                                                onClick={() => handleSort('total')}
+                                                className={cn(
+                                                    'sticky right-0 z-20 min-w-[80px] border-l border-surface-border bg-zinc-100 px-3 py-2.5 text-center font-black dark:bg-zinc-800 cursor-pointer select-none group transition-colors hover:bg-zinc-200/80 dark:hover:bg-zinc-700/80',
+                                                    sortField === 'total' && 'text-primary dark:text-primary',
+                                                )}
+                                                title="Urutkan berdasarkan Total"
+                                            >
+                                                <div className="flex items-center justify-center gap-1">
+                                                    <span>Total</span>
+                                                    {renderSortIcon('total')}
+                                                </div>
                                             </th>
                                         </tr>
                                     </thead>
@@ -329,7 +422,7 @@ export default function TeamReportsPage({ breadcrumbs }: { breadcrumbs?: Breadcr
                                                         </td>
                                                         <td className="border-r border-surface-border px-3 py-2 text-zinc-700 dark:text-zinc-300">
                                                             <span className="rounded-[4px] bg-blue-50 px-1.5 py-0.5 text-[11px] font-semibold text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">
-                                                                {row.division_name || '-'}
+                                                                {row.department_name || '-'}
                                                             </span>
                                                         </td>
                                                         <td className="border-r border-surface-border px-3 py-2 text-zinc-700 dark:text-zinc-300">

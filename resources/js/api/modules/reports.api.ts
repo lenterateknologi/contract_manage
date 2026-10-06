@@ -117,6 +117,8 @@ export interface TeamMatrixItem {
     user_name: string;
     user_email?: string;
     user_nik?: string;
+    department_name?: string;
+    department_code?: string;
     division_name?: string;
     org_group_name?: string;
     months: Record<number, number>;

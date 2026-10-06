@@ -647,9 +647,73 @@ export default function ResourceForm({
 }: Props) {
     const isEdit = !!record;
     const [activeTab, setActiveTab] = useState<'info' | 'detail'>('info');
-    const [dashboardTab, setDashboardTab] = useState<'setting' | 'authority' | 'filtering'>('setting');
-    const [slaTab, setSlaTab] = useState<'config' | 'overdue_authority'>('config');
-    const [userTab, setUserTab] = useState<'profile' | 'policy'>('profile');
+
+    // Helper to get initial tab from URL query params
+    const getInitialTab = <T extends string>(allowedTabs: T[], defaultTab: T): T => {
+        if (typeof window !== 'undefined') {
+            const params = new URLSearchParams(window.location.search);
+            const tabParam = params.get('tab') as T;
+            if (tabParam && allowedTabs.includes(tabParam)) {
+                return tabParam;
+            }
+        }
+        return defaultTab;
+    };
+
+    const [dashboardTab, setDashboardTab] = useState<'authority' | 'visibility' | 'template_authority' | 'on_behalf'>(() =>
+        getInitialTab(['authority', 'visibility', 'template_authority', 'on_behalf'], 'authority')
+    );
+    const [slaTab, setSlaTab] = useState<'config' | 'overdue_authority'>(() =>
+        getInitialTab(['config', 'overdue_authority'], 'config')
+    );
+    const [userTab, setUserTab] = useState<'profile' | 'policy'>(() =>
+        getInitialTab(['profile', 'policy'], 'profile')
+    );
+
+    const handleDashboardTabChange = (newTab: 'authority' | 'visibility' | 'template_authority' | 'on_behalf') => {
+        setDashboardTab(newTab);
+        if (typeof window !== 'undefined') {
+            const url = new URL(window.location.href);
+            url.searchParams.set('tab', newTab);
+            window.history.replaceState({}, '', url.toString());
+        }
+    };
+
+    const handleSlaTabChange = (newTab: 'config' | 'overdue_authority') => {
+        setSlaTab(newTab);
+        if (typeof window !== 'undefined') {
+            const url = new URL(window.location.href);
+            url.searchParams.set('tab', newTab);
+            window.history.replaceState({}, '', url.toString());
+        }
+    };
+
+    const handleUserTabChange = (newTab: 'profile' | 'policy') => {
+        setUserTab(newTab);
+        if (typeof window !== 'undefined') {
+            const url = new URL(window.location.href);
+            url.searchParams.set('tab', newTab);
+            window.history.replaceState({}, '', url.toString());
+        }
+    };
+
+    useEffect(() => {
+        const handlePopState = () => {
+            const params = new URLSearchParams(window.location.search);
+            const currentTab = params.get('tab');
+            if (resourceSlug === 'dashboard-types' && currentTab && ['authority', 'visibility', 'template_authority', 'on_behalf'].includes(currentTab)) {
+                setDashboardTab(currentTab as any);
+            } else if (resourceSlug === 'contract-sla-configs' && currentTab && ['config', 'overdue_authority'].includes(currentTab)) {
+                setSlaTab(currentTab as any);
+            } else if (resourceSlug === 'users' && currentTab && ['profile', 'policy'].includes(currentTab)) {
+                setUserTab(currentTab as any);
+            }
+        };
+
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, [resourceSlug]);
+
     const [localAccessTypes, setLocalAccessTypes] = useState<Record<string, string>>({});
     const [isSlaSimOpen, setIsSlaSimOpen] = useState(false);
 
@@ -692,6 +756,10 @@ export default function ResourceForm({
 
     if (resourceSlug === 'dashboard-types' || resourceSlug === 'contract-sla-configs') {
         initialFormState['authorities'] = record?.authorities || [];
+    }
+
+    if (resourceSlug === 'dashboard-types') {
+        initialFormState['on_behalf_authorities'] = record?.on_behalf_authorities || [];
     }
 
     const { data, setData, post, put, errors, processing } = useForm(initialFormState);
@@ -796,9 +864,20 @@ export default function ResourceForm({
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const endpoint = returnUrl
-            ? `/admin/core/${resourceSlug}${isEdit ? `/${record.id}` : ''}?return_url=${encodeURIComponent(returnUrl)}`
-            : `/admin/core/${resourceSlug}${isEdit ? `/${record.id}` : ''}`;
+        const urlParams = new URLSearchParams();
+        if (returnUrl) {
+            urlParams.set('return_url', returnUrl);
+        }
+        if (resourceSlug === 'dashboard-types') {
+            urlParams.set('tab', dashboardTab);
+        } else if (resourceSlug === 'contract-sla-configs') {
+            urlParams.set('tab', slaTab);
+        } else if (resourceSlug === 'users' && isEdit) {
+            urlParams.set('tab', userTab);
+        }
+
+        const queryString = urlParams.toString() ? `?${urlParams.toString()}` : '';
+        const endpoint = `/admin/core/${resourceSlug}${isEdit ? `/${record.id}` : ''}${queryString}`;
 
         if (isEdit) {
             put(endpoint);
@@ -1415,60 +1494,59 @@ export default function ResourceForm({
                 {(field.type === 'switch' || field.type === 'toggle') && (() => {
                     const isChecked = data[field.name] === true || data[field.name] === 1 || data[field.name] === '1' || data[field.name] === 'true';
                     return (
-                        <div className="space-y-1.5 w-full">
-                            <Label className="text-[11px] font-bold uppercase text-slate-700 dark:text-zinc-200 px-0.5">
-                                {field.label} {field.required && <span className="text-rose-500">*</span>}
-                            </Label>
-                            <div
-                                onClick={() => setData(field.name, !isChecked)}
-                                className={cn(
-                                    "flex min-h-[38px] items-center justify-between px-3.5 py-2 rounded-lg border transition-all cursor-pointer select-none",
-                                    isChecked
-                                        ? "border-primary/50 bg-primary/[0.04] dark:bg-primary/[0.08] dark:border-primary/50"
-                                        : "border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:border-slate-300 dark:hover:border-zinc-600"
-                                )}
-                            >
-                                <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                        <div
+                            key={field.name}
+                            onClick={() => setData(field.name, !isChecked)}
+                            className={cn(
+                                "group relative flex flex-col justify-between p-3.5 rounded-xl border transition-all duration-150 cursor-pointer select-none h-full",
+                                isChecked
+                                    ? "border-primary/40 bg-primary/[0.04] dark:bg-primary/[0.08] shadow-2xs"
+                                    : "border-border bg-surface-base hover:border-border/80 hover:bg-surface-muted/30"
+                            )}
+                        >
+                            <div className="flex items-start justify-between gap-2.5 mb-1.5">
+                                <div className="flex items-center gap-2.5 min-w-0">
                                     {IconComponent && (
-                                        <IconComponent className={cn(
-                                            "h-4 w-4 shrink-0 transition-colors",
-                                            isChecked ? "text-primary" : "text-slate-400 dark:text-zinc-500"
-                                        )} />
-                                    )}
-                                    <div className="flex flex-col min-w-0">
-                                        <span className={cn(
-                                            "text-xs font-semibold truncate transition-colors",
-                                            isChecked ? "text-primary dark:text-primary font-bold" : "text-slate-700 dark:text-zinc-300"
+                                        <div className={cn(
+                                            "w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors",
+                                            isChecked ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
                                         )}>
-                                            {isChecked ? 'Aktif' : 'Nonaktif'}
-                                        </span>
-                                        {field.helperText && (
-                                            <span className="text-[10.5px] text-muted-foreground line-clamp-1 font-normal">
-                                                {field.helperText}
-                                            </span>
-                                        )}
-                                    </div>
+                                            <IconComponent className="h-3.5 w-3.5" />
+                                        </div>
+                                    )}
+                                    <span className={cn(
+                                        "text-xs font-bold tracking-tight transition-colors line-clamp-1",
+                                        isChecked ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"
+                                    )}>
+                                        {field.label}
+                                    </span>
                                 </div>
-                                <div className="shrink-0 ml-2" onClick={(e) => e.stopPropagation()}>
-                                    <button
-                                        type="button"
-                                        role="switch"
-                                        aria-checked={isChecked}
-                                        onClick={() => setData(field.name, !isChecked)}
+                                <button
+                                    type="button"
+                                    role="switch"
+                                    aria-checked={isChecked}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setData(field.name, !isChecked);
+                                    }}
+                                    className={cn(
+                                        "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+                                        isChecked ? "bg-primary" : "bg-slate-200 dark:bg-zinc-700"
+                                    )}
+                                >
+                                    <span
                                         className={cn(
-                                            "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
-                                            isChecked ? "bg-primary" : "bg-slate-200 dark:bg-zinc-700"
+                                            "pointer-events-none block h-3.5 w-3.5 rounded-full bg-white dark:bg-zinc-100 shadow-sm transition-transform duration-200",
+                                            isChecked ? "translate-x-4.5" : "translate-x-1"
                                         )}
-                                    >
-                                        <span
-                                            className={cn(
-                                                "pointer-events-none block h-3.5 w-3.5 rounded-full bg-white dark:bg-zinc-100 shadow-sm transition-transform duration-200",
-                                                isChecked ? "translate-x-4.5" : "translate-x-1"
-                                            )}
-                                        />
-                                    </button>
-                                </div>
+                                    />
+                                </button>
                             </div>
+                            {field.helperText && (
+                                <p className="text-[10.5px] text-muted-foreground leading-relaxed mt-1">
+                                    {field.helperText}
+                                </p>
+                            )}
                             {errors[field.name] && (
                                 <span className="text-rose-500 text-[10px] font-bold uppercase mt-1 block">
                                     {errors[field.name]}
@@ -1526,20 +1604,7 @@ export default function ResourceForm({
                             <div className="flex items-center gap-2 px-6 border-t border-surface-border/60 pt-2 bg-surface-base">
                                 <button
                                     type="button"
-                                    onClick={() => setDashboardTab('setting')}
-                                    className={cn(
-                                        "px-4 py-2 text-xs font-semibold border-b-2 transition-all cursor-pointer flex items-center gap-1.5",
-                                        dashboardTab === 'setting'
-                                            ? "border-primary text-primary font-bold"
-                                            : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
-                                    )}
-                                >
-                                    <LucideIcons.LayoutDashboard size={14} className={dashboardTab === 'setting' ? 'text-primary' : 'text-slate-400'} />
-                                    1. Pengaturan & Visibilitas Tab
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setDashboardTab('authority')}
+                                    onClick={() => handleDashboardTabChange('authority')}
                                     className={cn(
                                         "px-4 py-2 text-xs font-semibold border-b-2 transition-all cursor-pointer flex items-center gap-1.5",
                                         dashboardTab === 'authority'
@@ -1547,8 +1612,47 @@ export default function ResourceForm({
                                             : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
                                     )}
                                 >
-                                    <LucideIcons.Users size={14} className={dashboardTab === 'authority' ? 'text-primary' : 'text-slate-400'} />
-                                    2. Target Pengguna & Matriks Organisasi
+                                    <LucideIcons.ShieldCheck size={14} className={dashboardTab === 'authority' ? 'text-primary' : 'text-slate-400'} />
+                                    1. Identitas & Target
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => handleDashboardTabChange('visibility')}
+                                    className={cn(
+                                        "px-4 py-2 text-xs font-semibold border-b-2 transition-all cursor-pointer flex items-center gap-1.5",
+                                        dashboardTab === 'visibility'
+                                            ? "border-primary text-primary font-bold"
+                                            : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                                    )}
+                                >
+                                    <LucideIcons.LayoutDashboard size={14} className={dashboardTab === 'visibility' ? 'text-primary' : 'text-slate-400'} />
+                                    2. Visibilitas Dashboard
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => handleDashboardTabChange('template_authority')}
+                                    className={cn(
+                                        "px-4 py-2 text-xs font-semibold border-b-2 transition-all cursor-pointer flex items-center gap-1.5",
+                                        dashboardTab === 'template_authority'
+                                            ? "border-primary text-primary font-bold"
+                                            : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                                    )}
+                                >
+                                    <LucideIcons.FileSpreadsheet size={14} className={dashboardTab === 'template_authority' ? 'text-primary' : 'text-slate-400'} />
+                                    3. Otoritas Template
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => handleDashboardTabChange('on_behalf')}
+                                    className={cn(
+                                        "px-4 py-2 text-xs font-semibold border-b-2 transition-all cursor-pointer flex items-center gap-1.5",
+                                        dashboardTab === 'on_behalf'
+                                            ? "border-primary text-primary font-bold"
+                                            : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                                    )}
+                                >
+                                    <LucideIcons.UserCheck size={14} className={dashboardTab === 'on_behalf' ? 'text-primary' : 'text-slate-400'} />
+                                    4. Otoritas On-Behalf
                                 </button>
                             </div>
                         )}
@@ -1558,7 +1662,7 @@ export default function ResourceForm({
                             <div className="flex items-center gap-2 px-6 border-t border-surface-border/60 pt-2 bg-surface-base">
                                 <button
                                     type="button"
-                                    onClick={() => setSlaTab('config')}
+                                    onClick={() => handleSlaTabChange('config')}
                                     className={cn(
                                         "px-4 py-2 text-xs font-semibold border-b-2 transition-all cursor-pointer flex items-center gap-1.5",
                                         slaTab === 'config'
@@ -1571,7 +1675,7 @@ export default function ResourceForm({
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={() => setSlaTab('overdue_authority')}
+                                    onClick={() => handleSlaTabChange('overdue_authority')}
                                     className={cn(
                                         "px-4 py-2 text-xs font-semibold border-b-2 transition-all cursor-pointer flex items-center gap-1.5",
                                         slaTab === 'overdue_authority'
@@ -1593,7 +1697,7 @@ export default function ResourceForm({
                             <div className="flex items-center gap-2 px-6 border-t border-surface-border/60 pt-2 bg-surface-base">
                                 <button
                                     type="button"
-                                    onClick={() => setUserTab('profile')}
+                                    onClick={() => handleUserTabChange('profile')}
                                     className={cn(
                                         "px-4 py-2 text-xs font-semibold border-b-2 transition-all cursor-pointer flex items-center gap-1.5",
                                         userTab === 'profile'
@@ -1606,7 +1710,7 @@ export default function ResourceForm({
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={() => setUserTab('policy')}
+                                    onClick={() => handleUserTabChange('policy')}
                                     className={cn(
                                         "px-4 py-2 text-xs font-semibold border-b-2 transition-all cursor-pointer flex items-center gap-1.5",
                                         userTab === 'policy'
@@ -1689,50 +1793,126 @@ export default function ResourceForm({
                                         />
                                     </div>
                                 ) : resourceSlug === 'dashboard-types' && dashboardTab === 'authority' ? (
-                                    <div className="col-span-full space-y-4">
+                                    <div className="space-y-6">
                                         <div className="p-4 rounded-xl border border-primary/20 bg-primary/5 flex items-start gap-3">
                                             <LucideIcons.ShieldCheck className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                                             <div>
-                                                <h4 className="text-xs font-bold text-text-main">Matriks Otoritas & Target Pengguna Terpadu</h4>
+                                                <h4 className="text-xs font-bold text-text-main">Identitas Profil & Matriks Target Pengguna</h4>
                                                 <p className="text-[11px] text-text-muted mt-0.5">
-                                                    Tentukan satu atau beberapa kombinasi kriteria (Role, Level Jabatan, Divisi, Departemen, Lokasi, atau Akun Spesifik) yang dapat menggunakan profil dashboard ini.
+                                                    Atur nama profil, tingkat prioritas evaluasi, dan tentukan satu atau beberapa kombinasi kriteria pengguna (Role, Level Jabatan, Divisi, Departemen, Lokasi, atau Akun Spesifik) yang mendapatkan profil dashboard ini.
                                                 </p>
                                             </div>
                                         </div>
 
-                                        <AuthorityTableManager
-                                            authorities={data.authorities || []}
-                                            onChange={(newAuths) => setData('authorities', newAuths)}
-                                            roles={roles}
-                                            departments={departments}
-                                            divisions={divisions}
-                                            locations={locations}
-                                            users={users}
-                                            companyGroups={companyGroups}
-                                            organizationGroups={organizationGroups}
-                                            regions={regions}
-                                            companies={companies}
-                                            title="Matriks Target Pengguna Profil"
-                                            showCustom={false}
-                                            showCombinations={true}
-                                            showInitiatorOption={false}
-                                        />
+                                        <div className={getGridClass()}>
+                                            {formSchema
+                                                .filter((field: any) => {
+                                                    const label = (field.label || '').toLowerCase();
+                                                    return label.includes('identitas') || label.includes('informasi');
+                                                })
+                                                .map((field: any) => {
+                                                    if (field.isGroup) {
+                                                        const GroupIcon = field.icon && (LucideIcons as any)[field.icon]
+                                                            ? (LucideIcons as any)[field.icon]
+                                                            : undefined;
+
+                                                        return (
+                                                            <div key={field.label} className="col-span-full flex flex-col gap-4 pt-2">
+                                                                <div className="flex items-center justify-between pb-2 border-b border-surface-border gap-4">
+                                                                    <div className="flex items-center gap-2">
+                                                                        {GroupIcon && <GroupIcon className="h-4 w-4 text-primary shrink-0 opacity-80" />}
+                                                                        <div>
+                                                                            <h3 className="text-xs font-semibold uppercase tracking-wider text-text-main">{field.label}</h3>
+                                                                            {field.description && (
+                                                                                <p className="text-[11px] text-text-muted mt-0.5">{field.description}</p>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <div className={getGridClass()}>
+                                                                    {field.schema
+                                                                        .filter((subField: any) => !['can_change_company_group', 'can_change_region', 'can_change_company', 'can_change_division', 'can_change_department', 'use_role_filter'].includes(subField.name))
+                                                                        .map((subField: any) => renderField(subField))}
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    }
+                                                    return renderField(field);
+                                                })}
+                                        </div>
+
+                                        <div className="col-span-full pt-2">
+                                            <AuthorityTableManager
+                                                authorities={data.authorities || []}
+                                                onChange={(newAuths) => setData('authorities', newAuths)}
+                                                roles={roles}
+                                                departments={departments}
+                                                divisions={divisions}
+                                                locations={locations}
+                                                users={users}
+                                                companyGroups={companyGroups}
+                                                organizationGroups={organizationGroups}
+                                                regions={regions}
+                                                companies={companies}
+                                                title="Matriks Target Pengguna Profil"
+                                                showCustom={false}
+                                                showCombinations={true}
+                                                showInitiatorOption={false}
+                                            />
+                                        </div>
                                     </div>
                                 ) : (
-                                    <div className={getGridClass()}>
-                                        {formSchema
-                                            .filter((field: any) => {
-                                                if (resourceSlug !== 'dashboard-types') return true;
-                                                const label = (field.label || '').toLowerCase();
-                                                if (dashboardTab === 'setting') {
-                                                    return label.includes('identitas') || label.includes('informasi') || label.includes('visibility') || label.includes('visibilitas');
-                                                }
-                                                if (dashboardTab === 'filtering') {
-                                                    return label.includes('cakupan dokumen') || label.includes('kuncian tipe') || label.includes('dokumen & pengajuan') || (label.includes('scoping') && !label.includes('organisasi') && !label.includes('dynamic'));
-                                                }
-                                                return true;
-                                            })
-                                            .map((field: any) => {
+                                    <div className="space-y-6">
+                                        {resourceSlug === 'dashboard-types' && dashboardTab === 'visibility' && (
+                                            <div className="p-4 rounded-xl border border-primary/20 bg-primary/5 flex items-start gap-3">
+                                                <LucideIcons.LayoutDashboard className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                                                <div>
+                                                    <h4 className="text-xs font-bold text-text-main">Visibilitas Tab Ringkasan & Modul Dashboard</h4>
+                                                    <p className="text-[11px] text-text-muted mt-0.5">
+                                                        Tentukan tab statistik ringkasan dan modul dashboard apa saja yang dapat dilihat dan diakses oleh pengguna dengan profil ini.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        )}
+                                        {resourceSlug === 'dashboard-types' && dashboardTab === 'template_authority' && (
+                                            <div className="p-4 rounded-xl border border-primary/20 bg-primary/5 flex items-start gap-3">
+                                                <LucideIcons.FileSpreadsheet className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                                                <div>
+                                                    <h4 className="text-xs font-bold text-text-main">Hak Akses & Otoritas Template Dokumen (/admin/templates)</h4>
+                                                    <p className="text-[11px] text-text-muted mt-0.5">
+                                                        Tentukan hak akses pengguna profil ini terhadap berkas template kontrak, pembuatan folder direktori, download file, upload berkas, ubah nama, atur visibilitas, hingga penghapusan berkas.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        )}
+                                        {resourceSlug === 'dashboard-types' && dashboardTab === 'on_behalf' && (
+                                            <div className="p-4 rounded-xl border border-primary/20 bg-primary/5 flex items-start gap-3">
+                                                <LucideIcons.UserCheck className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                                                <div>
+                                                    <h4 className="text-xs font-bold text-text-main">Otoritas Buat Pengajuan Atas Nama Orang Lain (On-Behalf)</h4>
+                                                    <p className="text-[11px] text-text-muted mt-0.5">
+                                                        Izinkan pengguna dengan profil dashboard ini untuk membuat dan mengajukan draft kontrak baru atas nama personil atau pemohon (requester) lain.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        )}
+                                        <div className={getGridClass()}>
+                                            {formSchema
+                                                .filter((field: any) => {
+                                                    if (resourceSlug !== 'dashboard-types') return true;
+                                                    const label = (field.label || '').toLowerCase();
+                                                    if (dashboardTab === 'visibility') {
+                                                        return label.includes('visibilitas tab') || label.includes('visibility') || label.includes('visibilitas');
+                                                    }
+                                                    if (dashboardTab === 'template_authority') {
+                                                        return label.includes('template dokumen') || label.includes('otoritas & akses template');
+                                                    }
+                                                    if (dashboardTab === 'on_behalf') {
+                                                        return label.includes('on-behalf') || label.includes('on_behalf') || label.includes('atas nama');
+                                                    }
+                                                    return false;
+                                                })
+                                                .map((field: any) => {
                                                 if (field.isGroup) {
                                                     const GroupIcon = field.icon && (LucideIcons as any)[field.icon]
                                                         ? (LucideIcons as any)[field.icon]
@@ -1762,6 +1942,29 @@ export default function ResourceForm({
 
                                                 return renderField(field);
                                             })}
+                                        </div>
+
+                                        {resourceSlug === 'dashboard-types' && dashboardTab === 'on_behalf' && data.can_create_on_behalf && (
+                                            <div className="col-span-full pt-4 border-t border-surface-border">
+                                                <AuthorityTableManager
+                                                    authorities={data.on_behalf_authorities || []}
+                                                    onChange={(newAuths) => setData('on_behalf_authorities', newAuths)}
+                                                    roles={roles}
+                                                    departments={departments}
+                                                    divisions={divisions}
+                                                    locations={locations}
+                                                    users={users}
+                                                    companyGroups={companyGroups}
+                                                    organizationGroups={organizationGroups}
+                                                    regions={regions}
+                                                    companies={companies}
+                                                    title="Matriks Target Initiator yang Boleh Diwakili (On-Behalf)"
+                                                    showCustom={false}
+                                                    showCombinations={true}
+                                                    showInitiatorOption={false}
+                                                />
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>

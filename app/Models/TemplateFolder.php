@@ -18,8 +18,13 @@ class TemplateFolder extends Model
     protected $fillable = [
         'parent_id',
         'name',
+        'is_visible',
         'created_by',
         'updated_by',
+    ];
+
+    protected $casts = [
+        'is_visible' => 'boolean',
     ];
 
     public function parent(): BelongsTo

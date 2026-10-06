@@ -1857,39 +1857,25 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                     };
                 }
 
-                if (templateType === 'default') {
-                    // Default / Viewer: View only on all modules
-                    return {
-                        ...access,
-                        can_read: true,
-                        can_create: false,
-                        can_update: false,
-                        can_delete: false,
-                        can_approve: false,
-                        can_bulk_approve: false,
-                        can_bulk_delete: false,
-                    };
-                }
+                if (templateType === 'default' || templateType === 'staff') {
+                    // Default / Staff: CRUD on Beranda & Laporan operational modules, Read-only on Master Data / Settings
+                    const route = moduleRoute || '';
+                    const group = moduleGroup || '';
+                    const isOperational =
+                        group === 'beranda' ||
+                        group === 'laporan' ||
+                        route.startsWith('/contracts') ||
+                        route === '/dashboard' ||
+                        route === '/admin/chat' ||
+                        route === '/admin/templates' ||
+                        route.startsWith('/admin/reports');
 
-                if (templateType === 'staff') {
-                    // Staff: CRUD on regular operational modules, Read-only on Master Data / Settings, No admin/delete/bulk permissions
-                    const isMasterOrSetting =
-                        moduleGroup.includes('master') ||
-                        moduleGroup.includes('pengaturan') ||
-                        moduleGroup.includes('setting') ||
-                        moduleGroup.includes('admin') ||
-                        moduleName.includes('role') ||
-                        moduleName.includes('user') ||
-                        moduleName.includes('pengguna') ||
-                        moduleIdentifier.includes('role') ||
-                        moduleIdentifier.includes('user');
-
-                    if (isMasterOrSetting) {
+                    if (isOperational) {
                         return {
                             ...access,
                             can_read: true,
-                            can_create: false,
-                            can_update: false,
+                            can_create: true,
+                            can_update: true,
                             can_delete: false,
                             can_approve: false,
                             can_bulk_approve: false,
@@ -1897,12 +1883,12 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                         };
                     }
 
-                    // Operational modules: Create, Read, Update (no delete, no bulk approve/delete)
+                    // Master Data, Portal, Pengaturan Sistem: Read only
                     return {
                         ...access,
                         can_read: true,
-                        can_create: true,
-                        can_update: true,
+                        can_create: false,
+                        can_update: false,
                         can_delete: false,
                         can_approve: false,
                         can_bulk_approve: false,
@@ -1961,7 +1947,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
         );
 
         const templateNames: Record<string, string> = {
-            default: 'Default (Lihat Saja)',
+            default: 'Default (Standar Role)',
             staff: 'Template Staff (Operasional CRUD)',
             admin: 'Template Admin (Akses Penuh)',
             legal: 'Template Legal (Kontrak & Approval)',
@@ -2011,60 +1997,84 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
             return;
         }
 
-        if (templateType === 'staff') {
-            // Staff: Install operational & dashboard modules, omit master/admin setting modules or keep them in available repository
-            const staffModules: Module[] = [];
+        if (templateType === 'staff' || templateType === 'default') {
+            // Staff / Standar Role Default Preset
+            // Exact 2 groups according to Staff role standard: Beranda & Laporan
+            const BERANDA_GROUP_ID = 'e44ee6fb-854a-4ac4-b999-e413a51f2ccb';
+            const LAPORAN_GROUP_ID = 'f5ec460e-6856-447c-8530-848bd6114325';
+
+            const berandaModuleOrder = [
+                '/dashboard',
+                '/contracts/pending',
+                '/contracts/mine',
+                '/contracts',
+                '/contracts/organization',
+                '/contracts/expiry',
+                '/admin/chat',
+                '/admin/templates',
+            ];
+
+            const laporanModuleOrder = [
+                '/admin/reports/divisions',
+                '/admin/reports/team',
+                '/admin/reports/analytics',
+                '/admin/reports/audit',
+            ];
+
+            const berandaModules: Module[] = [];
+            const laporanModules: Module[] = [];
             const remainingModules: Module[] = [];
 
             allModules.forEach((m) => {
-                const groupName = m.module_group?.name?.toLowerCase() || '';
-                const name = m.name?.toLowerCase() || '';
-                const isMasterSetting =
-                    groupName.includes('master') ||
-                    groupName.includes('pengaturan') ||
-                    groupName.includes('setting') ||
-                    groupName.includes('admin') ||
-                    name.includes('role') ||
-                    name.includes('user') ||
-                    name.includes('pengguna');
+                const route = m.route || '';
+                const gId = m.module_group_id || m.module_group?.id || '';
+                const gName = m.module_group?.name?.toLowerCase() || '';
 
-                if (!isMasterSetting) {
-                    staffModules.push(m);
+                if (gId === BERANDA_GROUP_ID || gName === 'beranda' || berandaModuleOrder.includes(route)) {
+                    berandaModules.push(m);
+                } else if (gId === LAPORAN_GROUP_ID || gName === 'laporan' || laporanModuleOrder.includes(route) || route.startsWith('/admin/reports')) {
+                    laporanModules.push(m);
                 } else {
                     remainingModules.push(m);
                 }
             });
 
-            // Group staff modules
-            const groupsMap: Record<string, { id: string; name: string; icon?: string | null; modules: Module[] }> = {};
-            staffModules.forEach((m) => {
-                const gid = m.module_group_id || 'staff-ops';
-                const gname = m.module_group?.name || 'Operasional';
-                if (!groupsMap[gid]) {
-                    groupsMap[gid] = {
-                        id: gid,
-                        name: gname,
-                        icon: 'Folder',
-                        modules: [],
-                    };
-                }
-                groupsMap[gid].modules.push(m);
+            // Sort modules according to standard staff order
+            berandaModules.sort((a, b) => {
+                const idxA = berandaModuleOrder.indexOf(a.route || '');
+                const idxB = berandaModuleOrder.indexOf(b.route || '');
+                return (idxA !== -1 ? idxA : 999) - (idxB !== -1 ? idxB : 999);
             });
 
-            const newNavItems: Group[] = Object.values(groupsMap).map((g, idx) => ({
-                id: g.id,
-                name: g.name,
-                icon: g.icon || 'Folder',
-                sequence: idx + 1,
-                modules: g.modules.map((m, mIdx) => ({ ...m, sequence: mIdx + 1 })),
-            }));
+            laporanModules.sort((a, b) => {
+                const idxA = laporanModuleOrder.indexOf(a.route || '');
+                const idxB = laporanModuleOrder.indexOf(b.route || '');
+                return (idxA !== -1 ? idxA : 999) - (idxB !== -1 ? idxB : 999);
+            });
+
+            const newNavItems: Group[] = [
+                {
+                    id: BERANDA_GROUP_ID,
+                    name: 'Beranda',
+                    icon: 'Home',
+                    sequence: 1,
+                    modules: berandaModules.map((m, mIdx) => ({ ...m, sequence: mIdx + 1, module_group_id: BERANDA_GROUP_ID })),
+                },
+                {
+                    id: LAPORAN_GROUP_ID,
+                    name: 'Laporan',
+                    icon: 'BarChart3',
+                    sequence: 2,
+                    modules: laporanModules.map((m, mIdx) => ({ ...m, sequence: mIdx + 1, module_group_id: LAPORAN_GROUP_ID })),
+                },
+            ];
 
             setNavItems(newNavItems);
             setAvailableModules(remainingModules);
-            if (newNavItems.length > 0) {
-                setSelectedGroupId(newNavItems[0].id);
-            }
-            showToast('Template Navigasi "Staff (Menu Operasional)" diterapkan', 'success');
+            setSelectedGroupId(BERANDA_GROUP_ID);
+
+            const label = templateType === 'default' ? 'Default (Standar Role)' : 'Staff (Menu Operasional)';
+            showToast(`Template Navigasi "${label}" diterapkan (Hanya Beranda & Laporan)`, 'success');
             return;
         }
 
@@ -2134,17 +2144,6 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
             }
             showToast('Template Navigasi "Default Legal (Menu Kontrak & Legal)" diterapkan', 'success');
             return;
-        }
-
-        if (templateType === 'default') {
-            // Default: Reset to standard props navigation or basic groups
-            setNavItems(navigation);
-            const activeModuleIds = new Set(navigation.flatMap((g) => g.modules.map((m) => m.id)));
-            setAvailableModules(allModules.filter((m) => !activeModuleIds.has(m.id)));
-            if (navigation.length > 0) {
-                setSelectedGroupId(navigation[0].id);
-            }
-            showToast('Template Navigasi "Default (Standar Role)" diterapkan', 'success');
         }
     };
 
@@ -2659,7 +2658,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                             <Eye size={14} className="text-sky-600 dark:text-sky-400 shrink-0" />
                                             <div className="flex flex-col">
                                                 <span className="font-bold">Default (Standar Role)</span>
-                                                <span className="text-[10px] text-text-desc font-normal">Pulihkan susunan default modul role</span>
+                                                <span className="text-[10px] text-text-desc font-normal">Pasang modul operasional harian (Standar Staff)</span>
                                             </div>
                                         </DropdownMenuItem>
 

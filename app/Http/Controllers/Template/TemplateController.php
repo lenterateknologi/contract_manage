@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Template;
 
 use App\Http\Controllers\Controller;
 use App\Models\ContractTemplate;
+use App\Models\DashboardType;
 use App\Models\TemplateFolder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,7 +14,62 @@ use Inertia\Inertia;
 class TemplateController extends Controller
 {
     /**
-     * Check permission against role access mapping for ADMIN_TEMPLATES module.
+     * Get resolved template permissions for current user from DashboardType profile.
+     */
+    private function getTemplatePermissions(): array
+    {
+        $user = Auth::user();
+        if (! $user) {
+            return [
+                'canRead' => false,
+                'canDownload' => false,
+                'canUpload' => false,
+                'canCreateFolder' => false,
+                'canEdit' => false,
+                'canToggleVisibility' => false,
+                'canDelete' => false,
+            ];
+        }
+
+        if ($user->isAdmin() || in_array($user->role, ['Super Admin', 'Admin'])) {
+            return [
+                'canRead' => true,
+                'canDownload' => true,
+                'canUpload' => true,
+                'canCreateFolder' => true,
+                'canEdit' => true,
+                'canToggleVisibility' => true,
+                'canDelete' => true,
+            ];
+        }
+
+        $policy = DashboardType::resolveForUser($user);
+
+        if (! $policy) {
+            return [
+                'canRead' => true,
+                'canDownload' => true,
+                'canUpload' => false,
+                'canCreateFolder' => false,
+                'canEdit' => false,
+                'canToggleVisibility' => false,
+                'canDelete' => false,
+            ];
+        }
+
+        return [
+            'canRead' => (bool) ($policy->template_can_read ?? true),
+            'canDownload' => (bool) ($policy->template_can_download ?? true),
+            'canUpload' => (bool) ($policy->template_can_upload ?? false),
+            'canCreateFolder' => (bool) ($policy->template_can_create_folder ?? false),
+            'canEdit' => (bool) ($policy->template_can_edit ?? false),
+            'canToggleVisibility' => (bool) ($policy->template_can_toggle_visibility ?? false),
+            'canDelete' => (bool) ($policy->template_can_delete ?? false),
+        ];
+    }
+
+    /**
+     * Check permission against resolved template policy.
      */
     private function checkPermission(string $action = 'read')
     {
@@ -26,26 +82,22 @@ class TemplateController extends Controller
             return true;
         }
 
-        $role = \App\Models\Role::firstWhere('name', $user->role);
-        if (! $role) {
-            abort(403, 'Akses ditolak: Role tidak valid.');
-        }
+        $perms = $this->getTemplatePermissions();
 
-        $module = \App\Models\Module::where('identifier', 'ADMIN_TEMPLATES')
-            ->orWhere('route', '/admin/templates')
-            ->first();
+        $allowed = match ($action) {
+            'read', 'view' => $perms['canRead'],
+            'download' => $perms['canDownload'],
+            'upload' => $perms['canUpload'],
+            'create_folder' => $perms['canCreateFolder'],
+            'create' => $perms['canUpload'] || $perms['canCreateFolder'],
+            'update', 'edit' => $perms['canEdit'],
+            'toggle_visibility' => $perms['canToggleVisibility'],
+            'delete' => $perms['canDelete'],
+            default => false,
+        };
 
-        if (! $module) {
-            return true;
-        }
-
-        $access = \App\Models\AccessModule::where('role_id', $role->id)
-            ->where('module_id', $module->id)
-            ->first();
-
-        $column = 'can_'.$action;
-        if (! $access || ! ($access->{$column} ?? false)) {
-            abort(403, 'Role Anda ('.$user->role.') tidak memiliki izin untuk '.$action.' pada modul Template Dokumen.');
+        if (! $allowed) {
+            abort(403, 'Akses ditolak: Anda tidak memiliki otoritas untuk melakukan tindakan ini pada Template Dokumen.');
         }
 
         return true;
@@ -57,34 +109,45 @@ class TemplateController extends Controller
     public function index()
     {
         $this->checkPermission('read');
+        $permissions = $this->getTemplatePermissions();
+        $canManage = $permissions['canEdit'] || $permissions['canToggleVisibility'];
+
+        $folderQuery = TemplateFolder::query()
+            ->select(['id', 'parent_id', 'name', 'is_visible', 'created_by', 'created_at', 'updated_at'])
+            ->with(['creator'])
+            ->withCount('templates')
+            ->orderBy('name');
+
+        $templateQuery = ContractTemplate::query()
+            ->select([
+                'id',
+                'template_folder_id',
+                'name',
+                'description',
+                'file_path',
+                'file_name',
+                'file_size',
+                'file_type',
+                'is_visible',
+                'created_by',
+                'created_at',
+                'updated_at',
+            ])
+            ->with([
+                'folder:id,name',
+                'creator',
+            ])
+            ->orderBy('name');
+
+        if (! $canManage) {
+            $folderQuery->where('is_visible', true);
+            $templateQuery->where('is_visible', true);
+        }
 
         return Inertia::render('contract-templates/Index', [
-            'folders' => TemplateFolder::query()
-                ->select(['id', 'parent_id', 'name', 'created_by', 'created_at', 'updated_at'])
-                ->with(['creator'])
-                ->withCount('templates')
-                ->orderBy('name')
-                ->get(),
-            'templates' => ContractTemplate::query()
-                ->select([
-                    'id',
-                    'template_folder_id',
-                    'name',
-                    'description',
-                    'file_path',
-                    'file_name',
-                    'file_size',
-                    'file_type',
-                    'created_by',
-                    'created_at',
-                    'updated_at',
-                ])
-                ->with([
-                    'folder:id,name',
-                    'creator',
-                ])
-                ->orderBy('name')
-                ->get(),
+            'folders' => $folderQuery->get(),
+            'templates' => $templateQuery->get(),
+            'permissions' => $permissions,
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#'],
                 ['title' => 'Template Kontrak', 'href' => route('admin.templates.index')],
@@ -102,11 +165,13 @@ class TemplateController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'parent_id' => 'nullable|exists:m_template_folders,id',
+            'is_visible' => 'nullable|boolean',
         ]);
 
         TemplateFolder::create([
             'name' => $request->name,
             'parent_id' => $request->parent_id,
+            'is_visible' => $request->boolean('is_visible', true),
             'created_by' => Auth::id(),
             'updated_by' => Auth::id(),
         ]);
@@ -123,14 +188,34 @@ class TemplateController extends Controller
 
         $request->validate([
             'name' => 'required|string|max:255',
+            'is_visible' => 'nullable|boolean',
         ]);
 
+        $updateData = ['name' => $request->name, 'updated_by' => Auth::id()];
+        if ($request->has('is_visible')) {
+            $updateData['is_visible'] = $request->boolean('is_visible');
+        }
+
+        $folder->update($updateData);
+
+        return back()->with('success', 'Folder berhasil diperbarui.');
+    }
+
+    /**
+     * Toggle visibility of a folder.
+     */
+    public function toggleFolderVisibility(TemplateFolder $folder)
+    {
+        $this->checkPermission('update');
+
         $folder->update([
-            'name' => $request->name,
+            'is_visible' => ! $folder->is_visible,
             'updated_by' => Auth::id(),
         ]);
 
-        return back()->with('success', 'Folder berhasil diperbarui.');
+        $status = $folder->is_visible ? 'ditampilkan' : 'disembunyikan';
+
+        return back()->with('success', "Folder {$folder->name} berhasil {$status}.");
     }
 
     /**
@@ -181,6 +266,7 @@ class TemplateController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'template_folder_id' => 'nullable|exists:m_template_folders,id',
+            'is_visible' => 'nullable|boolean',
             'file' => 'required|file|mimes:docx,doc,pdf,xls,xlsx,txt,rtf,odt,ods,csv|max:20480', // 20MB max
         ]);
 
@@ -192,6 +278,7 @@ class TemplateController extends Controller
             'name' => $request->name,
             'description' => $request->description,
             'template_folder_id' => $request->template_folder_id,
+            'is_visible' => $request->boolean('is_visible', true),
             'file_path' => $path,
             'file_name' => $fileName,
             'file_size' => $file->getSize(),
@@ -214,6 +301,7 @@ class TemplateController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'template_folder_id' => 'nullable|exists:m_template_folders,id',
+            'is_visible' => 'nullable|boolean',
             'file' => 'nullable|file|mimes:docx,doc,pdf,xls,xlsx,txt,rtf,odt,ods,csv|max:20480',
         ]);
 
@@ -223,6 +311,10 @@ class TemplateController extends Controller
             'template_folder_id' => $request->template_folder_id,
             'updated_by' => Auth::id(),
         ];
+
+        if ($request->has('is_visible')) {
+            $data['is_visible'] = $request->boolean('is_visible');
+        }
 
         if ($request->hasFile('file')) {
             if (Storage::disk('public')->exists($template->file_path)) {
@@ -241,6 +333,23 @@ class TemplateController extends Controller
         $template->update($data);
 
         return back()->with('success', 'Template berhasil diperbarui.');
+    }
+
+    /**
+     * Toggle visibility of a template.
+     */
+    public function toggleTemplateVisibility(ContractTemplate $template)
+    {
+        $this->checkPermission('update');
+
+        $template->update([
+            'is_visible' => ! $template->is_visible,
+            'updated_by' => Auth::id(),
+        ]);
+
+        $status = $template->is_visible ? 'ditampilkan' : 'disembunyikan';
+
+        return back()->with('success', "Dokumen {$template->name} berhasil {$status}.");
     }
 
     /**
@@ -396,9 +505,20 @@ class TemplateController extends Controller
      */
     public function getApiData()
     {
+        $user = Auth::user();
+        $isAdmin = $user && ($user->isAdmin() || in_array($user->role, ['Super Admin', 'Admin']));
+
+        $folderQuery = TemplateFolder::query();
+        $templateQuery = ContractTemplate::with('creator');
+
+        if (! $isAdmin) {
+            $folderQuery->where('is_visible', true);
+            $templateQuery->where('is_visible', true);
+        }
+
         return response()->json([
-            'folders' => TemplateFolder::all(),
-            'templates' => ContractTemplate::with('creator')->get(),
+            'folders' => $folderQuery->get(),
+            'templates' => $templateQuery->get(),
         ]);
     }
 }

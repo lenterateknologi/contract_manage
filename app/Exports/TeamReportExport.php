@@ -56,7 +56,7 @@ class TeamReportExport implements FromCollection, ShouldAutoSize, WithEvents, Wi
         return [
             'No',
             'Nama Anggota Tim',
-            'Divisi',
+            'Departemen',
             'Organization Group',
             'NIK / Email',
             'Jan',
@@ -78,7 +78,7 @@ class TeamReportExport implements FromCollection, ShouldAutoSize, WithEvents, Wi
     public function map($item): array
     {
         $userName = $item['user_name'] ?? '-';
-        $divisionName = $item['division_name'] ?? '-';
+        $departmentName = $item['department_name'] ?? '-';
         $orgGroupName = $item['org_group_name'] ?? $this->orgGroupName;
         $identifier = $item['user_nik'] ?: ($item['user_email'] ?: '-');
         $total = $item['total'] ?? 0;
@@ -86,7 +86,7 @@ class TeamReportExport implements FromCollection, ShouldAutoSize, WithEvents, Wi
         $row = [
             $this->rowNumber++,
             $userName,
-            $divisionName,
+            $departmentName,
             $orgGroupName,
             $identifier,
         ];

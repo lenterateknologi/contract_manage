@@ -5,11 +5,13 @@ namespace App\Http\Actions\Contract;
 use App\Enums\ContractHistoryAction;
 use App\Enums\ContractStatusEnum;
 use App\Enums\TransactionType;
+use App\Models\Authority;
 use App\Models\Contract;
 use App\Models\ContractHistory;
 use App\Models\ContractType;
 use App\Models\NumberingFormat;
 use App\Models\User;
+use App\Models\Vendor;
 use App\Services\Workflow\ContractWorkflowService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -27,9 +29,24 @@ class StoreContractAction
     public function execute(array $validated): Contract
     {
         return DB::transaction(function () use ($validated) {
-            $userId = Auth::id();
+            $user = Auth::user();
+            $userId = $user?->id;
             $initiatorId = $validated['initiated_by_id'] ?? $userId;
             $initiator = User::with('department')->find($initiatorId);
+
+            if (! $initiator) {
+                throw ValidationException::withMessages([
+                    'initiated_by_id' => 'User pemohon / initiator tidak ditemukan.',
+                ]);
+            }
+
+            if ($user && (string) $initiatorId !== (string) $userId) {
+                if (! Authority::checkCreatorCanRepresentInitiator($user, $initiator)) {
+                    throw ValidationException::withMessages([
+                        'initiated_by_id' => 'Anda tidak memiliki otoritas (On-Behalf) untuk membuat pengajuan atas nama user '.$initiator->name.'.',
+                    ]);
+                }
+            }
             $contractType = ContractType::find($validated['contract_type_id']);
 
             $form_no = NumberingFormat::generateNextNumber('contract', [
@@ -49,13 +66,18 @@ class StoreContractAction
                 $taxRequired = true;
             }
 
+            // ponytail: fallback parent_id and ancestry_id from contractType if not provided
+            $parentTypeId = $validated['contract_type_parent_id'] ?? $contractType?->parent_id;
+            $ancestryId = $contractType?->ancestry_id ?? null;
+
             $contract = Contract::create([
                 'form_no' => $form_no,
                 'title' => $validated['title'],
                 'contract_no' => $validated['contract_no'] ?? null,
                 'description' => $validated['description'] ?? '—',
                 'contract_type_id' => $validated['contract_type_id'],
-                'contract_type_parent_id' => $validated['contract_type_parent_id'] ?? null,
+                'contract_type_parent_id' => $parentTypeId,
+                'contract_type_ancestry_id' => $ancestryId,
                 'submission_type_id' => $validated['submission_type_id'] ?? null,
                 'transaction_type' => $contractType?->name ? strtolower($contractType->name) : ($validated['transaction_type'] ?? null),
                 'status' => ContractStatusEnum::Draft->value,

@@ -166,11 +166,11 @@ class ResourceController extends Controller
                 'departments' => \App\Models\Department::select('id', 'name', 'code', 'idorg_group', 'org_group_name')->where('is_used', true)->orderBy('name')->get(),
                 'divisions' => \App\Models\Division::select('id', 'name', 'code', 'department_id')->orderBy('name')->get(),
                 'locations' => \App\Models\Location::select('id', 'name', 'code')->where('is_used', true)->orderBy('name')->get(),
-                'users' => \App\Models\User::select('id', 'name', 'email', 'nik', 'username', 'role_id', 'department_id', 'division_id', 'company_id', 'company_name', 'org_name', 'location_id', 'idlocation', 'location_name', 'company_group_id', 'region_id', 'is_used')
-                    ->with(['department:id,name,idorg_group,org_group_name', 'company:id,name,company_group_name,region_name', 'location:id,name,code'])
+                'users' => \App\Models\User::select('id', 'name', 'nik', 'role_id', 'department_id', 'division_id', 'company_name', 'org_name', 'is_used')
                     ->where('is_used', true)
                     ->orderBy('name')
-                    ->get(),
+                    ->get()
+                    ->each->setAppends([]),
                 'companyGroups' => \App\Models\CompanyGroup::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
                 'organizationGroups' => \App\Models\OrganizationGroup::select('id', 'name', 'code', 'idorg_group')->where('is_used', true)->orderBy('name')->get(),
                 'regions' => \App\Models\Region::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
@@ -253,6 +253,14 @@ class ResourceController extends Controller
             $created->region_ids = array_values(array_unique($regIds));
             $created->org_group_ids = array_values(array_unique($orgGroupIds));
             $created->save();
+
+            if ($request->has('on_behalf_authorities')) {
+                $this->authoritySyncService->sync(
+                    Authority::CONTEXT_ON_BEHALF_CREATE,
+                    $created->id,
+                    (array) $request->input('on_behalf_authorities', [])
+                );
+            }
         } elseif ($resourceSlug === 'contract-sla-configs' && $request->has('authorities')) {
             $this->authoritySyncService->sync(
                 Authority::CONTEXT_SLA_OVERDUE,
@@ -284,12 +292,13 @@ class ResourceController extends Controller
             if ($authorities->isEmpty()) {
                 $constructed = [];
                 $userIds = \App\Models\DashboardType::normalizeIds($record->user_ids);
+                $userMap = ! empty($userIds) ? \App\Models\User::select('id', 'name', 'email', 'nik', 'username', 'role_id', 'department_id', 'division_id', 'job_level_id', 'job_position_id')->whereIn('id', $userIds)->get()->keyBy('id') : collect();
                 foreach ($userIds as $uid) {
                     $constructed[] = [
                         'id' => (string) \Illuminate\Support\Str::uuid(),
                         'authority_type' => 'user',
                         'user_id' => $uid,
-                        'user' => \App\Models\User::select('id', 'name', 'email', 'nik', 'username', 'role_id', 'department_id', 'division_id')->find($uid),
+                        'user' => $userMap->get($uid),
                     ];
                 }
 
@@ -304,6 +313,15 @@ class ResourceController extends Controller
 
                 $hasGroupDims = ! empty($roleIds) || ! empty($divIds) || ! empty($deptIds) || ! empty($locIds) || ! empty($compGroupIds) || ! empty($compIds) || ! empty($regIds) || ! empty($orgGroupIds);
                 if ($hasGroupDims) {
+                    $roleMap = ! empty($roleIds) ? \App\Models\Role::select('id', 'name')->whereIn('id', $roleIds)->get()->keyBy('id') : collect();
+                    $deptMap = ! empty($deptIds) ? \App\Models\Department::select('id', 'name', 'code')->whereIn('id', $deptIds)->get()->keyBy('id') : collect();
+                    $divMap = ! empty($divIds) ? \App\Models\Division::select('id', 'name', 'code')->whereIn('id', $divIds)->get()->keyBy('id') : collect();
+                    $locMap = ! empty($locIds) ? \App\Models\Location::select('id', 'name', 'code')->whereIn('id', $locIds)->get()->keyBy('id') : collect();
+                    $cgMap = ! empty($compGroupIds) ? \App\Models\CompanyGroup::select('id', 'name')->whereIn('id', $compGroupIds)->get()->keyBy('id') : collect();
+                    $compMap = ! empty($compIds) ? \App\Models\Company::select('id', 'name')->whereIn('id', $compIds)->get()->keyBy('id') : collect();
+                    $regMap = ! empty($regIds) ? \App\Models\Region::select('id', 'name')->whereIn('id', $regIds)->get()->keyBy('id') : collect();
+                    $ogMap = ! empty($orgGroupIds) ? \App\Models\OrganizationGroup::select('id', 'name', 'code')->whereIn('id', $orgGroupIds)->get()->keyBy('id') : collect();
+
                     $rList = ! empty($roleIds) ? $roleIds : [null];
                     $dList = ! empty($deptIds) ? $deptIds : [null];
                     $dvList = ! empty($divIds) ? $divIds : [null];
@@ -332,14 +350,14 @@ class ResourceController extends Controller
                                                         'company_id' => $cp,
                                                         'region_id' => $rg,
                                                         'organization_group_id' => $og,
-                                                        'role' => $r ? \App\Models\Role::select('id', 'name')->find($r) : null,
-                                                        'department' => $d ? \App\Models\Department::select('id', 'name', 'code')->find($d) : null,
-                                                        'division' => $dv ? \App\Models\Division::select('id', 'name', 'code')->find($dv) : null,
-                                                        'location' => $l ? \App\Models\Location::select('id', 'name', 'code')->find($l) : null,
-                                                        'companyGroup' => $cg ? \App\Models\CompanyGroup::select('id', 'name')->find($cg) : null,
-                                                        'company' => $cp ? \App\Models\Company::select('id', 'name')->find($cp) : null,
-                                                        'region' => $rg ? \App\Models\Region::select('id', 'name')->find($rg) : null,
-                                                        'organizationGroup' => $og ? \App\Models\OrganizationGroup::select('id', 'name', 'code')->find($og) : null,
+                                                        'role' => $r ? $roleMap->get($r) : null,
+                                                        'department' => $d ? $deptMap->get($d) : null,
+                                                        'division' => $dv ? $divMap->get($dv) : null,
+                                                        'location' => $l ? $locMap->get($l) : null,
+                                                        'companyGroup' => $cg ? $cgMap->get($cg) : null,
+                                                        'company' => $cp ? $compMap->get($cp) : null,
+                                                        'region' => $rg ? $regMap->get($rg) : null,
+                                                        'organizationGroup' => $og ? $ogMap->get($og) : null,
                                                     ];
                                                 }
                                             }
@@ -355,16 +373,19 @@ class ResourceController extends Controller
             }
             $record->setAttribute('authorities', $authorities);
 
+            $onBehalfAuthorities = $this->authoritySyncService->getForContext(Authority::CONTEXT_ON_BEHALF_CREATE, $record->id);
+            $record->setAttribute('on_behalf_authorities', $onBehalfAuthorities);
+
             $extraProps = [
                 'roles' => \App\Models\Role::select('id', 'name')->orderBy('name')->get(),
                 'departments' => \App\Models\Department::select('id', 'name', 'code', 'idorg_group', 'org_group_name')->where('is_used', true)->orderBy('name')->get(),
                 'divisions' => \App\Models\Division::select('id', 'name', 'code', 'department_id')->orderBy('name')->get(),
                 'locations' => \App\Models\Location::select('id', 'name', 'code')->where('is_used', true)->orderBy('name')->get(),
-                'users' => \App\Models\User::select('id', 'name', 'email', 'nik', 'username', 'role_id', 'department_id', 'division_id', 'company_id', 'company_name', 'org_name', 'location_id', 'idlocation', 'location_name', 'company_group_id', 'region_id', 'is_used')
-                    ->with(['department:id,name,idorg_group,org_group_name', 'company:id,name,company_group_name,region_name', 'location:id,name,code'])
+                'users' => \App\Models\User::select('id', 'name', 'nik', 'role_id', 'department_id', 'division_id', 'company_name', 'org_name', 'is_used')
                     ->where('is_used', true)
                     ->orderBy('name')
-                    ->get(),
+                    ->get()
+                    ->each->setAppends([]),
                 'companyGroups' => \App\Models\CompanyGroup::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
                 'organizationGroups' => \App\Models\OrganizationGroup::select('id', 'name', 'code', 'idorg_group')->where('is_used', true)->orderBy('name')->get(),
                 'regions' => \App\Models\Region::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
@@ -381,11 +402,11 @@ class ResourceController extends Controller
                 'departments' => \App\Models\Department::select('id', 'name', 'code', 'idorg_group', 'org_group_name')->where('is_used', true)->orderBy('name')->get(),
                 'divisions' => \App\Models\Division::select('id', 'name', 'code', 'department_id')->orderBy('name')->get(),
                 'locations' => \App\Models\Location::select('id', 'name', 'code')->where('is_used', true)->orderBy('name')->get(),
-                'users' => \App\Models\User::select('id', 'name', 'email', 'nik', 'username', 'role_id', 'department_id', 'division_id', 'company_id', 'company_name', 'org_name', 'location_id', 'idlocation', 'location_name', 'company_group_id', 'region_id', 'is_used')
-                    ->with(['department:id,name,idorg_group,org_group_name', 'company:id,name,company_group_name,region_name', 'location:id,name,code'])
+                'users' => \App\Models\User::select('id', 'name', 'nik', 'role_id', 'department_id', 'division_id', 'company_name', 'org_name', 'is_used')
                     ->where('is_used', true)
                     ->orderBy('name')
-                    ->get(),
+                    ->get()
+                    ->each->setAppends([]),
                 'companyGroups' => \App\Models\CompanyGroup::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
                 'organizationGroups' => \App\Models\OrganizationGroup::select('id', 'name', 'code', 'idorg_group')->where('is_used', true)->orderBy('name')->get(),
                 'regions' => \App\Models\Region::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
@@ -566,6 +587,14 @@ class ResourceController extends Controller
             $record->region_ids = array_values(array_unique($regIds));
             $record->org_group_ids = array_values(array_unique($orgGroupIds));
             $record->save();
+
+            if ($request->has('on_behalf_authorities')) {
+                $this->authoritySyncService->sync(
+                    Authority::CONTEXT_ON_BEHALF_CREATE,
+                    $record->id,
+                    (array) $request->input('on_behalf_authorities', [])
+                );
+            }
         } elseif ($resourceSlug === 'contract-sla-configs' && $request->has('authorities')) {
             $this->authoritySyncService->sync(
                 Authority::CONTEXT_SLA_OVERDUE,

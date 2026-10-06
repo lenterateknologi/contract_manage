@@ -83,6 +83,7 @@ class HandleInertiaRequests extends Middleware
                     'can_change_department' => $request->user()->can_change_department,
                     'allowed_departments' => $request->user()->allowed_departments,
                     'can_create_on_behalf' => (bool) $request->user()->can_create_on_behalf,
+                    'allowed_on_behalf_user_ids' => $request->user()->allowed_on_behalf_user_ids,
                 ]) : null,
                 'permissions' => $this->getUserPermissions($request),
                 'impersonation' => [
@@ -149,6 +150,9 @@ class HandleInertiaRequests extends Middleware
             $dashboardTypes = DashboardType::orderBy('name')->get()->map(function ($d) {
                 $activeTabs = [];
                 if ($d->show_overview) $activeTabs[] = 'Ringkasan';
+                if ($d->show_overview_contract) $activeTabs[] = 'Kontrak';
+                if ($d->show_overview_non_contract) $activeTabs[] = 'Non Kontrak';
+                if ($d->show_overview_nda) $activeTabs[] = 'NDA';
                 if ($d->show_workload) $activeTabs[] = 'Beban Kerja';
                 if ($d->show_master_data) $activeTabs[] = 'Master Data';
 
@@ -161,6 +165,9 @@ class HandleInertiaRequests extends Middleware
                     'badge' => $badge,
                     'description' => $d->description ?: 'Konfigurasi visibilitas tab dashboard',
                     'show_overview' => (bool) $d->show_overview,
+                    'show_overview_contract' => (bool) $d->show_overview_contract,
+                    'show_overview_non_contract' => (bool) $d->show_overview_non_contract,
+                    'show_overview_nda' => (bool) $d->show_overview_nda,
                     'show_workload' => (bool) $d->show_workload,
                     'show_master_data' => (bool) $d->show_master_data,
                 ];
@@ -274,12 +281,12 @@ class HandleInertiaRequests extends Middleware
                 ->get();
 
             $currentUser = $request->user();
-            $canViewGlobalContracts = $currentUser && ($currentUser->isAdmin() || $currentUser->isSuperAdmin() || $currentUser->isLegal());
+            $canViewGlobalContracts = $currentUser && $currentUser->canViewGlobalContracts();
             if (! $canViewGlobalContracts) {
-                // Non-legal users: hide global /contracts and /admin/reports/divisions, show /contracts/organization as Semua Pengajuan
+                // Non-global view users: hide global /contracts and /admin/reports/divisions, show /contracts/organization as Semua Pengajuan
                 $modules = $modules->reject(fn ($m) => in_array($m->route, ['/contracts', '/admin/contracts', '/admin/reports/divisions']));
             } else {
-                // Legal & Admin users: hide /contracts/organization, show global /contracts as Semua Pengajuan
+                // Global view users: hide /contracts/organization, show global /contracts as Semua Pengajuan
                 $modules = $modules->reject(fn ($m) => in_array($m->route, ['/contracts/organization', '/contracts/org-group']));
             }
 

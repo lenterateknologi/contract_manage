@@ -209,7 +209,7 @@ class ContractListQuery
     private function applyContractsView(Builder $query, Request $request): void
     {
         $user = Auth::user();
-        if ($user && ! ($user->isAdmin() || $user->isSuperAdmin() || $user->isLegal())) {
+        if ($user && ! $user->canViewGlobalContracts()) {
             $this->applyOrganizationView($query, $request);
 
             return;

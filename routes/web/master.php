@@ -207,7 +207,9 @@ Route::middleware(['admin'])->prefix('admin')->group(function () {
         Route::delete('/{template}', 'destroyTemplate')->name('admin.templates.destroy');
         Route::get('/{template}/download', 'downloadTemplate')->name('admin.templates.download');
         Route::patch('/folders/{folder}/move', 'moveFolder')->name('admin.templates.folders.move');
+        Route::patch('/folders/{folder}/toggle-visibility', 'toggleFolderVisibility')->name('admin.templates.folders.toggle-visibility');
         Route::patch('/{template}/move', 'moveTemplate')->name('admin.templates.move');
+        Route::patch('/{template}/toggle-visibility', 'toggleTemplateVisibility')->name('admin.templates.toggle-visibility');
         Route::post('/bulk-delete', 'bulkDestroy')->name('admin.templates.bulk-destroy');
         Route::post('/bulk-move', 'bulkMove')->name('admin.templates.bulk-move');
     });

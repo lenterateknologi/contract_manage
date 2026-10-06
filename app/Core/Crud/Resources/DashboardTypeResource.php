@@ -56,6 +56,7 @@ class DashboardTypeResource extends Resource
             BooleanColumn::make('show_overview_nda', 'Ringkasan NDA'),
             BooleanColumn::make('show_workload', 'Beban Kerja'),
             BooleanColumn::make('show_master_data', 'Master Data'),
+            BooleanColumn::make('can_create_on_behalf', 'On-Behalf'),
         ];
     }
 
@@ -66,95 +67,19 @@ class DashboardTypeResource extends Resource
                 TextInput::make('name', 'Nama Profil Otoritas')
                     ->required()
                     ->rules(['string', 'max:255'])
-                    ->helperText('Contoh: Otoritas Manager Legal (Khusus Kontrak), Otoritas Procurement, dll.'),
-                TextInput::make('priority', 'Leveling / Prioritas Evaluasi (1 = Prioritas Tertinggi / Khusus)')
+                    ->helperText('Contoh: Otoritas Manager Legal (Khusus Kontrak), Otoritas Procurement, dll.')
+                    ->columnSpan(2),
+                TextInput::make('priority', 'Tingkat Prioritas (Level)')
                     ->required()
                     ->default(10)
                     ->rules(['required', 'integer', 'min:1'])
-                    ->helperText('Angka lebih kecil = diprioritaskan lebih dulu. Misal Level 1 untuk Profil Khusus Manager, Level 2 untuk Profil General.'),
+                    ->helperText('1 = Prioritas Tertinggi. Angka lebih kecil dievaluasi lebih awal.')
+                    ->columnSpan(1),
                 TextareaInput::make('description', 'Deskripsi')
                     ->rules(['nullable', 'string'])
                     ->helperText('Penjelasan batasan akses dan visibilitas profil ini.')
-                    ->columnSpan(2),
+                    ->columnSpan(3),
             ])->icon('ShieldCheck'),
-
-            Section::make('Target Pengguna (User Matrix)', [
-                SelectInput::make('user_ids', 'Pengguna Spesifik (Akun User Tertentu)')
-                    ->multiple(true)
-                    ->options(fn () => User::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray())
-                    ->placeholder('Pilih satu atau lebih Akun Pengguna...')
-                    ->searchable()
-                    ->helperText('Jika diisi, profil otoritas ini menjadi prioritas utama bagi akun pengguna terpilih.'),
-                SelectInput::make('role_ids', 'Role Akses')
-                    ->multiple(true)
-                    ->options(fn () => Role::orderBy('name')->pluck('name', 'id')->toArray())
-                    ->placeholder('Pilih satu atau lebih Role...')
-                    ->searchable()
-                    ->helperText('Kosongkan jika berlaku untuk semua role.'),
-                SelectInput::make('job_level_ids', 'Level Jabatan (Job Level)')
-                    ->multiple(true)
-                    ->options(fn () => JobLevel::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray())
-                    ->placeholder('Pilih satu atau lebih Level Jabatan...')
-                    ->searchable()
-                    ->helperText('Kosongkan jika berlaku untuk semua level jabatan.'),
-                SelectInput::make('job_title_ids', 'Jabatan (Job Title)')
-                    ->multiple(true)
-                    ->options(fn () => JobTitle::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray())
-                    ->placeholder('Pilih satu atau lebih Jabatan...')
-                    ->searchable()
-                    ->helperText('Kosongkan jika berlaku untuk semua jabatan.'),
-            ])->icon('Users'),
-
-            Section::make('Cakupan Organisasi & Pembatasan Antar Departemen', [
-                SelectInput::make('org_group_ids', 'Grup Organisasi (Organization Group)')
-                    ->multiple(true)
-                    ->options(fn () => OrganizationGroup::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray())
-                    ->placeholder('Pilih satu atau lebih Grup Organisasi...')
-                    ->searchable()
-                    ->helperText('Kosongkan untuk mengunci hanya ke grup organisasi user sendiri, atau pilih grup organisasi spesifik.'),
-                SelectInput::make('division_ids', 'Divisi')
-                    ->multiple(true)
-                    ->options(fn () => Division::orderBy('name')->pluck('name', 'id')->toArray())
-                    ->placeholder('Pilih satu atau lebih Divisi...')
-                    ->searchable()
-                    ->helperText('Kosongkan untuk mengunci hanya ke divisi user sendiri, atau pilih divisi spesifik yang diizinkan.'),
-                SelectInput::make('department_ids', 'Departemen')
-                    ->multiple(true)
-                    ->options(fn () => Department::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray())
-                    ->placeholder('Pilih satu atau lebih Departemen...')
-                    ->searchable()
-                    ->helperText('Kosongkan untuk mengunci hanya ke departemen user sendiri, atau pilih departemen spesifik yang diizinkan.'),
-                SelectInput::make('company_ids', 'Perusahaan (Company)')
-                    ->multiple(true)
-                    ->options(fn () => Company::orderBy('name')->pluck('name', 'id')->toArray())
-                    ->placeholder('Pilih Perusahaan...')
-                    ->searchable()
-                    ->helperText('Kosongkan untuk mengunci hanya ke perusahaan user sendiri, atau pilih perusahaan spesifik yang diizinkan.'),
-                SelectInput::make('company_group_ids', 'Grup Perusahaan')
-                    ->multiple(true)
-                    ->options(fn () => CompanyGroup::orderBy('name')->pluck('name', 'id')->toArray())
-                    ->placeholder('Pilih Grup Perusahaan...')
-                    ->searchable()
-                    ->helperText('Kosongkan untuk mengunci hanya ke grup perusahaan user sendiri, atau pilih grup spesifik yang diizinkan.'),
-                SelectInput::make('region_ids', 'Region / Wilayah')
-                    ->multiple(true)
-                    ->options(fn () => Region::orderBy('name')->pluck('name', 'id')->toArray())
-                    ->placeholder('Pilih Wilayah (Region)...')
-                    ->searchable()
-                    ->helperText('Kosongkan untuk mengunci hanya ke wilayah user sendiri, atau pilih wilayah spesifik yang diizinkan.'),
-                SelectInput::make('location_ids', 'Lokasi (Location)')
-                    ->multiple(true)
-                    ->options(fn () => Location::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray())
-                    ->placeholder('Pilih satu atau lebih Lokasi...')
-                    ->searchable()
-                    ->helperText('Kosongkan untuk mengunci hanya ke lokasi user sendiri, atau pilih lokasi spesifik yang diizinkan.'),
-                SelectInput::make('business_unit_ids', 'Unit Bisnis (Business Unit)')
-                    ->multiple(true)
-                    ->options(fn () => BusinessUnit::orderBy('name')->pluck('name', 'id')->toArray())
-                    ->placeholder('Pilih Unit Bisnis...')
-                    ->searchable()
-                    ->helperText('Kosongkan untuk mengunci ke unit bisnis user sendiri, atau pilih unit bisnis spesifik.'),
-            ])->icon('Building2'),
 
             Section::make('Visibilitas Tab Ringkasan & Dashboard', [
                 ToggleInput::make('show_overview', 'Ringkasan Semua (Gabungan)')
@@ -182,6 +107,45 @@ class DashboardTypeResource extends Resource
                     ->icon('Database')
                     ->helperText('Menampilkan tab akses pintas ke registri master data & matriks referensi.'),
             ])->icon('Eye'),
+
+            Section::make('Otoritas & Akses Template Dokumen (Corixa Repository)', [
+                ToggleInput::make('template_can_read', 'Lihat & Pratinjau Dokumen Template')
+                    ->default(true)
+                    ->icon('Eye')
+                    ->helperText('Izinkan pengguna melihat direktori folder dan membuka pratinjau dokumen template.'),
+                ToggleInput::make('template_can_download', 'Download Dokumen Template')
+                    ->default(true)
+                    ->icon('Download')
+                    ->helperText('Izinkan pengguna mengunduh berkas template kontrak.'),
+                ToggleInput::make('template_can_upload', 'Upload Dokumen Template')
+                    ->default(false)
+                    ->icon('Upload')
+                    ->helperText('Izinkan pengguna mengunggah berkas template kontrak baru.'),
+                ToggleInput::make('template_can_create_folder', 'Buat Folder & Sub-Folder')
+                    ->default(false)
+                    ->icon('FolderPlus')
+                    ->helperText('Izinkan pengguna membuat folder direktori baru.'),
+                ToggleInput::make('template_can_edit', 'Ubah Nama & Pindahkan Dokumen/Folder')
+                    ->default(false)
+                    ->icon('Edit3')
+                    ->helperText('Izinkan pengguna mengubah nama atau memindahkan folder dan file template.'),
+                ToggleInput::make('template_can_toggle_visibility', 'Atur Visibilitas Dokumen (Tampil / Sembunyi)')
+                    ->default(false)
+                    ->icon('EyeOff')
+                    ->helperText('Izinkan pengguna mengubah status visibilitas template menjadi Tampil atau Tersembunyi.'),
+                ToggleInput::make('template_can_delete', 'Hapus Dokumen & Folder')
+                    ->default(false)
+                    ->icon('Trash2')
+                    ->helperText('Izinkan pengguna menghapus dokumen template atau folder direktori.'),
+            ])->icon('FileSpreadsheet'),
+
+            Section::make('Otoritas Buat Pengajuan (On-Behalf)', [
+                ToggleInput::make('can_create_on_behalf', 'Izinkan Buat Pengajuan Atas Nama Orang Lain (On-Behalf)')
+                    ->default(false)
+                    ->icon('UserCheck')
+                    ->helperText('Izinkan pengguna dengan profil ini membuat dan mengajukan draft kontrak atas nama requester/personil lain.')
+                    ->columnSpan(3),
+            ])->icon('UserCheck'),
         ];
     }
 

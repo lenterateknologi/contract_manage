@@ -72,6 +72,30 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Aturan Visibilitas & Akses Kontrak (Global vs Organization Group)
+    |--------------------------------------------------------------------------
+    | Daftar nama role yang diizinkan melihat seluruh kontrak secara global
+    | (/contracts) dan laporan per organization group (/admin/reports/divisions).
+    |
+    | Role di luar daftar ini (misal: Staff) otomatis dibatasi hanya melihat
+    | kontrak di dalam unit Organization Group-nya (/contracts/organization).
+    |--------------------------------------------------------------------------
+    */
+    'contracts' => [
+        'global_view_roles' => [
+            'Admin',
+            'Super Admin',
+            'Legal',
+            'Legal Approver',
+            'Legal Admin',
+            'VP',
+            'COO',
+            'CEO',
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Daftar Entitas yang Diizinkan untuk Clean & Export/Import
     | Satu-satunya source of truth — dipakai controller & CleanMasterDataRequest
     |--------------------------------------------------------------------------

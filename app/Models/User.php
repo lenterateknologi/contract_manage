@@ -100,7 +100,6 @@ class User extends Authenticatable
         'avatar_url',
         'role',
         'role_name',
-        'can_create_on_behalf',
         'division_name',
         'department_name',
         'org_group_name',
@@ -681,13 +680,50 @@ class User extends Authenticatable
         return stripos($orgGroup, 'legal') !== false || stripos($deptName, 'legal') !== false;
     }
 
+    public function canViewGlobalContracts(): bool
+    {
+        if ($this->isAdmin() || $this->isSuperAdmin() || $this->isLegal()) {
+            return true;
+        }
+
+        $userRole = $this->roleRelation?->name ?? $this->role;
+        $globalRoles = config('master.contracts.global_view_roles', ['Admin', 'Super Admin', 'Legal']);
+
+        if (! empty($userRole) && in_array($userRole, $globalRoles, true)) {
+            return true;
+        }
+
+        return false;
+    }
+
     public function getCanCreateOnBehalfAttribute(): bool
     {
         if ($this->isAdmin() || $this->isSuperAdmin()) {
             return true;
         }
 
+        // 1. Check if enabled in active DashboardType profile
+        $dashboardType = DashboardType::resolveForUser($this);
+        if ($dashboardType && $dashboardType->can_create_on_behalf) {
+            return true;
+        }
+
+        // 2. Check standalone authority matrix rules fallback
         return Authority::checkUserAllowedOnBehalf($this);
+    }
+
+    public function getAllowedOnBehalfUserIdsAttribute(): ?array
+    {
+        if ($this->isAdmin() || $this->isSuperAdmin()) {
+            return null; // Unrestricted (All users allowed)
+        }
+
+        $dashboardType = DashboardType::resolveForUser($this);
+        if ($dashboardType) {
+            return $dashboardType->getAllowedOnBehalfUserIds($this);
+        }
+
+        return null;
     }
 
     public function getAvatarUrlAttribute(): ?string

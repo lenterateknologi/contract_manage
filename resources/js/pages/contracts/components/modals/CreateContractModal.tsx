@@ -9,7 +9,7 @@ import { usePov } from '@/stores/usePovStore';
 import { type SharedData } from '@/types';
 import { usePage } from '@inertiajs/react';
 import { AlertCircle, Check, FilePlus2, Loader2, ShieldCheck } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 interface Props {
     open: boolean;
@@ -19,9 +19,59 @@ interface Props {
     submissionTypes?: any[];
     users?: any[];
     vendors?: any[];
+    activeTab?: string;
+    activeContractTypeId?: string;
+    dashboardConfig?: {
+        show_overview_contract?: boolean;
+        show_overview_non_contract?: boolean;
+        show_overview_nda?: boolean;
+        [key: string]: unknown;
+    };
 }
 
-export default function CreateContractModal({ open, onClose, onSubmit, types = [], users = [], vendors = [] }: Props) {
+// ponytail: helper to resolve root category ('contract' | 'non-contract' | 'nda') & topic from type hierarchy
+function resolveTypeCategory(typeId: string, types: any[], activeTab?: string): { category: 'contract' | 'non-contract' | 'nda'; topic: string } {
+    let current = types.find((t) => String(t.id) === String(typeId));
+    const visited = new Set<string>();
+    while (current && current.parent_id && String(current.parent_id) !== String(current.id) && !visited.has(String(current.id))) {
+        visited.add(String(current.id));
+        const parent = types.find((t) => String(t.id) === String(current.parent_id));
+        if (parent) {
+            current = parent;
+        } else {
+            break;
+        }
+    }
+
+    if (!current) {
+        if (activeTab === 'non_kontrak') return { category: 'non-contract', topic: 'non-perjanjian' };
+        if (activeTab === 'nda') return { category: 'nda', topic: 'nda' };
+        return { category: 'contract', topic: 'perjanjian' };
+    }
+
+    const code = (current.code || '').toUpperCase();
+    const name = (current.name || '').toLowerCase();
+
+    if (code === 'A-2' || name.includes('non')) {
+        return { category: 'non-contract', topic: 'non-perjanjian' };
+    }
+    if (code === 'NDA' || name.includes('nda') || name.includes('kerahasiaan')) {
+        return { category: 'nda', topic: 'nda' };
+    }
+    return { category: 'contract', topic: 'perjanjian' };
+}
+
+export default function CreateContractModal({
+    open,
+    onClose,
+    onSubmit,
+    types = [],
+    users = [],
+    vendors = [],
+    activeTab,
+    activeContractTypeId,
+    dashboardConfig,
+}: Props) {
     const { auth, povOptions } = usePage<SharedData>().props;
     const pov = usePov(povOptions);
     const [title, setTitle] = useState('');
@@ -39,29 +89,142 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
     const [fetchingWorkflows, setFetchingWorkflows] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
-    const initiatorOptions = [
-        { value: String(auth?.user?.id), label: `Diri Sendiri (${auth?.user?.name})` },
-        ...(Array.isArray(users)
+    // ponytail: filter type tree to strictly match active filtering/tab (kontrak / non_kontrak / nda) & dashboardConfig
+    const filteredTypes = useMemo(() => {
+        const showContract = dashboardConfig?.show_overview_contract !== false;
+        const showNonContract = dashboardConfig?.show_overview_non_contract !== false;
+        const showNda = dashboardConfig?.show_overview_nda !== false;
+
+        let baseTypes = types;
+        if (!showContract || !showNonContract || !showNda) {
+            // Find root ids that are allowed
+            const allowedRootIds = new Set<string>();
+            types.forEach((t) => {
+                if (t.parent_id && String(t.parent_id) !== String(t.id)) return;
+                const code = (t.code || '').toUpperCase();
+                const name = (t.name || '').toLowerCase();
+                const isContract = code === 'A-1' || (!name.includes('non') && name.includes('kontrak'));
+                const isNonContract = code === 'A-2' || name.includes('non');
+                const isNda = code === 'NDA' || name.includes('nda') || name.includes('kerahasiaan');
+
+                if ((isContract && showContract) || (isNonContract && showNonContract) || (isNda && showNda)) {
+                    allowedRootIds.add(String(t.id));
+                }
+            });
+
+            if (allowedRootIds.size > 0) {
+                const allowedDescendantIds = new Set<string>(allowedRootIds);
+                let added = true;
+                while (added) {
+                    added = false;
+                    for (const item of types) {
+                        if (item.parent_id && allowedDescendantIds.has(String(item.parent_id)) && !allowedDescendantIds.has(String(item.id))) {
+                            allowedDescendantIds.add(String(item.id));
+                            added = true;
+                        }
+                    }
+                }
+                baseTypes = types.filter((t) => allowedDescendantIds.has(String(t.id)));
+            }
+        }
+
+        if (!activeTab || activeTab === 'all' || activeTab === 'pending' || activeTab === 'history') {
+            return baseTypes;
+        }
+
+        const root = baseTypes.find((t) => {
+            if (t.parent_id && String(t.parent_id) !== String(t.id)) return false;
+            const code = (t.code || '').toUpperCase();
+            const name = (t.name || '').toLowerCase();
+            if (activeTab === 'kontrak') {
+                return code === 'A-1' || (!name.includes('non') && name.includes('kontrak'));
+            }
+            if (activeTab === 'non_kontrak') {
+                return code === 'A-2' || name.includes('non');
+            }
+            if (activeTab === 'nda') {
+                return code === 'NDA' || name.includes('nda') || name.includes('kerahasiaan');
+            }
+            return false;
+        });
+
+        if (!root) return baseTypes;
+
+        const allowedIds = new Set<string>([String(root.id)]);
+        let added = true;
+        while (added) {
+            added = false;
+            for (const item of baseTypes) {
+                if (item.parent_id && allowedIds.has(String(item.parent_id)) && !allowedIds.has(String(item.id))) {
+                    allowedIds.add(String(item.id));
+                    added = true;
+                }
+            }
+        }
+
+        return baseTypes.filter((t) => allowedIds.has(String(t.id)));
+    }, [types, activeTab, dashboardConfig]);
+
+    const initiatorOptions = useMemo(() => {
+        const allowedUserIds = auth?.user?.allowed_on_behalf_user_ids;
+        const otherUsers = Array.isArray(users)
             ? users
-                  .filter((u) => u.id !== auth?.user?.id)
+                  .filter((u) => {
+                      if (String(u.id) === String(auth?.user?.id)) return false;
+                      if (Array.isArray(allowedUserIds)) {
+                          return allowedUserIds.includes(String(u.id));
+                      }
+                      return true;
+                  })
                   .map((u) => ({
                       value: String(u.id),
                       label: `${u.name} — ${u.role} (${u.department_name || 'No Dept'})`,
                   }))
-            : []),
-    ];
+            : [];
 
-    // Reset directed_by when modal opens
-    useEffect(() => {
-        if (open && auth?.user) {
-            setInitiatedById(auth.user.id);
-        }
-    }, [open, auth]);
+        return [
+            { value: String(auth?.user?.id), label: `Diri Sendiri (${auth?.user?.name})` },
+            ...otherUsers,
+        ];
+    }, [auth?.user, users]);
 
+    // Reset and initialize state when modal opens
     useEffect(() => {
         if (open) {
+            setTitle('');
+            setTypeId('');
+            setParentTypeId('');
+            setWorkflowId('');
+            setWorkflows([]);
+            setErrors({});
+            setProjectName('');
+            const initialCat = resolveTypeCategory('', types, activeTab).category;
+            setCategory(initialCat);
+
+            if (auth?.user) {
+                setInitiatedById(auth.user.id);
+            }
+
+            // Auto-select if activeContractTypeId is a leaf in filteredTypes
+            if (activeContractTypeId) {
+                const target = filteredTypes.find((t) => String(t.id) === String(activeContractTypeId));
+                if (target) {
+                    const hasChildren = filteredTypes.some((t) => String(t.parent_id) === String(target.id) && String(t.id) !== String(target.id));
+                    if (!hasChildren) {
+                        setTypeId(String(target.id));
+                        setParentTypeId(target.parent_id ? String(target.parent_id) : '');
+                        setTitle(target.name);
+                        setCategory(resolveTypeCategory(String(target.id), types, activeTab).category);
+                    }
+                }
+            }
+        }
+    }, [open, auth, activeTab, activeContractTypeId, filteredTypes, types]);
+
+    useEffect(() => {
+        if (open && typeId) {
             fetchWorkflows(typeId, initiatedById);
-        } else {
+        } else if (!typeId) {
             setWorkflows([]);
             setWorkflowId('');
         }
@@ -98,6 +261,8 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
 
         setErrors({});
 
+        const { category: detectedCat } = resolveTypeCategory(typeId, types, activeTab);
+
         const fd = new FormData();
         fd.append('title', title);
         fd.append('contract_type_id', typeId);
@@ -112,14 +277,14 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
         if (vendorId) {
             fd.append('vendor_id', vendorId);
         }
-        fd.append('category', category);
+        fd.append('category', detectedCat);
         if (workflowId) {
             fd.append('workflow_id', workflowId);
         }
-        if (category === 'nda') {
-            fd.append('project_name', projectName);
+        if (detectedCat === 'nda') {
+            fd.append('project_name', projectName || title);
             fd.append('topic', 'nda');
-        } else if (category === 'non-contract') {
+        } else if (detectedCat === 'non-contract') {
             fd.append('topic', 'non-perjanjian');
         } else {
             fd.append('topic', 'perjanjian');
@@ -138,14 +303,26 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
 
     const isFormValid = Boolean(title && typeId && (!workflows.length || workflowId));
 
+    const modalTitle = activeTab === 'non_kontrak'
+        ? 'Buat Pengajuan Non Kontrak'
+        : activeTab === 'nda'
+          ? 'Buat Pengajuan NDA'
+          : 'Buat Pengajuan Baru';
+
+    const modalDesc = activeTab === 'non_kontrak'
+        ? 'Isi formulir berikut untuk memulai pengajuan non-kontrak'
+        : activeTab === 'nda'
+          ? 'Isi formulir berikut untuk memulai pengajuan dokumen kerahasiaan (NDA)'
+          : 'Isi formulir berikut untuk memulai pengajuan kontrak';
+
     return (
         <Modal
             isOpen={open}
             onClose={onClose}
             headerVariant="primary"
             headerIcon={<FilePlus2 size={18} />}
-            title="Buat Kontrak Baru"
-            description="Isi formulir berikut untuk memulai pengajuan kontrak"
+            title={modalTitle}
+            description={modalDesc}
             maxWidth="3xl"
             className="min-h-[620px] max-h-[85vh] flex flex-col"
             footer={
@@ -160,7 +337,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                     </Button>
                     <Button onClick={handleSubmit} disabled={loading || !isFormValid} className="h-9 min-w-[120px] text-xs font-bold">
                         {loading ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Check size={15} className="mr-1.5" />}
-                        Buat Kontrak
+                        Buat Pengajuan
                     </Button>
                 </div>
             }
@@ -203,6 +380,9 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                             setTypeId(childId);
                             setParentTypeId(parentId ?? '');
 
+                            const { category: detectedCat } = resolveTypeCategory(childId, types, activeTab);
+                            setCategory(detectedCat);
+
                             if (Array.isArray(types)) {
                                 const selectedType = types.find((t) => String(t.id) === childId);
                                 if (selectedType) {
@@ -221,8 +401,14 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                                 }
                             }
                         }}
-                        items={types}
-                        placeholder="Pilih Klasifikasi / Jenis Kontrak"
+                        items={filteredTypes}
+                        placeholder={
+                            activeTab === 'non_kontrak'
+                                ? 'Pilih Jenis Dokumen Non Kontrak'
+                                : activeTab === 'nda'
+                                  ? 'Pilih Jenis Dokumen NDA'
+                                  : 'Pilih Klasifikasi / Jenis Kontrak'
+                        }
                         disableParentSelection={true}
                     />
                     {errors.contract_type_id && <div className="mt-0.5 text-[10px] font-medium text-rose-500">{errors.contract_type_id}</div>}
@@ -247,11 +433,11 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                 </div>
 
                 <FormInput
-                    label="Nama Project / Judul Kontrak"
+                    label="Nama Project / Judul Dokumen"
                     labelClassName="font-extrabold text-[10.5px] uppercase"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Masukkan nama project atau judul kontrak"
+                    placeholder="Masukkan nama project atau judul dokumen"
                     error={errors.title}
                     required
                 />

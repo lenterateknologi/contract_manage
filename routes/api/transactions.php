@@ -23,6 +23,7 @@ Route::prefix('contracts')->group(function () {
         Route::get('/roles', 'getRoles');
         Route::get('/dashboard-metrics', 'getDashboardMetrics');
         Route::prefix('dashboard')->group(function () {
+            Route::get('/visibility', 'getDashboardVisibility');
             Route::get('/summary', 'getDashboardSummary');
             Route::get('/overview', 'getDashboardOverview');
             Route::get('/distributions', 'getDashboardDistributions');

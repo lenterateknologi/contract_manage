@@ -603,8 +603,8 @@ class ReportController extends Controller
     public function divisions(Request $request): JsonResponse
     {
         $user = $request->user();
-        if (! ($user && ($user->isAdmin() || $user->isSuperAdmin() || $user->isLegal()))) {
-            return $this->errorResponse('Akses ditolak. Laporan ini hanya dapat diakses oleh bagian Legal.', 403);
+        if (! ($user && $user->canViewGlobalContracts())) {
+            return $this->errorResponse('Akses ditolak. Laporan ini hanya dapat diakses oleh bagian Legal atau role yang memiliki izin global.', 403);
         }
 
         $year = (int) $request->input('year', date('Y'));
@@ -1005,6 +1005,8 @@ class ReportController extends Controller
                 'u.name as user_name',
                 'u.email as user_email',
                 'u.nik as user_nik',
+                'dept.name as department_name',
+                'dept.code as department_code',
                 DB::raw("COALESCE(d.name, 'Divisi') as division_name"),
                 DB::raw("COALESCE(dept.org_group_name, '{$currentOrgGroup->name}') as org_group_name"),
             ])
@@ -1057,6 +1059,8 @@ class ReportController extends Controller
                 'user_name' => $u->user_name,
                 'user_email' => $u->user_email,
                 'user_nik' => $u->user_nik,
+                'department_name' => $u->department_name,
+                'department_code' => $u->department_code,
                 'division_name' => $u->division_name,
                 'org_group_name' => $currentOrgGroup->name,
                 'months' => array_fill(1, 12, 0),
@@ -1100,6 +1104,7 @@ class ReportController extends Controller
             'name' => $matrixList[0]['user_name'],
             'total' => $matrixList[0]['total'],
             'email' => $matrixList[0]['user_email'],
+            'department' => $matrixList[0]['department_name'],
             'division' => $matrixList[0]['division_name'],
         ] : null;
 
