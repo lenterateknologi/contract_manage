@@ -94,8 +94,16 @@ class ContractController extends Controller
     /**
      * Generalized method for Inertia contract views
      */
-    public function contractsView(Request $request, string $view = 'contracts'): Response|JsonResponse
+    public function contractsView(Request $request, string $view = 'contracts', ?string $tab = null): Response|JsonResponse|\Illuminate\Http\RedirectResponse
     {
+        if ($view === 'contracts' || $view === 'all') {
+            $user = Auth::user();
+            $canViewGlobal = $user && ($user->isAdmin() || $user->isSuperAdmin() || $user->isLegal());
+            if (! $canViewGlobal) {
+                return redirect()->route('contracts.organization', $request->query());
+            }
+        }
+
         $contracts = in_array($view, ['dashboard', 'profile'])
             ? new LengthAwarePaginator([], 0, 25)
             : $this->contractListQuery
@@ -118,8 +126,11 @@ class ContractController extends Controller
         $loaders = $this->contractOptionsQuery->getLoaders();
         $meta = $this->getViewMetadata($view);
 
+        $resolvedTab = $tab ?? $request->query('tab') ?? $request->query('dashboard_tab');
+
         $data = array_merge([
             'currentView' => $view,
+            'currentDashboardTab' => $resolvedTab,
             'contracts' => $contracts,
             'types' => $loaders['types'](),
             'submissionTypes' => $loaders['submissionTypes'](),
@@ -145,7 +156,7 @@ class ContractController extends Controller
                 'created_from', 'created_to', 'region_ids', 'vendor_ids', 'statuses',
                 'contract_type_ids', 'pic_ids', 'department_ids', 'submission_type_id',
                 'period', 'company_group_ids', 'company_ids',
-                'company_group_id', 'region_id', 'company_id', 'division_id', 'mine_tab', 'contract_tab', 'parent_tab', 'pending_tab', 'expiry_tab',
+                'company_group_id', 'region_id', 'company_id', 'division_id', 'mine_tab', 'org_tab', 'contract_tab', 'parent_tab', 'pending_tab', 'expiry_tab',
                 'sort_by', 'sort_dir', 'sortBy', 'sortDir',
             ]), [
                 'per_page' => $request->integer('per_page', 10),
@@ -172,6 +183,7 @@ class ContractController extends Controller
     {
         return match ($view) {
             'dashboard' => ['title' => 'Dashboard', 'description' => 'Statistik dan ringkasan aktivitas kontrak.', 'icon' => 'LayoutGrid'],
+            'organization' => ['title' => 'Semua Pengajuan', 'description' => 'Daftar seluruh dokumen pengajuan dalam lingkup Organization Group Anda.', 'icon' => 'FileText'],
             'mine' => ['title' => 'Pengajuan Saya', 'description' => 'Daftar dokumen pengajuan yang Anda buat.', 'icon' => 'FileEdit'],
             'pending' => ['title' => 'Persetujuan Saya', 'description' => 'Dokumen pengajuan yang menunggu atau telah diproses persetujuan Anda.', 'icon' => 'Clock'],
             'expiry' => ['title' => 'Masa Berlaku Dokumen', 'description' => 'Dokumen yang akan atau telah berakhir masa berlakunya.', 'icon' => 'History'],
@@ -213,8 +225,8 @@ class ContractController extends Controller
             $nonKontrakIds = $getDescendantIds($nonKontrakParent?->id);
             $ndaIds = $getDescendantIds($ndaParent?->id);
 
-            // Scoped base query respecting user organization permissions
-            $scopedAllQuery = $this->contractListQuery->build(new Request(), 'all');
+            // Scoped base query respecting user organization permissions (no eager loading needed for counts)
+            $scopedAllQuery = $this->contractListQuery->build(new Request(), 'all', false);
             $activeContractsQuery = (clone $scopedAllQuery)->whereRaw('UPPER(status) != ?', ['ARCHIVED'])->whereNull('closed_at');
 
             $parentCategoryCounts = [
@@ -224,6 +236,18 @@ class ContractController extends Controller
                 'nda' => (clone $activeContractsQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $ndaIds)->orWhereIn('contract_type_parent_id', $ndaIds))->count(),
                 'in_progress' => (clone $scopedAllQuery)->whereIn('status', ['in_review', 'pending', 'locked'])->whereNull('closed_at')->count(),
                 'archived' => (clone $scopedAllQuery)->where(fn ($q) => $q->whereRaw('UPPER(status) = ?', ['ARCHIVED'])->orWhereNotNull('closed_at'))->count(),
+            ];
+
+            // Org Group Counts
+            $scopedOrgQuery = $this->contractListQuery->build(new Request(), 'organization', false);
+            $activeOrgQuery = (clone $scopedOrgQuery)->whereRaw('UPPER(status) != ?', ['ARCHIVED'])->whereNull('closed_at');
+            $orgCategoryCounts = [
+                'all' => (clone $activeOrgQuery)->count(),
+                'kontrak' => (clone $activeOrgQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $kontrakIds)->orWhereIn('contract_type_parent_id', $kontrakIds))->count(),
+                'non_kontrak' => (clone $activeOrgQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $nonKontrakIds)->orWhereIn('contract_type_parent_id', $nonKontrakIds))->count(),
+                'nda' => (clone $activeOrgQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $ndaIds)->orWhereIn('contract_type_parent_id', $ndaIds))->count(),
+                'in_progress' => (clone $scopedOrgQuery)->whereIn('status', ['in_review', 'pending', 'locked'])->whereNull('closed_at')->count(),
+                'archived' => (clone $scopedOrgQuery)->where(fn ($q) => $q->whereRaw('UPPER(status) = ?', ['ARCHIVED'])->orWhereNotNull('closed_at'))->count(),
             ];
 
             $myBaseQuery = DB::table('t_contracts')
@@ -275,6 +299,7 @@ class ContractController extends Controller
 
             return [
                 'parentCategoryCounts' => $parentCategoryCounts,
+                'orgCategoryCounts' => $orgCategoryCounts,
                 'mineCounts' => $mineCounts,
                 'pendingCounts' => $pendingCounts,
                 'expiryCategoryCounts' => $expiryCategoryCounts,

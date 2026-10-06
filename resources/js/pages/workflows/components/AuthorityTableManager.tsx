@@ -1180,6 +1180,7 @@ export default function AuthorityTableManager({
                                 {selectedIndices.length} dipilih
                             </span>
                             <Button
+                                type="button"
                                 variant="outline"
                                 size="sm"
                                 onClick={openBulkEditModal}
@@ -1188,6 +1189,7 @@ export default function AuthorityTableManager({
                                 <Pencil size={12} /> Ubah
                             </Button>
                             <Button
+                                type="button"
                                 variant="destructive"
                                 size="sm"
                                 onClick={handleBulkDelete}
@@ -1208,7 +1210,7 @@ export default function AuthorityTableManager({
                             className="h-8 pl-8 pr-3 text-xs bg-white dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-700/80 text-slate-800 dark:text-zinc-100 rounded-lg outline-none focus:border-primary transition-all w-full sm:w-44 focus:sm:w-52"
                         />
                     </div>
-                    <Button variant="primary" size="sm" onClick={openModal} className="h-8 text-xs rounded-lg px-3 shadow-none shrink-0">
+                    <Button type="button" variant="primary" size="sm" onClick={openModal} className="h-8 text-xs rounded-lg px-3 shadow-none shrink-0">
                         <Plus size={14} className="mr-1" /> Tambah
                     </Button>
                 </div>

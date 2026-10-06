@@ -9,7 +9,6 @@ import { globSync } from 'node:fs';
 const pageInputs = [
     'resources/css/app.css',
     'resources/js/app.tsx',
-    ...globSync('resources/js/pages/**/*.tsx'),
 ];
 
 export default defineConfig({

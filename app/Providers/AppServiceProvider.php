@@ -34,27 +34,35 @@ class AppServiceProvider extends ServiceProvider
         // Strict Eloquent
         Model::shouldBeStrict(! $this->app->isProduction());
 
-        // Auto-populate blame columns (created_by and updated_by) from authenticated user
-        Model::creating(function (Model $model) {
+        // Auto-populate blame columns (created_by and updated_by) from authenticated user with in-memory column cache
+        static $tableColumnsCache = [];
+        $hasColumn = function (string $table, string $column) use (&$tableColumnsCache): bool {
+            if (! isset($tableColumnsCache[$table])) {
+                $tableColumnsCache[$table] = array_flip(Schema::getColumnListing($table));
+            }
+            return isset($tableColumnsCache[$table][$column]);
+        };
+
+        Model::creating(function (Model $model) use ($hasColumn) {
             if (Auth::check()) {
                 $userId = Auth::id();
                 $table = $model->getTable();
 
-                if (Schema::hasColumn($table, 'created_by') && is_null($model->created_by)) {
+                if ($hasColumn($table, 'created_by') && is_null($model->created_by)) {
                     $model->created_by = $userId;
                 }
-                if (Schema::hasColumn($table, 'updated_by') && is_null($model->updated_by)) {
+                if ($hasColumn($table, 'updated_by') && is_null($model->updated_by)) {
                     $model->updated_by = $userId;
                 }
             }
         });
 
-        Model::updating(function (Model $model) {
+        Model::updating(function (Model $model) use ($hasColumn) {
             if (Auth::check()) {
                 $userId = Auth::id();
                 $table = $model->getTable();
 
-                if (Schema::hasColumn($table, 'updated_by')) {
+                if ($hasColumn($table, 'updated_by')) {
                     $model->updated_by = $userId;
                 }
             }

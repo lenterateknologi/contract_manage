@@ -57,7 +57,7 @@ const EditContractModal = lazy(() => import('@/pages/contracts/components/modals
 const PreviewModal = lazy(() => import('@/pages/contracts/components/modals/PreviewModal'));
 const SendApprovalModal = lazy(() => import('@/pages/contracts/components/modals/SendApprovalModal'));
 
-type View = 'dashboard' | 'contracts' | 'pending' | 'audit' | 'f1' | 'f2' | 'profile' | 'mine' | 'expiry' | 'archived' | 'in_progress';
+type View = 'dashboard' | 'contracts' | 'organization' | 'pending' | 'audit' | 'f1' | 'f2' | 'profile' | 'mine' | 'expiry' | 'archived' | 'in_progress';
 
 import { ConfirmationModal, ContractCardSkeleton, ContractTableSkeleton, StatusBadge } from '@/components/ui';
 import { DashboardSkeleton } from '@/components/ui/feedback/DashboardSkeleton';
@@ -256,12 +256,21 @@ interface IndexProps {
     types: ContractType[];
     submissionTypes: Array<{ id: string; name: string }>;
     currentView: View;
+    currentDashboardTab?: string | null;
     metrics?: {
         dashboardConfig?: DashboardConfig;
         [key: string]: unknown;
     } | null;
     userFilterSettings?: UserFilterSettings | null;
     mineCounts?: {
+        all: number;
+        kontrak: number;
+        non_kontrak: number;
+        nda: number;
+        in_progress: number;
+        archived: number;
+    };
+    orgCategoryCounts?: {
         all: number;
         kontrak: number;
         non_kontrak: number;
@@ -298,6 +307,7 @@ interface IndexProps {
         sortDir?: 'asc' | 'desc' | string;
         sort_dir?: 'asc' | 'desc' | string;
         mine_tab?: string;
+        org_tab?: string;
         parent_tab?: string;
         pending_tab?: string;
         expiry_tab?: string;
@@ -327,6 +337,34 @@ interface IndexProps {
     organizationTree?: Array<Record<string, unknown>>;
 }
 
+const DASHBOARD_TAB_TO_SLUG: Record<string, string> = {
+    overview: 'ringkasan',
+    overview_contract: 'ringkasan-kontrak',
+    overview_non_contract: 'ringkasan-non-kontrak',
+    overview_nda: 'ringkasan-nda',
+    workload: 'beban-kerja',
+    master_data: 'master-data',
+};
+
+const SLUG_TO_DASHBOARD_TAB: Record<string, 'overview' | 'overview_contract' | 'overview_non_contract' | 'overview_nda' | 'workload' | 'master_data'> = {
+    ringkasan: 'overview',
+    overview: 'overview',
+    'ringkasan-kontrak': 'overview_contract',
+    kontrak: 'overview_contract',
+    overview_contract: 'overview_contract',
+    'ringkasan-non-kontrak': 'overview_non_contract',
+    'non-kontrak': 'overview_non_contract',
+    overview_non_contract: 'overview_non_contract',
+    'ringkasan-nda': 'overview_nda',
+    nda: 'overview_nda',
+    overview_nda: 'overview_nda',
+    'beban-kerja': 'workload',
+    workload: 'workload',
+    'master-data': 'master_data',
+    masterdata: 'master_data',
+    master_data: 'master_data',
+};
+
 function ContractPage({
     contracts: contractsPaged = { data: [], links: [], current_page: 1, last_page: 1, total: 0, from: 0, to: 0, per_page: 25 },
     meId = '',
@@ -335,6 +373,7 @@ function ContractPage({
     types = [],
     submissionTypes = [],
     currentView = 'dashboard',
+    currentDashboardTab,
     metrics,
     filters = {},
     formTemplates = [],
@@ -346,6 +385,7 @@ function ContractPage({
     regions = [],
     divisions = [],
     mineCounts,
+    orgCategoryCounts,
     parentCategoryCounts,
     pendingCounts,
     expiryCategoryCounts,
@@ -359,34 +399,62 @@ function ContractPage({
     const [dashboardTab, setDashboardTab] = useState<
         'overview' | 'overview_contract' | 'overview_non_contract' | 'overview_nda' | 'workload' | 'master_data'
     >(() => {
+        if (currentDashboardTab && SLUG_TO_DASHBOARD_TAB[currentDashboardTab]) {
+            return SLUG_TO_DASHBOARD_TAB[currentDashboardTab];
+        }
         if (typeof window !== 'undefined') {
+            const pathParts = window.location.pathname.split('/').filter(Boolean);
+            if (pathParts[0] === 'dashboard' && pathParts[1] && SLUG_TO_DASHBOARD_TAB[pathParts[1]]) {
+                return SLUG_TO_DASHBOARD_TAB[pathParts[1]];
+            }
             const urlParams = new URLSearchParams(window.location.search);
             const tabParam = urlParams.get('dashboard_tab') || urlParams.get('tab');
-            const validTabs: ('overview' | 'overview_contract' | 'overview_non_contract' | 'overview_nda' | 'workload' | 'master_data')[] = [
-                'overview',
-                'overview_contract',
-                'overview_non_contract',
-                'overview_nda',
-                'workload',
-                'master_data',
-            ];
-            if (tabParam && (validTabs as string[]).includes(tabParam)) {
-                return tabParam as 'overview' | 'overview_contract' | 'overview_non_contract' | 'overview_nda' | 'workload' | 'master_data';
+            if (tabParam && SLUG_TO_DASHBOARD_TAB[tabParam]) {
+                return SLUG_TO_DASHBOARD_TAB[tabParam];
             }
             const saved = getClientPref<string>('dashboard_active_tab', '');
-            if (saved && (validTabs as string[]).includes(saved)) {
-                return saved as 'overview' | 'overview_contract' | 'overview_non_contract' | 'overview_nda' | 'workload' | 'master_data';
+            if (saved && SLUG_TO_DASHBOARD_TAB[saved]) {
+                return SLUG_TO_DASHBOARD_TAB[saved];
             }
         }
         return 'overview_contract';
     });
 
-    const handleDashboardTabChange = (
+    const handleDashboardTabChange = useCallback((
         newTab: 'overview' | 'overview_contract' | 'overview_non_contract' | 'overview_nda' | 'workload' | 'master_data',
     ) => {
         setDashboardTab(newTab);
         setClientPref('dashboard_active_tab', newTab);
-    };
+        if (typeof window !== 'undefined' && (window.location.pathname.startsWith('/dashboard') || window.location.pathname === '/')) {
+            const slug = DASHBOARD_TAB_TO_SLUG[newTab] || newTab;
+            const targetUrl = `/dashboard/${slug}${window.location.search}`;
+            if (window.location.pathname !== `/dashboard/${slug}`) {
+                window.history.pushState({}, '', targetUrl);
+            }
+        }
+    }, []);
+
+    useEffect(() => {
+        const handlePopState = () => {
+            if (typeof window !== 'undefined' && window.location.pathname.startsWith('/dashboard')) {
+                const parts = window.location.pathname.split('/').filter(Boolean);
+                const subSlug = parts[1];
+                if (subSlug && SLUG_TO_DASHBOARD_TAB[subSlug]) {
+                    setDashboardTab(SLUG_TO_DASHBOARD_TAB[subSlug]);
+                } else if (!subSlug) {
+                    setDashboardTab('overview_contract');
+                }
+            }
+        };
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, []);
+
+    useEffect(() => {
+        if (currentDashboardTab && SLUG_TO_DASHBOARD_TAB[currentDashboardTab]) {
+            setDashboardTab(SLUG_TO_DASHBOARD_TAB[currentDashboardTab]);
+        }
+    }, [currentDashboardTab]);
 
     const effectiveDashboardConfig = useMemo(() => {
         const baseConfig = metrics?.dashboardConfig || {
@@ -432,6 +500,14 @@ function ContractPage({
     const [selected, setSelected] = useState<Contract | null>(initialSelected ?? null);
     const viewTitleMap: Record<string, string> = {
         dashboard: 'Dashboard Kontrak',
+        organization:
+            filters?.org_tab === 'kontrak'
+                ? 'Semua Pengajuan - Kontrak'
+                : filters?.org_tab === 'non_kontrak'
+                  ? 'Semua Pengajuan - Non Kontrak'
+                  : filters?.org_tab === 'nda'
+                    ? 'Semua Pengajuan - NDA'
+                    : 'Semua Pengajuan',
         contracts:
             filters?.parent_tab === 'kontrak'
                 ? 'Semua Pengajuan - Kontrak'
@@ -465,6 +541,7 @@ function ContractPage({
     };
     const viewDescMap: Record<string, string> = {
         dashboard: 'Statistik dan ringkasan aktivitas kontrak.',
+        organization: 'Daftar seluruh dokumen pengajuan dalam lingkup Organization Group Anda.',
         contracts: 'Daftar seluruh arsip dokumen pengajuan dalam sistem.',
         mine: 'Daftar dokumen pengajuan yang Anda buat.',
         pending:
@@ -487,6 +564,7 @@ function ContractPage({
     };
     const viewIconMap: Record<string, React.ComponentType<{ className?: string; size?: number | string; strokeWidth?: number }>> = {
         dashboard: LayoutGrid,
+        organization: FileText,
         contracts: FileText,
         mine: FileEdit,
         pending: Clock,
@@ -503,26 +581,34 @@ function ContractPage({
     const handleFilterChange = useCallback(
         (newFilters: Record<string, unknown>) => {
             const merged = { ...filters, ...newFilters };
-            const cleaned = Object.fromEntries(
-                Object.entries(merged)
-                    .map(([k, v]) => {
-                        if (Array.isArray(v)) {
-                            return [k, v.filter((item) => item !== undefined && item !== null && item !== '')];
-                        }
-                        return [k, v];
-                    })
-                    .filter(([k, v]) => {
-                        if ((['company_group_id', 'region_id', 'company_id', 'division_id', 'department_id'] as string[]).includes(k)) {
-                            return v !== undefined && v !== null;
-                        }
-                        return v !== undefined && v !== null && v !== '' && (Array.isArray(v) ? v.length > 0 : true);
-                    }),
-            ) as Record<string, string | number | string[]>;
+            const cleaned: Record<string, string | number> = {};
+
+            for (const [k, v] of Object.entries(merged)) {
+                if (v === undefined || v === null || v === '' || v === 'all') {
+                    continue;
+                }
+                // Omit default page 1 to keep URL clean
+                if (k === 'page' && (v === 1 || v === '1')) {
+                    continue;
+                }
+                if (k === 'per_page' && (v === 10 || v === '10' || v === 25 || v === '25')) {
+                    continue;
+                }
+                if (Array.isArray(v)) {
+                    const validItems = v.filter((item) => item !== undefined && item !== null && item !== '' && item !== 'all');
+                    if (validItems.length > 0) {
+                        cleaned[k] = validItems.join(',');
+                    }
+                } else {
+                    cleaned[k] = v as string | number;
+                }
+            }
+
             router.get(globalThis.location.pathname, cleaned, {
                 preserveState: true,
                 preserveScroll: true,
                 replace: true,
-                only: ['contracts', 'filters', 'parentCategoryCounts', 'mineCounts', 'pendingCounts', 'expiryCategoryCounts'],
+                only: ['contracts', 'filters', 'parentCategoryCounts', 'orgCategoryCounts', 'mineCounts', 'pendingCounts', 'expiryCategoryCounts'],
             });
         },
         [filters],
@@ -1081,6 +1167,7 @@ function ContractPage({
                     </div>
                 ),
                 align: 'center',
+                pinned: 'right',
                 className: 'w-16 text-center px-2 py-1.5',
                 cell: (c: Contract) => (
                     <div className="flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
@@ -1104,47 +1191,7 @@ function ContractPage({
         let tabs: { key: string; label: string; count: number; icon?: React.ComponentType<{ className?: string; size?: number | string }> | React.ReactNode; isActive: boolean }[] = [];
         const activeView = (currentView || view) as string;
 
-        // Ambil filter types dan categories dari user setting (dashboard profile)
-        const allowedTypeIds: string[] = (userFilterSettings?.contract_type_ids || []).map(String);
-        const allowedCategories: string[] = (userFilterSettings?.categories || []).map((c: string) => c.toLowerCase().replace('-', '_'));
-
-        // Cek apakah tipe yang dipilih mengarah ke kategori tertentu jika contract_type_ids ditentukan
-        const resolveAllowedCategoriesFromTypes = (): string[] => {
-            if (allowedCategories.length > 0) return allowedCategories;
-            if (allowedTypeIds.length === 0 || !types || types.length === 0) return [];
-
-            const matchedCats = new Set<string>();
-            const findRootCode = (typeId: string): string | null => {
-                let current = types.find((t) => String(t.id) === String(typeId));
-                while (current && current.parent_id) {
-                    const parent = types.find((t) => String(t.id) === String(current?.parent_id));
-                    if (!parent) break;
-                    current = parent;
-                }
-                return current ? String(current.code || current.name).toUpperCase() : null;
-            };
-
-            for (const typeId of allowedTypeIds) {
-                const root = findRootCode(typeId);
-                if (root) {
-                    if (root.includes('A-1') || (root.includes('KONTRAK') && !root.includes('NON'))) {
-                        matchedCats.add('contract');
-                        matchedCats.add('kontrak');
-                    } else if (root.includes('A-2') || root.includes('NON')) {
-                        matchedCats.add('non_contract');
-                        matchedCats.add('non_kontrak');
-                    } else if (root.includes('NDA') || root.includes('KERAHASIAAN')) {
-                        matchedCats.add('nda');
-                    }
-                }
-            }
-
-            return Array.from(matchedCats);
-        };
-
-        const effectiveAllowedCategories = resolveAllowedCategoriesFromTypes();
-
-        const buildFilteredTabs = (
+        const buildTabs = (
             counts: { all?: number; kontrak?: number; non_kontrak?: number; nda?: number } | undefined,
             activeKey: string,
             isHistoryPending: boolean = false,
@@ -1168,10 +1215,10 @@ function ContractPage({
                 ];
             }
 
-            const candidateTabs = [
+            return [
+                { key: '', label: 'Semua', count: counts?.all ?? 0, icon: LayoutGrid, isActive: !activeKey },
                 {
                     key: 'kontrak',
-                    categoryKey: 'contract',
                     label: 'Kontrak',
                     count: counts?.kontrak ?? 0,
                     icon: FileText,
@@ -1179,59 +1226,85 @@ function ContractPage({
                 },
                 {
                     key: 'non_kontrak',
-                    categoryKey: 'non_contract',
                     label: 'Non Kontrak',
                     count: counts?.non_kontrak ?? 0,
                     icon: FileCheck,
                     isActive: activeKey === 'non_kontrak',
                 },
-                { key: 'nda', categoryKey: 'nda', label: 'NDA', count: counts?.nda ?? 0, icon: Zap, isActive: activeKey === 'nda' },
+                {
+                    key: 'nda',
+                    label: 'NDA',
+                    count: counts?.nda ?? 0,
+                    icon: Zap,
+                    isActive: activeKey === 'nda',
+                },
             ];
-
-            const filteredCandidates =
-                effectiveAllowedCategories.length > 0
-                    ? candidateTabs.filter((t) => effectiveAllowedCategories.includes(t.categoryKey) || effectiveAllowedCategories.includes(t.key))
-                    : candidateTabs;
-
-            // Jika hanya 1 kategori yang diizinkan, langsung tampilkan tab kategori tersebut saja
-            if (filteredCandidates.length === 1) {
-                return filteredCandidates.map((t) => ({ ...t, isActive: true }));
-            }
-
-            // Jika ada lebih dari 1 kategori atau tanpa pembatasan, sertakan tab 'Semua'
-            return [{ key: '', label: 'Semua', count: counts?.all ?? 0, icon: LayoutGrid, isActive: !activeKey }, ...filteredCandidates];
         };
 
-        if (activeView === 'contracts' || activeView === 'admin.contracts' || activeView === 'admin/contracts') {
-            const activeKey = filters?.parent_tab || '';
-            tabs = buildFilteredTabs(parentCategoryCounts, activeKey);
-        } else if (activeView === 'mine') {
-            const activeKey = filters?.mine_tab || '';
-            tabs = buildFilteredTabs(mineCounts, activeKey);
-        } else if (activeView === 'pending') {
-            const activeKey = filters?.pending_tab === 'history' ? 'history' : 'pending';
-            tabs = buildFilteredTabs(undefined, activeKey, true);
-        } else if (activeView === 'expiry') {
-            const activeKey = filters?.expiry_tab || '';
-            tabs = buildFilteredTabs(expiryCategoryCounts, activeKey);
+        switch (activeView) {
+            case 'contracts':
+            case 'admin.contracts':
+            case 'admin/contracts': {
+                const activeKey = filters?.parent_tab || '';
+                tabs = buildTabs(parentCategoryCounts, activeKey);
+                break;
+            }
+            case 'organization':
+            case 'contracts.organization':
+            case 'contracts/organization': {
+                const activeKey = filters?.org_tab || filters?.parent_tab || '';
+                tabs = buildTabs(orgCategoryCounts || parentCategoryCounts, activeKey);
+                break;
+            }
+            case 'mine': {
+                const activeKey = filters?.mine_tab || '';
+                tabs = buildTabs(mineCounts, activeKey);
+                break;
+            }
+            case 'pending': {
+                const activeKey = filters?.pending_tab === 'history' ? 'history' : 'pending';
+                tabs = buildTabs(undefined, activeKey, true);
+                break;
+            }
+            case 'expiry': {
+                const activeKey = filters?.expiry_tab || '';
+                tabs = buildTabs(expiryCategoryCounts, activeKey);
+                break;
+            }
+            default:
+                break;
         }
 
         if (tabs.length === 0) return null;
 
         const onTabClick = (tabKey: string) => {
-            if (activeView === 'contracts' || activeView === 'admin.contracts' || activeView === 'admin/contracts') {
-                handleFilterChange({ parent_tab: tabKey || '', page: 1 });
-            } else if (activeView === 'mine') {
-                handleFilterChange({ mine_tab: tabKey || '', page: 1 });
-            } else if (activeView === 'pending') {
-                handleFilterChange({ pending_tab: tabKey, page: 1 });
-            } else if (activeView === 'expiry') {
-                handleFilterChange({ expiry_tab: tabKey || '', page: 1 });
+            switch (activeView) {
+                case 'contracts':
+                case 'admin.contracts':
+                case 'admin/contracts':
+                    handleFilterChange({ parent_tab: tabKey || '', page: 1 });
+                    break;
+                case 'organization':
+                case 'contracts.organization':
+                case 'contracts/organization':
+                    handleFilterChange({ org_tab: tabKey || '', page: 1 });
+                    break;
+                case 'mine':
+                    handleFilterChange({ mine_tab: tabKey || '', page: 1 });
+                    break;
+                case 'pending':
+                    handleFilterChange({ pending_tab: tabKey, page: 1 });
+                    break;
+                case 'expiry':
+                    handleFilterChange({ expiry_tab: tabKey || '', page: 1 });
+                    break;
+                default:
+                    break;
             }
         };
 
         return (
-            <div className="border-surface-border bg-card custom-scrollbar flex h-12 shrink-0 items-center gap-1.5 overflow-x-auto border-b px-4">
+            <div className="border-surface-border bg-card custom-scrollbar flex h-11 shrink-0 items-center gap-6 overflow-x-auto border-b px-5 select-none">
                 {tabs.map((tab) => {
                     const TabIcon = tab.icon;
                     return (
@@ -1240,10 +1313,10 @@ function ContractPage({
                             type="button"
                             onClick={() => onTabClick(tab.key)}
                             className={cn(
-                                'group relative flex shrink-0 cursor-pointer items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-all duration-150 select-none',
+                                'group relative -mb-px flex h-full shrink-0 cursor-pointer items-center gap-2 border-b-2 text-xs font-bold transition-all duration-150 select-none',
                                 tab.isActive
-                                    ? 'bg-primary text-primary-foreground font-bold shadow-xs'
-                                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/70',
+                                    ? 'border-primary text-primary'
+                                    : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground',
                             )}
                         >
                             {TabIcon && (
@@ -1251,16 +1324,16 @@ function ContractPage({
                                     size={14}
                                     className={cn(
                                         'shrink-0 transition-colors',
-                                        tab.isActive ? 'text-primary-foreground' : 'text-muted-foreground group-hover:text-foreground',
+                                        tab.isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground',
                                     )}
                                 />
                             )}
                             <span>{tab.label}</span>
                             <span
                                 className={cn(
-                                    'shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold tabular-nums transition-colors',
+                                    'shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums transition-colors',
                                     tab.isActive
-                                        ? 'text-primary bg-white dark:bg-black dark:text-white'
+                                        ? 'bg-primary/10 text-primary dark:bg-primary/20'
                                         : 'bg-muted text-muted-foreground group-hover:text-foreground',
                                 )}
                             >

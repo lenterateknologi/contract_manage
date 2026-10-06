@@ -188,13 +188,19 @@ export function DataTable<T extends { id?: any } = Record<string, unknown>>({
                                 {columns.map((col, idx) => {
                                     const isSortable = col.sortable;
                                     const isSorted = sortBy === col.accessorKey;
-                                    const isPinned = Boolean(col.pinned);
+                                    const isPinnedRight = col.pinned === 'right';
+                                    const isPinnedLeft = col.pinned === 'left' || (col.pinned === true && !isPinnedRight);
+                                    const isPinned = isPinnedLeft || isPinnedRight;
                                     const pinOffset = col.pinOffset;
                                     const isLastPinned = col.isLastPinned;
 
-                                    const thStyles: React.CSSProperties = isPinned ? {
+                                    const thStyles: React.CSSProperties = isPinnedRight ? {
                                         position: 'sticky',
-                                        left: pinOffset !== undefined ? `${pinOffset}px` : undefined,
+                                        right: pinOffset !== undefined ? `${pinOffset}px` : '0px',
+                                        zIndex: 25,
+                                    } : isPinnedLeft ? {
+                                        position: 'sticky',
+                                        left: pinOffset !== undefined ? `${pinOffset}px` : '0px',
                                         zIndex: 25,
                                     } : {};
 
@@ -206,7 +212,8 @@ export function DataTable<T extends { id?: any } = Record<string, unknown>>({
                                                 "h-9 py-1.5 px-3 text-[10.5px] font-bold uppercase text-white dark:text-zinc-200 select-none sticky top-0 bg-primary dark:bg-zinc-800 border-b border-primary/20 dark:border-zinc-700/80 align-middle whitespace-nowrap",
                                                 !isPinned && "z-10",
                                                 isPinned && "z-25 bg-primary dark:bg-zinc-800",
-                                                isLastPinned && "shadow-[4px_0_6px_-2px_rgba(0,0,0,0.18)] border-r border-white/20",
+                                                isPinnedRight && "shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.18)] border-l border-white/20",
+                                                (isLastPinned || (isPinnedLeft && isLastPinned)) && "shadow-[4px_0_6px_-2px_rgba(0,0,0,0.18)] border-r border-white/20",
                                                 isSortable && "cursor-pointer hover:text-white/80 dark:hover:text-white transition-colors",
                                                 col.className
                                             )}
@@ -307,13 +314,19 @@ export function DataTable<T extends { id?: any } = Record<string, unknown>>({
                                                     </td>
                                                 )}
                                                 {columns.map((col, colIdx) => {
-                                                    const isPinned = Boolean(col.pinned);
+                                                    const isPinnedRight = col.pinned === 'right';
+                                                    const isPinnedLeft = col.pinned === 'left' || (col.pinned === true && !isPinnedRight);
+                                                    const isPinned = isPinnedLeft || isPinnedRight;
                                                     const pinOffset = col.pinOffset;
                                                     const isLastPinned = col.isLastPinned;
 
-                                                    const tdStyles: React.CSSProperties = isPinned ? {
+                                                    const tdStyles: React.CSSProperties = isPinnedRight ? {
                                                         position: 'sticky',
-                                                        left: pinOffset !== undefined ? `${pinOffset}px` : undefined,
+                                                        right: pinOffset !== undefined ? `${pinOffset}px` : '0px',
+                                                        zIndex: 15,
+                                                    } : isPinnedLeft ? {
+                                                        position: 'sticky',
+                                                        left: pinOffset !== undefined ? `${pinOffset}px` : '0px',
                                                         zIndex: 15,
                                                     } : {};
 
@@ -324,7 +337,8 @@ export function DataTable<T extends { id?: any } = Record<string, unknown>>({
                                                             className={cn(
                                                                 "py-2 px-3 align-middle text-xs font-normal text-text-main whitespace-nowrap",
                                                                 isPinned && "sticky z-15 bg-white dark:bg-zinc-900 group-hover:bg-slate-50 dark:group-hover:bg-zinc-800 transition-colors",
-                                                                isLastPinned && "shadow-[4px_0_6px_-2px_rgba(0,0,0,0.12)] border-r border-surface-border",
+                                                                isPinnedRight && "shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.12)] border-l border-surface-border/70",
+                                                                (isLastPinned || (isPinnedLeft && isLastPinned)) && "shadow-[4px_0_6px_-2px_rgba(0,0,0,0.12)] border-r border-surface-border",
                                                                 col.className
                                                             )}
                                                         >

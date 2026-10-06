@@ -146,6 +146,10 @@ export const API_ENDPOINTS = {
 
     // 9. Reports & Audit Trail
     REPORTS: {
+        DIVISIONS: '/api/admin/reports/divisions',
+        EXPORT_DIVISIONS: '/api/admin/reports/divisions/export',
+        TEAM: '/api/admin/reports/team',
+        EXPORT_TEAM: '/api/admin/reports/team/export',
         ANALYTICS: '/api/admin/reports/analytics',
         AUDIT: '/api/admin/reports/audit',
         EXPORT_ANALYTICS: '/api/admin/reports/analytics/export',

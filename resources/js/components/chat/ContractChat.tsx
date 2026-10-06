@@ -4,6 +4,7 @@ import DocumentPreviewModal from '@/pages/contracts/components/modals/DocumentPr
 import { Contract, ContractMessage } from '@/pages/contracts/types';
 import { contractApi } from '@/pages/contracts/utils';
 import { discussionsApi } from '@/api';
+import { usePage } from '@inertiajs/react';
 import { ArrowDown, MessageSquare, RefreshCw, Search, X } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ChatEditor } from './components/ChatEditor';
@@ -18,6 +19,28 @@ interface ContractChatProps {
 
 export default function ContractChat({ contract, meId, users = [], onNewMessage }: ContractChatProps) {
     const { showToast } = useToast();
+    const { auth } = usePage<any>().props;
+    const authUser = auth?.user;
+
+    const currentUserProfile = useMemo(() => {
+        const uid = meId || authUser?.id || '';
+        const name = authUser?.name || 'Anda';
+        let initials = authUser?.initials || '';
+        if (!initials && name) {
+            const words = name.trim().split(/\s+/);
+            initials = words.length >= 2
+                ? (words[0][0] + words[1][0]).toUpperCase()
+                : name.substring(0, 2).toUpperCase();
+        }
+        return {
+            id: uid,
+            name: name,
+            initials: initials || 'ME',
+            avatar: authUser?.avatar || authUser?.avatar_url || authUser?.image_src || '',
+            avatar_url: authUser?.avatar || authUser?.avatar_url || authUser?.image_src || '',
+            role: authUser?.role || authUser?.role_name || '',
+        };
+    }, [meId, authUser]);
     const [input, setInput] = useState('');
     const [search, setSearch] = useState('');
     const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -454,19 +477,16 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
         const tempId = `temp_${Date.now()}`;
         const sentContent = textContent || htmlContent;
 
+        const currentUserId = meId || authUser?.id || '';
         const optimisticMsg: ContractMessage = {
             id: tempId,
             contract_id: contract.id,
-            user_id: meId,
+            user_id: currentUserId,
             message: sentContent,
             created_at: new Date().toISOString().replace('T', ' ').substring(0, 19),
-            read_by: [meId],
+            read_by: [currentUserId],
             reactions: [],
-            user: {
-                id: meId,
-                name: 'Anda',
-                initials: 'ME',
-            },
+            user: currentUserProfile,
         };
 
         setMessages((prev) => [...prev, optimisticMsg]);

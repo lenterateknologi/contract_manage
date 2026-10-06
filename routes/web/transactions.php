@@ -14,11 +14,26 @@ Route::controller(ContractExportController::class)->group(function () {
 });
 
 Route::controller(ContractController::class)->group(function () {
-    Route::get('dashboard', 'contractsView')->defaults('view', 'dashboard')->name('dashboard');
+    Route::prefix('dashboard')->group(function () {
+        Route::get('/', 'contractsView')->defaults('view', 'dashboard')->name('dashboard');
+        Route::get('/ringkasan', 'contractsView')->defaults('view', 'dashboard')->defaults('tab', 'overview')->name('dashboard.ringkasan');
+        Route::get('/ringkasan-kontrak', 'contractsView')->defaults('view', 'dashboard')->defaults('tab', 'overview_contract')->name('dashboard.ringkasan-kontrak');
+        Route::get('/kontrak', 'contractsView')->defaults('view', 'dashboard')->defaults('tab', 'overview_contract');
+        Route::get('/ringkasan-non-kontrak', 'contractsView')->defaults('view', 'dashboard')->defaults('tab', 'overview_non_contract')->name('dashboard.ringkasan-non-kontrak');
+        Route::get('/non-kontrak', 'contractsView')->defaults('view', 'dashboard')->defaults('tab', 'overview_non_contract');
+        Route::get('/ringkasan-nda', 'contractsView')->defaults('view', 'dashboard')->defaults('tab', 'overview_nda')->name('dashboard.ringkasan-nda');
+        Route::get('/nda', 'contractsView')->defaults('view', 'dashboard')->defaults('tab', 'overview_nda');
+        Route::get('/beban-kerja', 'contractsView')->defaults('view', 'dashboard')->defaults('tab', 'workload')->name('dashboard.beban-kerja');
+        Route::get('/workload', 'contractsView')->defaults('view', 'dashboard')->defaults('tab', 'workload');
+        Route::get('/master-data', 'contractsView')->defaults('view', 'dashboard')->defaults('tab', 'master_data')->name('dashboard.master-data');
+        Route::get('/masterdata', 'contractsView')->defaults('view', 'dashboard')->defaults('tab', 'master_data');
+    });
 
     Route::prefix('contracts')->group(function () {
         Route::get('/', 'contractsView')->defaults('view', 'contracts')->name('contracts');
         Route::get('/mine', 'contractsView')->defaults('view', 'mine')->name('contracts.mine');
+        Route::get('/organization', 'contractsView')->defaults('view', 'organization')->name('contracts.organization');
+        Route::get('/org-group', 'contractsView')->defaults('view', 'organization');
         Route::get('/pending', 'contractsView')->defaults('view', 'pending')->name('pending');
         Route::get('/f1', 'contractsView')->defaults('view', 'f1')->name('f1');
         Route::get('/f2', 'contractsView')->defaults('view', 'f2')->name('f2');

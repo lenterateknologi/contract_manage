@@ -211,11 +211,48 @@ class ResourceController extends Controller
         $created = $modelClass::create($saveData);
 
         if ($resourceSlug === 'dashboard-types' && $request->has('authorities')) {
+            $authorities = (array) $request->input('authorities', []);
             $this->authoritySyncService->sync(
                 Authority::CONTEXT_DASHBOARD_TYPE,
                 $created->id,
-                (array) $request->input('authorities', [])
+                $authorities
             );
+
+            $userIds = [];
+            $roleIds = [];
+            $divIds = [];
+            $deptIds = [];
+            $locIds = [];
+            $compGroupIds = [];
+            $compIds = [];
+            $regIds = [];
+            $orgGroupIds = [];
+
+            foreach ($authorities as $auth) {
+                if (($auth['authority_type'] ?? '') === 'user' && ! empty($auth['user_id'])) {
+                    $userIds[] = (string) $auth['user_id'];
+                } elseif (($auth['authority_type'] ?? '') === 'group') {
+                    if (! empty($auth['role_id'])) $roleIds[] = (string) $auth['role_id'];
+                    if (! empty($auth['division_id'])) $divIds[] = (string) $auth['division_id'];
+                    if (! empty($auth['department_id'])) $deptIds[] = (string) $auth['department_id'];
+                    if (! empty($auth['location_id'])) $locIds[] = (string) $auth['location_id'];
+                    if (! empty($auth['company_group_id'])) $compGroupIds[] = (string) $auth['company_group_id'];
+                    if (! empty($auth['company_id'])) $compIds[] = (string) $auth['company_id'];
+                    if (! empty($auth['region_id'])) $regIds[] = (string) $auth['region_id'];
+                    if (! empty($auth['organization_group_id'])) $orgGroupIds[] = (string) $auth['organization_group_id'];
+                }
+            }
+
+            $created->user_ids = array_values(array_unique($userIds));
+            $created->role_ids = array_values(array_unique($roleIds));
+            $created->division_ids = array_values(array_unique($divIds));
+            $created->department_ids = array_values(array_unique($deptIds));
+            $created->location_ids = array_values(array_unique($locIds));
+            $created->company_group_ids = array_values(array_unique($compGroupIds));
+            $created->company_ids = array_values(array_unique($compIds));
+            $created->region_ids = array_values(array_unique($regIds));
+            $created->org_group_ids = array_values(array_unique($orgGroupIds));
+            $created->save();
         } elseif ($resourceSlug === 'contract-sla-configs' && $request->has('authorities')) {
             $this->authoritySyncService->sync(
                 Authority::CONTEXT_SLA_OVERDUE,
@@ -244,6 +281,78 @@ class ResourceController extends Controller
 
         if ($resourceSlug === 'dashboard-types' && $record instanceof \App\Models\DashboardType) {
             $authorities = $this->authoritySyncService->getForContext(Authority::CONTEXT_DASHBOARD_TYPE, $record->id);
+            if ($authorities->isEmpty()) {
+                $constructed = [];
+                $userIds = \App\Models\DashboardType::normalizeIds($record->user_ids);
+                foreach ($userIds as $uid) {
+                    $constructed[] = [
+                        'id' => (string) \Illuminate\Support\Str::uuid(),
+                        'authority_type' => 'user',
+                        'user_id' => $uid,
+                        'user' => \App\Models\User::select('id', 'name', 'email', 'nik', 'username', 'role_id', 'department_id', 'division_id')->find($uid),
+                    ];
+                }
+
+                $roleIds = \App\Models\DashboardType::normalizeIds($record->role_ids);
+                $divIds = \App\Models\DashboardType::normalizeIds($record->division_ids);
+                $deptIds = \App\Models\DashboardType::normalizeIds($record->department_ids);
+                $locIds = \App\Models\DashboardType::normalizeIds($record->location_ids);
+                $compGroupIds = \App\Models\DashboardType::normalizeIds($record->company_group_ids);
+                $compIds = \App\Models\DashboardType::normalizeIds($record->company_ids);
+                $regIds = \App\Models\DashboardType::normalizeIds($record->region_ids);
+                $orgGroupIds = \App\Models\DashboardType::normalizeIds($record->org_group_ids);
+
+                $hasGroupDims = ! empty($roleIds) || ! empty($divIds) || ! empty($deptIds) || ! empty($locIds) || ! empty($compGroupIds) || ! empty($compIds) || ! empty($regIds) || ! empty($orgGroupIds);
+                if ($hasGroupDims) {
+                    $rList = ! empty($roleIds) ? $roleIds : [null];
+                    $dList = ! empty($deptIds) ? $deptIds : [null];
+                    $dvList = ! empty($divIds) ? $divIds : [null];
+                    $lList = ! empty($locIds) ? $locIds : [null];
+                    $cgList = ! empty($compGroupIds) ? $compGroupIds : [null];
+                    $cList = ! empty($compIds) ? $compIds : [null];
+                    $rgList = ! empty($regIds) ? $regIds : [null];
+                    $ogList = ! empty($orgGroupIds) ? $orgGroupIds : [null];
+
+                    foreach ($rList as $r) {
+                        foreach ($dList as $d) {
+                            foreach ($dvList as $dv) {
+                                foreach ($lList as $l) {
+                                    foreach ($cgList as $cg) {
+                                        foreach ($cList as $cp) {
+                                            foreach ($rgList as $rg) {
+                                                foreach ($ogList as $og) {
+                                                    $constructed[] = [
+                                                        'id' => (string) \Illuminate\Support\Str::uuid(),
+                                                        'authority_type' => 'group',
+                                                        'role_id' => $r,
+                                                        'department_id' => $d,
+                                                        'division_id' => $dv,
+                                                        'location_id' => $l,
+                                                        'company_group_id' => $cg,
+                                                        'company_id' => $cp,
+                                                        'region_id' => $rg,
+                                                        'organization_group_id' => $og,
+                                                        'role' => $r ? \App\Models\Role::select('id', 'name')->find($r) : null,
+                                                        'department' => $d ? \App\Models\Department::select('id', 'name', 'code')->find($d) : null,
+                                                        'division' => $dv ? \App\Models\Division::select('id', 'name', 'code')->find($dv) : null,
+                                                        'location' => $l ? \App\Models\Location::select('id', 'name', 'code')->find($l) : null,
+                                                        'companyGroup' => $cg ? \App\Models\CompanyGroup::select('id', 'name')->find($cg) : null,
+                                                        'company' => $cp ? \App\Models\Company::select('id', 'name')->find($cp) : null,
+                                                        'region' => $rg ? \App\Models\Region::select('id', 'name')->find($rg) : null,
+                                                        'organizationGroup' => $og ? \App\Models\OrganizationGroup::select('id', 'name', 'code')->find($og) : null,
+                                                    ];
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                $authorities = collect($constructed);
+            }
             $record->setAttribute('authorities', $authorities);
 
             $extraProps = [
@@ -415,11 +524,48 @@ class ResourceController extends Controller
         $record->update($saveData);
 
         if ($resourceSlug === 'dashboard-types' && $request->has('authorities')) {
+            $authorities = (array) $request->input('authorities', []);
             $this->authoritySyncService->sync(
                 Authority::CONTEXT_DASHBOARD_TYPE,
                 $record->id,
-                (array) $request->input('authorities', [])
+                $authorities
             );
+
+            $userIds = [];
+            $roleIds = [];
+            $divIds = [];
+            $deptIds = [];
+            $locIds = [];
+            $compGroupIds = [];
+            $compIds = [];
+            $regIds = [];
+            $orgGroupIds = [];
+
+            foreach ($authorities as $auth) {
+                if (($auth['authority_type'] ?? '') === 'user' && ! empty($auth['user_id'])) {
+                    $userIds[] = (string) $auth['user_id'];
+                } elseif (($auth['authority_type'] ?? '') === 'group') {
+                    if (! empty($auth['role_id'])) $roleIds[] = (string) $auth['role_id'];
+                    if (! empty($auth['division_id'])) $divIds[] = (string) $auth['division_id'];
+                    if (! empty($auth['department_id'])) $deptIds[] = (string) $auth['department_id'];
+                    if (! empty($auth['location_id'])) $locIds[] = (string) $auth['location_id'];
+                    if (! empty($auth['company_group_id'])) $compGroupIds[] = (string) $auth['company_group_id'];
+                    if (! empty($auth['company_id'])) $compIds[] = (string) $auth['company_id'];
+                    if (! empty($auth['region_id'])) $regIds[] = (string) $auth['region_id'];
+                    if (! empty($auth['organization_group_id'])) $orgGroupIds[] = (string) $auth['organization_group_id'];
+                }
+            }
+
+            $record->user_ids = array_values(array_unique($userIds));
+            $record->role_ids = array_values(array_unique($roleIds));
+            $record->division_ids = array_values(array_unique($divIds));
+            $record->department_ids = array_values(array_unique($deptIds));
+            $record->location_ids = array_values(array_unique($locIds));
+            $record->company_group_ids = array_values(array_unique($compGroupIds));
+            $record->company_ids = array_values(array_unique($compIds));
+            $record->region_ids = array_values(array_unique($regIds));
+            $record->org_group_ids = array_values(array_unique($orgGroupIds));
+            $record->save();
         } elseif ($resourceSlug === 'contract-sla-configs' && $request->has('authorities')) {
             $this->authoritySyncService->sync(
                 Authority::CONTEXT_SLA_OVERDUE,

@@ -67,6 +67,10 @@ class ChatController extends Controller
             return $this->errorResponse('Kontrak berstatus DRAFT belum memiliki fitur chat.', 403);
         }
 
+        if (! $this->chatService->isUserInvolved($contract, Auth::user())) {
+            return $this->errorResponse('Anda tidak memiliki akses ke diskusi kontrak ini.', 403);
+        }
+
         $limit = $request->integer('limit', $request->integer('per_page', 50));
         $search = $request->query('search');
 
@@ -83,6 +87,10 @@ class ChatController extends Controller
         $contract = Contract::findOrFail($contractId);
         if (strtoupper($contract->status) === 'DRAFT') {
             return $this->errorResponse('Kontrak berstatus DRAFT belum memiliki fitur chat.', 403);
+        }
+
+        if (! $this->chatService->isUserInvolved($contract, Auth::user())) {
+            return $this->errorResponse('Anda tidak memiliki akses ke diskusi kontrak ini.', 403);
         }
 
         $limit = $request->integer('limit', 100);
@@ -124,6 +132,10 @@ class ChatController extends Controller
             return $this->errorResponse('Kontrak berstatus DRAFT belum dapat menggunakan fitur chat.', 403);
         }
 
+        if (! $this->chatService->isUserInvolved($contract, Auth::user())) {
+            return $this->errorResponse('Anda tidak memiliki akses ke diskusi kontrak ini.', 403);
+        }
+
         $msg = $this->chatService->sendMessage(
             $contract,
             Auth::user(),
@@ -158,6 +170,11 @@ class ChatController extends Controller
     public function markAsRead(string $contractId): JsonResponse
     {
         $contract = Contract::findOrFail($contractId);
+
+        if (! $this->chatService->isUserInvolved($contract, Auth::user())) {
+            return $this->errorResponse('Anda tidak memiliki akses ke diskusi kontrak ini.', 403);
+        }
+
         $count = $this->chatService->markAsRead($contract, Auth::user());
 
         return $this->successResponse(['marked' => $count], 'Messages marked as read');

@@ -38,6 +38,9 @@ export interface PageFilterProps {
 
 const ensureArray = (val: any): string[] => {
     if (val === undefined || val === null || val === '') return [];
+    if (typeof val === 'string' && val.includes(',')) {
+        return val.split(',').map((v) => v.trim()).filter(Boolean);
+    }
     const arr = Array.isArray(val) ? val : [val];
     return arr.filter((v) => v !== undefined && v !== null && v !== '').map(String);
 };

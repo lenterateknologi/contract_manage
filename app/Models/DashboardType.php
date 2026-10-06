@@ -76,6 +76,39 @@ class DashboardType extends Model
                 $model->department_id = null;
             }
         });
+
+        static::saved(function ($model) {
+            if ($model->isDirty('user_ids')) {
+                $newUserIds = is_array($model->user_ids) ? array_map('strval', array_filter($model->user_ids)) : [];
+                $oldUserIds = is_array($model->getOriginal('user_ids')) ? array_map('strval', array_filter($model->getOriginal('user_ids'))) : [];
+
+                $added = array_diff($newUserIds, $oldUserIds);
+                if (! empty($added)) {
+                    User::whereIn('id', $added)->update(['dashboard_type_id' => $model->id]);
+                    foreach ($added as $uid) {
+                        Authority::firstOrCreate([
+                            'context_type' => Authority::CONTEXT_DASHBOARD_TYPE,
+                            'context_id' => $model->id,
+                            'authority_type' => 'user',
+                            'user_id' => $uid,
+                        ], [
+                            'is_active' => true,
+                            'sequence' => 1,
+                        ]);
+                    }
+                }
+
+                $removed = array_diff($oldUserIds, $newUserIds);
+                if (! empty($removed)) {
+                    User::whereIn('id', $removed)->where('dashboard_type_id', $model->id)->update(['dashboard_type_id' => null]);
+                    Authority::where('context_type', Authority::CONTEXT_DASHBOARD_TYPE)
+                        ->where('context_id', $model->id)
+                        ->where('authority_type', 'user')
+                        ->whereIn('user_id', $removed)
+                        ->forceDelete();
+                }
+            }
+        });
     }
 
     protected $casts = [
@@ -473,17 +506,17 @@ class DashboardType extends Model
         }
 
         return [
-            'can_change_company_group' => false,
+            'can_change_company_group' => ! $this->scope_to_user_company_group,
             'allowed_company_groups' => self::normalizeIds($this->company_group_ids),
-            'can_change_region' => false,
+            'can_change_region' => ! $this->scope_to_user_region,
             'allowed_regions' => self::normalizeIds($this->region_ids),
             'can_change_location' => false,
             'allowed_locations' => self::normalizeIds($this->location_ids),
-            'can_change_company' => false,
+            'can_change_company' => ! $this->scope_to_user_company,
             'allowed_companies' => self::normalizeIds($this->company_ids),
-            'can_change_division' => false,
+            'can_change_division' => ! $this->scope_to_user_division,
             'allowed_divisions' => self::normalizeIds($this->division_ids),
-            'can_change_department' => false,
+            'can_change_department' => ! $this->scope_to_user_department,
             'allowed_departments' => $allowedDepartments,
             'org_group_ids' => $orgGroupIds,
             'location_ids' => self::normalizeIds($this->location_ids),

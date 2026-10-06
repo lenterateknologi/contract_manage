@@ -101,71 +101,15 @@ class ContractDashboardQuery
     public function resolveDashboardConfig(?User $user): array
     {
         $dashboardConfig = null;
-        if ($user && $user->role_id) {
-            $userRole = $user->roleRelation;
-            $roleDashboardTypeId = data_get($userRole?->getAttributes(), 'dashboard_type_id');
-            if ($roleDashboardTypeId) {
-                $dashboardConfig = DashboardType::find($roleDashboardTypeId);
+        if ($user) {
+            $dashboardTypeId = $user->dashboard_type_id ?? data_get($user->getAttributes(), 'dashboard_type_id');
+            if (! empty($dashboardTypeId)) {
+                $dashboardConfig = DashboardType::find($dashboardTypeId);
             }
-        }
 
-        if (! $dashboardConfig && $user) {
-            $dashboardConfig = DashboardType::all()->filter(function ($dt) use ($user) {
-                $rawRoles = $dt->role_ids ?? data_get($dt->getAttributes(), 'role_ids');
-                $roleIds = DashboardType::normalizeIds($rawRoles);
-                if ($rawRoles === null && ! empty($dt->role_id)) {
-                    $roleIds = [$dt->role_id];
-                }
-
-                $rawDivisions = $dt->division_ids ?? data_get($dt->getAttributes(), 'division_ids');
-                $divisionIds = DashboardType::normalizeIds($rawDivisions);
-                if ($rawDivisions === null && ! empty($dt->division_id)) {
-                    $divisionIds = [$dt->division_id];
-                }
-
-                $rawDepartments = $dt->department_ids ?? data_get($dt->getAttributes(), 'department_ids');
-                $departmentIds = DashboardType::normalizeIds($rawDepartments);
-                if ($rawDepartments === null && ! empty($dt->department_id)) {
-                    $departmentIds = [$dt->department_id];
-                }
-
-                $roleMatch = empty($roleIds) || in_array((string) $user->role_id, array_map('strval', $roleIds));
-                $divisionMatch = empty($divisionIds) || in_array((string) $user->division_id, array_map('strval', $divisionIds));
-                $departmentMatch = empty($departmentIds) || in_array((string) $user->department_id, array_map('strval', $departmentIds));
-
-                return $roleMatch && $divisionMatch && $departmentMatch;
-            })->sortByDesc(function ($dt) {
-                $rawRoles = $dt->role_ids ?? data_get($dt->getAttributes(), 'role_ids');
-                $roleIds = DashboardType::normalizeIds($rawRoles);
-                if ($rawRoles === null && ! empty($dt->role_id)) {
-                    $roleIds = [$dt->role_id];
-                }
-
-                $rawDivisions = $dt->division_ids ?? data_get($dt->getAttributes(), 'division_ids');
-                $divisionIds = DashboardType::normalizeIds($rawDivisions);
-                if ($rawDivisions === null && ! empty($dt->division_id)) {
-                    $divisionIds = [$dt->division_id];
-                }
-
-                $rawDepartments = $dt->department_ids ?? data_get($dt->getAttributes(), 'department_ids');
-                $departmentIds = DashboardType::normalizeIds($rawDepartments);
-                if ($rawDepartments === null && ! empty($dt->department_id)) {
-                    $departmentIds = [$dt->department_id];
-                }
-
-                $score = 0;
-                if (! empty($roleIds)) {
-                    $score += 4;
-                }
-                if (! empty($divisionIds)) {
-                    $score += 2;
-                }
-                if (! empty($departmentIds)) {
-                    $score += 1;
-                }
-
-                return $score;
-            })->first();
+            if (! $dashboardConfig) {
+                $dashboardConfig = DashboardType::resolveForUser($user);
+            }
         }
 
         return [

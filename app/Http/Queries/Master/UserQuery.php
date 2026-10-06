@@ -41,10 +41,11 @@ class UserQuery
     /**
      * Get a simple list of users for dropdowns/options.
      */
-    public function options(): Builder
+    public function options(): \Illuminate\Database\Query\Builder
     {
-        return User::query()
-            ->select(['id', 'name', 'company_id', 'division_id', 'role_id'])
+        return DB::table('m_users')
+            ->select(['id', 'name'])
+            ->whereNull('deleted_at')
             ->orderBy('name');
     }
 }

@@ -53,7 +53,7 @@ export const StatusBadge = ({
     return (
         <span
             className={cn(
-                'inline-flex items-center rounded-full font-semibold tracking-tight uppercase whitespace-nowrap shadow-xs border transition-colors',
+                'inline-flex items-center rounded-[4px] font-semibold tracking-tight uppercase whitespace-nowrap shadow-xs border transition-colors',
                 'bg-[color-mix(in_srgb,var(--status-color)_12%,transparent)]',
                 'dark:bg-[color-mix(in_srgb,var(--status-color)_18%,#18181b)]',
                 'border-[color-mix(in_srgb,var(--status-color)_24%,transparent)]',

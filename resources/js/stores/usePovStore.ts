@@ -60,6 +60,7 @@ export const FALLBACK_NAV_OPTIONS: NavPovOption[] = [
         allowedRoutes: [
             '/dashboard',
             '/contracts',
+            '/contracts/organization',
             '/contracts/mine',
             '/contracts/pending',
             '/contracts/expiry',
@@ -93,6 +94,7 @@ export const FALLBACK_NAV_OPTIONS: NavPovOption[] = [
         allowedRoutes: [
             '/dashboard',
             '/contracts',
+            '/contracts/organization',
             '/contracts/mine',
             '/contracts/pending',
             '/admin/chat',
@@ -109,7 +111,7 @@ export const FALLBACK_NAV_OPTIONS: NavPovOption[] = [
         description: 'Pembuatan pengajuan baru, dokumen & diskusi',
         allowedRoutes: [
             '/dashboard',
-            '/contracts',
+            '/contracts/organization',
             '/contracts/mine',
             '/contracts/pending',
             '/admin/chat',

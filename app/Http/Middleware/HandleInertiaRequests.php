@@ -273,19 +273,27 @@ class HandleInertiaRequests extends Middleware
                 )
                 ->get();
 
+            $currentUser = $request->user();
+            $canViewGlobalContracts = $currentUser && ($currentUser->isAdmin() || $currentUser->isSuperAdmin() || $currentUser->isLegal());
+            if (! $canViewGlobalContracts) {
+                // Non-legal users: hide global /contracts and /admin/reports/divisions, show /contracts/organization as Semua Pengajuan
+                $modules = $modules->reject(fn ($m) => in_array($m->route, ['/contracts', '/admin/contracts', '/admin/reports/divisions']));
+            } else {
+                // Legal & Admin users: hide /contracts/organization, show global /contracts as Semua Pengajuan
+                $modules = $modules->reject(fn ($m) => in_array($m->route, ['/contracts/organization', '/contracts/org-group']));
+            }
+
             // compute is_used AND is_active counts for Portal master data
             $getPortalCount = function (string $table): string {
                 $hasIsUsed = Schema::hasColumn($table, 'is_used');
                 $hasIsActive = Schema::hasColumn($table, 'is_active');
 
-                $condition = '1=1';
-                if ($hasIsUsed && $hasIsActive) {
-                    $condition = 'is_used = true AND is_active = true';
-                } elseif ($hasIsUsed) {
-                    $condition = 'is_used = true';
-                } elseif ($hasIsActive) {
-                    $condition = 'is_active = true';
-                }
+                $condition = match (true) {
+                    $hasIsUsed && $hasIsActive => 'is_used = true AND is_active = true',
+                    $hasIsUsed => 'is_used = true',
+                    $hasIsActive => 'is_active = true',
+                    default => '1=1',
+                };
 
                 $res = DB::table($table)
                     ->whereNull('deleted_at')
@@ -344,7 +352,9 @@ class HandleInertiaRequests extends Middleware
                 $allNonKontrak = (clone $scopedActiveQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $nonKontrakIds)->orWhereIn('contract_type_parent_id', $nonKontrakIds))->count();
                 $allNda = (clone $scopedActiveQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $ndaIds)->orWhereIn('contract_type_parent_id', $ndaIds))->count();
 
-                $myBaseQuery = DB::table('t_contracts')->whereNull('deleted_at')->where('created_by', $userId);
+                $myBaseQuery = DB::table('t_contracts')->whereNull('deleted_at')->where(function ($q) use ($userId) {
+                    $q->where('created_by', $userId)->orWhere('initiated_by_id', $userId);
+                });
                 $myTotal = (clone $myBaseQuery)->whereRaw("UPPER(status) != 'ARCHIVED'")->whereNull('closed_at')->count();
                 $myKontrak = (clone $myBaseQuery)->whereRaw("UPPER(status) != 'ARCHIVED'")->whereNull('closed_at')->where(fn ($q) => $q->whereIn('contract_type_id', $kontrakIds)->orWhereIn('contract_type_parent_id', $kontrakIds))->count();
                 $myNonKontrak = (clone $myBaseQuery)->whereRaw("UPPER(status) != 'ARCHIVED'")->whereNull('closed_at')->where(fn ($q) => $q->whereIn('contract_type_id', $nonKontrakIds)->orWhereIn('contract_type_parent_id', $nonKontrakIds))->count();
@@ -381,12 +391,26 @@ class HandleInertiaRequests extends Middleware
                 $expiryNonKontrak = (clone $scopedExpiryQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $nonKontrakIds)->orWhereIn('contract_type_parent_id', $nonKontrakIds))->count();
                 $expiryNda = (clone $scopedExpiryQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $ndaIds)->orWhereIn('contract_type_parent_id', $ndaIds))->count();
 
+                // Scoped base query for organization group contracts
+                $scopedOrgQuery = app(\App\Http\Queries\Contract\ContractListQuery::class)->build(new Request(), 'organization');
+                $scopedOrgActiveQuery = (clone $scopedOrgQuery)->whereRaw("UPPER(status) != 'ARCHIVED'")->whereNull('closed_at');
+                $orgTotal = (clone $scopedOrgActiveQuery)->count();
+                $orgKontrak = (clone $scopedOrgActiveQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $kontrakIds)->orWhereIn('contract_type_parent_id', $kontrakIds))->count();
+                $orgNonKontrak = (clone $scopedOrgActiveQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $nonKontrakIds)->orWhereIn('contract_type_parent_id', $nonKontrakIds))->count();
+                $orgNda = (clone $scopedOrgActiveQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $ndaIds)->orWhereIn('contract_type_parent_id', $ndaIds))->count();
+
                 return [
                     'all' => [
                         'total' => $allTotal,
                         'kontrak' => $allKontrak,
                         'non_kontrak' => $allNonKontrak,
                         'nda' => $allNda,
+                    ],
+                    'organization' => [
+                        'total' => $orgTotal,
+                        'kontrak' => $orgKontrak,
+                        'non_kontrak' => $orgNonKontrak,
+                        'nda' => $orgNda,
                     ],
                     'mine' => [
                         'total' => $myTotal,
@@ -413,31 +437,40 @@ class HandleInertiaRequests extends Middleware
                     $first = $items->first();
                     $sortedItems = $items->map(function ($module) use ($portalUsedCounts, $contractCounts) {
                         $route = $module->route;
-                        $title = $module->name;
-                        $children = null;
-                        $badge = $portalUsedCounts[$module->route] ?? null;
-
-                        if ($route === '/contracts' || $route === '/admin/contracts') {
-                            $title = 'Semua Pengajuan';
-                            $badge = $contractCounts['all']['total'] ?? 0;
-                        } elseif ($route === '/contracts/mine') {
-                            $title = 'Pengajuan Saya';
-                            $badge = $contractCounts['mine']['total'] ?? 0;
-                        } elseif ($route === '/contracts/pending') {
-                            $title = 'Persetujuan Saya';
-                            $badge = $contractCounts['pending']['total'] ?? 0;
-                        } elseif ($route === '/contracts/expiry') {
-                            $title = 'Masa Berlaku Dokumen';
-                            $badge = $contractCounts['expiry']['total'] ?? 0;
-                        }
+                        $meta = match ($route) {
+                            '/contracts', '/admin/contracts' => [
+                                'title' => 'Semua Pengajuan',
+                                'badge' => $contractCounts['all']['total'] ?? 0,
+                            ],
+                            '/contracts/organization', '/contracts/org-group' => [
+                                'title' => 'Semua Pengajuan',
+                                'badge' => $contractCounts['organization']['total'] ?? 0,
+                            ],
+                            '/contracts/mine' => [
+                                'title' => 'Pengajuan Saya',
+                                'badge' => $contractCounts['mine']['total'] ?? 0,
+                            ],
+                            '/contracts/pending' => [
+                                'title' => 'Persetujuan Saya',
+                                'badge' => $contractCounts['pending']['total'] ?? 0,
+                            ],
+                            '/contracts/expiry' => [
+                                'title' => 'Masa Berlaku Dokumen',
+                                'badge' => $contractCounts['expiry']['total'] ?? 0,
+                            ],
+                            default => [
+                                'title' => $module->name,
+                                'badge' => $portalUsedCounts[$route] ?? null,
+                            ],
+                        };
 
                         return [
-                            'title' => $title,
+                            'title' => $meta['title'],
                             'url' => $route,
                             'description' => $module->description,
                             'icon' => $module->icon,
                             'sequence' => $module->module_sequence,
-                            'badge' => $badge,
+                            'badge' => $meta['badge'],
                             'children' => null,
                         ];
                     })->values()->all();

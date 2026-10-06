@@ -13,6 +13,8 @@ use App\Http\Controllers\Master\OrganizationTreeController;
 use App\Http\Controllers\Report\ReportController;
 use App\Http\Controllers\System\EmailTestController;
 use App\Http\Controllers\Template\TemplateController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -128,6 +130,42 @@ Route::middleware(['admin'])->prefix('admin')->group(function () {
     });
 
     Route::prefix('reports')->group(function () {
+        Route::get('/', function (Request $request) {
+            $user = $request->user();
+            if ($user && ($user->isAdmin() || $user->isSuperAdmin() || $user->isLegal())) {
+                return redirect()->route('admin.reports.divisions');
+            }
+
+            return redirect()->route('admin.reports.analytics');
+        })->name('admin.reports.index');
+
+        Route::get('/divisions', function (Request $request) {
+            $user = $request->user();
+            if (! ($user && ($user->isAdmin() || $user->isSuperAdmin() || $user->isLegal()))) {
+                abort(403, 'Akses ditolak. Laporan ini hanya dapat diakses oleh bagian Legal.');
+            }
+
+            return Inertia::render('reports/divisions', [
+                'breadcrumbs' => [
+                    ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
+                    ['title' => 'Laporan Pengajuan Org Group', 'href' => route('admin.reports.divisions'), 'description' => 'Rekapitulasi dan tren jumlah pengajuan per organization group setiap bulan.', 'icon' => 'Network'],
+                ],
+            ]);
+        })->name('admin.reports.divisions');
+
+        Route::get('/team', function () {
+            return Inertia::render('reports/team', [
+                'breadcrumbs' => [
+                    ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
+                    ['title' => 'Laporan Pengajuan Tim', 'href' => route('admin.reports.team'), 'description' => 'Rekapitulasi bulanan jumlah pengajuan kontrak per nama anggota tim / divisi.', 'icon' => 'Users'],
+                ],
+            ]);
+        })->name('admin.reports.team');
+
+        Route::get('/divisi', function () {
+            return redirect()->route('admin.reports.divisions');
+        });
+
         Route::get('/analytics', function () {
             return Inertia::render('reports/analytics', [
                 'breadcrumbs' => [
@@ -147,6 +185,10 @@ Route::middleware(['admin'])->prefix('admin')->group(function () {
         })->name('admin.reports.audit');
 
         Route::controller(ReportController::class)->prefix('api')->group(function () {
+            Route::match(['get', 'post'], '/divisions', 'divisions');
+            Route::get('/divisions/export', 'exportDivisions');
+            Route::match(['get', 'post'], '/team', 'team');
+            Route::get('/team/export', 'exportTeam');
             Route::match(['get', 'post'], '/analytics', 'analytics');
             Route::match(['get', 'post'], '/audit', 'audit');
             Route::match(['get', 'post'], '/data', 'index');

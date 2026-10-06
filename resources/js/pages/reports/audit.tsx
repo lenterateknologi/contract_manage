@@ -168,16 +168,10 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
         () => [
             { label: 'Rentang Waktu', key: 'date', type: 'date-range' },
             {
-                label: 'Aktor (Person)',
+                label: 'Aktor (Pelaku)',
                 key: 'creator_ids',
                 type: 'searchable',
                 options: data?.users.map((u) => ({ label: u.name, value: u.id })) || [],
-            },
-            {
-                label: 'Dokumen Pengajuan',
-                key: 'contract_ids',
-                type: 'searchable',
-                options: data?.contracts?.map((c) => ({ label: c.name, value: c.id })) || [],
             },
             {
                 label: 'Tipe Aksi (Action)',
@@ -207,27 +201,22 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
 
     const renderActionBadge = (action: string) => {
         const act = (action || '').toLowerCase();
-        let colorClass = 'bg-slate-50 text-slate-700 border-slate-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700';
         let IconComponent = Info;
 
         if (act.includes('approve') || act.includes('submit') || act.includes('create') || act.includes('sign')) {
-            colorClass = 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/60';
             IconComponent = act.includes('create') ? PlusCircle : CheckCircle2;
         } else if (act.includes('reject') || act.includes('delete') || act.includes('cancel') || act.includes('terminate')) {
-            colorClass = 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-900/60';
             IconComponent = XCircle;
         } else if (act.includes('revise') || act.includes('revision') || act.includes('assign') || act.includes('update')) {
-            colorClass = 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/60';
             IconComponent = act.includes('assign') ? UserCheck : RefreshCw;
         } else if (act.includes('sent') || act.includes('send')) {
-            colorClass = 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-900/60';
             IconComponent = Send;
         }
 
         return (
-            <span className={cn('inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold tracking-wide border', colorClass)}>
-                <IconComponent size={12} className="shrink-0" />
-                <span>{action}</span>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] text-xs font-semibold tracking-wide border border-neutral-300 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 text-black dark:text-white">
+                <IconComponent size={12} className="shrink-0 text-black dark:text-white" />
+                <span className="text-black dark:text-white">{action}</span>
             </span>
         );
     };
@@ -237,56 +226,9 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
             header: 'Waktu Transaksi',
             accessorKey: 'created_at',
             cell: (row: AuditLog) => (
-                <span className="text-text-main font-medium text-xs whitespace-nowrap">
+                <span className="text-black dark:text-white font-medium text-xs whitespace-nowrap">
                     {formatDateTime(row.created_at)}
                 </span>
-            )
-        },
-        {
-            header: 'No. Form / Kontrak',
-            accessorKey: 'form_no',
-            cell: (row: AuditLog) => (
-                <span className="text-xs font-mono font-bold text-primary whitespace-nowrap">
-                    {row.form_no || row.contract_no || (row.contract_id ? `#${row.contract_id.substring(0, 8)}` : '—')}
-                </span>
-            )
-        },
-        {
-            header: 'Judul Kontrak',
-            accessorKey: 'contract_title',
-            cell: (row: AuditLog) => (
-                <span className="text-text-main font-medium text-xs truncate max-w-[260px] block" title={row.contract_title}>
-                    {row.contract_title || '—'}
-                </span>
-            )
-        },
-        {
-            header: 'Tipe Kontrak',
-            accessorKey: 'contract_type',
-            cell: (row: AuditLog) => (
-                <span className="text-text-main text-xs whitespace-nowrap">
-                    {row.contract_type || '—'}
-                </span>
-            )
-        },
-        {
-            header: 'Tahap Alur Kerja',
-            accessorKey: 'step_name',
-            cell: (row: AuditLog) => (
-                <span className="text-text-main text-xs truncate max-w-[180px] block" title={row.step_name}>
-                    {row.step_name || '—'}
-                </span>
-            )
-        },
-        {
-            header: 'No. Tahap',
-            accessorKey: 'step_number',
-            cell: (row: AuditLog) => (
-                row.step_number ? (
-                    <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[11px] font-bold">
-                        Tahap {row.step_number}
-                    </span>
-                ) : <span className="text-text-desc text-xs">—</span>
             )
         },
         {
@@ -295,29 +237,29 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
             cell: (row: AuditLog) => renderActionBadge(row.action)
         },
         {
+            header: 'No. Form / Kontrak',
+            accessorKey: 'form_no',
+            cell: (row: AuditLog) => (
+                <span className="text-xs font-mono font-bold text-black dark:text-white whitespace-nowrap">
+                    {row.form_no || row.contract_no || (row.contract_id ? `#${row.contract_id.substring(0, 8)}` : '—')}
+                </span>
+            )
+        },
+        {
+            header: 'Judul Kontrak',
+            accessorKey: 'contract_title',
+            cell: (row: AuditLog) => (
+                <span className="text-black dark:text-white font-medium text-xs truncate max-w-[280px] block" title={row.contract_title}>
+                    {row.contract_title || '—'}
+                </span>
+            )
+        },
+        {
             header: 'Pelaksana (Actor)',
             accessorKey: 'actor',
             cell: (row: AuditLog) => (
-                <span className="text-text-main font-medium text-xs whitespace-nowrap">
+                <span className="text-black dark:text-white font-medium text-xs whitespace-nowrap">
                     {row.actor || 'System'}
-                </span>
-            )
-        },
-        {
-            header: 'Jabatan / Role',
-            accessorKey: 'actor_role',
-            cell: (row: AuditLog) => (
-                <span className="text-text-desc text-xs whitespace-nowrap">
-                    {row.actor_role || '—'}
-                </span>
-            )
-        },
-        {
-            header: 'Departemen',
-            accessorKey: 'actor_department',
-            cell: (row: AuditLog) => (
-                <span className="text-text-desc text-xs whitespace-nowrap">
-                    {row.actor_department || '—'}
                 </span>
             )
         },
@@ -325,7 +267,7 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
             header: 'Deskripsi / Catatan',
             accessorKey: 'description',
             cell: (row: AuditLog) => (
-                <span className="text-text-main text-xs truncate max-w-[300px] block" title={row.description}>
+                <span className="text-black dark:text-white text-xs truncate max-w-[320px] block" title={row.description}>
                     {row.description || '—'}
                 </span>
             )
@@ -341,10 +283,10 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
                         e.stopPropagation();
                         handleRowClick(row);
                     }}
-                    className="h-7 w-7 p-0 rounded-md text-text-desc hover:text-primary hover:bg-primary/10 cursor-pointer"
+                    className="h-7 w-7 p-0 rounded-[4px] text-black dark:text-white hover:bg-neutral-200 dark:hover:bg-neutral-800 cursor-pointer"
                     title="Buka detail jejak audit"
                 >
-                    <Eye size={14} />
+                    <Eye size={14} className="text-black dark:text-white" />
                 </Button>
             )
         }
@@ -379,13 +321,13 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
                             size="sm"
                             onClick={handleExport}
                             disabled={exportLoading}
-                            className="h-9 px-3.5 rounded-lg text-xs font-semibold border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-700 dark:text-zinc-200 hover:bg-emerald-50/60 hover:border-emerald-300 hover:text-emerald-700 dark:hover:bg-emerald-950/30 dark:hover:border-emerald-800 dark:hover:text-emerald-400 gap-2 shadow-xs transition-all cursor-pointer"
+                            className="h-8 gap-1.5 rounded-[4px] px-3 text-xs font-semibold border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-700 dark:text-zinc-200 hover:bg-emerald-50/60 hover:border-emerald-300 hover:text-emerald-700 dark:hover:bg-emerald-950/30 dark:hover:border-emerald-800 dark:hover:text-emerald-400 shadow-none transition-all cursor-pointer"
                             title="Export log jejak audit ke format Excel (.xlsx)"
                         >
                             {exportLoading ? (
-                                <Loader2 size={14} className="animate-spin text-emerald-600" />
+                                <Loader2 size={13} className="animate-spin text-emerald-600" />
                             ) : (
-                                <FileSpreadsheet size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                <FileSpreadsheet size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
                             )}
                             <span>{exportLoading ? 'Mengunduh...' : 'Export Excel'}</span>
                         </Button>
@@ -421,104 +363,114 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
 
             {/* Audit Inspector Side Drawer */}
             <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-                <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto p-6 bg-surface-card border-l border-surface-border">
+                <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto p-6 bg-white dark:bg-neutral-900 border-l border-neutral-200 dark:border-neutral-800 text-black dark:text-white rounded-[4px]">
                     {selectedLog && (
                         <div className="space-y-6">
                             {/* Drawer Header */}
-                            <SheetHeader className="text-left border-b border-surface-border pb-4">
+                            <SheetHeader className="text-left border-b border-neutral-200 dark:border-neutral-800 pb-4">
                                 <div className="flex items-center justify-between gap-2">
                                     {renderActionBadge(selectedLog.action)}
-                                    <span className="text-[11px] text-text-desc font-mono">
+                                    <span className="text-[11px] text-black dark:text-white font-mono">
                                         ID: {selectedLog.id ? String(selectedLog.id).substring(0, 8) : '—'}
                                     </span>
                                 </div>
-                                <SheetTitle className="text-base font-bold text-text-main mt-2">
+                                <SheetTitle className="text-base font-bold text-black dark:text-white mt-2">
                                     Detail Jejak Audit
                                 </SheetTitle>
-                                <SheetDescription className="text-xs text-text-desc flex items-center gap-1">
-                                    <Clock size={12} />
+                                <SheetDescription className="text-xs text-black dark:text-white flex items-center gap-1">
+                                    <Clock size={12} className="text-black dark:text-white" />
                                     {selectedLog.created_at ? `${formatDateTime(selectedLog.created_at)} (${formatDate(selectedLog.created_at)})` : '—'}
                                 </SheetDescription>
                             </SheetHeader>
 
                             {/* Section 1: Dokumen Terkait */}
-                            <div className="space-y-2 p-3.5 rounded-lg border border-surface-border bg-surface-muted/70 dark:bg-zinc-800/40">
+                            <div className="space-y-2 p-3.5 rounded-[4px] border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/40 text-black dark:text-white">
                                 <div className="flex items-center justify-between">
-                                    <span className="text-[11px] font-bold text-text-desc uppercase tracking-wider flex items-center gap-1.5">
-                                        <FileText size={13} className="text-primary" /> Dokumen Kontrak
+                                    <span className="text-[11px] font-bold text-black dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                                        <FileText size={13} className="text-black dark:text-white" /> Dokumen Kontrak
                                     </span>
                                     {selectedLog.contract_id && (
                                         <Link
                                             href={`/contracts/${selectedLog.contract_id}`}
-                                            className="text-xs font-semibold text-primary hover:underline flex items-center gap-1"
+                                            className="text-xs font-semibold text-black dark:text-white underline hover:opacity-80 flex items-center gap-1"
                                         >
-                                            Buka Kontrak <ExternalLink size={11} />
+                                            Buka Kontrak <ExternalLink size={11} className="text-black dark:text-white" />
                                         </Link>
                                     )}
                                 </div>
-                                <div className="text-sm font-semibold text-text-main mt-1">
+                                <div className="text-sm font-semibold text-black dark:text-white mt-1">
                                     {selectedLog.contract_title || '—'}
                                 </div>
-                                <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-surface-border/50 text-text-desc">
+                                <div className="grid grid-cols-3 gap-2 text-xs pt-1 border-t border-neutral-200 dark:border-neutral-800 text-black dark:text-white">
                                     <div>
-                                        <span className="text-[10px] text-text-desc block">No. Form / Ref:</span>
-                                        <span className="font-mono font-medium text-text-main">
+                                        <span className="text-[10px] text-black dark:text-white block">No. Form / Ref:</span>
+                                        <span className="font-mono font-medium text-black dark:text-white">
                                             {selectedLog.form_no || selectedLog.contract_no || '—'}
                                         </span>
                                     </div>
                                     <div>
-                                        <span className="text-[10px] text-text-desc block">Tipe Kontrak:</span>
-                                        <span className="font-medium text-text-main">
+                                        <span className="text-[10px] text-black dark:text-white block">Tipe Kontrak:</span>
+                                        <span className="font-medium text-black dark:text-white">
                                             {selectedLog.contract_type || '—'}
                                         </span>
+                                    </div>
+                                    <div>
+                                        <span className="text-[10px] text-black dark:text-white block">Status Kontrak:</span>
+                                        {selectedLog.contract_status ? (
+                                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-[4px] text-[10px] font-bold uppercase bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-black dark:text-white mt-0.5">
+                                                {selectedLog.contract_status}
+                                            </span>
+                                        ) : (
+                                            <span className="text-black dark:text-white">—</span>
+                                        )}
                                     </div>
                                 </div>
                             </div>
 
                             {/* Section 2: Tahap Alur Kerja */}
-                            <div className="space-y-2 p-3.5 rounded-lg border border-surface-border bg-surface-muted/70 dark:bg-zinc-800/40">
-                                <span className="text-[11px] font-bold text-text-desc uppercase tracking-wider flex items-center gap-1.5">
-                                    <Layers size={13} className="text-primary" /> Tahap Alur Kerja Saat Aksi
+                            <div className="space-y-2 p-3.5 rounded-[4px] border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/40 text-black dark:text-white">
+                                <span className="text-[11px] font-bold text-black dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                                    <Layers size={13} className="text-black dark:text-white" /> Tahap Alur Kerja Saat Aksi
                                 </span>
                                 <div className="flex items-center gap-2 mt-1">
                                     {selectedLog.step_number ? (
-                                        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0">
+                                        <span className="inline-flex items-center justify-center w-6 h-6 rounded-[4px] bg-neutral-200 dark:bg-neutral-700 text-black dark:text-white text-xs font-bold shrink-0">
                                             {selectedLog.step_number}
                                         </span>
                                     ) : null}
-                                    <span className="text-sm font-medium text-text-main">
+                                    <span className="text-sm font-medium text-black dark:text-white">
                                         {selectedLog.step_name || 'Tidak terkait tahap spesifik'}
                                     </span>
                                 </div>
                             </div>
 
                             {/* Section 3: Pelaksana / Aktor */}
-                            <div className="space-y-2 p-3.5 rounded-lg border border-surface-border bg-surface-muted/70 dark:bg-zinc-800/40">
-                                <span className="text-[11px] font-bold text-text-desc uppercase tracking-wider flex items-center gap-1.5">
-                                    <User size={13} className="text-primary" /> Informasi Pelaksana
+                            <div className="space-y-2 p-3.5 rounded-[4px] border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/40 text-black dark:text-white">
+                                <span className="text-[11px] font-bold text-black dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                                    <User size={13} className="text-black dark:text-white" /> Informasi Pelaksana
                                 </span>
                                 <div className="space-y-1 mt-1">
-                                    <div className="text-sm font-semibold text-text-main">
+                                    <div className="text-sm font-semibold text-black dark:text-white">
                                         {selectedLog.actor || 'System'}
                                     </div>
                                     {selectedLog.actor_email && (
-                                        <div className="text-xs text-text-desc">
+                                        <div className="text-xs text-black dark:text-white">
                                             {selectedLog.actor_email}
                                         </div>
                                     )}
                                     <div className="flex flex-wrap gap-1.5 pt-1">
                                         {selectedLog.actor_role && (
-                                            <span className="text-[11px] px-2 py-0.5 rounded bg-primary/10 text-primary font-medium">
+                                            <span className="text-[11px] px-2 py-0.5 rounded-[4px] bg-neutral-200 dark:bg-neutral-700 text-black dark:text-white font-medium">
                                                 {selectedLog.actor_role}
                                             </span>
                                         )}
                                         {selectedLog.actor_department && (
-                                            <span className="text-[11px] px-2 py-0.5 rounded bg-surface-base border border-surface-border text-text-desc">
+                                            <span className="text-[11px] px-2 py-0.5 rounded-[4px] bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 text-black dark:text-white">
                                                 {selectedLog.actor_department}
                                             </span>
                                         )}
                                         {selectedLog.actor_division && (
-                                            <span className="text-[11px] px-2 py-0.5 rounded bg-surface-base border border-surface-border text-text-desc">
+                                            <span className="text-[11px] px-2 py-0.5 rounded-[4px] bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 text-black dark:text-white">
                                                 {selectedLog.actor_division}
                                             </span>
                                         )}
@@ -528,10 +480,10 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
 
                             {/* Section 4: Deskripsi & Catatan Lengkap */}
                             <div className="space-y-1.5">
-                                <span className="text-xs font-bold text-text-desc uppercase tracking-wider">
+                                <span className="text-xs font-bold text-black dark:text-white uppercase tracking-wider">
                                     Deskripsi / Catatan Transaksi
                                 </span>
-                                <div className="p-3.5 rounded-lg border border-surface-border bg-surface-base dark:bg-zinc-800/60 text-xs text-text-main leading-relaxed whitespace-pre-wrap">
+                                <div className="p-3.5 rounded-[4px] border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-xs text-black dark:text-white leading-relaxed whitespace-pre-wrap">
                                     {selectedLog.description || 'Tidak ada catatan tambahan.'}
                                 </div>
                             </div>

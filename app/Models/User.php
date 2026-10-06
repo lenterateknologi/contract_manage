@@ -203,8 +203,49 @@ class User extends Authenticatable
             }
         });
 
-        static::saved(function () {
+        static::saved(function ($user) {
             \Illuminate\Support\Facades\Cache::forget('admin_members_tree_users_v2');
+
+            if ($user->isDirty('dashboard_type_id')) {
+                $newDtId = $user->dashboard_type_id;
+                $oldDtId = $user->getOriginal('dashboard_type_id');
+
+                if ($newDtId) {
+                    $newDt = DashboardType::find($newDtId);
+                    if ($newDt) {
+                        $currentUsers = is_array($newDt->user_ids) ? array_map('strval', array_filter($newDt->user_ids)) : [];
+                        if (! in_array((string) $user->id, $currentUsers)) {
+                            $currentUsers[] = (string) $user->id;
+                            $newDt->updateQuietly(['user_ids' => array_values($currentUsers)]);
+                        }
+                    }
+
+                    Authority::firstOrCreate([
+                        'context_type' => Authority::CONTEXT_DASHBOARD_TYPE,
+                        'context_id' => $newDtId,
+                        'authority_type' => 'user',
+                        'user_id' => $user->id,
+                    ], [
+                        'is_active' => true,
+                        'sequence' => 1,
+                    ]);
+                }
+
+                if ($oldDtId && $oldDtId !== $newDtId) {
+                    $oldDt = DashboardType::find($oldDtId);
+                    if ($oldDt) {
+                        $currentUsers = is_array($oldDt->user_ids) ? array_map('strval', array_filter($oldDt->user_ids)) : [];
+                        $filtered = array_values(array_filter($currentUsers, fn ($uid) => $uid !== (string) $user->id));
+                        $oldDt->updateQuietly(['user_ids' => $filtered]);
+                    }
+
+                    Authority::where('context_type', Authority::CONTEXT_DASHBOARD_TYPE)
+                        ->where('context_id', $oldDtId)
+                        ->where('authority_type', 'user')
+                        ->where('user_id', $user->id)
+                        ->forceDelete();
+                }
+            }
         });
 
         static::deleted(function () {
@@ -630,6 +671,14 @@ class User extends Authenticatable
     public function isSuperAdmin(): bool
     {
         return $this->role === 'Super Admin';
+    }
+
+    public function isLegal(): bool
+    {
+        $orgGroup = $this->org_group_name ?? '';
+        $deptName = $this->department_name ?? '';
+
+        return stripos($orgGroup, 'legal') !== false || stripos($deptName, 'legal') !== false;
     }
 
     public function getCanCreateOnBehalfAttribute(): bool

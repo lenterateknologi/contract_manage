@@ -5,7 +5,7 @@ import { cn, formatDate, formatDateTime, formatRelativeTime } from '@/lib/utils'
 import { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 import { reportsApi } from '@/api';
-import { BarChart3, Download, FileText, History, ListFilter } from 'lucide-react';
+import { BarChart3, Download, FileSpreadsheet, FileText, History, ListFilter } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -191,14 +191,16 @@ export default function ReportsPage() {
                         )}
                     </div>
 
-                    <div className="flex h-9 items-center gap-2">
+                    <div className="flex h-8 items-center gap-2">
                         <Button
                             variant="outline"
-                            className="flex h-full items-center gap-1.5 rounded-xl border-surface-border bg-card px-3 text-xs font-medium transition-all hover:bg-surface-muted shadow-none"
+                            size="sm"
                             onClick={exportCsv}
+                            className="h-8 gap-1.5 rounded-[4px] px-3 text-xs font-semibold border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-700 dark:text-zinc-200 hover:bg-emerald-50/60 hover:border-emerald-300 hover:text-emerald-700 dark:hover:bg-emerald-950/30 dark:hover:border-emerald-800 dark:hover:text-emerald-400 shadow-none transition-all cursor-pointer"
+                            title="Export laporan ke format Excel"
                         >
-                            <Download size={13} />
-                            Export
+                            <FileSpreadsheet size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                            <span>Export Excel</span>
                         </Button>
                     </div>
                 </div>

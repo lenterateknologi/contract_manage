@@ -15,7 +15,7 @@ import { memo } from 'react';
 export const AppSidebarHeader = memo(function AppSidebarHeader({ breadcrumbs = [] }: { readonly breadcrumbs?: BreadcrumbItemType[] }) {
     const { url } = usePage();
     const path = url.split('?')[0];
-    const isDetailRoute = /^\/contracts\/[a-zA-Z0-9-]+$/.test(path) && !['/contracts/mine', '/contracts/pending', '/contracts/expiry', '/contracts/in-progress', '/contracts/archived'].includes(path);
+    const isDetailRoute = /^\/contracts\/[a-zA-Z0-9-]+$/.test(path) && !['/contracts/mine', '/contracts/organization', '/contracts/org-group', '/contracts/pending', '/contracts/expiry', '/contracts/in-progress', '/contracts/archived'].includes(path);
 
     return (
         <div
@@ -54,24 +54,29 @@ export const AppSidebarHeader = memo(function AppSidebarHeader({ breadcrumbs = [
                             const path = typeof window !== 'undefined' ? window.location.pathname : '';
                             let currentBreadcrumbs = [...breadcrumbs];
                             if (currentBreadcrumbs.length === 0) {
-                                if (path.includes('/contracts')) {
-                                    currentBreadcrumbs = [
-                                        { title: 'Modul Kontrak', href: '/dashboard' },
-                                        { title: 'Draft saya', href: '/dashboard' },
-                                        { title: 'Detail kontrak', href: '#' },
-                                    ];
-                                } else if (path.includes('/dashboard')) {
-                                    currentBreadcrumbs = [
-                                        { title: 'Modul Kontrak', href: '/dashboard' },
-                                        { title: 'Draft saya', href: '#' },
-                                    ];
-                                } else if (path.includes('/admin/contracts')) {
-                                    currentBreadcrumbs = [
-                                        { title: 'Modul Kontrak', href: '/admin/contracts' },
-                                        { title: 'Daftar Kontrak', href: '#' },
-                                    ];
-                                } else {
-                                    currentBreadcrumbs = [{ title: 'Modul Kontrak', href: '#' }];
+                                switch (true) {
+                                    case path.includes('/admin/contracts'):
+                                        currentBreadcrumbs = [
+                                            { title: 'Modul Kontrak', href: '/admin/contracts' },
+                                            { title: 'Daftar Kontrak', href: '#' },
+                                        ];
+                                        break;
+                                    case path.includes('/contracts'):
+                                        currentBreadcrumbs = [
+                                            { title: 'Modul Kontrak', href: '/dashboard' },
+                                            { title: 'Draft saya', href: '/dashboard' },
+                                            { title: 'Detail kontrak', href: '#' },
+                                        ];
+                                        break;
+                                    case path.includes('/dashboard'):
+                                        currentBreadcrumbs = [
+                                            { title: 'Modul Kontrak', href: '/dashboard' },
+                                            { title: 'Draft saya', href: '#' },
+                                        ];
+                                        break;
+                                    default:
+                                        currentBreadcrumbs = [{ title: 'Modul Kontrak', href: '#' }];
+                                        break;
                                 }
                             }
                             return <Breadcrumbs breadcrumbs={currentBreadcrumbs} />;

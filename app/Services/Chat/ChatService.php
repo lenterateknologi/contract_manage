@@ -12,6 +12,66 @@ use Illuminate\Support\Collection;
 class ChatService
 {
     /**
+     * Scope query to only contracts where the user is an involved member.
+     */
+    public function applyInvolvedScope($query, User $user)
+    {
+        return $query->where(function ($q) use ($user) {
+            $q->where('created_by', $user->id)
+                ->orWhere('initiated_by_id', $user->id)
+                ->orWhere('assigned_pic_id', $user->id)
+                ->orWhere('assigned_by_id', $user->id)
+                ->orWhere('closed_by', $user->id)
+                ->orWhereHas('approvals', function ($sq) use ($user) {
+                    $sq->where('user_id', $user->id);
+                })
+                ->orWhereHas('messages', function ($sq) use ($user) {
+                    $sq->where('user_id', $user->id);
+                })
+                ->orWhereHas('submissionReviews', function ($sq) use ($user) {
+                    $sq->where('user_id', $user->id);
+                })
+                ->orWhereHas('histories', function ($sq) use ($user) {
+                    $sq->where('actor_id', $user->id);
+                });
+        });
+    }
+
+    /**
+     * Check whether the user is an involved participant in the contract.
+     */
+    public function isUserInvolved(Contract $contract, User $user): bool
+    {
+        if (
+            $contract->created_by === $user->id ||
+            $contract->initiated_by_id === $user->id ||
+            $contract->assigned_pic_id === $user->id ||
+            $contract->assigned_by_id === $user->id ||
+            $contract->closed_by === $user->id
+        ) {
+            return true;
+        }
+
+        if ($contract->approvals()->where('user_id', $user->id)->exists()) {
+            return true;
+        }
+
+        if ($contract->messages()->where('user_id', $user->id)->exists()) {
+            return true;
+        }
+
+        if ($contract->submissionReviews()->where('user_id', $user->id)->exists()) {
+            return true;
+        }
+
+        if ($contract->histories()->where('actor_id', $user->id)->exists()) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
      * Get contracts involved with the user for Chat Center.
      */
     public function getInvolvedContracts(User $user, ?string $selectedId = null): Collection
@@ -40,22 +100,14 @@ class ChatService
             }
         }
 
-        $contracts = Contract::query()
+        $query = Contract::query()
             ->select(['id', 'form_no', 'contract_no', 'title', 'contract_type_id', 'created_by', 'created_at', 'updated_at'])
             ->selectSub($lastMessageQuery, 'last_message_at')
-            ->whereRaw("UPPER(status) != 'DRAFT'")
-            ->where(function ($query) use ($user) {
-                $query->where('created_by', $user->id)
-                    ->orWhere('initiated_by_id', $user->id)
-                    ->orWhere('assigned_pic_id', $user->id)
-                    ->orWhere('assigned_by_id', $user->id)
-                    ->orWhereHas('approvals', function ($q) use ($user) {
-                        $q->where('user_id', $user->id);
-                    })
-                    ->orWhereHas('messages', function ($q) use ($user) {
-                        $q->where('user_id', $user->id);
-                    });
-            })
+            ->whereRaw("UPPER(status) != 'DRAFT'");
+
+        $this->applyInvolvedScope($query, $user);
+
+        $contracts = $query
             ->with([
                 'creator:id,name,role_id',
                 'contractType:id,name',
@@ -130,20 +182,11 @@ class ChatService
         $query = Contract::query()
             ->select(['id', 'form_no', 'contract_no', 'title', 'status', 'contract_type_id', 'created_by', 'created_at', 'updated_at'])
             ->selectSub($lastMessageQuery, 'last_message_at')
-            ->whereRaw("UPPER(status) != 'DRAFT'")
-            ->where(function ($q) use ($user) {
-                $q->where('created_by', $user->id)
-                    ->orWhere('initiated_by_id', $user->id)
-                    ->orWhere('assigned_pic_id', $user->id)
-                    ->orWhere('assigned_by_id', $user->id)
-                    ->orWhereHas('approvals', function ($sq) use ($user) {
-                        $sq->where('user_id', $user->id);
-                    })
-                    ->orWhereHas('messages', function ($sq) use ($user) {
-                        $sq->where('user_id', $user->id);
-                    });
-            })
-            ->with([
+            ->whereRaw("UPPER(status) != 'DRAFT'");
+
+        $this->applyInvolvedScope($query, $user);
+
+        $query->with([
                 'creator:id,name,role_id',
                 'contractType:id,name',
             ])

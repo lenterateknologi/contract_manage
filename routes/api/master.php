@@ -11,6 +11,10 @@ use Illuminate\Support\Facades\Route;
 // ── Admin Data API (Master Data) ──
 Route::prefix('admin')->group(function () {
     Route::controller(ReportController::class)->prefix('reports')->group(function () {
+        Route::match(['get', 'post'], '/divisions', 'divisions');
+        Route::get('/divisions/export', 'exportDivisions');
+        Route::match(['get', 'post'], '/team', 'team');
+        Route::get('/team/export', 'exportTeam');
         Route::match(['get', 'post'], '/analytics', 'analytics');
         Route::match(['get', 'post'], '/audit', 'audit');
         Route::get('/analytics/export', 'exportAnalytics');

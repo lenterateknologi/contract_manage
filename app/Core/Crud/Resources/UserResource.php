@@ -36,7 +36,7 @@ class UserResource extends Resource
 
     public static ?string $importClass = UsersImport::class;
 
-    public static array $with = ['roleRelation', 'division', 'department', 'company', 'reportingTo'];
+    public static array $with = ['roleRelation', 'division', 'department', 'company', 'reportingTo', 'dashboardType'];
 
     public static ?string $title = 'Registri Otoritas Pengguna';
 
@@ -60,6 +60,7 @@ class UserResource extends Resource
             TextColumn::make('supervisor_job_title', 'Jabatan Atasan')->sortable()->searchable(),
             TextColumn::make('supervisor_job_level', 'Level Atasan')->sortable()->searchable(),
             TextColumn::make('role_name', 'Role Akses')->sortable()->searchable(),
+            TextColumn::make('dashboardType.name', 'Profil Dashboard')->sortable()->searchable(),
             TextColumn::make('company_name', 'Perusahaan')->sortable()->searchable(),
             TextColumn::make('company_group_code', 'Grup Perusahaan')->sortable()->searchable(),
             TextColumn::make('location_name', 'Lokasi Kerja')->sortable()->searchable(),
@@ -197,6 +198,11 @@ class UserResource extends Resource
                     ->options(fn () => Role::orderBy('name')->pluck('name', 'id')->toArray())
                     ->placeholder('Pilih Role Kewenangan...')
                     ->helperText('Menentukan hak akses modul dan matriks kebijakan sistem.'),
+                SelectInput::make('dashboard_type_id', 'Tipe Profil Dashboard & Scope Dokumen')
+                    ->options(fn () => DashboardType::orderBy('name')->pluck('name', 'id')->toArray())
+                    ->searchable()
+                    ->placeholder('Pilih Profil Dashboard (Default Otomatis)...')
+                    ->helperText('Menentukan batasan kategori dokumen (misal: hanya Non-Kontrak), visibilitas tab ringkasan & beban kerja.'),
                 TextInput::make('username', 'Username Login')
                     ->required()
                     ->rules(['string', 'max:50'])
@@ -300,6 +306,13 @@ class UserResource extends Resource
             Filter::make('role_id', 'Role Akses')
                 ->type('searchable')
                 ->options(fn () => Role::orderBy('name')->pluck('name', 'id')->toArray()),
+            Filter::make('dashboard_type_id', 'Profil Dashboard')
+                ->type('searchable')
+                ->options(function () {
+                    $options = ['__empty__' => '- (Default / Otomatis)'];
+
+                    return $options + DashboardType::orderBy('name')->pluck('name', 'id')->toArray();
+                }),
             Filter::make('gender', 'Jenis Kelamin')
                 ->options([
                     'M' => 'M - Laki-Laki (Male)',

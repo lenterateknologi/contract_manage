@@ -58,7 +58,7 @@ class ContractOptionsQuery
                 $cacheKey = 'contract_opts_groups_'.($allowedGroups ? md5(json_encode($allowedGroups)) : 'all');
 
                 return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($allowedGroups) {
-                    $q = CompanyGroup::query()->where('is_used', true);
+                    $q = CompanyGroup::query()->select(['id', 'name', 'code'])->where('is_used', true);
                     if ($allowedGroups !== null) {
                         $q->whereIn('id', $allowedGroups);
                     }
@@ -71,7 +71,7 @@ class ContractOptionsQuery
                 $cacheKey = 'contract_opts_regions_'.($allowedRegions ? md5(json_encode($allowedRegions)) : 'all');
 
                 return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($allowedRegions) {
-                    $q = Region::query()->where('is_used', true);
+                    $q = Region::query()->select(['id', 'name', 'code'])->where('is_used', true);
                     if ($allowedRegions !== null) {
                         $q->whereIn('id', $allowedRegions);
                     }
@@ -82,7 +82,7 @@ class ContractOptionsQuery
 
             'locations' => function () {
                 return Cache::remember('contract_opts_locations', now()->addMinutes(10), function () {
-                    return Location::query()->where('is_used', true)->orderBy('name')->get();
+                    return Location::query()->select(['id', 'name', 'code', 'company_group_id'])->where('is_used', true)->orderBy('name')->get();
                 });
             },
 
@@ -90,7 +90,7 @@ class ContractOptionsQuery
                 $cacheKey = 'contract_opts_companies_'.($allowedCompanies ? md5(json_encode($allowedCompanies)) : 'all');
 
                 return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($allowedCompanies) {
-                    $q = Company::query()->where('is_used', true);
+                    $q = Company::query()->select(['id', 'name', 'code', 'company_group_id', 'region_id'])->where('is_used', true);
                     if ($allowedCompanies !== null) {
                         $q->whereIn('id', $allowedCompanies);
                     }
@@ -103,7 +103,7 @@ class ContractOptionsQuery
                 $cacheKey = 'contract_opts_divisions_'.($allowedDivisions ? md5(json_encode($allowedDivisions)) : 'all');
 
                 return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($allowedDivisions) {
-                    $q = Division::query();
+                    $q = Division::query()->select(['id', 'name', 'code']);
                     if ($allowedDivisions !== null) {
                         $q->whereIn('id', $allowedDivisions);
                     }
@@ -116,7 +116,7 @@ class ContractOptionsQuery
                 $cacheKey = 'contract_opts_depts_'.($allowedDepts ? md5(json_encode($allowedDepts)) : 'all');
 
                 return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($allowedDepts) {
-                    $q = Department::query()->where('is_used', true);
+                    $q = Department::query()->select(['id', 'name', 'code', 'company_id', 'idorg_group', 'org_group_name'])->where('is_used', true);
                     if ($allowedDepts !== null) {
                         $q->whereIn('id', $allowedDepts);
                     }
@@ -207,17 +207,17 @@ class ContractOptionsQuery
                 ])
                 ->toArray()),
 
-            'roles' => fn () => Cache::remember('contract_opts_roles', now()->addMinutes(10), fn () => Role::orderBy('name')->get()),
+            'roles' => fn () => Cache::remember('contract_opts_roles', now()->addMinutes(10), fn () => Role::select(['id', 'name'])->orderBy('name')->get()),
             'contractStatuses' => fn () => Cache::remember('contract_opts_statuses', now()->addMinutes(10), fn () => ContractStatus::all()),
 
             'types' => function () {
                 return Cache::remember('contract_opts_types', now()->addMinutes(10), function () {
-                    $workflows = Workflow::where('is_active', true)->where('is_selectable', true)->get();
+                    $workflows = Workflow::where('is_active', true)->where('is_selectable', true)->get(['id', 'contract_type_id', 'meta']);
                     $globalExists = $workflows->contains(
                         fn ($w) => empty($w->contract_type_id) && empty($w->meta['contract_type_ids'])
                     );
 
-                    $allTypes = ContractType::all();
+                    $allTypes = ContractType::select(['id', 'name', 'code', 'parent_id', 'ancestry_id', 'f1_input_mechanism', 'f1_form_template_id', 'f2_input_mechanism', 'f2_form_template_id', 'contract_input_mechanism', 'contract_form_template_id'])->get();
 
                     if ($globalExists) {
                         return $allTypes;
@@ -267,7 +267,7 @@ class ContractOptionsQuery
                 });
             },
 
-            'submissionTypes' => fn () => Cache::remember('contract_opts_submission_types', now()->addMinutes(10), fn () => SubmissionType::where('is_active', true)->get()),
+            'submissionTypes' => fn () => Cache::remember('contract_opts_submission_types', now()->addMinutes(10), fn () => SubmissionType::where('is_active', true)->select(['id', 'name', 'code'])->get()),
         ];
     }
 }

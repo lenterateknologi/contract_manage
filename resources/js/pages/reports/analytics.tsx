@@ -180,7 +180,7 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
             header: 'Judul Pengajuan / Kontrak',
             accessorKey: 'title',
             cell: (row: any) => (
-                <span className="text-text-main font-medium text-xs truncate max-w-[260px] block" title={row.title}>
+                <span className="text-text-main font-medium text-xs truncate max-w-[280px] block" title={row.title}>
                     {row.title}
                 </span>
             )
@@ -196,74 +196,9 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
             cell: (row: any) => <span className="text-text-main text-xs whitespace-nowrap">{row.submission_type || '—'}</span>
         },
         {
-            header: 'Alur Kerja (Workflow)',
-            accessorKey: 'current_workflow',
-            cell: (row: any) => (
-                <span className="text-text-main text-xs truncate max-w-[180px] block" title={row.current_workflow}>
-                    {row.current_workflow || '—'}
-                </span>
-            )
-        },
-        {
-            header: 'Tahap Saat Ini',
-            accessorKey: 'current_step',
-            cell: (row: any) => (
-                <span className="text-text-main text-xs truncate max-w-[160px] block" title={row.current_step}>
-                    {row.current_step || '—'}
-                </span>
-            )
-        },
-        {
-            header: 'No. Tahap',
-            accessorKey: 'current_step_number',
-            cell: (row: any) => (
-                row.current_step_number ? (
-                    <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[11px] font-bold">
-                        Tahap {row.current_step_number}
-                    </span>
-                ) : <span className="text-text-muted text-xs">—</span>
-            )
-        },
-        {
-            header: 'Aktor / Approver Saat Ini',
-            accessorKey: 'current_actor',
-            cell: (row: any) => (
-                <span className="text-text-main text-xs truncate max-w-[180px] block" title={row.current_actor}>
-                    {row.current_actor || '—'}
-                </span>
-            )
-        },
-        {
-            header: 'Aksi Terakhir',
-            accessorKey: 'last_action',
-            cell: (row: any) => (
-                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-surface-muted text-text-muted border border-border/50">
-                    {row.last_action || 'CREATE'}
-                </span>
-            )
-        },
-        {
-            header: 'Aksi Oleh',
-            accessorKey: 'last_action_by',
-            cell: (row: any) => (
-                <span className="text-text-main font-medium text-xs whitespace-nowrap" title={row.last_action_by}>
-                    {row.last_action_by || '—'}
-                </span>
-            )
-        },
-        {
-            header: 'Waktu Aksi Terakhir',
-            accessorKey: 'last_action_at',
-            cell: (row: any) => (
-                <span className="text-text-muted text-xs whitespace-nowrap">
-                    {row.last_action_at ? formatDateTime(row.last_action_at) : '—'}
-                </span>
-            )
-        },
-        {
-            header: 'Pembuat',
+            header: 'Pembuat (Pengaju)',
             accessorKey: 'creator',
-            cell: (row: any) => <span className="text-text-main text-xs whitespace-nowrap">{row.creator || '—'}</span>
+            cell: (row: any) => <span className="text-text-main font-medium text-xs whitespace-nowrap">{row.creator || '—'}</span>
         },
         {
             header: 'Status',
@@ -271,7 +206,7 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
             cell: (row: any) => <StatusBadge status={row.status} />
         },
         {
-            header: 'Tanggal Registrasi',
+            header: 'Tanggal Dibuat',
             accessorKey: 'created_at',
             cell: (row: any) => (
                 <span className="text-text-main text-xs whitespace-nowrap">
@@ -310,13 +245,13 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
                             size="sm"
                             onClick={handleExport}
                             disabled={exportLoading}
-                            className="h-9 px-3.5 rounded-lg text-xs font-semibold border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-700 dark:text-zinc-200 hover:bg-emerald-50/60 hover:border-emerald-300 hover:text-emerald-700 dark:hover:bg-emerald-950/30 dark:hover:border-emerald-800 dark:hover:text-emerald-400 gap-2 shadow-xs transition-all cursor-pointer"
+                            className="h-8 gap-1.5 rounded-[4px] px-3 text-xs font-semibold border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-700 dark:text-zinc-200 hover:bg-emerald-50/60 hover:border-emerald-300 hover:text-emerald-700 dark:hover:bg-emerald-950/30 dark:hover:border-emerald-800 dark:hover:text-emerald-400 shadow-none transition-all cursor-pointer"
                             title="Export laporan analitik ke format Excel (.xlsx)"
                         >
                             {exportLoading ? (
-                                <Loader2 size={14} className="animate-spin text-emerald-600" />
+                                <Loader2 size={13} className="animate-spin text-emerald-600" />
                             ) : (
-                                <FileSpreadsheet size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                <FileSpreadsheet size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
                             )}
                             <span>{exportLoading ? 'Mengunduh...' : 'Export Excel'}</span>
                         </Button>
