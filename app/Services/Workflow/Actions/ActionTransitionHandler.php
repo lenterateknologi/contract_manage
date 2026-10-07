@@ -21,15 +21,24 @@ class ActionTransitionHandler
 
         if (is_array($transition) && isset($transition['type'])) {
             switch ($transition['type']) {
+                case 'sequential':
+                case 'back':
+                case 'stay':
                 case 'relative':
-                    $offset = (int) ($transition['offset'] ?? 1);
+                    $activeWfId = $currentStep->workflow_id ?: $contract->workflow_id;
+                    $offset = match ($transition['type']) {
+                        'sequential' => 1,
+                        'back' => -1,
+                        'stay' => 0,
+                        default => (int) ($transition['offset'] ?? 1),
+                    };
                     if ($offset === 1) {
                         return $this->findNextValidStep($contract, $currentStep);
                     } elseif ($offset === 0) {
                         return $currentStep;
                     } elseif ($offset > 1) {
                         $targetSequence = $currentStep->step + $offset;
-                        $allSteps = WorkflowStep::where('workflow_id', $contract->workflow_id)
+                        $allSteps = WorkflowStep::where('workflow_id', $activeWfId)
                             ->where('step', '>=', $targetSequence)
                             ->orderBy('step')
                             ->get();
@@ -44,7 +53,7 @@ class ActionTransitionHandler
                     } elseif ($offset < 0) {
                         $targetSequence = max(1, $currentStep->step + $offset);
 
-                        return WorkflowStep::where('workflow_id', $contract->workflow_id)
+                        return WorkflowStep::where('workflow_id', $activeWfId)
                             ->where('step', '<=', $targetSequence)
                             ->orderBy('step', 'desc')
                             ->first();
@@ -56,20 +65,20 @@ class ActionTransitionHandler
                     return null;
 
                 case 'absolute':
+                    $activeWfId = $currentStep->workflow_id ?: $contract->workflow_id;
                     $targetStep = null;
                     if (! empty($transition['step_id'])) {
-                        $targetStep = WorkflowStep::where('workflow_id', $contract->workflow_id)->find($transition['step_id']);
+                        $targetStep = WorkflowStep::where('workflow_id', $activeWfId)->find($transition['step_id']);
                     }
                     if (! $targetStep && ! empty($stepAction->next_step_id)) {
-                        $targetStep = WorkflowStep::where('workflow_id', $contract->workflow_id)->find($stepAction->next_step_id);
+                        $targetStep = WorkflowStep::where('workflow_id', $activeWfId)->find($stepAction->next_step_id);
                     }
                     if (! $targetStep) {
                         $targetSequence = max(1, (int) ($transition['sequence'] ?? 1));
-                        $targetStep = WorkflowStep::where('workflow_id', $contract->workflow_id)->where('step', $targetSequence)->first();
+                        $targetStep = WorkflowStep::where('workflow_id', $activeWfId)->where('step', $targetSequence)->first();
                     }
                     if ($targetStep) {
                         $contract->update([
-                            'workflow_id' => $contract->workflow_id,
                             'workflow_step_id' => $targetStep->id,
                         ]);
 
@@ -77,9 +86,10 @@ class ActionTransitionHandler
                     }
                     break;
 
+                case 'origin_return':
                 case 'cross_workflow':
                     $workflowId = $transition['workflow_id'] ?? null;
-                    if ($workflowId === 'origin_workflow' || $workflowId === 'origin' || empty($workflowId)) {
+                    if ($transition['type'] === 'origin_return' || $workflowId === 'origin_workflow' || $workflowId === 'origin' || empty($workflowId)) {
                         $workflowId = $contract->origin_workflow_id ?: $contract->workflow_id;
                     }
 
@@ -199,37 +209,11 @@ class ActionTransitionHandler
             }
         }
 
-        if ($stepAction->next_workflow_id) {
-            $targetSubWfId = $stepAction->next_workflow_id;
-            $targetStep = $stepAction->next_workflow_step_id
-                ? WorkflowStep::find($stepAction->next_workflow_step_id)
-                : WorkflowStep::where('workflow_id', $targetSubWfId)->orderBy('step')->first();
-
-            if ($targetStep) {
-                $contract->update([
-                    'origin_workflow_id' => $contract->origin_workflow_id ?: $contract->workflow_id,
-                    'workflow_step_id' => $targetStep->id,
-                    'current_sub_workflow_id' => $targetSubWfId,
-                    'is_in_sub_workflow' => ($targetSubWfId !== ($contract->origin_workflow_id ?: $contract->workflow_id)),
-                ]);
-            }
-
-            return $targetStep;
-        }
-
         if ($stepAction->next_step_id) {
             return WorkflowStep::find($stepAction->next_step_id);
         }
 
-        // Default forward progression for approve/sign/assign/forward/auto actions when no explicit target is set
-        $actionCodeStr = $stepAction->action_code instanceof \BackedEnum
-            ? $stepAction->action_code->value
-            : (string) ($stepAction->action_code ?? '');
-
-        if (in_array(strtolower($actionCodeStr), ['approve', 'assign', 'assign_pic', 'add_adhoc', 'auto'])) {
-            return $this->findNextValidStep($contract, $currentStep);
-        }
-
-        return null;
+        // ponytail: Default forward progression when no explicit transition is configured
+        return $this->findNextValidStep($contract, $currentStep);
     }
 }

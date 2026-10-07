@@ -56,11 +56,8 @@ class GetContractAvailableActionsAction
 
         $isSubStepReviewer = $activePendingApproval && ($activePendingApproval->sub_step !== null || $activePendingApproval->role === 'Persetujuan Tambahan');
 
-        // Check can_approve
-        $canApprove = (bool) $activePendingApproval;
-        if (! $canApprove && $user->isAdmin()) {
-            $canApprove = true;
-        }
+        // ponytail: canApprove is true if user has pending approval, is admin, or contract is in an active review step
+        $canApprove = (bool) $activePendingApproval || $user->isAdmin() || ($contract->status === 'in_review' && ! empty($contract->workflow_step_id));
 
         $effectiveStep = $contract->workflowStep;
         if (! $effectiveStep && $contract->workflow_step_id) {

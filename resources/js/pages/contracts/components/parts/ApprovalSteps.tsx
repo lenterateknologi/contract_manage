@@ -77,7 +77,9 @@ export default function ApprovalSteps({ contract, approvals = [], creator, submi
     }, [activePendingApproval]);
 
     const filteredSteps = useMemo(() => {
-        let result = [...safeApprovals];
+        let result = safeApprovals.filter(
+            (a) => a.workflow_step?.is_visible !== false && (a.workflow_step?.meta as any)?.is_visible !== false,
+        );
 
         // Tab: Lite (Sederhana - Hanya yang sudah dieksekusi atau step aktif sekarang)
         if (viewTab === 'lite') {

@@ -24,7 +24,8 @@ class ContractFormatter
     {
         if ($isDetail) {
             // Auto-sync current step approvers with latest master authority & role settings
-            if ($c->status === 'in_review' && $c->workflow_step_id && $c->workflowStep) {
+            $isActiveWorkflow = $c->workflow_step_id && $c->workflowStep && ! in_array($c->status, ['approved', 'rejected', 'finished', 'cancelled', 'draft']);
+            if ($isActiveWorkflow) {
                 try {
                     app(ContractWorkflowService::class)->createApprovalForStep($c, $c->workflowStep);
                     $c->unsetRelation('approvals');
@@ -442,7 +443,9 @@ class ContractFormatter
                     return false;
                 }
 
-                if ($c->status === 'in_review' && $c->workflow_step_id && $c->workflowStep) {
+                $isActiveWorkflow = $c->workflow_step_id && $c->workflowStep && ! in_array($c->status, ['approved', 'rejected', 'finished', 'cancelled', 'draft']);
+
+                if ($isActiveWorkflow) {
                     $hasPendingOrWaiting = $c->approvals
                         ->where('workflow_step_id', $c->workflow_step_id)
                         ->whereIn('status', ['pending', 'waiting'])
@@ -472,7 +475,9 @@ class ContractFormatter
                     return false;
                 }
 
-                if ($c->status === 'in_review' && $c->workflow_step_id && $c->workflowStep) {
+                $isActiveWorkflow = $c->workflow_step_id && $c->workflowStep && ! in_array($c->status, ['approved', 'rejected', 'finished', 'cancelled', 'draft']);
+
+                if ($isActiveWorkflow) {
                     $hasPendingOrWaiting = $c->approvals
                         ->where('workflow_step_id', $c->workflow_step_id)
                         ->whereIn('status', ['pending', 'waiting'])

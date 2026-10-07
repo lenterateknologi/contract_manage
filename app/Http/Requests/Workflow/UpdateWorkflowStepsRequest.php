@@ -16,6 +16,10 @@ class UpdateWorkflowStepsRequest extends FormRequest
         return [
             'steps' => 'nullable|array',
             'steps.*.id' => 'nullable|string',
+            'steps.*.label' => 'nullable|string',
+            'steps.*.is_mandatory' => 'nullable|boolean',
+            'steps.*.is_visible' => 'nullable|boolean',
+            'steps.*.is_active' => 'nullable|boolean',
             'steps.*.role' => 'nullable',
             'steps.*.description' => 'nullable|string',
             'steps.*.approver_type' => 'nullable|string',

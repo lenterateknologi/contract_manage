@@ -35,7 +35,9 @@ export function ApprovalStepsLite({
 
     // Filter approvals for Lite mode (only executed steps or current pending step)
     const filteredSteps = useMemo(() => {
-        let result = [...safeApprovals];
+        let result = safeApprovals.filter(
+            (a) => a.workflow_step?.is_visible !== false && (a.workflow_step?.meta as any)?.is_visible !== false,
+        );
         const currentStepId = contract.workflow_step_id;
         const currentWorkflowId = contract.workflow_id;
         const pendingSeq = activePendingApproval?.sequence;

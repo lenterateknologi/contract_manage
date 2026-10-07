@@ -35,54 +35,62 @@ class WorkflowTransitionService
             $stepAction = $approval->workflowStep->actions()->where('id', $requestActionId)->first();
         }
 
-        // 2. Check workflow meta custom actions (e.g. action_branch, branch, cross_workflow, or custom action IDs)
+        // 2. Check workflow meta custom actions (e.g. exact custom action ID, or fallback to action_code)
         if (! $stepAction) {
             $customActions = $contract->workflow?->meta['custom_actions']
                 ?? $contract->origin_workflow?->meta['custom_actions']
                 ?? [];
             if (is_array($customActions)) {
-                foreach ($customActions as $cAct) {
-                    $cId = $cAct['id'] ?? '';
-                    $cCode = $cAct['action_code'] ?? '';
-                    if (($requestActionId && ($cId === $requestActionId || ($requestActionId === 'action_branch' && in_array($cCode, ['branch', 'cross_workflow'])))) ||
-                        ($actionCode && ($cCode === $actionCode || ($actionCode === 'branch' && in_array($cCode, ['branch', 'cross_workflow']))))) {
-                        $stepAction = new WorkflowStepAction();
-                        $stepAction->forceFill([
-                            'id' => $cId ?: $cCode,
-                            'action_code' => $cCode ?: $actionCode,
-                            'alias' => $cAct['alias'] ?? $cAct['name'] ?? null,
-                            'transition_config' => $cAct['transition_config'] ?? null,
-                            'target_status' => $cAct['target_status'] ?? null,
-                            'next_workflow_id' => $cAct['next_workflow_id'] ?? null,
-                            'next_step_id' => $cAct['next_step_id'] ?? null,
-                            'required_fields' => $cAct['required_fields'] ?? [],
-                            'autofilled_fields' => $cAct['autofilled_fields'] ?? [],
-                        ]);
-                        break;
+                // First pass: Prioritize exact action ID if provided
+                if ($requestActionId) {
+                    foreach ($customActions as $cAct) {
+                        $cId = $cAct['id'] ?? '';
+                        if ($cId && $cId === $requestActionId) {
+                            $stepAction = new WorkflowStepAction();
+                            $stepAction->forceFill([
+                                'id' => $cId,
+                                'action_code' => $cAct['action_code'] ?? $actionCode,
+                                'alias' => $cAct['alias'] ?? $cAct['name'] ?? null,
+                                'transition_config' => $cAct['transition_config'] ?? null,
+                                'target_status' => $cAct['target_status'] ?? null,
+                                'next_workflow_id' => $cAct['next_workflow_id'] ?? null,
+                                'next_step_id' => $cAct['next_step_id'] ?? null,
+                                'required_fields' => $cAct['required_fields'] ?? [],
+                                'autofilled_fields' => $cAct['autofilled_fields'] ?? [],
+                            ]);
+                            break;
+                        }
+                    }
+                }
+
+                // Second pass: Fallback match by action code if not resolved by ID
+                if (! $stepAction && $actionCode) {
+                    foreach ($customActions as $cAct) {
+                        $cId = $cAct['id'] ?? '';
+                        $cCode = $cAct['action_code'] ?? '';
+                        if ($cCode === $actionCode) {
+                            $stepAction = new WorkflowStepAction();
+                            $stepAction->forceFill([
+                                'id' => $cId ?: $cCode,
+                                'action_code' => $cCode,
+                                'alias' => $cAct['alias'] ?? $cAct['name'] ?? null,
+                                'transition_config' => $cAct['transition_config'] ?? null,
+                                'target_status' => $cAct['target_status'] ?? null,
+                                'next_workflow_id' => $cAct['next_workflow_id'] ?? null,
+                                'next_step_id' => $cAct['next_step_id'] ?? null,
+                                'required_fields' => $cAct['required_fields'] ?? [],
+                                'autofilled_fields' => $cAct['autofilled_fields'] ?? [],
+                            ]);
+                            break;
+                        }
                     }
                 }
             }
         }
 
         // 3. Match action code in step actions
-        if (! $stepAction && $approval->workflowStep) {
-            $matchingActions = $approval->workflowStep->actions()
-                ->where(function ($q) use ($actionCode) {
-                    $q->where('action_code', $actionCode);
-                    if (in_array(strtolower($actionCode), ['assign', 'assign_pic'])) {
-                        $q->orWhereIn('action_code', ['assign', 'assign_pic', 'approve']);
-                    }
-                })->get();
-
-            $stepAction = $matchingActions->first();
-        }
-
-        if (! $stepAction && $actionCode === 'approve' && $approval->role === 'Persetujuan Tambahan' && $approval->workflowStep) {
-            $stepAction = $approval->workflowStep->actions()->where('action_code', 'add_adhoc')->first();
-        }
-
-        if (! $stepAction && $approval->workflowStep && in_array($actionCode, ['approve', 'assign', 'assign_pic'])) {
-            $stepAction = $approval->workflowStep->actions()->whereIn('action_code', ['approve', 'assign', 'assign_pic'])->first();
+        if (! $stepAction && $approval->workflowStep && $actionCode) {
+            $stepAction = $approval->workflowStep->actions()->where('action_code', $actionCode)->first();
         }
 
         return $stepAction;
@@ -107,12 +115,6 @@ class WorkflowTransitionService
     {
         $workflowService = app(\App\Services\Workflow\ContractWorkflowService::class);
 
-        $isRoleBased = $approval->workflowStep?->approver_type === 'role';
-        $isBranchAction = in_array($actionCode, ['branch', 'cross_workflow']);
-        if ($isRoleBased && ! $isBranchAction) {
-            $contract->approvals()->where('workflow_step_id', $approval->workflow_step_id)->where('role', '!=', 'Persetujuan Tambahan')->whereIn('status', ['pending', 'waiting'])->delete();
-        }
-
         if (str_contains(strtolower($approval->role), 'legal') || str_contains(strtolower($approval->workflowStep?->description ?? ''), 'legal')) {
             $metadata = $contract->metadata ?? [];
             $metadata['current_phase'] = 'agreement';
@@ -135,6 +137,11 @@ class WorkflowTransitionService
         $nextStep = $stepAction && $approval->workflowStep ? $this->evaluateNextStep($contract, $approval->workflowStep, $stepAction) : null;
         while ($nextStep && ! $this->shouldExecuteStep($contract, $nextStep)) {
             $nextStep = $this->findNextValidStep($contract, $nextStep);
+        }
+
+        $isRoleBased = $approval->workflowStep?->approver_type === 'role';
+        if ($isRoleBased && $nextStep && $nextStep->id !== $approval->workflow_step_id && ! $contract->is_in_sub_workflow) {
+            $contract->approvals()->where('workflow_step_id', $approval->workflow_step_id)->where('role', '!=', 'Persetujuan Tambahan')->whereIn('status', ['pending', 'waiting'])->delete();
         }
 
         $isReject = in_array(strtolower((string) $actionCode), ['reject', 'rejection', 'tolak', 'revisi']);

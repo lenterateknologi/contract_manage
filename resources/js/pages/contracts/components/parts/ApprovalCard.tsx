@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/feedback/Badge';
 import { formatFileSize } from '@/lib/formatters';
 import { cn, formatDateTime } from '@/lib/utils';
 import { Contract, ContractApproval } from '@/pages/contracts/types';
-import { Check, CheckCircle2, ChevronDown, Clock, Download, Eye, Lock, LogIn, X } from 'lucide-react';
+import { Check, CheckCircle2, ChevronDown, Clock, Download, Eye, Lock, LogIn, X, Bot } from 'lucide-react';
 import { useState } from 'react';
 import DocumentPreviewModal from '@/pages/contracts/components/modals/DocumentPreviewModal';
 import { StatusBadge } from '../ui/ui';
@@ -43,6 +43,15 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false,
     const matchedStep = a.workflow_step || contract?.workflow?.steps?.find((s: any) => (a.workflow_step_id && s.id === a.workflow_step_id) || s.step === a.sequence);
     const stepMeta = (matchedStep as any)?.meta || {};
     const stepActions: any[] = (matchedStep as any)?.action_configs || (matchedStep as any)?.actions || [];
+
+    const isAutoStep = Boolean(
+        a.approver_type === 'auto' ||
+        a.action_code === 'auto' ||
+        a.role === 'Sistem' ||
+        a.approver_name === 'System' ||
+        (matchedStep?.label || '').includes('Kembali ke Alur Utama') ||
+        (a.step_name || '').includes('Kembali ke Alur Utama')
+    );
 
     // Cari action spesifik yang dieksekusi approver
     const executedAction = stepActions.find((act: any) => {
@@ -92,6 +101,13 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false,
                     {/* Avatar */}
                     <div className="shrink-0">
                         {(() => {
+                            if (isAutoStep) {
+                                return (
+                                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-500/15 border border-violet-500/30 text-violet-600 dark:text-violet-400 ring-1 ring-surface-base shadow-2xs">
+                                        <Bot size={13} strokeWidth={2.2} />
+                                    </div>
+                                );
+                            }
                             const approverName = a.approver?.name || a.approver_name || (a.target_approvers ? a.target_approvers.split(',')[0].trim() : null);
                             if (a.approver || approverName) {
                                 return (
@@ -118,7 +134,20 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false,
                     </div>
 
                     {/* Approver Details */}
-                    {a.approver ? (
+                    {isAutoStep ? (
+                        <div className={cn("flex min-w-0", isLite ? "flex-row items-center gap-1.5 flex-wrap" : "flex-col")}>
+                            <div className="flex items-center gap-1 min-w-0">
+                                <span className={cn("text-text-main truncate font-bold leading-tight", isLite ? "text-[11px]" : "text-[11px]")}>
+                                    System
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-[9.5px] text-text-soft flex-wrap">
+                                <Badge variant="outline" className="px-1.5 py-0 font-semibold uppercase text-violet-700 dark:text-violet-300 border-violet-500/25 bg-violet-500/10 rounded-xs text-[8.5px]">
+                                    Sistem (Otomatis)
+                                </Badge>
+                            </div>
+                        </div>
+                    ) : a.approver ? (
                         <div className={cn("flex min-w-0", isLite ? "flex-row items-center gap-1.5 flex-wrap" : "flex-col")}>
                             <div className="flex items-center gap-1 min-w-0">
                                 <span className={cn("text-text-main truncate font-bold leading-tight", isLite ? "text-[11px]" : "text-[11px]")}>

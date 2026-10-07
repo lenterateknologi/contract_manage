@@ -355,8 +355,6 @@ export const ContractDetailView = ({
         }
     };
 
-    const canApprove = !!contract.can_approve;
-
     const activePendingApproval = useMemo(() => {
         if (!contract.approvals) return null;
         if (contract.pending_approval_id) {
@@ -364,6 +362,8 @@ export const ContractDetailView = ({
         }
         return contract.approvals.find((a: any) => a.status === 'pending' && a.user_id === meId);
     }, [contract.approvals, contract.pending_approval_id, meId]);
+
+    const canApprove = !!contract.can_approve || !!activePendingApproval || (contract.status === 'in_review' && !!contract.workflow_step_id);
 
     const isSubStepReviewer = useMemo(() => {
         return !!activePendingApproval && (activePendingApproval.sub_step != null || activePendingApproval.role === 'Persetujuan Tambahan');
