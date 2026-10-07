@@ -539,19 +539,21 @@ class DashboardType extends Model
             }
         }
 
+        // ponytail: Target criteria (division_ids, company_ids, etc.) define who GETS the dashboard.
+        // When scope_to_user_* is false (cross-organization access), allowed_* must be empty to avoid restricting data.
         return [
             'can_change_company_group' => ! $this->scope_to_user_company_group,
-            'allowed_company_groups' => self::normalizeIds($this->company_group_ids),
+            'allowed_company_groups' => [],
             'can_change_region' => ! $this->scope_to_user_region,
-            'allowed_regions' => self::normalizeIds($this->region_ids),
+            'allowed_regions' => [],
             'can_change_location' => false,
             'allowed_locations' => self::normalizeIds($this->location_ids),
             'can_change_company' => ! $this->scope_to_user_company,
-            'allowed_companies' => self::normalizeIds($this->company_ids),
+            'allowed_companies' => [],
             'can_change_division' => ! $this->scope_to_user_division,
-            'allowed_divisions' => self::normalizeIds($this->division_ids),
+            'allowed_divisions' => [],
             'can_change_department' => ! $this->scope_to_user_department,
-            'allowed_departments' => $allowedDepartments,
+            'allowed_departments' => ! empty($orgGroupIds) ? $allowedDepartments : [],
             'org_group_ids' => $orgGroupIds,
             'location_ids' => self::normalizeIds($this->location_ids),
             'contract_type_ids' => self::normalizeIds($this->contract_type_ids),

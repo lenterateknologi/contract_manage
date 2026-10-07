@@ -53,7 +53,7 @@ class ContractListQuery
     public function build(Request $request, string $view = 'contracts', bool $withRelations = true): Builder
     {
         $user = Auth::user();
-        if ($user) {
+        if ($user && $view !== 'mine') {
             // Delegasikan semua scope organisasi ke service — satu tempat, satu aturan.
             (new ContractFilterScopeService)->applyToRequest($request, $user);
         }
@@ -65,14 +65,15 @@ class ContractListQuery
 
         $this->applyViewFilter($query, $view, $request);
         $this->applySearchFilter($query, $request);
-        $this->applyStatusFilter($query, $request, $view);
-        $this->applyTypeFilter($query, $request);
 
-        // Untuk view 'pending' dan 'mine', query sudah spesifik user_id yang bersangkutan,
-        // sehingga tidak boleh dibatasi oleh scope organisasi/departemen default.
-        if ($view !== 'pending' && $view !== 'mine') {
-            $this->applyDepartmentFilter($query, $request);
-            $this->applyOrgFilters($query, $request);
+        // ponytail: view 'mine' menampilkan semua pengajuan yang dibuat/diinisiasi user tanpa batasan filter organisasi/tipe
+        if ($view !== 'mine') {
+            $this->applyStatusFilter($query, $request, $view);
+            $this->applyTypeFilter($query, $request);
+            if ($view !== 'pending') {
+                $this->applyDepartmentFilter($query, $request);
+                $this->applyOrgFilters($query, $request);
+            }
         }
 
         $this->applyDateRangeFilter($query, $request);
@@ -119,8 +120,9 @@ class ContractListQuery
                 $query->whereIn('status', ['in_review', 'pending', 'locked'])->whereNull('closed_at');
                 break;
             default:
-                $query->whereRaw('UPPER(status) != ?', ['ARCHIVED'])->whereNull('closed_at');
-                $this->applyParentTabFilter($query, $mineTab);
+                if ($mineTab !== 'all') {
+                    $this->applyParentTabFilter($query, $mineTab);
+                }
                 break;
         }
     }
