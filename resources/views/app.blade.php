@@ -32,6 +32,8 @@
             })();
         </script>
 
+        {{-- ponytail: reset static flag to prevent Ziggy from rendering merge script on persistent PHP processes --}}
+        @php \Tighten\Ziggy\BladeRouteGenerator::$generated = false; @endphp
         @routes
         @viteReactRefresh
         @vite(['resources/js/app.tsx', "resources/js/pages/{$page['component']}.tsx"])

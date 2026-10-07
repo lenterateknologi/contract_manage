@@ -18,6 +18,11 @@ class HandleInertiaRequests extends Middleware
 {
     public function handle(Request $request, \Closure $next)
     {
+        // ponytail: ensure fresh Ziggy routes script on long-running PHP servers (Octane/FrankenPHP/serve)
+        if (class_exists(\Tighten\Ziggy\BladeRouteGenerator::class)) {
+            \Tighten\Ziggy\BladeRouteGenerator::$generated = false;
+        }
+
         $response = parent::handle($request, $next);
 
         $response->headers->set('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
