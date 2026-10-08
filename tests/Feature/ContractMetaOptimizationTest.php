@@ -1,7 +1,7 @@
 <?php
 
-use App\Models\Contract;
-use App\Models\User;
+use App\Models\Master\User;
+use App\Models\Transaction\Contract;
 
 test('it creates a contract and stores its metadata transparently in t_contract_meta', function () {
     $user = User::factory()->create();

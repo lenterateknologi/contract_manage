@@ -18,7 +18,8 @@ export function matchUserAgainstWorkflowPool(user: any, config: any, contract: a
                 return creatorId && String(user.id) === String(creatorId);
             }
             if (party === 'assigned_pic' || party === 'pic') {
-                const picId = contract?.assigned_pic_id || contract?.assigned_pic?.id || contract?.assignedPic?.id || contract?.metadata?.assigned_pic_id;
+                const picId =
+                    contract?.assigned_pic_id || contract?.assigned_pic?.id || contract?.assignedPic?.id || contract?.metadata?.assigned_pic_id;
                 return picId && String(user.id) === String(picId);
             }
             // Fallback: treat as role name
@@ -31,14 +32,18 @@ export function matchUserAgainstWorkflowPool(user: any, config: any, contract: a
         if (authorities.length === 0) return false;
 
         return authorities.some((auth: any) => {
-            if (auth.authority_type === 'custom' || ['initiator', 'assigned_pic', 'creator', 'adhoc_approvers', 'adhoc'].includes(auth.authority_type)) {
+            if (
+                auth.authority_type === 'custom' ||
+                ['initiator', 'assigned_pic', 'creator', 'adhoc_approvers', 'adhoc'].includes(auth.authority_type)
+            ) {
                 const actorType = auth.user_id || auth.authority_type;
                 if (actorType === 'initiator') {
                     const initId = contract?.initiator?.id || contract?.initiated_by_id;
                     return initId && String(user.id) === String(initId);
                 }
                 if (actorType === 'assigned_pic') {
-                    const picId = contract?.assigned_pic_id || contract?.assigned_pic?.id || contract?.assignedPic?.id || contract?.metadata?.assigned_pic_id;
+                    const picId =
+                        contract?.assigned_pic_id || contract?.assigned_pic?.id || contract?.assignedPic?.id || contract?.metadata?.assigned_pic_id;
                     return picId && String(user.id) === String(picId);
                 }
                 if (actorType === 'creator') {
@@ -47,7 +52,9 @@ export function matchUserAgainstWorkflowPool(user: any, config: any, contract: a
                 }
                 if (actorType === 'adhoc_approvers' || actorType === 'adhoc') {
                     const adhocApprovals = (contract?.approvals || []).filter(
-                        (a: any) => (a.role === 'Persetujuan Tambahan' || a.role === 'Ad-Hoc Approver') && String(a.workflow_step_id) === String(contract?.workflow_step_id)
+                        (a: any) =>
+                            (a.role === 'Persetujuan Tambahan' || a.role === 'Ad-Hoc Approver') &&
+                            String(a.workflow_step_id) === String(contract?.workflow_step_id),
                     );
                     return adhocApprovals.some((a: any) => String(a.user_id) === String(user.id));
                 }
@@ -67,26 +74,26 @@ export function matchUserAgainstWorkflowPool(user: any, config: any, contract: a
             let matchesLocation = true;
             let hasFilters = false;
 
-            let userRoleId = String(user.role_id || user.role || '');
-            let userDeptId = String(user.department_id || user.department?.id || '');
-            let userDivId = String(user.division_id || user.division?.id || user.department?.division_id || '');
-            let userLocId = String(user.location_id || user.idlocation || user.location?.id || '');
-            let userCompId = String(user.company_id || user.company?.id || '');
-            let userCgId = String(user.company_group_id || user.company?.company_group_id || '');
-            let userRegionId = String(user.region_id || user.company?.region_id || '');
-            let userOrgGroupUuid = String(user.organization_group_id || user.department?.organization_group_id || '');
-            let userOrgGroupId = String(user.department?.idorg_group || user.idorg_group || userOrgGroupUuid || '');
+            const userRoleId = String(user.role_id || user.role || '');
+            const userDeptId = String(user.department_id || user.department?.id || '');
+            const userDivId = String(user.division_id || user.division?.id || user.department?.division_id || '');
+            const userLocId = String(user.location_id || user.idlocation || user.location?.id || '');
+            const userCompId = String(user.company_id || user.company?.id || '');
+            const userCgId = String(user.company_group_id || user.company?.company_group_id || '');
+            const userRegionId = String(user.region_id || user.company?.region_id || '');
+            const userOrgGroupUuid = String(user.organization_group_id || user.department?.organization_group_id || '');
+            const userOrgGroupId = String(user.department?.idorg_group || user.idorg_group || userOrgGroupUuid || '');
 
             if (auth.role_id) {
                 const targetRoleStr = String(auth.role_id);
-                matchesRole = targetRoleStr === userRoleId || 
-                              auth.role?.name?.toLowerCase() === user.role?.toLowerCase() ||
-                              targetRoleStr.toLowerCase() === user.role?.toLowerCase();
+                matchesRole =
+                    targetRoleStr === userRoleId ||
+                    auth.role?.name?.toLowerCase() === user.role?.toLowerCase() ||
+                    targetRoleStr.toLowerCase() === user.role?.toLowerCase();
                 hasFilters = true;
             } else if (auth.role_use_initiator) {
                 const initRoleId = String(contract?.initiator?.role_id || contract?.initiator?.role || '');
-                matchesRole = initRoleId === userRoleId || 
-                              contract?.initiator?.role?.toLowerCase() === user.role?.toLowerCase();
+                matchesRole = initRoleId === userRoleId || contract?.initiator?.role?.toLowerCase() === user.role?.toLowerCase();
                 hasFilters = true;
             }
 
@@ -103,7 +110,9 @@ export function matchUserAgainstWorkflowPool(user: any, config: any, contract: a
                 matchesDiv = String(auth.division_id) === userDivId;
                 hasFilters = true;
             } else if (auth.division_use_initiator) {
-                const initDivId = String(contract?.initiator?.division_id || contract?.initiator?.division?.id || contract?.initiator?.department?.division_id || '');
+                const initDivId = String(
+                    contract?.initiator?.division_id || contract?.initiator?.division?.id || contract?.initiator?.department?.division_id || '',
+                );
                 matchesDiv = initDivId === userDivId;
                 hasFilters = true;
             }
@@ -111,16 +120,16 @@ export function matchUserAgainstWorkflowPool(user: any, config: any, contract: a
             if (auth.location_id) {
                 const targetLocStr = String(auth.location_id);
                 const userLocName = (user.location_name || user.location?.name || '').toLowerCase().trim();
-                matchesLocation = targetLocStr === userLocId ||
-                                  auth.location?.name?.toLowerCase() === userLocName ||
-                                  targetLocStr.toLowerCase() === userLocName;
+                matchesLocation =
+                    targetLocStr === userLocId || auth.location?.name?.toLowerCase() === userLocName || targetLocStr.toLowerCase() === userLocName;
                 hasFilters = true;
             } else if (auth.location_use_initiator) {
-                const initLocId = String(contract?.initiator?.location_id || contract?.initiator?.idlocation || contract?.initiator?.location?.id || '');
+                const initLocId = String(
+                    contract?.initiator?.location_id || contract?.initiator?.idlocation || contract?.initiator?.location?.id || '',
+                );
                 const initLocName = (contract?.initiator?.location_name || contract?.initiator?.location?.name || '').toLowerCase().trim();
                 const userLocName = (user.location_name || user.location?.name || '').toLowerCase().trim();
-                matchesLocation = (initLocId && userLocId && initLocId === userLocId) ||
-                                  (initLocName && userLocName && initLocName === userLocName);
+                matchesLocation = (initLocId && userLocId && initLocId === userLocId) || (initLocName && userLocName && initLocName === userLocName);
                 hasFilters = true;
             }
 
@@ -134,11 +143,11 @@ export function matchUserAgainstWorkflowPool(user: any, config: any, contract: a
             }
 
             if (auth.company_id) {
-                matchesGroup = matchesGroup && (String(auth.company_id) === userCompId);
+                matchesGroup = matchesGroup && String(auth.company_id) === userCompId;
                 hasFilters = true;
             } else if (auth.company_use_initiator) {
                 const initCompanyId = String(contract?.initiator?.company_id || contract?.initiator?.company?.id || '');
-                matchesGroup = matchesGroup && (initCompanyId === userCompId);
+                matchesGroup = matchesGroup && initCompanyId === userCompId;
                 hasFilters = true;
             }
 
@@ -146,7 +155,9 @@ export function matchUserAgainstWorkflowPool(user: any, config: any, contract: a
                 matchesRegion = String(auth.region_id) === userRegionId;
                 hasFilters = true;
             } else if (auth.region_use_initiator) {
-                const initRegion = String(contract?.initiator?.region_id || contract?.initiator?.region?.id || contract?.initiator?.company?.region_id || '');
+                const initRegion = String(
+                    contract?.initiator?.region_id || contract?.initiator?.region?.id || contract?.initiator?.company?.region_id || '',
+                );
                 matchesRegion = initRegion === userRegionId;
                 hasFilters = true;
             }
@@ -154,37 +165,54 @@ export function matchUserAgainstWorkflowPool(user: any, config: any, contract: a
             if (auth.organization_group_id) {
                 const targetOgId = String(auth.organization_group_id);
                 const targetOgName = (auth.organizationGroup?.name || auth.organization_group?.name || '').toLowerCase().trim();
-                const targetIdOrgGroup = auth.organizationGroup?.idorg_group !== undefined && auth.organizationGroup?.idorg_group !== null
-                    ? String(auth.organizationGroup.idorg_group)
-                    : (auth.organization_group?.idorg_group !== undefined && auth.organization_group?.idorg_group !== null ? String(auth.organization_group.idorg_group) : null);
+                const targetIdOrgGroup =
+                    auth.organizationGroup?.idorg_group !== undefined && auth.organizationGroup?.idorg_group !== null
+                        ? String(auth.organizationGroup.idorg_group)
+                        : auth.organization_group?.idorg_group !== undefined && auth.organization_group?.idorg_group !== null
+                          ? String(auth.organization_group.idorg_group)
+                          : null;
 
-                const userIdOrgGroup = user.department?.idorg_group !== undefined && user.department?.idorg_group !== null
-                    ? String(user.department.idorg_group)
-                    : (user.idorg_group !== undefined && user.idorg_group !== null ? String(user.idorg_group) : '');
+                const userIdOrgGroup =
+                    user.department?.idorg_group !== undefined && user.department?.idorg_group !== null
+                        ? String(user.department.idorg_group)
+                        : user.idorg_group !== undefined && user.idorg_group !== null
+                          ? String(user.idorg_group)
+                          : '';
                 const userOrgGroupName = (user.org_group_name || user.department?.org_group_name || '').toLowerCase().trim();
 
-                matchesOrgGroup = (userOrgGroupUuid !== '' && targetOgId === userOrgGroupUuid) ||
-                                  (targetOgId === userOrgGroupId) ||
-                                  (targetIdOrgGroup !== null && targetIdOrgGroup === userIdOrgGroup) ||
-                                  (targetOgName && targetOgName === userOrgGroupName) ||
-                                  (targetOgId === userIdOrgGroup);
+                matchesOrgGroup =
+                    (userOrgGroupUuid !== '' && targetOgId === userOrgGroupUuid) ||
+                    targetOgId === userOrgGroupId ||
+                    (targetIdOrgGroup !== null && targetIdOrgGroup === userIdOrgGroup) ||
+                    (targetOgName && targetOgName === userOrgGroupName) ||
+                    targetOgId === userIdOrgGroup;
                 hasFilters = true;
             } else if (auth.organization_group_use_initiator) {
-                const initOrgGroupId = String(contract?.initiator?.department?.organization_group_id || contract?.initiator?.organization_group_id || '');
-                const initIdOrgGroup = contract?.initiator?.department?.idorg_group !== undefined && contract?.initiator?.department?.idorg_group !== null
-                    ? String(contract?.initiator?.department.idorg_group)
-                    : (contract?.initiator?.idorg_group !== undefined && contract?.initiator?.idorg_group !== null ? String(contract?.initiator?.idorg_group) : '');
-                const initOrgGroupName = (contract?.initiator?.org_group_name || contract?.initiator?.department?.org_group_name || '').toLowerCase().trim();
+                const initOrgGroupId = String(
+                    contract?.initiator?.department?.organization_group_id || contract?.initiator?.organization_group_id || '',
+                );
+                const initIdOrgGroup =
+                    contract?.initiator?.department?.idorg_group !== undefined && contract?.initiator?.department?.idorg_group !== null
+                        ? String(contract?.initiator?.department.idorg_group)
+                        : contract?.initiator?.idorg_group !== undefined && contract?.initiator?.idorg_group !== null
+                          ? String(contract?.initiator?.idorg_group)
+                          : '';
+                const initOrgGroupName = (contract?.initiator?.org_group_name || contract?.initiator?.department?.org_group_name || '')
+                    .toLowerCase()
+                    .trim();
 
-                const userIdOrgGroup = user.department?.idorg_group !== undefined && user.department?.idorg_group !== null
-                    ? String(user.department.idorg_group)
-                    : (user.idorg_group !== undefined && user.idorg_group !== null ? String(user.idorg_group) : '');
+                const userIdOrgGroup =
+                    user.department?.idorg_group !== undefined && user.department?.idorg_group !== null
+                        ? String(user.department.idorg_group)
+                        : user.idorg_group !== undefined && user.idorg_group !== null
+                          ? String(user.idorg_group)
+                          : '';
                 const userOrgGroupName = (user.org_group_name || user.department?.org_group_name || '').toLowerCase().trim();
 
                 matchesOrgGroup = Boolean(
                     (initOrgGroupId && userOrgGroupId && initOrgGroupId === userOrgGroupId) ||
                     (initIdOrgGroup && userIdOrgGroup && initIdOrgGroup === userIdOrgGroup) ||
-                    (initOrgGroupName && userOrgGroupName && initOrgGroupName === userOrgGroupName)
+                    (initOrgGroupName && userOrgGroupName && initOrgGroupName === userOrgGroupName),
                 );
                 hasFilters = true;
             }
@@ -197,12 +225,7 @@ export function matchUserAgainstWorkflowPool(user: any, config: any, contract: a
         });
     }
 
-    const hasNewConfig = (
-        config.custom !== undefined ||
-        config.users !== undefined ||
-        config.roles !== undefined ||
-        config.departments !== undefined
-    );
+    const hasNewConfig = config.custom !== undefined || config.users !== undefined || config.roles !== undefined || config.departments !== undefined;
 
     if (hasNewConfig) {
         const targetUsers = config.users || [];
@@ -249,10 +272,7 @@ export function matchUserAgainstWorkflowPool(user: any, config: any, contract: a
 
         let matchesRole = true;
         if (hasRoles) {
-            matchesRole = targetRoles.some((r: string) =>
-                r.toLowerCase() === user.role?.toLowerCase() ||
-                String(r) === String(user.role_id)
-            );
+            matchesRole = targetRoles.some((r: string) => r.toLowerCase() === user.role?.toLowerCase() || String(r) === String(user.role_id));
         }
 
         let matchesDept = true;
@@ -272,7 +292,13 @@ export function matchUserAgainstWorkflowPool(user: any, config: any, contract: a
         }
 
         // If config is completely empty (no users, no custom, no roles, no departments, no divisions), default to false
-        if (targetUsers.length === 0 && customActors.length === 0 && targetRoles.length === 0 && targetDepts.length === 0 && targetDivs.length === 0) {
+        if (
+            targetUsers.length === 0 &&
+            customActors.length === 0 &&
+            targetRoles.length === 0 &&
+            targetDepts.length === 0 &&
+            targetDivs.length === 0
+        ) {
             return false;
         }
 

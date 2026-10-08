@@ -3,17 +3,20 @@
 namespace App\Services\Workflow;
 
 use App\Enums\WorkflowAction;
-use App\Models\Approval;
-use App\Models\Contract;
-use App\Models\ContractStatus;
-use App\Models\User;
-use App\Models\Workflow;
-use App\Models\WorkflowStep;
-use App\Models\WorkflowStepAction;
+use App\Models\Master\ContractStatus;
+use App\Models\Master\User;
+use App\Models\Master\Workflow;
+use App\Models\Master\WorkflowStep;
+use App\Models\Master\WorkflowStepAction;
+use App\Models\Transaction\Approval;
+use App\Models\Transaction\Contract;
+use App\Services\Workflow\Actions\ActionAutofillHandler;
+use App\Services\Workflow\Actions\ActionFieldValidator;
 use App\Services\Workflow\Actions\WorkflowTransitionService;
 use App\Services\Workflow\Concerns\EvaluatesWorkflowSteps;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class ContractWorkflowService
 {
@@ -133,8 +136,8 @@ class ContractWorkflowService
 
         $statusStr = ($firstStep->meta && ! empty($firstStep->meta['target_status']))
             ? $firstStep->meta['target_status']
-            : ($firstStep->actions()->whereIn('action_code', ['approve', 'submit'])->value('target_status') 
-                ?? data_get($workflow->meta, 'initial_status') 
+            : ($firstStep->actions()->whereIn('action_code', ['approve', 'submit'])->value('target_status')
+                ?? data_get($workflow->meta, 'initial_status')
                 ?? $contract->status);
         $nextStatus = ContractStatus::where('code', $statusStr)->first();
 
@@ -241,8 +244,8 @@ class ContractWorkflowService
             $this->applyAutofilledFields($contract, $stepAction->autofilled_fields);
         }
 
-        $actionIdToSave = ($stepAction?->id && \Illuminate\Support\Str::isUuid($stepAction->id)) ? $stepAction->id : (\Illuminate\Support\Str::isUuid($actionId) ? $actionId : null);
-        $actionCodeToSave = $stepAction?->action_code instanceof \App\Enums\WorkflowAction ? $stepAction->action_code->value : ($stepAction?->action_code ?? (string) $actionCode);
+        $actionIdToSave = ($stepAction?->id && Str::isUuid($stepAction->id)) ? $stepAction->id : (Str::isUuid($actionId) ? $actionId : null);
+        $actionCodeToSave = $stepAction?->action_code instanceof WorkflowAction ? $stepAction->action_code->value : ($stepAction?->action_code ?? (string) $actionCode);
         $actionAliasToSave = $stepAction?->alias;
 
         $stepName = $approval->workflowStep?->name ?: "Tahap {$approval->sequence}";
@@ -329,7 +332,7 @@ class ContractWorkflowService
 
         $allApproved = $adhocApproved && $signersApproved && $regularApproved;
 
-        $isBranchOrReject = in_array(strtolower((string) $actionCode), ['branch', 'cross_workflow', 'reject', 'rejection', 'tolak']) 
+        $isBranchOrReject = in_array(strtolower((string) $actionCode), ['branch', 'cross_workflow', 'reject', 'rejection', 'tolak'])
             || in_array(strtolower((string) $actionCodeToSave), ['branch', 'cross_workflow', 'reject', 'rejection', 'tolak']);
 
         if ($allApproved || $isBranchOrReject) {
@@ -377,8 +380,8 @@ class ContractWorkflowService
                 $nextStep = $this->evaluateTransition($contract, $step, $action);
                 if ($nextStep && $nextStep->id !== $step->id) {
                     $statusStr = $action->target_status
-                        ?: ($nextStep->meta['target_status'] 
-                            ?? $nextStep->actions()->where('action_code', 'approve')->value('target_status') 
+                        ?: ($nextStep->meta['target_status']
+                            ?? $nextStep->actions()->where('action_code', 'approve')->value('target_status')
                             ?? $contract->status);
                     $nextStatus = ContractStatus::where('code', $statusStr)->first();
 
@@ -436,7 +439,7 @@ class ContractWorkflowService
      */
     public function applyAutofilledFields(Contract $contract, array $fields): void
     {
-        app(\App\Services\Workflow\Actions\ActionAutofillHandler::class)->apply($contract, $fields);
+        app(ActionAutofillHandler::class)->apply($contract, $fields);
     }
 
     /**
@@ -444,8 +447,6 @@ class ContractWorkflowService
      */
     public function validateRequiredFields(Contract $contract, WorkflowStep $step, ?WorkflowStepAction $action = null, ?string $assignedPicId = null): void
     {
-        app(\App\Services\Workflow\Actions\ActionFieldValidator::class)->validate($contract, $step, $action, $assignedPicId);
+        app(ActionFieldValidator::class)->validate($contract, $step, $action, $assignedPicId);
     }
 }
-
-

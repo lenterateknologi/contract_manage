@@ -1,4 +1,4 @@
-import { CheckCircle2, FileSignature, GitBranch, Settings2, UserCheck, XCircle } from 'lucide-react';
+import { CheckCircle2, GitBranch, Settings2, UserCheck, XCircle } from 'lucide-react';
 
 export const AVAILABLE_FIELDS = [
     { value: 'pic', label: 'Data PIC (Penanggung Jawab)' },

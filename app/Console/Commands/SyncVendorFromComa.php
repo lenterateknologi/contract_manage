@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Vendor;
+use App\Models\Master\Vendor;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;

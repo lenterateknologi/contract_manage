@@ -18,28 +18,28 @@ Sistem Manajemen Kontrak terintegrasi dengan alur kerja persetujuan (workflow ap
 
 1. Clone repositori dan masuk ke direktori proyek.
 2. Salin file konfigurasi lingkungan:
-   ```bash
-   cp .env.example .env
-   ```
+    ```bash
+    cp .env.example .env
+    ```
 3. Instal dependensi backend dan frontend:
-   ```bash
-   composer install
-   npm install
-   ```
+    ```bash
+    composer install
+    npm install
+    ```
 4. Generate key aplikasi dan jalankan migrasi database:
-   ```bash
-   php artisan key:generate
-   php artisan migrate
-   ```
+    ```bash
+    php artisan key:generate
+    php artisan migrate
+    ```
 5. Jalankan seeder untuk mengisi data master awal:
-   ```bash
-   php artisan db:seed
-   ```
+    ```bash
+    php artisan db:seed
+    ```
 6. Jalankan server lokal:
-   ```bash
-   # Terminal 1 (Backend)
-   php artisan serve
-   
-   # Terminal 2 (Frontend)
-   npm run dev
-   ```
+    ```bash
+    # Terminal 1 (Backend)
+    php artisan serve
+
+    # Terminal 2 (Frontend)
+    npm run dev
+    ```

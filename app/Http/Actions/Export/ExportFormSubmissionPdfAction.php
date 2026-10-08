@@ -2,18 +2,117 @@
 
 namespace App\Http\Actions\Export;
 
-use App\Models\Contract;
-use App\Models\FormSubmission;
-use App\Models\FormTemplate;
+use App\Jobs\GeneratePdfJob;
+use App\Models\Master\FormTemplate;
+use App\Models\Transaction\Contract;
+use App\Models\Transaction\FormSubmission;
+use App\Models\Transaction\FormSubmissionHistory;
 use App\Services\Utils\PdfMetadataService;
+use App\Services\Utils\PdfService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Str;
 use Spatie\Browsershot\Browsershot;
 
 class ExportFormSubmissionPdfAction
 {
     use HasExportHelpers;
+
+    public function queue(Contract $contract, string $type, Request $request)
+    {
+        Log::info("PDF Queue Request: id={$contract->id}, type={$type}");
+
+        $submission = FormSubmission::where('contract_id', $contract->id)
+            ->where('document_type', $type)
+            ->first();
+
+        $templateId = $request->input('form_template_id');
+        if ($templateId) {
+            $template = FormTemplate::find($templateId);
+        } else {
+            $template = $submission ? $submission->formTemplate : FormTemplate::where('document_type', $type)->first();
+        }
+
+        if (! $template) {
+            Log::error("Template not found in PDF Queue. Type: {$type}, Provided ID: ".($templateId ?? 'none'));
+
+            return response()->json(['message' => 'Template not found.'], 404);
+        }
+
+        $formDataRaw = $request->input('data');
+        if ($formDataRaw) {
+            $formData = is_string($formDataRaw) ? json_decode($formDataRaw, true) : $formDataRaw;
+        } else {
+            /** @var FormSubmissionHistory|null $latestVersion */
+            $latestVersion = $submission ? $submission->versions()->orderByDesc('version_no')->first() : null;
+            $formData = $latestVersion ? ($latestVersion->form_data ?? []) : [];
+        }
+
+        if ($type === 'f2') {
+            $f1Submission = FormSubmission::where('contract_id', $contract->id)
+                ->where('document_type', 'f1')
+                ->first();
+
+            $latestF1 = $f1Submission ? $f1Submission->versions()->orderByDesc('version_no')->first() : null;
+            $f1Data = $latestF1 ? ($latestF1->form_data ?? []) : [];
+
+            $formData = $this->applyInheritance($f1Data, $contract, $formData);
+        }
+
+        try {
+            $jobId = (string) Str::uuid();
+            $cacheKey = 'pdf_adhoc_'.$jobId;
+            $user = Auth::user();
+
+            Log::info("Prepping PDF Cache: {$cacheKey}");
+            Cache::put($cacheKey, [
+                'template' => $template->toArray() + ['fields' => $template->fields->toArray()],
+                'formData' => $formData,
+                'printedBy' => [
+                    'name' => $user?->name ?? 'System',
+                    'id' => $user?->id ?? '-',
+                    'email' => $user?->email ?? '',
+                    'timestamp' => now()->format('d/m/Y H:i:s'),
+                ],
+            ], 1800);
+
+            $printUrl = URL::temporarySignedRoute(
+                'admin.form-templates.render-adhoc',
+                now()->addMinutes(30),
+                ['key' => $cacheKey],
+            );
+
+            if (app()->environment('local')) {
+                $printUrl = str_replace('localhost', '127.0.0.1', $printUrl);
+            }
+
+            $safeNo = $contract->contract_no ? Str::slug($contract->contract_no) : 'contract';
+            $fileName = $safeNo.'_'.strtoupper($type).'_'.time().'.pdf';
+
+            Log::info("Dispatching PDF Job: {$jobId} for file: {$fileName}");
+            GeneratePdfJob::dispatch($jobId, $printUrl, $fileName);
+
+            Cache::put('pdf_status_'.$jobId, ['status' => 'pending', 'progress' => 10], 1800);
+
+            return response()->json([
+                'success' => true,
+                'job_id' => $jobId,
+            ]);
+        } catch (\Exception $e) {
+            Log::critical("PDF Queue Failure for ID {$contract->id}: ".$e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'type' => $type,
+            ]);
+
+            return response()->json([
+                'message' => 'Gagal antrikan PDF: '.$e->getMessage(),
+            ], 500);
+        }
+    }
 
     public function execute(Contract $contract, string $type, string $disposition = 'attachment', ?int $versionNo = null): mixed
     {
@@ -113,28 +212,8 @@ class ExportFormSubmissionPdfAction
                 $printUrl = str_replace('localhost', '127.0.0.1', $printUrl);
             }
 
-            $chromePath = file_exists('/Applications/Brave Browser.app/Contents/MacOS/Brave Browser')
-                ? '/Applications/Brave Browser.app/Contents/MacOS/Brave Browser'
-                : '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-
-            $finalPdf = Browsershot::url($printUrl)
-                ->setNodeBinary('/opt/homebrew/bin/node')
-                ->setNpmBinary('/opt/homebrew/bin/npm')
-                ->setChromePath($chromePath)
-                ->noSandbox()
-                ->addChromiumArguments([
-                    'disable-gpu',
-                    'disable-dev-shm-usage',
-                    'disable-setuid-sandbox',
-                    'no-first-run',
-                    'disable-extensions',
-                ])
-                ->timeout(180)
-                ->paperSize(210, 297, 'mm')
-                ->margins(0, 0, 0, 0)
-                ->showBackground()
+            $finalPdf = PdfService::browsershotUrl($printUrl, 180)
                 ->waitForSelector('#pdf-render-complete')
-                ->setDelay(1000)
                 ->pdf();
 
             if (! Storage::disk('local')->exists($pdfDir)) {

@@ -1,5 +1,5 @@
-import { usePage } from '@inertiajs/react';
 import { type PovOptions } from '@/types';
+import { usePage } from '@inertiajs/react';
 import { useMemo, useSyncExternalStore } from 'react';
 
 export interface NavPovOption {

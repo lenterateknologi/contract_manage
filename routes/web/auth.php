@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\ConfirmablePasswordController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 use App\Http\Controllers\Auth\EmailVerificationPromptController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\Auth\ImpersonateController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
 
@@ -55,10 +56,10 @@ Route::middleware('auth')->group(function () {
         ->name('logout');
 
     // User Impersonation (Super Admin)
-    Route::get('impersonate/search', [\App\Http\Controllers\Auth\ImpersonateController::class, 'search'])
+    Route::get('impersonate/search', [ImpersonateController::class, 'search'])
         ->name('impersonate.search');
-    Route::post('impersonate/switch/{userId}', [\App\Http\Controllers\Auth\ImpersonateController::class, 'switch'])
+    Route::post('impersonate/switch/{userId}', [ImpersonateController::class, 'switch'])
         ->name('impersonate.switch');
-    Route::post('impersonate/leave', [\App\Http\Controllers\Auth\ImpersonateController::class, 'leave'])
+    Route::post('impersonate/leave', [ImpersonateController::class, 'leave'])
         ->name('impersonate.leave');
 });

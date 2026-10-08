@@ -1,0 +1,44 @@
+<?php
+
+namespace App\Models\Transaction;
+
+use App\Models\Master\User;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+class FormSubmissionHistory extends Model
+{
+    protected $table = 't_form_submission_h';
+
+    use HasUuids, SoftDeletes;
+
+    protected $fillable = [
+        'submission_id',
+        'version_no',
+        'form_data',
+        'change_summary',
+        'created_by',
+        'workflow_step_id',
+        'step_number',
+        'workflow_iteration',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'form_data' => 'array',
+        ];
+    }
+
+    public function submission(): BelongsTo
+    {
+        return $this->belongsTo(FormSubmission::class, 'submission_id');
+    }
+
+    public function createdBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+}

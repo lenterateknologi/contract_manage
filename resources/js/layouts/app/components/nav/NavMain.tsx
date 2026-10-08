@@ -1,5 +1,3 @@
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/utilities/Collapsible';
-import { HighlightingCell } from '@/components/ui/utilities/Highlighter';
 import {
     SidebarGroup,
     SidebarGroupContent,
@@ -8,6 +6,8 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/navigation/Sidebar';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/utilities/Collapsible';
+import { HighlightingCell } from '@/components/ui/utilities/Highlighter';
 import { cn } from '@/lib/utils';
 import { type NavGroup, type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
@@ -20,9 +20,7 @@ export const NavMain = memo(function NavMain({ title, items = [], search = '' }:
     const path = page.url.split('?')[0];
 
     const allUrls = useMemo(() => {
-        return ((sidebarNavGroups as NavGroup[]) ?? [])
-            .flatMap((g) => g.items)
-            .map((item) => item.url.split('?')[0]);
+        return ((sidebarNavGroups as NavGroup[]) ?? []).flatMap((g) => g.items).map((item) => item.url.split('?')[0]);
     }, [sidebarNavGroups]);
 
     const checkActive = (itemUrl: string) => {
@@ -74,7 +72,7 @@ export const NavMain = memo(function NavMain({ title, items = [], search = '' }:
                                             className={cn(
                                                 'group/btn relative h-9 overflow-hidden rounded-xl px-3 transition-all duration-300',
                                                 isActive
-                                                    ? 'bg-primary text-white data-[active=true]:bg-primary data-[active=true]:text-white dark:bg-primary dark:text-white dark:data-[active=true]:bg-primary dark:data-[active=true]:text-white border-primary animate-in fade-in slide-in-from-left-1 font-semibold duration-300 shadow-xs'
+                                                    ? 'bg-primary data-[active=true]:bg-primary dark:bg-primary dark:data-[active=true]:bg-primary border-primary animate-in fade-in slide-in-from-left-1 font-semibold text-white shadow-xs duration-300 data-[active=true]:text-white dark:text-white dark:data-[active=true]:text-white'
                                                     : 'hover:bg-sidebar-accent/40 text-sidebar-foreground/70 hover:text-sidebar-foreground font-medium',
                                             )}
                                         >

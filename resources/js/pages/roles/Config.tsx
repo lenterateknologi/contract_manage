@@ -1,25 +1,23 @@
-import { FormSection, ManagementForm } from '@/pages/admin/components/ManagementForm';
-import { SELECTABLE_ICONS } from '@/pages/admin/components/NavigationManagement';
+import { Icons } from '@/components/ui';
 import { Button } from '@/components/ui/buttons/Button';
-import { Checkbox } from '@/components/ui/selection/Checkbox';
-import { useToast } from '@/components/ui/feedback/Toast';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/selection/Select';
 import { ConfirmationModal } from '@/components/ui/dialogs/ConfirmationModal';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialogs/Dialog';
-import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/dialogs/Sheet';
+import { Sheet, SheetContent } from '@/components/ui/dialogs/Sheet';
+import { useToast } from '@/components/ui/feedback/Toast';
+import { FloatingPanel } from '@/components/ui/navigation/FloatingPanel';
+import { MasterPageLayout } from '@/components/ui/navigation/MasterPageLayout';
+import { Checkbox } from '@/components/ui/selection/Checkbox';
 import {
     DropdownMenu,
-    DropdownMenuCheckboxItem,
     DropdownMenuContent,
-    DropdownMenuGroup,
     DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/selection/DropdownMenu';
-import { MasterPageLayout } from '@/components/ui/navigation/MasterPageLayout';
-import { FloatingPanel } from '@/components/ui/navigation/FloatingPanel';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/selection/Select';
 import { cn } from '@/lib/utils';
+import { SELECTABLE_ICONS } from '@/pages/admin/components/NavigationManagement';
 import {
     defaultDropAnimationSideEffects,
     DndContext,
@@ -29,7 +27,6 @@ import {
     DragStartEvent,
     KeyboardSensor,
     PointerSensor,
-    closestCenter,
     pointerWithin,
     UniqueIdentifier,
     useDroppable,
@@ -39,7 +36,6 @@ import {
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Head, router, useForm } from '@inertiajs/react';
-import { AppIcon, Icons, type LucideIcon } from '@/components/ui';
 import React, { useEffect, useMemo, useState } from 'react';
 
 const {
@@ -158,7 +154,12 @@ const PERMISSION_CONFIG: Record<
     },
 };
 
-function getPermissionLevel(access: any): { level: PresetLevel; label: string; badgeClass: string; icon: React.ComponentType<{ size?: number; className?: string }> } {
+function getPermissionLevel(access: any): {
+    level: PresetLevel;
+    label: string;
+    badgeClass: string;
+    icon: React.ComponentType<{ size?: number; className?: string }>;
+} {
     if (!access) {
         return {
             level: 'none',
@@ -297,53 +298,48 @@ const ModernModuleRow = React.memo(
         return (
             <div
                 className={cn(
-                    'flex flex-col md:flex-row md:items-center justify-between gap-3 p-3.5 border-b border-surface-border/60 hover:bg-slate-50/70 dark:hover:bg-zinc-800/40 transition-colors last:border-b-0',
+                    'border-surface-border/60 flex flex-col justify-between gap-3 border-b p-3.5 transition-colors last:border-b-0 hover:bg-slate-50/70 md:flex-row md:items-center dark:hover:bg-zinc-800/40',
                     isSelected ? 'bg-primary/5 dark:bg-primary/10' : 'bg-surface-card',
                 )}
             >
                 {/* Module Identification */}
-                <div className="flex items-center gap-3 min-w-0 md:w-[35%] lg:w-[30%]">
+                <div className="flex min-w-0 items-center gap-3 md:w-[35%] lg:w-[30%]">
                     <Checkbox
                         checked={isSelected}
                         onCheckedChange={() => onSelect(module.id)}
-                        className="border-surface-border data-[state=checked]:bg-primary data-[state=checked]:border-primary h-4 w-4 rounded-md transition-all active:scale-90 shrink-0 cursor-pointer"
+                        className="border-surface-border data-[state=checked]:bg-primary data-[state=checked]:border-primary h-4 w-4 shrink-0 cursor-pointer rounded-md transition-all active:scale-90"
                         title={isSelected ? 'Batalkan pilihan' : 'Pilih untuk bulk edit'}
                     />
-                    <div 
+                    <div
                         onClick={() => onOpenSideConfig(module)}
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 cursor-pointer hover:bg-primary/20 transition-colors"
+                        className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-xl border transition-colors"
                         title="Klik untuk konfigurasi detail modul"
                     >
-                        {module.icon && SELECTABLE_ICONS[module.icon]
-                            ? React.createElement(SELECTABLE_ICONS[module.icon], { size: 16 })
-                            : <LayoutGrid size={16} />}
+                        {module.icon && SELECTABLE_ICONS[module.icon] ? (
+                            React.createElement(SELECTABLE_ICONS[module.icon], { size: 16 })
+                        ) : (
+                            <LayoutGrid size={16} />
+                        )}
                     </div>
-                    <div 
-                        onClick={() => onOpenSideConfig(module)}
-                        className="flex flex-col min-w-0 cursor-pointer group"
-                    >
+                    <div onClick={() => onOpenSideConfig(module)} className="group flex min-w-0 cursor-pointer flex-col">
                         <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-text-main truncate group-hover:text-primary transition-colors">
+                            <span className="text-text-main group-hover:text-primary truncate text-xs font-bold transition-colors">
                                 {module.name}
                             </span>
                         </div>
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                            <span className="font-mono text-[10px] text-text-desc truncate">
-                                {module.identifier || 'system.module'}
-                            </span>
+                        <div className="mt-0.5 flex items-center gap-1.5">
+                            <span className="text-text-desc truncate font-mono text-[10px]">{module.identifier || 'system.module'}</span>
                             {module.route && (
-                                <span className="text-[10px] text-text-desc/60 truncate border-l border-surface-border pl-1.5">
-                                    {module.route}
-                                </span>
+                                <span className="text-text-desc/60 border-surface-border truncate border-l pl-1.5 text-[10px]">{module.route}</span>
                             )}
                         </div>
                     </div>
                 </div>
 
                 {/* Active Permission Badges */}
-                <div 
+                <div
                     onClick={() => onOpenSideConfig(module)}
-                    className="flex flex-wrap items-center gap-1.5 flex-1 min-w-0 cursor-pointer"
+                    className="flex min-w-0 flex-1 cursor-pointer flex-wrap items-center gap-1.5"
                     title="Buka panel konfigurasi izin"
                 >
                     {PERMISSIONS.map((p) => {
@@ -357,7 +353,7 @@ const ModernModuleRow = React.memo(
                             <span
                                 key={p}
                                 className={cn(
-                                    'inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10.5px] font-semibold border shadow-2xs transition-all',
+                                    'inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10.5px] font-semibold shadow-2xs transition-all',
                                     cfg.badgeClass,
                                 )}
                                 title={cfg.description}
@@ -368,7 +364,7 @@ const ModernModuleRow = React.memo(
                         );
                     })}
                     {status.level === 'none' && (
-                        <span className="text-[11px] text-text-desc/70 italic flex items-center gap-1">
+                        <span className="text-text-desc/70 flex items-center gap-1 text-[11px] italic">
                             <ShieldOff size={12} />
                             Tidak ada hak akses yang diizinkan
                         </span>
@@ -376,10 +372,10 @@ const ModernModuleRow = React.memo(
                 </div>
 
                 {/* Dropdown Action & Level Indicator */}
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex shrink-0 items-center gap-2">
                     <span
                         className={cn(
-                            'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border shadow-2xs',
+                            'inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-bold shadow-2xs',
                             status.badgeClass,
                         )}
                     >
@@ -392,7 +388,7 @@ const ModernModuleRow = React.memo(
                         variant="ghost"
                         size="sm"
                         onClick={() => onOpenSideConfig(module)}
-                        className="h-8 px-2.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 hover:bg-primary/10 hover:text-primary cursor-pointer border border-surface-border/70 bg-surface-muted/40"
+                        className="hover:bg-primary/10 hover:text-primary border-surface-border/70 bg-surface-muted/40 flex h-8 cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 text-xs font-semibold"
                         title="Buka Side Config izin lengkap"
                     >
                         <SlidersHorizontal size={12} />
@@ -405,62 +401,65 @@ const ModernModuleRow = React.memo(
                             <Button
                                 variant="outline"
                                 size="sm"
-                                className="h-8 px-2.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 border-surface-border bg-surface-muted/60 hover:bg-surface-border/80 cursor-pointer"
+                                className="border-surface-border bg-surface-muted/60 hover:bg-surface-border/80 flex h-8 cursor-pointer items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold"
                             >
                                 <span>Preset</span>
                                 <ChevronDown size={12} className="text-text-desc" />
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-64 p-1.5 bg-white dark:bg-zinc-900 border border-surface-border shadow-2xl rounded-xl z-50">
-                            <DropdownMenuLabel className="text-[10px] font-bold uppercase tracking-wider text-text-desc px-2 py-1">
+                        <DropdownMenuContent
+                            align="end"
+                            className="border-surface-border z-50 w-64 rounded-xl border bg-white p-1.5 shadow-2xl dark:bg-zinc-900"
+                        >
+                            <DropdownMenuLabel className="text-text-desc px-2 py-1 text-[10px] font-bold tracking-wider uppercase">
                                 Preset Akses Cepat
                             </DropdownMenuLabel>
                             <DropdownMenuItem
                                 onClick={() => onSetPreset(module.id, 'full')}
-                                className="cursor-pointer rounded-lg text-xs font-semibold flex items-center gap-2 py-1.5 px-2 hover:bg-primary/10 hover:text-primary"
+                                className="hover:bg-primary/10 hover:text-primary flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-xs font-semibold"
                             >
-                                <ShieldCheck size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                <ShieldCheck size={14} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
                                 <div className="flex flex-col">
                                     <span>Akses Penuh</span>
-                                    <span className="text-[10px] font-normal text-text-desc">Semua izin CRUD & Approve</span>
+                                    <span className="text-text-desc text-[10px] font-normal">Semua izin CRUD & Approve</span>
                                 </div>
                             </DropdownMenuItem>
                             <DropdownMenuItem
                                 onClick={() => onSetPreset(module.id, 'editor')}
-                                className="cursor-pointer rounded-lg text-xs font-semibold flex items-center gap-2 py-1.5 px-2 hover:bg-primary/10 hover:text-primary"
+                                className="hover:bg-primary/10 hover:text-primary flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-xs font-semibold"
                             >
-                                <Edit2 size={14} className="text-blue-600 dark:text-blue-400 shrink-0" />
+                                <Edit2 size={14} className="shrink-0 text-blue-600 dark:text-blue-400" />
                                 <div className="flex flex-col">
                                     <span>Editor (CRUD)</span>
-                                    <span className="text-[10px] font-normal text-text-desc">Read, Create, Update</span>
+                                    <span className="text-text-desc text-[10px] font-normal">Read, Create, Update</span>
                                 </div>
                             </DropdownMenuItem>
                             <DropdownMenuItem
                                 onClick={() => onSetPreset(module.id, 'read')}
-                                className="cursor-pointer rounded-lg text-xs font-semibold flex items-center gap-2 py-1.5 px-2 hover:bg-primary/10 hover:text-primary"
+                                className="hover:bg-primary/10 hover:text-primary flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-xs font-semibold"
                             >
-                                <Eye size={14} className="text-sky-600 dark:text-sky-400 shrink-0" />
+                                <Eye size={14} className="shrink-0 text-sky-600 dark:text-sky-400" />
                                 <div className="flex flex-col">
                                     <span>Lihat Saja (Read Only)</span>
-                                    <span className="text-[10px] font-normal text-text-desc">Hanya dapat melihat data</span>
+                                    <span className="text-text-desc text-[10px] font-normal">Hanya dapat melihat data</span>
                                 </div>
                             </DropdownMenuItem>
                             <DropdownMenuItem
                                 onClick={() => onSetPreset(module.id, 'none')}
-                                className="cursor-pointer rounded-lg text-xs font-semibold flex items-center gap-2 py-1.5 px-2 hover:bg-rose-500/10 hover:text-rose-600"
+                                className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-xs font-semibold hover:bg-rose-500/10 hover:text-rose-600"
                             >
-                                <ShieldOff size={14} className="text-rose-500 shrink-0" />
+                                <ShieldOff size={14} className="shrink-0 text-rose-500" />
                                 <div className="flex flex-col">
                                     <span>Tidak Ada Akses</span>
-                                    <span className="text-[10px] font-normal text-text-desc">Nonaktifkan semua izin</span>
+                                    <span className="text-text-desc text-[10px] font-normal">Nonaktifkan semua izin</span>
                                 </div>
                             </DropdownMenuItem>
 
-                            <DropdownMenuSeparator className="my-1 bg-surface-border" />
+                            <DropdownMenuSeparator className="bg-surface-border my-1" />
 
                             <DropdownMenuItem
                                 onClick={() => onOpenSideConfig(module)}
-                                className="cursor-pointer rounded-lg text-xs font-bold text-primary flex items-center gap-2 py-1.5 px-2 hover:bg-primary/10"
+                                className="text-primary hover:bg-primary/10 flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-xs font-bold"
                             >
                                 <SlidersHorizontal size={14} className="shrink-0" />
                                 <span>Buka Konfigurasi Detail</span>
@@ -483,14 +482,7 @@ interface ModuleAccessSideConfigProps {
     onSetPreset: (moduleId: string, preset: PresetLevel) => void;
 }
 
-const ModuleAccessSideConfig: React.FC<ModuleAccessSideConfigProps> = ({
-    module,
-    role,
-    access,
-    onClose,
-    onToggle,
-    onSetPreset,
-}) => {
+const ModuleAccessSideConfig: React.FC<ModuleAccessSideConfigProps> = ({ module, role, access, onClose, onToggle, onSetPreset }) => {
     if (!module) return null;
 
     const status = getPermissionLevel(access);
@@ -500,113 +492,126 @@ const ModuleAccessSideConfig: React.FC<ModuleAccessSideConfigProps> = ({
     const isFormsModule = module.identifier === 'ADMIN_FORMS';
 
     return (
-        <Sheet open={!!module} onOpenChange={(open) => { if (!open) onClose(); }}>
-            <SheetContent className="w-full sm:max-w-xl md:max-w-2xl overflow-y-auto p-0 flex flex-col bg-surface-card border-l border-surface-border z-50">
+        <Sheet
+            open={!!module}
+            onOpenChange={(open) => {
+                if (!open) onClose();
+            }}
+        >
+            <SheetContent className="bg-surface-card border-surface-border z-50 flex w-full flex-col overflow-y-auto border-l p-0 sm:max-w-xl md:max-w-2xl">
                 {/* Header */}
-                <div className="p-6 pb-4 border-b border-surface-border bg-gradient-to-b from-primary/5 via-transparent to-transparent">
+                <div className="border-surface-border from-primary/5 border-b bg-gradient-to-b via-transparent to-transparent p-6 pb-4">
                     <div className="flex items-start justify-between gap-4">
                         <div className="flex items-center gap-3.5">
-                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary border border-primary/20 shadow-xs">
-                                {module.icon && SELECTABLE_ICONS[module.icon]
-                                    ? React.createElement(SELECTABLE_ICONS[module.icon], { size: 22 })
-                                    : <LayoutGrid size={22} />}
+                            <div className="bg-primary/10 text-primary border-primary/20 flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border shadow-xs">
+                                {module.icon && SELECTABLE_ICONS[module.icon] ? (
+                                    React.createElement(SELECTABLE_ICONS[module.icon], { size: 22 })
+                                ) : (
+                                    <LayoutGrid size={22} />
+                                )}
                             </div>
                             <div className="flex flex-col">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                    <h2 className="text-base font-bold text-text-main">
-                                        {module.name}
-                                    </h2>
-                                    <span className={cn('inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border', status.badgeClass)}>
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <h2 className="text-text-main text-base font-bold">{module.name}</h2>
+                                    <span
+                                        className={cn(
+                                            'inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-bold',
+                                            status.badgeClass,
+                                        )}
+                                    >
                                         <StatusIcon size={11} />
                                         {status.label}
                                     </span>
                                 </div>
-                                <div className="flex items-center gap-2 mt-1 text-xs text-text-desc">
-                                    <span className="font-mono bg-surface-muted px-1.5 py-0.5 rounded border border-surface-border text-[10.5px]">
+                                <div className="text-text-desc mt-1 flex items-center gap-2 text-xs">
+                                    <span className="bg-surface-muted border-surface-border rounded border px-1.5 py-0.5 font-mono text-[10.5px]">
                                         {module.identifier || 'system.module'}
                                     </span>
-                                    {module.route && (
-                                        <span className="text-[11px] text-text-desc/70">
-                                            {module.route}
-                                        </span>
-                                    )}
+                                    {module.route && <span className="text-text-desc/70 text-[11px]">{module.route}</span>}
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     {/* Role Target Info Banner */}
-                    <div className="mt-4 p-3 rounded-xl bg-surface-muted/60 border border-surface-border flex items-center justify-between gap-3 text-xs">
-                        <div className="flex items-center gap-2 text-text-main font-medium">
+                    <div className="bg-surface-muted/60 border-surface-border mt-4 flex items-center justify-between gap-3 rounded-xl border p-3 text-xs">
+                        <div className="text-text-main flex items-center gap-2 font-medium">
                             <Shield size={14} className="text-primary shrink-0" />
-                            <span>Konfigurasi Izin Role: <strong className="text-primary font-bold">{role.name}</strong></span>
+                            <span>
+                                Konfigurasi Izin Role: <strong className="text-primary font-bold">{role.name}</strong>
+                            </span>
                         </div>
-                        <span className="text-[10px] text-text-desc font-mono">ID: {role.id}</span>
+                        <span className="text-text-desc font-mono text-[10px]">ID: {role.id}</span>
                     </div>
                 </div>
 
-                <div className="p-6 space-y-6 flex-1 overflow-y-auto">
+                <div className="flex-1 space-y-6 overflow-y-auto p-6">
                     {/* Special Context Banner */}
                     {isTemplatesModule && (
-                        <div className="p-4 rounded-xl bg-sky-500/10 border border-sky-500/30 space-y-2">
-                            <div className="flex items-center gap-2 text-sky-700 dark:text-sky-300 font-bold text-xs">
+                        <div className="space-y-2 rounded-xl border border-sky-500/30 bg-sky-500/10 p-4">
+                            <div className="flex items-center gap-2 text-xs font-bold text-sky-700 dark:text-sky-300">
                                 <Info size={14} className="shrink-0" />
                                 <span>Panduan Otorisasi Document & Contract Templates</span>
                             </div>
-                            <p className="text-[11.5px] text-sky-900 dark:text-sky-200 leading-relaxed">
+                            <p className="text-[11.5px] leading-relaxed text-sky-900 dark:text-sky-200">
                                 Modul ini mengontrol manajemen berkas template dokumen kontrak.
                             </p>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-sky-800 dark:text-sky-200/90 pt-1">
+                            <div className="grid grid-cols-1 gap-2 pt-1 text-[11px] text-sky-800 sm:grid-cols-2 dark:text-sky-200/90">
                                 <div className="flex items-start gap-1.5">
-                                    <Check size={13} className="text-sky-600 mt-0.5 shrink-0" />
-                                    <span><strong>Lihat & Download:</strong> Kontrol akses membuka halaman dan mengunduh berkas template (.docx / .pdf).</span>
+                                    <Check size={13} className="mt-0.5 shrink-0 text-sky-600" />
+                                    <span>
+                                        <strong>Lihat & Download:</strong> Kontrol akses membuka halaman dan mengunduh berkas template (.docx / .pdf).
+                                    </span>
                                 </div>
                                 <div className="flex items-start gap-1.5">
-                                    <Check size={13} className="text-sky-600 mt-0.5 shrink-0" />
-                                    <span><strong>Mode Inisiator / CRUD:</strong> Membuat folder baru, upload file, rename, dan memindahkan dokumen.</span>
+                                    <Check size={13} className="mt-0.5 shrink-0 text-sky-600" />
+                                    <span>
+                                        <strong>Mode Inisiator / CRUD:</strong> Membuat folder baru, upload file, rename, dan memindahkan dokumen.
+                                    </span>
                                 </div>
                             </div>
                         </div>
                     )}
 
                     {isFormsModule && (
-                        <div className="p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/30 space-y-2">
-                            <div className="flex items-center gap-2 text-indigo-700 dark:text-indigo-300 font-bold text-xs">
+                        <div className="space-y-2 rounded-xl border border-indigo-500/30 bg-indigo-500/10 p-4">
+                            <div className="flex items-center gap-2 text-xs font-bold text-indigo-700 dark:text-indigo-300">
                                 <Info size={14} className="shrink-0" />
                                 <span>Panduan Otorisasi Form Management & Builder</span>
                             </div>
-                            <p className="text-[11.5px] text-indigo-900 dark:text-indigo-200 leading-relaxed">
-                                Mengatur perizinan pembuatan form dinamis, pembukaan editor Form Builder, impor skema, serta penghapusan template form.
+                            <p className="text-[11.5px] leading-relaxed text-indigo-900 dark:text-indigo-200">
+                                Mengatur perizinan pembuatan form dinamis, pembukaan editor Form Builder, impor skema, serta penghapusan template
+                                form.
                             </p>
                         </div>
                     )}
 
                     {/* Quick Preset Cards */}
                     <div>
-                        <div className="flex items-center justify-between mb-3">
-                            <h3 className="text-xs font-bold uppercase tracking-wider text-text-desc flex items-center gap-1.5">
+                        <div className="mb-3 flex items-center justify-between">
+                            <h3 className="text-text-desc flex items-center gap-1.5 text-xs font-bold tracking-wider uppercase">
                                 <Sparkles size={13} className="text-primary" />
                                 <span>Preset Akses Cepat</span>
                             </h3>
-                            <span className="text-[10.5px] text-text-desc/70">Klik untuk mengatur otomatis</span>
+                            <span className="text-text-desc/70 text-[10.5px]">Klik untuk mengatur otomatis</span>
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                             <button
                                 type="button"
                                 onClick={() => onSetPreset(module.id, 'full')}
                                 className={cn(
-                                    'flex items-start gap-3 p-3 rounded-xl border text-left transition-all cursor-pointer',
+                                    'flex cursor-pointer items-start gap-3 rounded-xl border p-3 text-left transition-all',
                                     status.level === 'full'
-                                        ? 'bg-emerald-500/10 border-emerald-500/50 ring-1 ring-emerald-500/50'
+                                        ? 'border-emerald-500/50 bg-emerald-500/10 ring-1 ring-emerald-500/50'
                                         : 'bg-surface-card border-surface-border hover:border-emerald-500/30 hover:bg-emerald-500/5',
                                 )}
                             >
-                                <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
+                                <div className="shrink-0 rounded-lg bg-emerald-500/10 p-2 text-emerald-600 dark:text-emerald-400">
                                     <ShieldCheck size={16} />
                                 </div>
-                                <div className="flex flex-col min-w-0">
-                                    <span className="text-xs font-bold text-text-main">Akses Penuh</span>
-                                    <span className="text-[10.5px] text-text-desc mt-0.5">Semua izin CRUD, Download, Approve, Bulk Delete</span>
+                                <div className="flex min-w-0 flex-col">
+                                    <span className="text-text-main text-xs font-bold">Akses Penuh</span>
+                                    <span className="text-text-desc mt-0.5 text-[10.5px]">Semua izin CRUD, Download, Approve, Bulk Delete</span>
                                 </div>
                             </button>
 
@@ -614,18 +619,18 @@ const ModuleAccessSideConfig: React.FC<ModuleAccessSideConfigProps> = ({
                                 type="button"
                                 onClick={() => onSetPreset(module.id, 'editor')}
                                 className={cn(
-                                    'flex items-start gap-3 p-3 rounded-xl border text-left transition-all cursor-pointer',
+                                    'flex cursor-pointer items-start gap-3 rounded-xl border p-3 text-left transition-all',
                                     status.level === 'editor'
-                                        ? 'bg-blue-500/10 border-blue-500/50 ring-1 ring-blue-500/50'
+                                        ? 'border-blue-500/50 bg-blue-500/10 ring-1 ring-blue-500/50'
                                         : 'bg-surface-card border-surface-border hover:border-blue-500/30 hover:bg-blue-500/5',
                                 )}
                             >
-                                <div className="p-2 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 shrink-0">
+                                <div className="shrink-0 rounded-lg bg-blue-500/10 p-2 text-blue-600 dark:text-blue-400">
                                     <Edit2 size={16} />
                                 </div>
-                                <div className="flex flex-col min-w-0">
-                                    <span className="text-xs font-bold text-text-main">Mode Inisiator / Editor</span>
-                                    <span className="text-[10.5px] text-text-desc mt-0.5">Lihat, Download, Upload/Tambah, Ubah/Pindah</span>
+                                <div className="flex min-w-0 flex-col">
+                                    <span className="text-text-main text-xs font-bold">Mode Inisiator / Editor</span>
+                                    <span className="text-text-desc mt-0.5 text-[10.5px]">Lihat, Download, Upload/Tambah, Ubah/Pindah</span>
                                 </div>
                             </button>
 
@@ -633,18 +638,18 @@ const ModuleAccessSideConfig: React.FC<ModuleAccessSideConfigProps> = ({
                                 type="button"
                                 onClick={() => onSetPreset(module.id, 'read')}
                                 className={cn(
-                                    'flex items-start gap-3 p-3 rounded-xl border text-left transition-all cursor-pointer',
+                                    'flex cursor-pointer items-start gap-3 rounded-xl border p-3 text-left transition-all',
                                     status.level === 'read'
-                                        ? 'bg-sky-500/10 border-sky-500/50 ring-1 ring-sky-500/50'
+                                        ? 'border-sky-500/50 bg-sky-500/10 ring-1 ring-sky-500/50'
                                         : 'bg-surface-card border-surface-border hover:border-sky-500/30 hover:bg-sky-500/5',
                                 )}
                             >
-                                <div className="p-2 rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400 shrink-0">
+                                <div className="shrink-0 rounded-lg bg-sky-500/10 p-2 text-sky-600 dark:text-sky-400">
                                     <Eye size={16} />
                                 </div>
-                                <div className="flex flex-col min-w-0">
-                                    <span className="text-xs font-bold text-text-main">Lihat & Unduh Saja</span>
-                                    <span className="text-[10.5px] text-text-desc mt-0.5">Hanya melihat & mengunduh berkas template</span>
+                                <div className="flex min-w-0 flex-col">
+                                    <span className="text-text-main text-xs font-bold">Lihat & Unduh Saja</span>
+                                    <span className="text-text-desc mt-0.5 text-[10.5px]">Hanya melihat & mengunduh berkas template</span>
                                 </div>
                             </button>
 
@@ -652,18 +657,18 @@ const ModuleAccessSideConfig: React.FC<ModuleAccessSideConfigProps> = ({
                                 type="button"
                                 onClick={() => onSetPreset(module.id, 'none')}
                                 className={cn(
-                                    'flex items-start gap-3 p-3 rounded-xl border text-left transition-all cursor-pointer',
+                                    'flex cursor-pointer items-start gap-3 rounded-xl border p-3 text-left transition-all',
                                     status.level === 'none'
-                                        ? 'bg-rose-500/10 border-rose-500/50 ring-1 ring-rose-500/50'
+                                        ? 'border-rose-500/50 bg-rose-500/10 ring-1 ring-rose-500/50'
                                         : 'bg-surface-card border-surface-border hover:border-rose-500/30 hover:bg-rose-500/5',
                                 )}
                             >
-                                <div className="p-2 rounded-lg bg-rose-500/10 text-rose-600 shrink-0">
+                                <div className="shrink-0 rounded-lg bg-rose-500/10 p-2 text-rose-600">
                                     <ShieldOff size={16} />
                                 </div>
-                                <div className="flex flex-col min-w-0">
-                                    <span className="text-xs font-bold text-text-main">Nonaktifkan Semua</span>
-                                    <span className="text-[10.5px] text-text-desc mt-0.5">Role tidak memiliki izin apa pun di modul ini</span>
+                                <div className="flex min-w-0 flex-col">
+                                    <span className="text-text-main text-xs font-bold">Nonaktifkan Semua</span>
+                                    <span className="text-text-desc mt-0.5 text-[10.5px]">Role tidak memiliki izin apa pun di modul ini</span>
                                 </div>
                             </button>
                         </div>
@@ -671,12 +676,12 @@ const ModuleAccessSideConfig: React.FC<ModuleAccessSideConfigProps> = ({
 
                     {/* Detailed Granular Permission Cards */}
                     <div className="space-y-3">
-                        <div className="flex items-center justify-between border-b border-surface-border pb-2">
-                            <h3 className="text-xs font-bold uppercase tracking-wider text-text-desc flex items-center gap-1.5">
+                        <div className="border-surface-border flex items-center justify-between border-b pb-2">
+                            <h3 className="text-text-desc flex items-center gap-1.5 text-xs font-bold tracking-wider uppercase">
                                 <SlidersHorizontal size={13} className="text-primary" />
                                 <span>Izin Granular Terperinci</span>
                             </h3>
-                            <span className="text-[10.5px] text-text-desc">Sesuaikan hak perizinan spesifik</span>
+                            <span className="text-text-desc text-[10.5px]">Sesuaikan hak perizinan spesifik</span>
                         </div>
 
                         <div className="space-y-2.5">
@@ -706,13 +711,13 @@ const ModuleAccessSideConfig: React.FC<ModuleAccessSideConfigProps> = ({
                                     <div
                                         key={p}
                                         className={cn(
-                                            'p-3.5 rounded-xl border transition-all flex items-center justify-between gap-4',
+                                            'flex items-center justify-between gap-4 rounded-xl border p-3.5 transition-all',
                                             isChecked
                                                 ? 'bg-surface-card border-primary/30 shadow-xs'
                                                 : 'bg-surface-card/60 border-surface-border/70 opacity-80 hover:opacity-100',
                                         )}
                                     >
-                                        <div className="flex items-center gap-3 min-w-0">
+                                        <div className="flex min-w-0 items-center gap-3">
                                             <div
                                                 className={cn(
                                                     'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border transition-colors',
@@ -723,24 +728,20 @@ const ModuleAccessSideConfig: React.FC<ModuleAccessSideConfigProps> = ({
                                             >
                                                 <Icon size={16} className={isChecked ? cfg.colorClass : undefined} />
                                             </div>
-                                            <div className="flex flex-col min-w-0">
+                                            <div className="flex min-w-0 flex-col">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="text-xs font-bold text-text-main">
-                                                        {cfg.label}
-                                                    </span>
+                                                    <span className="text-text-main text-xs font-bold">{cfg.label}</span>
                                                     {isChecked ? (
-                                                        <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[9.5px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                                                        <span className="py-0.2 inline-flex items-center rounded border border-emerald-500/20 bg-emerald-500/10 px-1.5 text-[9.5px] font-bold text-emerald-600 dark:text-emerald-400">
                                                             Aktif
                                                         </span>
                                                     ) : (
-                                                        <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[9.5px] font-medium bg-surface-muted text-text-desc border border-surface-border">
+                                                        <span className="py-0.2 bg-surface-muted text-text-desc border-surface-border inline-flex items-center rounded border px-1.5 text-[9.5px] font-medium">
                                                             Nonaktif
                                                         </span>
                                                     )}
                                                 </div>
-                                                <span className="text-[11px] text-text-desc mt-0.5 leading-snug">
-                                                    {detailedDesc}
-                                                </span>
+                                                <span className="text-text-desc mt-0.5 text-[11px] leading-snug">{detailedDesc}</span>
                                             </div>
                                         </div>
 
@@ -750,8 +751,8 @@ const ModuleAccessSideConfig: React.FC<ModuleAccessSideConfigProps> = ({
                                             aria-checked={isChecked}
                                             onClick={() => onToggle(module.id, p, !isChecked)}
                                             className={cn(
-                                                'relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
-                                                isChecked ? 'bg-primary' : 'bg-surface-muted border border-surface-border',
+                                                'focus:ring-primary relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 outline-none focus:ring-2 focus:ring-offset-2',
+                                                isChecked ? 'bg-primary' : 'bg-surface-muted border-surface-border border',
                                             )}
                                         >
                                             <span
@@ -769,16 +770,9 @@ const ModuleAccessSideConfig: React.FC<ModuleAccessSideConfigProps> = ({
                 </div>
 
                 {/* Footer */}
-                <div className="p-4 border-t border-surface-border bg-surface-card flex items-center justify-between gap-3">
-                    <div className="text-[11px] text-text-desc">
-                        Perubahan otomatis disinkronkan ke draft matriks akses.
-                    </div>
-                    <Button
-                        variant="primary"
-                        size="sm"
-                        onClick={onClose}
-                        className="rounded-lg text-xs font-bold px-4 cursor-pointer"
-                    >
+                <div className="border-surface-border bg-surface-card flex items-center justify-between gap-3 border-t p-4">
+                    <div className="text-text-desc text-[11px]">Perubahan otomatis disinkronkan ke draft matriks akses.</div>
+                    <Button variant="primary" size="sm" onClick={onClose} className="cursor-pointer rounded-lg px-4 text-xs font-bold">
                         <Check size={14} />
                         <span>Selesai</span>
                     </Button>
@@ -821,42 +815,42 @@ const SortableModuleItem = ({
             ref={setNodeRef}
             style={style}
             className={cn(
-                'group border-surface-border/70 bg-surface-card hover:bg-slate-50/70 dark:hover:bg-zinc-800/40 flex items-center justify-between gap-3 rounded-xl border p-3 transition-all shadow-2xs',
+                'group border-surface-border/70 bg-surface-card flex items-center justify-between gap-3 rounded-xl border p-3 shadow-2xs transition-all hover:bg-slate-50/70 dark:hover:bg-zinc-800/40',
                 isDragging && 'border-primary ring-primary/20 z-50 scale-[1.02] opacity-50 shadow-2xl ring-2',
             )}
         >
-            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+            <div className="flex min-w-0 flex-1 items-center gap-2.5">
                 {/* Drag handle */}
                 <div
                     {...listeners}
                     {...attributes}
-                    className="text-text-desc hover:bg-primary/10 hover:text-primary cursor-grab rounded-lg p-1.5 transition-colors active:cursor-grabbing shrink-0"
+                    className="text-text-desc hover:bg-primary/10 hover:text-primary shrink-0 cursor-grab rounded-lg p-1.5 transition-colors active:cursor-grabbing"
                     title="Tarik untuk mengubah urutan modul"
                 >
                     <GripVertical size={15} />
                 </div>
 
                 {/* Sequence badge */}
-                <span className="flex h-6 w-6 items-center justify-center rounded-md bg-surface-muted text-[11px] font-bold text-text-desc shrink-0 border border-surface-border">
+                <span className="bg-surface-muted text-text-desc border-surface-border flex h-6 w-6 shrink-0 items-center justify-center rounded-md border text-[11px] font-bold">
                     #{index + 1}
                 </span>
 
                 {/* Module Icon */}
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/20">
-                    {module.icon && SELECTABLE_ICONS[module.icon]
-                        ? React.createElement(SELECTABLE_ICONS[module.icon], { size: 15 })
-                        : <LayoutGrid size={15} />}
+                <div className="bg-primary/10 text-primary border-primary/20 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border">
+                    {module.icon && SELECTABLE_ICONS[module.icon] ? (
+                        React.createElement(SELECTABLE_ICONS[module.icon], { size: 15 })
+                    ) : (
+                        <LayoutGrid size={15} />
+                    )}
                 </div>
 
                 {/* Module Details */}
-                <div className="flex flex-col min-w-0">
-                    <span className="text-xs font-bold text-text-main truncate">{module.name}</span>
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className="font-mono text-[9.5px] text-text-desc/80 truncate">
-                            {module.identifier || 'system.module'}
-                        </span>
+                <div className="flex min-w-0 flex-col">
+                    <span className="text-text-main truncate text-xs font-bold">{module.name}</span>
+                    <div className="mt-0.5 flex items-center gap-1.5">
+                        <span className="text-text-desc/80 truncate font-mono text-[9.5px]">{module.identifier || 'system.module'}</span>
                         {module.route && (
-                            <span className="text-[9.5px] text-text-desc/60 truncate border-l border-surface-border pl-1.5 font-mono">
+                            <span className="text-text-desc/60 border-surface-border truncate border-l pl-1.5 font-mono text-[9.5px]">
                                 {module.route}
                             </span>
                         )}
@@ -865,13 +859,13 @@ const SortableModuleItem = ({
             </div>
 
             {/* Quick Actions */}
-            <div className="flex items-center gap-1 shrink-0">
+            <div className="flex shrink-0 items-center gap-1">
                 {/* Reorder Up/Down */}
                 <button
                     type="button"
                     disabled={index === 0}
                     onClick={onMoveUp}
-                    className="p-1 rounded text-text-desc hover:text-primary hover:bg-primary/10 disabled:opacity-20 cursor-pointer"
+                    className="text-text-desc hover:text-primary hover:bg-primary/10 cursor-pointer rounded p-1 disabled:opacity-20"
                     title="Geser ke atas"
                 >
                     <ArrowUp size={13} />
@@ -880,34 +874,37 @@ const SortableModuleItem = ({
                     type="button"
                     disabled={index === total - 1}
                     onClick={onMoveDown}
-                    className="p-1 rounded text-text-desc hover:text-primary hover:bg-primary/10 disabled:opacity-20 cursor-pointer"
+                    className="text-text-desc hover:text-primary hover:bg-primary/10 cursor-pointer rounded p-1 disabled:opacity-20"
                     title="Geser ke bawah"
                 >
                     <ArrowDown size={13} />
                 </button>
 
-                <div className="h-3.5 w-px bg-surface-border mx-0.5" />
+                <div className="bg-surface-border mx-0.5 h-3.5 w-px" />
 
                 {/* Move to another group dropdown */}
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <button
                             type="button"
-                            className="p-1.5 rounded-lg text-text-desc hover:text-primary hover:bg-primary/10 transition-all cursor-pointer"
+                            className="text-text-desc hover:text-primary hover:bg-primary/10 cursor-pointer rounded-lg p-1.5 transition-all"
                             title="Pindahkan ke Grup Lain"
                         >
                             <Move size={13} />
                         </button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-52 p-1.5 bg-white dark:bg-zinc-900 border border-surface-border shadow-2xl rounded-xl z-50">
-                        <DropdownMenuLabel className="text-[10px] font-bold uppercase tracking-wider text-text-desc px-2 py-1">
+                    <DropdownMenuContent
+                        align="end"
+                        className="border-surface-border z-50 w-52 rounded-xl border bg-white p-1.5 shadow-2xl dark:bg-zinc-900"
+                    >
+                        <DropdownMenuLabel className="text-text-desc px-2 py-1 text-[10px] font-bold tracking-wider uppercase">
                             Pindah ke Grup
                         </DropdownMenuLabel>
                         {groups.map((g) => (
                             <DropdownMenuItem
                                 key={g.id}
                                 onClick={() => onMoveToGroup(module.id, g.id)}
-                                className="cursor-pointer rounded-lg text-xs font-semibold py-1.5 px-2 hover:bg-primary/10 hover:text-primary"
+                                className="hover:bg-primary/10 hover:text-primary cursor-pointer rounded-lg px-2 py-1.5 text-xs font-semibold"
                             >
                                 <LayoutGrid size={13} className="text-text-desc mr-2 shrink-0" />
                                 <span className="truncate">{g.name}</span>
@@ -920,7 +917,7 @@ const SortableModuleItem = ({
                 <button
                     type="button"
                     onClick={() => onEditModule(module)}
-                    className="p-1.5 rounded-lg text-text-desc hover:text-primary hover:bg-primary/10 transition-all cursor-pointer"
+                    className="text-text-desc hover:text-primary hover:bg-primary/10 cursor-pointer rounded-lg p-1.5 transition-all"
                     title="Ubah Nama/Path Modul"
                 >
                     <Edit2 size={13} />
@@ -930,7 +927,7 @@ const SortableModuleItem = ({
                 <button
                     type="button"
                     onClick={() => onRemove(module.id)}
-                    className="p-1.5 rounded-lg text-text-desc hover:text-rose-600 hover:bg-rose-500/10 transition-all cursor-pointer"
+                    className="text-text-desc cursor-pointer rounded-lg p-1.5 transition-all hover:bg-rose-500/10 hover:text-rose-600"
                     title="Lepas dari Navigasi Role Ini"
                 >
                     <Trash2 size={13} />
@@ -973,23 +970,23 @@ const SortableNavGroupRow = ({
             style={style}
             onClick={onSelect}
             className={cn(
-                'p-3 rounded-xl border cursor-pointer transition-all flex items-center justify-between group/item min-h-[50px] shadow-2xs relative overflow-hidden',
+                'group/item relative flex min-h-[50px] cursor-pointer items-center justify-between overflow-hidden rounded-xl border p-3 shadow-2xs transition-all',
                 isDragging && 'border-primary ring-primary/20 z-50 scale-[1.02] opacity-50 shadow-2xl ring-2',
                 isSelected
                     ? 'border-primary bg-primary/10 text-primary font-bold shadow-xs'
-                    : 'border-surface-border/80 hover:bg-slate-50/70 dark:hover:bg-zinc-800/40 bg-surface-card text-text-main',
+                    : 'border-surface-border/80 bg-surface-card text-text-main hover:bg-slate-50/70 dark:hover:bg-zinc-800/40',
             )}
         >
             {/* Active Left Indicator Bar */}
-            {isSelected && <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-r" />}
+            {isSelected && <div className="bg-primary absolute top-0 bottom-0 left-0 w-1 rounded-r" />}
 
-            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+            <div className="flex min-w-0 flex-1 items-center gap-2.5">
                 {/* Drag handle */}
                 <div
                     {...listeners}
                     {...attributes}
                     onClick={(e) => e.stopPropagation()}
-                    className="text-text-desc hover:bg-primary/10 hover:text-primary cursor-grab rounded-lg p-1 transition-colors active:cursor-grabbing shrink-0"
+                    className="text-text-desc hover:bg-primary/10 hover:text-primary shrink-0 cursor-grab rounded-lg p-1 transition-colors active:cursor-grabbing"
                     title="Tarik untuk mengubah urutan grup"
                 >
                     <GripVertical size={14} />
@@ -998,10 +995,8 @@ const SortableNavGroupRow = ({
                 {/* Sequence Number */}
                 <span
                     className={cn(
-                        'flex h-5 w-5 items-center justify-center rounded-md text-[10px] font-bold shrink-0 border',
-                        isSelected
-                            ? 'bg-primary text-primary-foreground border-primary'
-                            : 'bg-surface-muted text-text-desc border-surface-border',
+                        'flex h-5 w-5 shrink-0 items-center justify-center rounded-md border text-[10px] font-bold',
+                        isSelected ? 'bg-primary text-primary-foreground border-primary' : 'bg-surface-muted text-text-desc border-surface-border',
                     )}
                 >
                     {index + 1}
@@ -1010,31 +1005,31 @@ const SortableNavGroupRow = ({
                 {/* Group Icon */}
                 <div
                     className={cn(
-                        'flex h-7 w-7 items-center justify-center rounded-lg shrink-0 border',
+                        'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border',
                         isSelected ? 'bg-primary/20 text-primary border-primary/30' : 'bg-surface-muted text-text-desc border-surface-border',
                     )}
                 >
-                    {group.icon && SELECTABLE_ICONS[group.icon]
-                        ? React.createElement(SELECTABLE_ICONS[group.icon], { size: 14 })
-                        : <LayoutGrid size={14} />}
+                    {group.icon && SELECTABLE_ICONS[group.icon] ? (
+                        React.createElement(SELECTABLE_ICONS[group.icon], { size: 14 })
+                    ) : (
+                        <LayoutGrid size={14} />
+                    )}
                 </div>
 
-                <div className="flex flex-col min-w-0">
-                    <span className="text-xs font-bold truncate">{group.name}</span>
-                    <span className={cn('text-[10px] truncate', isSelected ? 'text-primary/80 font-medium' : 'text-text-desc')}>
+                <div className="flex min-w-0 flex-col">
+                    <span className="truncate text-xs font-bold">{group.name}</span>
+                    <span className={cn('truncate text-[10px]', isSelected ? 'text-primary/80 font-medium' : 'text-text-desc')}>
                         {group.modules.length} Modul Terpasang
                     </span>
                 </div>
             </div>
 
             {/* Quick Actions */}
-            <div className="flex items-center gap-1 shrink-0 ml-2" onClick={(e) => e.stopPropagation()}>
+            <div className="ml-2 flex shrink-0 items-center gap-1" onClick={(e) => e.stopPropagation()}>
                 <span
                     className={cn(
-                        'text-[10px] font-bold px-1.5 py-0.5 rounded-md border',
-                        isSelected
-                            ? 'bg-primary/15 text-primary border-primary/30'
-                            : 'bg-surface-muted text-text-desc border-surface-border',
+                        'rounded-md border px-1.5 py-0.5 text-[10px] font-bold',
+                        isSelected ? 'bg-primary/15 text-primary border-primary/30' : 'bg-surface-muted text-text-desc border-surface-border',
                     )}
                 >
                     {group.modules.length}
@@ -1044,7 +1039,7 @@ const SortableNavGroupRow = ({
                     type="button"
                     disabled={index === 0}
                     onClick={onMoveUp}
-                    className="p-1 rounded text-text-desc hover:text-primary hover:bg-primary/10 disabled:opacity-20 cursor-pointer"
+                    className="text-text-desc hover:text-primary hover:bg-primary/10 cursor-pointer rounded p-1 disabled:opacity-20"
                     title="Geser grup ke atas"
                 >
                     <ArrowUp size={12} />
@@ -1053,7 +1048,7 @@ const SortableNavGroupRow = ({
                     type="button"
                     disabled={index === total - 1}
                     onClick={onMoveDown}
-                    className="p-1 rounded text-text-desc hover:text-primary hover:bg-primary/10 disabled:opacity-20 cursor-pointer"
+                    className="text-text-desc hover:text-primary hover:bg-primary/10 cursor-pointer rounded p-1 disabled:opacity-20"
                     title="Geser grup ke bawah"
                 >
                     <ArrowDown size={12} />
@@ -1062,7 +1057,7 @@ const SortableNavGroupRow = ({
                 <button
                     type="button"
                     onClick={onEditGroup}
-                    className="p-1 rounded text-text-desc hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer"
+                    className="text-text-desc hover:text-primary hover:bg-primary/10 cursor-pointer rounded p-1 transition-colors"
                     title="Ubah Grup"
                 >
                     <Edit2 size={12} />
@@ -1070,7 +1065,7 @@ const SortableNavGroupRow = ({
                 <button
                     type="button"
                     onClick={onDeleteGroup}
-                    className="p-1 rounded text-text-desc hover:text-rose-600 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                    className="text-text-desc cursor-pointer rounded p-1 transition-colors hover:bg-rose-500/10 hover:text-rose-600"
                     title="Lepas Grup dari Navigasi"
                 >
                     <Trash2 size={12} />
@@ -1110,23 +1105,21 @@ const AvailableListContainer = ({
     }, [modules, search]);
 
     return (
-        <div className="flex flex-col gap-2.5 h-full">
-            <div className="flex items-center justify-between border-b border-surface-border pb-2 min-h-[36px]">
+        <div className="flex h-full flex-col gap-2.5">
+            <div className="border-surface-border flex min-h-[36px] items-center justify-between border-b pb-2">
                 <div className="flex items-center gap-2">
-                    <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-surface-muted text-text-desc border border-surface-border">
+                    <div className="bg-surface-muted text-text-desc border-surface-border flex h-6 w-6 items-center justify-center rounded-lg border">
                         <Layers size={13} />
                     </div>
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-text-main">
-                        Repository Modul
-                    </h3>
-                    <span className="bg-primary/10 text-primary text-[10px] font-bold px-2 py-0.5 rounded-full border border-primary/20">
+                    <h3 className="text-text-main text-xs font-bold tracking-wider uppercase">Repository Modul</h3>
+                    <span className="bg-primary/10 text-primary border-primary/20 rounded-full border px-2 py-0.5 text-[10px] font-bold">
                         {modules.length} Tersedia
                     </span>
                 </div>
                 <button
                     type="button"
                     onClick={onAddModule}
-                    className="text-primary hover:bg-primary/10 border border-primary/30 flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition-all active:scale-95 cursor-pointer"
+                    className="text-primary hover:bg-primary/10 border-primary/30 flex cursor-pointer items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-bold transition-all active:scale-95"
                     title="Buat Modul Baru ke Repository"
                 >
                     <Plus size={12} />
@@ -1136,19 +1129,19 @@ const AvailableListContainer = ({
 
             {/* Search filter for available modules */}
             <div className="relative">
-                <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-desc" />
+                <Search size={13} className="text-text-desc absolute top-1/2 left-2.5 -translate-y-1/2" />
                 <input
                     type="text"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder="Cari modul di repository..."
-                    className="w-full h-8 pl-7 pr-7 text-xs bg-surface-card border border-surface-border rounded-lg placeholder:text-text-desc/60 focus:outline-none focus:ring-1 focus:ring-primary text-text-main"
+                    className="bg-surface-card border-surface-border placeholder:text-text-desc/60 focus:ring-primary text-text-main h-8 w-full rounded-lg border pr-7 pl-7 text-xs focus:ring-1 focus:outline-none"
                 />
                 {search && (
                     <button
                         type="button"
                         onClick={() => setSearch('')}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-text-desc hover:text-text-main p-0.5 cursor-pointer"
+                        className="text-text-desc hover:text-text-main absolute top-1/2 right-2 -translate-y-1/2 cursor-pointer p-0.5"
                     >
                         <X size={12} />
                     </button>
@@ -1158,7 +1151,7 @@ const AvailableListContainer = ({
             {/* List container */}
             <div
                 ref={setNodeRef}
-                className="h-[calc(100vh-320px)] min-h-[350px] overflow-y-auto scrollbar-hide space-y-1.5 p-2 border border-surface-border/80 rounded-xl bg-slate-50/40 dark:bg-zinc-900/30 flex flex-col"
+                className="scrollbar-hide border-surface-border/80 flex h-[calc(100vh-320px)] min-h-[350px] flex-col space-y-1.5 overflow-y-auto rounded-xl border bg-slate-50/40 p-2 dark:bg-zinc-900/30"
             >
                 <SortableContext id="available-context" items={filtered.map((m) => m.id)} strategy={verticalListSortingStrategy}>
                     {filtered.map((module) => (
@@ -1173,12 +1166,10 @@ const AvailableListContainer = ({
                     ))}
                 </SortableContext>
                 {filtered.length === 0 && (
-                    <div className="flex flex-col items-center justify-center px-4 py-12 text-center text-text-desc">
+                    <div className="text-text-desc flex flex-col items-center justify-center px-4 py-12 text-center">
                         <Layers className="text-text-desc/40 mb-2" size={32} strokeWidth={1} />
-                        <p className="text-xs font-bold text-text-main">
-                            {search ? 'Tidak ada modul yang cocok' : 'Semua modul telah dipasang'}
-                        </p>
-                        <p className="text-[10px] text-text-desc mt-0.5">
+                        <p className="text-text-main text-xs font-bold">{search ? 'Tidak ada modul yang cocok' : 'Semua modul telah dipasang'}</p>
+                        <p className="text-text-desc mt-0.5 text-[10px]">
                             {search ? `Tidak ditemukan modul "${search}"` : 'Semua modul dari repository sudah terdaftar dalam navigasi.'}
                         </p>
                     </div>
@@ -1211,37 +1202,39 @@ const AvailableModuleItem = ({
             ref={setNodeRef}
             style={style}
             className={cn(
-                'group border-surface-border/70 bg-surface-card hover:bg-slate-50/70 dark:hover:bg-zinc-800/40 flex items-center justify-between gap-2.5 rounded-xl border p-2.5 transition-all shadow-2xs',
+                'group border-surface-border/70 bg-surface-card flex items-center justify-between gap-2.5 rounded-xl border p-2.5 shadow-2xs transition-all hover:bg-slate-50/70 dark:hover:bg-zinc-800/40',
                 isDragging && 'border-primary ring-primary/20 z-50 scale-[1.02] opacity-50 shadow-2xl ring-2',
             )}
         >
-            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+            <div className="flex min-w-0 flex-1 items-center gap-2.5">
                 <div
                     {...listeners}
                     {...attributes}
-                    className="text-text-desc hover:bg-primary/10 hover:text-primary cursor-grab rounded-lg p-1 transition-colors active:cursor-grabbing shrink-0"
+                    className="text-text-desc hover:bg-primary/10 hover:text-primary shrink-0 cursor-grab rounded-lg p-1 transition-colors active:cursor-grabbing"
                     title="Tarik modul ke grup navigasi"
                 >
                     <GripVertical size={14} />
                 </div>
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-surface-muted text-text-desc border border-surface-border">
-                    {module.icon && SELECTABLE_ICONS[module.icon]
-                        ? React.createElement(SELECTABLE_ICONS[module.icon], { size: 13 })
-                        : <LayoutGrid size={13} />}
+                <div className="bg-surface-muted text-text-desc border-surface-border flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border">
+                    {module.icon && SELECTABLE_ICONS[module.icon] ? (
+                        React.createElement(SELECTABLE_ICONS[module.icon], { size: 13 })
+                    ) : (
+                        <LayoutGrid size={13} />
+                    )}
                 </div>
-                <div className="flex flex-col min-w-0">
-                    <span className="text-xs font-bold text-text-main truncate">{module.name}</span>
-                    <span className="text-[9px] font-mono text-text-desc truncate mt-0.5">
+                <div className="flex min-w-0 flex-col">
+                    <span className="text-text-main truncate text-xs font-bold">{module.name}</span>
+                    <span className="text-text-desc mt-0.5 truncate font-mono text-[9px]">
                         {module.route || module.identifier || 'system.module'}
                     </span>
                 </div>
             </div>
 
-            <div className="flex items-center gap-1 shrink-0">
+            <div className="flex shrink-0 items-center gap-1">
                 <button
                     type="button"
                     onClick={() => onEditModule(module)}
-                    className="p-1 rounded text-text-desc hover:text-primary hover:bg-primary/10 cursor-pointer"
+                    className="text-text-desc hover:text-primary hover:bg-primary/10 cursor-pointer rounded p-1"
                     title="Edit Definisi Modul"
                 >
                     <Edit2 size={12} />
@@ -1249,7 +1242,7 @@ const AvailableModuleItem = ({
                 <button
                     type="button"
                     onClick={() => onDeleteModule(module.id)}
-                    className="p-1 rounded text-text-desc hover:text-rose-600 hover:bg-rose-500/10 cursor-pointer"
+                    className="text-text-desc cursor-pointer rounded p-1 hover:bg-rose-500/10 hover:text-rose-600"
                     title="Hapus Modul dari Sistem"
                 >
                     <Trash2 size={12} />
@@ -1258,7 +1251,7 @@ const AvailableModuleItem = ({
                     variant="outline"
                     size="sm"
                     onClick={() => onQuickAdd(module)}
-                    className="h-7 px-2 text-[11px] font-bold rounded-lg border-primary/30 text-primary bg-primary/5 hover:bg-primary/15 cursor-pointer ml-0.5"
+                    className="border-primary/30 text-primary bg-primary/5 hover:bg-primary/15 ml-0.5 h-7 cursor-pointer rounded-lg px-2 text-[11px] font-bold"
                     title={activeGroupName ? `Pasang ke grup ${activeGroupName}` : 'Pasang ke grup'}
                 >
                     <Plus size={11} className="mr-0.5" />
@@ -1473,9 +1466,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
         const module = navItems.flatMap((g) => g.modules).find((m) => m.id === moduleId);
         if (module) {
             setAvailableModules((prev) => [...prev, module]);
-            setNavItems((prev) =>
-                prev.map((g) => ({ ...g, modules: g.modules.filter((m) => m.id !== moduleId) }))
-            );
+            setNavItems((prev) => prev.map((g) => ({ ...g, modules: g.modules.filter((m) => m.id !== moduleId) })));
         }
 
         // Only remove from this role's nav, not global delete
@@ -1602,9 +1593,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
     });
 
     const toggleSelectModule = (id: string) => {
-        setSelectedModuleIds((prev) =>
-            prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-        );
+        setSelectedModuleIds((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]));
     };
 
     const toggleSelectGroup = (groupId: string) => {
@@ -1959,7 +1948,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
         if (templateType === 'admin') {
             // Admin: Group all available modules by their default module_group and mount all of them
             const groupsMap: Record<string, { id: string; name: string; icon?: string | null; modules: Module[] }> = {};
-            
+
             // First preserve existing groups if any
             navItems.forEach((g) => {
                 groupsMap[g.id] = { id: g.id, name: g.name, icon: g.icon, modules: [] };
@@ -2014,12 +2003,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                 '/admin/templates',
             ];
 
-            const laporanModuleOrder = [
-                '/admin/reports/divisions',
-                '/admin/reports/team',
-                '/admin/reports/analytics',
-                '/admin/reports/audit',
-            ];
+            const laporanModuleOrder = ['/admin/reports/divisions', '/admin/reports/team', '/admin/reports/analytics', '/admin/reports/audit'];
 
             const berandaModules: Module[] = [];
             const laporanModules: Module[] = [];
@@ -2032,7 +2016,12 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
 
                 if (gId === BERANDA_GROUP_ID || gName === 'beranda' || berandaModuleOrder.includes(route)) {
                     berandaModules.push(m);
-                } else if (gId === LAPORAN_GROUP_ID || gName === 'laporan' || laporanModuleOrder.includes(route) || route.startsWith('/admin/reports')) {
+                } else if (
+                    gId === LAPORAN_GROUP_ID ||
+                    gName === 'laporan' ||
+                    laporanModuleOrder.includes(route) ||
+                    route.startsWith('/admin/reports')
+                ) {
                     laporanModules.push(m);
                 } else {
                     remainingModules.push(m);
@@ -2291,7 +2280,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
         if (overContainer === 'available-list') {
             setAvailableModules((prevAvail) => {
                 // Prevent duplicate addition
-                if (prevAvail.find(m => m.id === active.id)) return prevAvail;
+                if (prevAvail.find((m) => m.id === active.id)) return prevAvail;
                 return [...prevAvail, movedItem];
             });
         }
@@ -2303,7 +2292,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                 }
                 if (g.id === overContainer) {
                     // Prevent duplicate addition
-                    if (g.modules.find(m => m.id === active.id)) return g;
+                    if (g.modules.find((m) => m.id === active.id)) return g;
                     const newModules = [...g.modules];
                     const overIndex = over.id === overContainer ? newModules.length : g.modules.findIndex((m) => m.id === over.id);
                     newModules.splice(overIndex === -1 ? newModules.length : overIndex, 0, movedItem);
@@ -2435,32 +2424,32 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
             <Head title={activeTab === 'access' ? 'Pemetaan Hak Akses' : 'Pemetaan Navigasi'} />
 
             <MasterPageLayout>
-                <FloatingPanel className="flex-1 min-w-0 flex flex-col">
+                <FloatingPanel className="flex min-w-0 flex-1 flex-col">
                     {/* Master Data Page Header Toolbar */}
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 border-b border-surface-border bg-surface-card shrink-0">
+                    <div className="border-surface-border bg-surface-card flex shrink-0 flex-col justify-between gap-4 border-b p-4 md:flex-row md:items-center">
                         <div className="flex items-center gap-3.5">
                             <button
                                 type="button"
                                 onClick={() => window.history.back()}
-                                className="p-2 rounded-xl bg-surface-muted hover:bg-surface-border text-text-main transition-colors cursor-pointer shadow-xs border border-surface-border"
+                                className="bg-surface-muted hover:bg-surface-border text-text-main border-surface-border cursor-pointer rounded-xl border p-2 shadow-xs transition-colors"
                                 title="Kembali"
                             >
                                 <ArrowLeft size={16} />
                             </button>
                             <div className="flex items-center gap-3">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20">
+                                <div className="bg-primary/10 text-primary border-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border">
                                     {activeTab === 'access' ? <Key size={20} /> : <LayoutGrid size={20} />}
                                 </div>
                                 <div className="flex flex-col">
                                     <div className="flex items-center gap-2">
-                                        <h1 className="text-base font-bold text-text-main">
+                                        <h1 className="text-text-main text-base font-bold">
                                             {activeTab === 'access' ? 'Pemetaan Hak Akses' : 'Pemetaan Navigasi'}
                                         </h1>
-                                        <span className="text-[11px] font-bold text-primary bg-primary/10 border border-primary/20 px-2.5 py-0.5 rounded-full">
+                                        <span className="text-primary bg-primary/10 border-primary/20 rounded-full border px-2.5 py-0.5 text-[11px] font-bold">
                                             Role: {role.name}
                                         </span>
                                     </div>
-                                    <p className="text-xs text-text-desc font-normal">
+                                    <p className="text-text-desc text-xs font-normal">
                                         {activeTab === 'access'
                                             ? 'Konfigurasi matriks perizinan CRUD, persetujuan, dan visibilitas modul'
                                             : 'Atur hierarki grup menu dan urutan modul navigasi aplikasi'}
@@ -2480,18 +2469,18 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                     }
                                 }}
                             >
-                                <SelectTrigger className="bg-surface-muted hover:bg-surface-border/80 border-surface-border h-9 w-[180px] rounded-lg px-2.5 text-xs font-semibold text-text-main">
-                                    <div className="flex items-center gap-1.5 truncate text-text-main">
+                                <SelectTrigger className="bg-surface-muted hover:bg-surface-border/80 border-surface-border text-text-main h-9 w-[180px] rounded-lg px-2.5 text-xs font-semibold">
+                                    <div className="text-text-main flex items-center gap-1.5 truncate">
                                         <ShieldAlert className="text-primary h-3.5 w-3.5 shrink-0" />
                                         <SelectValue placeholder="Pilih Role" />
                                     </div>
                                 </SelectTrigger>
-                                <SelectContent className="w-[180px] rounded-lg p-1 shadow-md border-surface-border">
+                                <SelectContent className="border-surface-border w-[180px] rounded-lg p-1 shadow-md">
                                     {roles.map((r) => (
                                         <SelectItem
                                             key={r.id}
                                             value={r.id}
-                                            className="cursor-pointer rounded-md pl-2 pr-2 py-1.5 text-xs font-medium"
+                                            className="cursor-pointer rounded-md py-1.5 pr-2 pl-2 text-xs font-medium"
                                         >
                                             {r.name}
                                         </SelectItem>
@@ -2501,14 +2490,14 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
 
                             {/* Mapping Type Switcher */}
                             {!isIndependent && (
-                                <div className="bg-surface-muted flex rounded-lg p-0.5 border border-surface-border">
+                                <div className="bg-surface-muted border-surface-border flex rounded-lg border p-0.5">
                                     <button
                                         onClick={() => setActiveTab('access')}
                                         type="button"
                                         className={cn(
-                                            'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer',
+                                            'flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-all',
                                             activeTab === 'access'
-                                                ? 'bg-surface-base text-primary shadow-xs border border-surface-border'
+                                                ? 'bg-surface-base text-primary border-surface-border border shadow-xs'
                                                 : 'text-text-desc hover:text-text-main hover:bg-surface-card/60',
                                         )}
                                     >
@@ -2518,9 +2507,9 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                         onClick={() => setActiveTab('navigation')}
                                         type="button"
                                         className={cn(
-                                            'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer',
+                                            'flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-all',
                                             activeTab === 'navigation'
-                                                ? 'bg-surface-base text-primary shadow-xs border border-surface-border'
+                                                ? 'bg-surface-base text-primary border-surface-border border shadow-xs'
                                                 : 'text-text-desc hover:text-text-main hover:bg-surface-card/60',
                                         )}
                                     >
@@ -2536,95 +2525,104 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                         <Button
                                             variant="outline"
                                             size="sm"
-                                            className="h-9 px-3 rounded-lg text-xs font-semibold flex items-center gap-1.5 cursor-pointer border-surface-border bg-surface-muted/60 hover:bg-surface-border/80"
+                                            className="border-surface-border bg-surface-muted/60 hover:bg-surface-border/80 flex h-9 cursor-pointer items-center gap-1.5 rounded-lg px-3 text-xs font-semibold"
                                         >
                                             <Sparkles size={13} className="text-primary" />
                                             <span>Setting Cepat</span>
                                             <ChevronDown size={12} className="text-text-desc" />
                                         </Button>
                                     </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end" className="w-64 p-1.5 bg-white dark:bg-zinc-900 border border-surface-border shadow-2xl rounded-xl z-50">
-                                        <DropdownMenuLabel className="text-[10px] font-bold uppercase tracking-wider text-text-desc px-2 py-1 flex items-center gap-1.5">
+                                    <DropdownMenuContent
+                                        align="end"
+                                        className="border-surface-border z-50 w-64 rounded-xl border bg-white p-1.5 shadow-2xl dark:bg-zinc-900"
+                                    >
+                                        <DropdownMenuLabel className="text-text-desc flex items-center gap-1.5 px-2 py-1 text-[10px] font-bold tracking-wider uppercase">
                                             <Sparkles size={11} className="text-primary" />
                                             <span>Template Hak Akses Role</span>
                                         </DropdownMenuLabel>
-                                        
+
                                         <DropdownMenuItem
                                             onClick={() => applyRoleTemplate('default')}
-                                            className="cursor-pointer rounded-lg text-xs font-semibold flex items-center gap-2 py-2 px-2 hover:bg-sky-500/10 hover:text-sky-600"
+                                            className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-2 text-xs font-semibold hover:bg-sky-500/10 hover:text-sky-600"
                                         >
-                                            <Eye size={14} className="text-sky-600 dark:text-sky-400 shrink-0" />
+                                            <Eye size={14} className="shrink-0 text-sky-600 dark:text-sky-400" />
                                             <div className="flex flex-col">
                                                 <span className="font-bold">Default (Lihat Saja)</span>
-                                                <span className="text-[10px] text-text-desc font-normal">Akses baca/view saja untuk semua modul</span>
+                                                <span className="text-text-desc text-[10px] font-normal">Akses baca/view saja untuk semua modul</span>
                                             </div>
                                         </DropdownMenuItem>
 
                                         <DropdownMenuItem
                                             onClick={() => applyRoleTemplate('staff')}
-                                            className="cursor-pointer rounded-lg text-xs font-semibold flex items-center gap-2 py-2 px-2 hover:bg-blue-500/10 hover:text-blue-600"
+                                            className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-2 text-xs font-semibold hover:bg-blue-500/10 hover:text-blue-600"
                                         >
-                                            <Briefcase size={14} className="text-blue-600 dark:text-blue-400 shrink-0" />
+                                            <Briefcase size={14} className="shrink-0 text-blue-600 dark:text-blue-400" />
                                             <div className="flex flex-col">
                                                 <span className="font-bold">Staff (Operasional)</span>
-                                                <span className="text-[10px] text-text-desc font-normal">CRUD data operasional, read-only master data</span>
+                                                <span className="text-text-desc text-[10px] font-normal">
+                                                    CRUD data operasional, read-only master data
+                                                </span>
                                             </div>
                                         </DropdownMenuItem>
 
                                         <DropdownMenuItem
                                             onClick={() => applyRoleTemplate('admin')}
-                                            className="cursor-pointer rounded-lg text-xs font-semibold flex items-center gap-2 py-2 px-2 hover:bg-emerald-500/10 hover:text-emerald-600"
+                                            className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-2 text-xs font-semibold hover:bg-emerald-500/10 hover:text-emerald-600"
                                         >
-                                            <ShieldCheck size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                            <ShieldCheck size={14} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
                                             <div className="flex flex-col">
                                                 <span className="font-bold">Admin (All Access)</span>
-                                                <span className="text-[10px] text-text-desc font-normal">Akses penuh CRUD, Approval & Bulk Action</span>
+                                                <span className="text-text-desc text-[10px] font-normal">
+                                                    Akses penuh CRUD, Approval & Bulk Action
+                                                </span>
                                             </div>
                                         </DropdownMenuItem>
 
                                         <DropdownMenuItem
                                             onClick={() => applyRoleTemplate('legal')}
-                                            className="cursor-pointer rounded-lg text-xs font-semibold flex items-center gap-2 py-2 px-2 hover:bg-indigo-500/10 hover:text-indigo-600"
+                                            className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-2 text-xs font-semibold hover:bg-indigo-500/10 hover:text-indigo-600"
                                         >
-                                            <Scale size={14} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
+                                            <Scale size={14} className="shrink-0 text-indigo-600 dark:text-indigo-400" />
                                             <div className="flex flex-col">
                                                 <span className="font-bold">Default Legal</span>
-                                                <span className="text-[10px] text-text-desc font-normal">CRUD & Approval Kontrak/Legal, read master</span>
+                                                <span className="text-text-desc text-[10px] font-normal">
+                                                    CRUD & Approval Kontrak/Legal, read master
+                                                </span>
                                             </div>
                                         </DropdownMenuItem>
 
-                                        <DropdownMenuSeparator className="my-1.5 bg-surface-border" />
+                                        <DropdownMenuSeparator className="bg-surface-border my-1.5" />
 
-                                        <DropdownMenuLabel className="text-[10px] font-bold uppercase tracking-wider text-text-desc px-2 py-1 flex items-center gap-1.5">
+                                        <DropdownMenuLabel className="text-text-desc flex items-center gap-1.5 px-2 py-1 text-[10px] font-bold tracking-wider uppercase">
                                             <SlidersHorizontal size={11} className="text-text-desc" />
                                             <span>Aksi Massal Seluruh Modul</span>
                                         </DropdownMenuLabel>
                                         <DropdownMenuItem
                                             onClick={() => applyPresetToAll('full')}
-                                            className="cursor-pointer rounded-lg text-xs font-medium flex items-center gap-2 py-1.5 px-2 hover:bg-primary/10 hover:text-primary"
+                                            className="hover:bg-primary/10 hover:text-primary flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-xs font-medium"
                                         >
-                                            <ShieldCheck size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                            <ShieldCheck size={13} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
                                             <span>Set Semua Akses Penuh</span>
                                         </DropdownMenuItem>
                                         <DropdownMenuItem
                                             onClick={() => applyPresetToAll('editor')}
-                                            className="cursor-pointer rounded-lg text-xs font-medium flex items-center gap-2 py-1.5 px-2 hover:bg-primary/10 hover:text-primary"
+                                            className="hover:bg-primary/10 hover:text-primary flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-xs font-medium"
                                         >
-                                            <Edit2 size={13} className="text-blue-600 dark:text-blue-400 shrink-0" />
+                                            <Edit2 size={13} className="shrink-0 text-blue-600 dark:text-blue-400" />
                                             <span>Set Semua Editor (CRUD)</span>
                                         </DropdownMenuItem>
                                         <DropdownMenuItem
                                             onClick={() => applyPresetToAll('read')}
-                                            className="cursor-pointer rounded-lg text-xs font-medium flex items-center gap-2 py-1.5 px-2 hover:bg-primary/10 hover:text-primary"
+                                            className="hover:bg-primary/10 hover:text-primary flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-xs font-medium"
                                         >
-                                            <Eye size={13} className="text-sky-600 dark:text-sky-400 shrink-0" />
+                                            <Eye size={13} className="shrink-0 text-sky-600 dark:text-sky-400" />
                                             <span>Set Semua Lihat Saja</span>
                                         </DropdownMenuItem>
                                         <DropdownMenuItem
                                             onClick={() => applyPresetToAll('none')}
-                                            className="cursor-pointer rounded-lg text-xs font-medium flex items-center gap-2 py-1.5 px-2 hover:bg-rose-500/10 hover:text-rose-600"
+                                            className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-xs font-medium hover:bg-rose-500/10 hover:text-rose-600"
                                         >
-                                            <ShieldOff size={13} className="text-rose-500 shrink-0" />
+                                            <ShieldOff size={13} className="shrink-0 text-rose-500" />
                                             <span>Kosongkan Semua Izin</span>
                                         </DropdownMenuItem>
                                     </DropdownMenuContent>
@@ -2638,60 +2636,65 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                         <Button
                                             variant="outline"
                                             size="sm"
-                                            className="h-9 px-3 rounded-lg text-xs font-semibold flex items-center gap-1.5 cursor-pointer border-surface-border bg-surface-muted/60 hover:bg-surface-border/80"
+                                            className="border-surface-border bg-surface-muted/60 hover:bg-surface-border/80 flex h-9 cursor-pointer items-center gap-1.5 rounded-lg px-3 text-xs font-semibold"
                                         >
                                             <Sparkles size={13} className="text-primary" />
                                             <span>Setting Cepat</span>
                                             <ChevronDown size={12} className="text-text-desc" />
                                         </Button>
                                     </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end" className="w-64 p-1.5 bg-white dark:bg-zinc-900 border border-surface-border shadow-2xl rounded-xl z-50">
-                                        <DropdownMenuLabel className="text-[10px] font-bold uppercase tracking-wider text-text-desc px-2 py-1 flex items-center gap-1.5">
+                                    <DropdownMenuContent
+                                        align="end"
+                                        className="border-surface-border z-50 w-64 rounded-xl border bg-white p-1.5 shadow-2xl dark:bg-zinc-900"
+                                    >
+                                        <DropdownMenuLabel className="text-text-desc flex items-center gap-1.5 px-2 py-1 text-[10px] font-bold tracking-wider uppercase">
                                             <Sparkles size={11} className="text-primary" />
                                             <span>Template Navigasi Sidebar</span>
                                         </DropdownMenuLabel>
-                                        
+
                                         <DropdownMenuItem
                                             onClick={() => applyNavTemplate('default')}
-                                            className="cursor-pointer rounded-lg text-xs font-semibold flex items-center gap-2 py-2 px-2 hover:bg-sky-500/10 hover:text-sky-600"
+                                            className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-2 text-xs font-semibold hover:bg-sky-500/10 hover:text-sky-600"
                                         >
-                                            <Eye size={14} className="text-sky-600 dark:text-sky-400 shrink-0" />
+                                            <Eye size={14} className="shrink-0 text-sky-600 dark:text-sky-400" />
                                             <div className="flex flex-col">
                                                 <span className="font-bold">Default (Standar Role)</span>
-                                                <span className="text-[10px] text-text-desc font-normal">Pasang modul operasional harian (Standar Staff)</span>
+                                                <span className="text-text-desc text-[10px] font-normal">
+                                                    Pasang modul operasional harian (Standar Staff)
+                                                </span>
                                             </div>
                                         </DropdownMenuItem>
 
                                         <DropdownMenuItem
                                             onClick={() => applyNavTemplate('staff')}
-                                            className="cursor-pointer rounded-lg text-xs font-semibold flex items-center gap-2 py-2 px-2 hover:bg-blue-500/10 hover:text-blue-600"
+                                            className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-2 text-xs font-semibold hover:bg-blue-500/10 hover:text-blue-600"
                                         >
-                                            <Briefcase size={14} className="text-blue-600 dark:text-blue-400 shrink-0" />
+                                            <Briefcase size={14} className="shrink-0 text-blue-600 dark:text-blue-400" />
                                             <div className="flex flex-col">
                                                 <span className="font-bold">Staff (Menu Operasional)</span>
-                                                <span className="text-[10px] text-text-desc font-normal">Pasang modul operasional harian</span>
+                                                <span className="text-text-desc text-[10px] font-normal">Pasang modul operasional harian</span>
                                             </div>
                                         </DropdownMenuItem>
 
                                         <DropdownMenuItem
                                             onClick={() => applyNavTemplate('admin')}
-                                            className="cursor-pointer rounded-lg text-xs font-semibold flex items-center gap-2 py-2 px-2 hover:bg-emerald-500/10 hover:text-emerald-600"
+                                            className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-2 text-xs font-semibold hover:bg-emerald-500/10 hover:text-emerald-600"
                                         >
-                                            <ShieldCheck size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                            <ShieldCheck size={14} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
                                             <div className="flex flex-col">
                                                 <span className="font-bold">Admin (Semua Modul Terpasang)</span>
-                                                <span className="text-[10px] text-text-desc font-normal">Pasang seluruh modul ke semua grup</span>
+                                                <span className="text-text-desc text-[10px] font-normal">Pasang seluruh modul ke semua grup</span>
                                             </div>
                                         </DropdownMenuItem>
 
                                         <DropdownMenuItem
                                             onClick={() => applyNavTemplate('legal')}
-                                            className="cursor-pointer rounded-lg text-xs font-semibold flex items-center gap-2 py-2 px-2 hover:bg-indigo-500/10 hover:text-indigo-600"
+                                            className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-2 text-xs font-semibold hover:bg-indigo-500/10 hover:text-indigo-600"
                                         >
-                                            <Scale size={14} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
+                                            <Scale size={14} className="shrink-0 text-indigo-600 dark:text-indigo-400" />
                                             <div className="flex flex-col">
                                                 <span className="font-bold">Default Legal</span>
-                                                <span className="text-[10px] text-text-desc font-normal">Pasang modul Kontrak, Legal & Dokumen</span>
+                                                <span className="text-text-desc text-[10px] font-normal">Pasang modul Kontrak, Legal & Dokumen</span>
                                             </div>
                                         </DropdownMenuItem>
                                     </DropdownMenuContent>
@@ -2702,7 +2705,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                 variant="primary"
                                 onClick={activeTab === 'access' ? handleAccessSubmit : handleNavSave}
                                 disabled={accessForm.processing || isSavingNav}
-                                className="h-9 rounded-lg px-4 text-xs font-bold shadow-xs cursor-pointer"
+                                className="h-9 cursor-pointer rounded-lg px-4 text-xs font-bold shadow-xs"
                             >
                                 {accessForm.processing || isSavingNav ? (
                                     <Loader2 size={14} className="animate-spin" />
@@ -2718,18 +2721,19 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
 
                     {/* Table Area for Access Mapping */}
                     {activeTab === 'access' ? (
-                        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+                        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
                             {/* Access Subheader Filter & Search Bar */}
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 bg-surface-muted/30 border-b border-surface-border shrink-0">
-                                <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <div className="bg-surface-muted/30 border-surface-border flex shrink-0 flex-col justify-between gap-3 border-b px-4 py-3 sm:flex-row sm:items-center">
+                                <div className="flex min-w-0 flex-1 items-center gap-3">
                                     {/* Select All Checkbox */}
                                     {(() => {
                                         const allVisibleModuleIds = Object.values(filteredGroupedModules).flatMap((g) => g.modules.map((m) => m.id));
-                                        const isAllVisibleSelected = allVisibleModuleIds.length > 0 && allVisibleModuleIds.every((id) => selectedModuleIds.includes(id));
+                                        const isAllVisibleSelected =
+                                            allVisibleModuleIds.length > 0 && allVisibleModuleIds.every((id) => selectedModuleIds.includes(id));
                                         const isSomeVisibleSelected = selectedModuleIds.length > 0 && !isAllVisibleSelected;
 
                                         return (
-                                            <div className="flex items-center gap-2 shrink-0 pr-2 border-r border-surface-border">
+                                            <div className="border-surface-border flex shrink-0 items-center gap-2 border-r pr-2">
                                                 <Checkbox
                                                     checked={isAllVisibleSelected ? true : isSomeVisibleSelected ? 'indeterminate' : false}
                                                     onCheckedChange={() => {
@@ -2739,31 +2743,34 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                                             setSelectedModuleIds(allVisibleModuleIds);
                                                         }
                                                     }}
-                                                    className="border-surface-border data-[state=checked]:bg-primary data-[state=checked]:border-primary h-4 w-4 rounded-md cursor-pointer"
+                                                    className="border-surface-border data-[state=checked]:bg-primary data-[state=checked]:border-primary h-4 w-4 cursor-pointer rounded-md"
                                                     id="select-all-visible"
                                                     title="Pilih seluruh modul yang tampil"
                                                 />
-                                                <label htmlFor="select-all-visible" className="text-xs font-bold text-text-main cursor-pointer select-none whitespace-nowrap">
+                                                <label
+                                                    htmlFor="select-all-visible"
+                                                    className="text-text-main cursor-pointer text-xs font-bold whitespace-nowrap select-none"
+                                                >
                                                     Pilih Semua {selectedModuleIds.length > 0 ? `(${selectedModuleIds.length})` : ''}
                                                 </label>
                                             </div>
                                         );
                                     })()}
 
-                                    <div className="relative flex-1 max-w-sm">
-                                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-desc" />
+                                    <div className="relative max-w-sm flex-1">
+                                        <Search size={14} className="text-text-desc absolute top-1/2 left-3 -translate-y-1/2" />
                                         <input
                                             type="text"
                                             value={searchQuery}
                                             onChange={(e) => setSearchQuery(e.target.value)}
                                             placeholder="Cari modul atau URL..."
-                                            className="w-full h-8 pl-8 pr-7 text-xs bg-surface-card border border-surface-border rounded-lg placeholder:text-text-desc/60 focus:outline-none focus:ring-1 focus:ring-primary text-text-main"
+                                            className="bg-surface-card border-surface-border placeholder:text-text-desc/60 focus:ring-primary text-text-main h-8 w-full rounded-lg border pr-7 pl-8 text-xs focus:ring-1 focus:outline-none"
                                         />
                                         {searchQuery && (
                                             <button
                                                 type="button"
                                                 onClick={() => setSearchQuery('')}
-                                                className="absolute right-2 top-1/2 -translate-y-1/2 text-text-desc hover:text-text-main p-0.5 rounded cursor-pointer"
+                                                className="text-text-desc hover:text-text-main absolute top-1/2 right-2 -translate-y-1/2 cursor-pointer rounded p-0.5"
                                             >
                                                 <X size={12} />
                                             </button>
@@ -2771,15 +2778,15 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                     </div>
                                 </div>
 
-                                <div className="flex items-center gap-2 shrink-0">
-                                    <div className="bg-surface-muted flex rounded-lg p-0.5 border border-surface-border">
+                                <div className="flex shrink-0 items-center gap-2">
+                                    <div className="bg-surface-muted border-surface-border flex rounded-lg border p-0.5">
                                         <button
                                             type="button"
                                             onClick={() => setStatusFilter('all')}
                                             className={cn(
-                                                'px-2.5 py-1 text-[11px] font-semibold rounded-md transition-all cursor-pointer',
+                                                'cursor-pointer rounded-md px-2.5 py-1 text-[11px] font-semibold transition-all',
                                                 statusFilter === 'all'
-                                                    ? 'bg-surface-card text-primary shadow-2xs border border-surface-border'
+                                                    ? 'bg-surface-card text-primary border-surface-border border shadow-2xs'
                                                     : 'text-text-desc hover:text-text-main',
                                             )}
                                         >
@@ -2789,9 +2796,9 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                             type="button"
                                             onClick={() => setStatusFilter('active')}
                                             className={cn(
-                                                'px-2.5 py-1 text-[11px] font-semibold rounded-md transition-all cursor-pointer',
+                                                'cursor-pointer rounded-md px-2.5 py-1 text-[11px] font-semibold transition-all',
                                                 statusFilter === 'active'
-                                                    ? 'bg-surface-card text-emerald-600 dark:text-emerald-400 shadow-2xs border border-surface-border'
+                                                    ? 'bg-surface-card border-surface-border border text-emerald-600 shadow-2xs dark:text-emerald-400'
                                                     : 'text-text-desc hover:text-text-main',
                                             )}
                                         >
@@ -2801,9 +2808,9 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                             type="button"
                                             onClick={() => setStatusFilter('inactive')}
                                             className={cn(
-                                                'px-2.5 py-1 text-[11px] font-semibold rounded-md transition-all cursor-pointer',
+                                                'cursor-pointer rounded-md px-2.5 py-1 text-[11px] font-semibold transition-all',
                                                 statusFilter === 'inactive'
-                                                    ? 'bg-surface-card text-rose-600 dark:text-rose-400 shadow-2xs border border-surface-border'
+                                                    ? 'bg-surface-card border-surface-border border text-rose-600 shadow-2xs dark:text-rose-400'
                                                     : 'text-text-desc hover:text-text-main',
                                             )}
                                         >
@@ -2814,12 +2821,12 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                             </div>
 
                             {/* Grouped Modules List */}
-                            <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide">
+                            <div className="scrollbar-hide flex-1 space-y-4 overflow-y-auto p-4">
                                 {Object.keys(filteredGroupedModules).length === 0 ? (
-                                    <div className="flex flex-col items-center justify-center py-16 text-center border border-dashed border-surface-border rounded-xl bg-surface-card/40">
+                                    <div className="border-surface-border bg-surface-card/40 flex flex-col items-center justify-center rounded-xl border border-dashed py-16 text-center">
                                         <ShieldOff size={36} className="text-text-desc/40 mb-2" />
-                                        <h3 className="text-sm font-bold text-text-main">Tidak Ada Modul Ditemukan</h3>
-                                        <p className="text-xs text-text-desc mt-1 max-w-sm">
+                                        <h3 className="text-text-main text-sm font-bold">Tidak Ada Modul Ditemukan</h3>
+                                        <p className="text-text-desc mt-1 max-w-sm text-xs">
                                             {searchQuery
                                                 ? `Tidak ditemukan modul yang cocok dengan kata kunci "${searchQuery}".`
                                                 : 'Tidak ada modul dengan filter yang dipilih.'}
@@ -2831,30 +2838,30 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                         const activeInGroupCount = accessForm.data.accesses.filter(
                                             (a) => groupModuleIds.includes(a.module_id) && PERMISSIONS.some((p) => (a as any)[p]),
                                         ).length;
-                                        const isGroupAllSelected = group.modules.length > 0 && group.modules.every((m) => selectedModuleIds.includes(m.id));
-                                        const isGroupSomeSelected = group.modules.some((m) => selectedModuleIds.includes(m.id)) && !isGroupAllSelected;
+                                        const isGroupAllSelected =
+                                            group.modules.length > 0 && group.modules.every((m) => selectedModuleIds.includes(m.id));
+                                        const isGroupSomeSelected =
+                                            group.modules.some((m) => selectedModuleIds.includes(m.id)) && !isGroupAllSelected;
 
                                         return (
                                             <div
                                                 key={groupId}
-                                                className="border border-surface-border/80 rounded-xl overflow-hidden bg-surface-card shadow-2xs"
+                                                className="border-surface-border/80 bg-surface-card overflow-hidden rounded-xl border shadow-2xs"
                                             >
                                                 {/* Group Card Header */}
-                                                <div className="flex items-center justify-between px-4 py-2.5 bg-surface-muted/60 border-b border-surface-border">
+                                                <div className="bg-surface-muted/60 border-surface-border flex items-center justify-between border-b px-4 py-2.5">
                                                     <div className="flex items-center gap-2.5">
                                                         <Checkbox
                                                             checked={isGroupAllSelected ? true : isGroupSomeSelected ? 'indeterminate' : false}
                                                             onCheckedChange={() => toggleSelectGroup(groupId)}
-                                                            className="border-surface-border data-[state=checked]:bg-primary data-[state=checked]:border-primary h-4 w-4 rounded-md cursor-pointer shrink-0 mr-0.5"
+                                                            className="border-surface-border data-[state=checked]:bg-primary data-[state=checked]:border-primary mr-0.5 h-4 w-4 shrink-0 cursor-pointer rounded-md"
                                                             title="Pilih seluruh modul di grup ini"
                                                         />
-                                                        <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/20">
+                                                        <div className="bg-primary/10 text-primary border-primary/20 flex h-6 w-6 items-center justify-center rounded-lg border">
                                                             <LayoutGrid size={13} />
                                                         </div>
-                                                        <h3 className="text-xs font-bold uppercase tracking-wider text-text-main">
-                                                            {group.name}
-                                                        </h3>
-                                                        <span className="text-[10px] font-bold text-text-desc bg-surface-card border border-surface-border px-2 py-0.5 rounded-full">
+                                                        <h3 className="text-text-main text-xs font-bold tracking-wider uppercase">{group.name}</h3>
+                                                        <span className="text-text-desc bg-surface-card border-surface-border rounded-full border px-2 py-0.5 text-[10px] font-bold">
                                                             {activeInGroupCount} / {group.modules.length} Aktif
                                                         </span>
                                                     </div>
@@ -2864,7 +2871,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                                         <DropdownMenuTrigger asChild>
                                                             <button
                                                                 type="button"
-                                                                className="text-xs font-semibold text-primary hover:text-primary-hover flex items-center gap-1 px-2 py-1 rounded-md hover:bg-primary/10 transition-colors cursor-pointer"
+                                                                className="text-primary hover:text-primary-hover hover:bg-primary/10 flex cursor-pointer items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold transition-colors"
                                                             >
                                                                 <span>Atur Izin Grup</span>
                                                                 <ChevronDown size={12} />
@@ -2872,38 +2879,38 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                                         </DropdownMenuTrigger>
                                                         <DropdownMenuContent
                                                             align="end"
-                                                            className="w-56 p-1.5 bg-white dark:bg-zinc-900 border border-surface-border shadow-2xl rounded-xl z-50"
+                                                            className="border-surface-border z-50 w-56 rounded-xl border bg-white p-1.5 shadow-2xl dark:bg-zinc-900"
                                                         >
-                                                            <DropdownMenuLabel className="text-[10px] font-bold uppercase tracking-wider text-text-desc px-2 py-1">
+                                                            <DropdownMenuLabel className="text-text-desc px-2 py-1 text-[10px] font-bold tracking-wider uppercase">
                                                                 Terapkan ke Semua di Grup
                                                             </DropdownMenuLabel>
                                                             <DropdownMenuItem
                                                                 onClick={() => applyPresetToGroup(groupId, 'full')}
-                                                                className="cursor-pointer rounded-lg text-xs font-semibold flex items-center gap-2 py-1.5 px-2 hover:bg-primary/10 hover:text-primary"
+                                                                className="hover:bg-primary/10 hover:text-primary flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-xs font-semibold"
                                                             >
-                                                                <ShieldCheck size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                                                <ShieldCheck size={14} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
                                                                 <span>Semua Akses Penuh</span>
                                                             </DropdownMenuItem>
                                                             <DropdownMenuItem
                                                                 onClick={() => applyPresetToGroup(groupId, 'editor')}
-                                                                className="cursor-pointer rounded-lg text-xs font-semibold flex items-center gap-2 py-1.5 px-2 hover:bg-primary/10 hover:text-primary"
+                                                                className="hover:bg-primary/10 hover:text-primary flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-xs font-semibold"
                                                             >
-                                                                <Edit2 size={14} className="text-blue-600 dark:text-blue-400 shrink-0" />
+                                                                <Edit2 size={14} className="shrink-0 text-blue-600 dark:text-blue-400" />
                                                                 <span>Semua Editor (CRUD)</span>
                                                             </DropdownMenuItem>
                                                             <DropdownMenuItem
                                                                 onClick={() => applyPresetToGroup(groupId, 'read')}
-                                                                className="cursor-pointer rounded-lg text-xs font-semibold flex items-center gap-2 py-1.5 px-2 hover:bg-primary/10 hover:text-primary"
+                                                                className="hover:bg-primary/10 hover:text-primary flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-xs font-semibold"
                                                             >
-                                                                <Eye size={14} className="text-sky-600 dark:text-sky-400 shrink-0" />
+                                                                <Eye size={14} className="shrink-0 text-sky-600 dark:text-sky-400" />
                                                                 <span>Semua Lihat Saja</span>
                                                             </DropdownMenuItem>
-                                                            <DropdownMenuSeparator className="my-1 bg-surface-border" />
+                                                            <DropdownMenuSeparator className="bg-surface-border my-1" />
                                                             <DropdownMenuItem
                                                                 onClick={() => applyPresetToGroup(groupId, 'none')}
-                                                                className="cursor-pointer rounded-lg text-xs font-semibold flex items-center gap-2 py-1.5 px-2 hover:bg-rose-500/10 hover:text-rose-600"
+                                                                className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-xs font-semibold hover:bg-rose-500/10 hover:text-rose-600"
                                                             >
-                                                                <ShieldOff size={14} className="text-rose-500 shrink-0" />
+                                                                <ShieldOff size={14} className="shrink-0 text-rose-500" />
                                                                 <span>Nonaktifkan Izin Grup</span>
                                                             </DropdownMenuItem>
                                                         </DropdownMenuContent>
@@ -2911,7 +2918,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                                 </div>
 
                                                 {/* Group Modules Rows */}
-                                                <div className="divide-y divide-surface-border/60">
+                                                <div className="divide-surface-border/60 divide-y">
                                                     {group.modules.map((module) => (
                                                         <ModernModuleRow
                                                             key={module.id}
@@ -2933,16 +2940,14 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
 
                             {/* Floating Bulk Action Bar */}
                             {selectedModuleIds.length > 0 && (
-                                <div className="p-3 bg-surface-card border-t border-surface-border shadow-xl flex flex-wrap items-center justify-between gap-3 shrink-0 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                                <div className="bg-surface-card border-surface-border animate-in fade-in slide-in-from-bottom-2 flex shrink-0 flex-wrap items-center justify-between gap-3 border-t p-3 shadow-xl duration-200">
                                     <div className="flex items-center gap-2.5">
-                                        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-primary-foreground text-xs font-bold shadow-xs">
+                                        <span className="bg-primary text-primary-foreground flex h-7 w-7 items-center justify-center rounded-lg text-xs font-bold shadow-xs">
                                             {selectedModuleIds.length}
                                         </span>
                                         <div className="flex flex-col">
-                                            <span className="text-xs font-bold text-text-main">
-                                                {selectedModuleIds.length} Modul Terpilih
-                                            </span>
-                                            <span className="text-[10px] text-text-desc">
+                                            <span className="text-text-main text-xs font-bold">{selectedModuleIds.length} Modul Terpilih</span>
+                                            <span className="text-text-desc text-[10px]">
                                                 Terapkan aksi atau preset ke seluruh modul yang dipilih
                                             </span>
                                         </div>
@@ -2953,7 +2958,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                             variant="outline"
                                             size="sm"
                                             onClick={() => applyPresetToSelected('full')}
-                                            className="h-8 px-2.5 text-xs font-semibold rounded-lg border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 cursor-pointer"
+                                            className="h-8 cursor-pointer rounded-lg border-emerald-500/30 px-2.5 text-xs font-semibold text-emerald-600 hover:bg-emerald-500/10 dark:text-emerald-400"
                                         >
                                             <ShieldCheck size={13} />
                                             <span>Akses Penuh</span>
@@ -2962,7 +2967,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                             variant="outline"
                                             size="sm"
                                             onClick={() => applyPresetToSelected('editor')}
-                                            className="h-8 px-2.5 text-xs font-semibold rounded-lg border-blue-500/30 text-blue-600 dark:text-blue-400 hover:bg-blue-500/10 cursor-pointer"
+                                            className="h-8 cursor-pointer rounded-lg border-blue-500/30 px-2.5 text-xs font-semibold text-blue-600 hover:bg-blue-500/10 dark:text-blue-400"
                                         >
                                             <Edit2 size={13} />
                                             <span>Editor</span>
@@ -2971,7 +2976,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                             variant="outline"
                                             size="sm"
                                             onClick={() => applyPresetToSelected('read')}
-                                            className="h-8 px-2.5 text-xs font-semibold rounded-lg border-sky-500/30 text-sky-600 dark:text-sky-400 hover:bg-sky-500/10 cursor-pointer"
+                                            className="h-8 cursor-pointer rounded-lg border-sky-500/30 px-2.5 text-xs font-semibold text-sky-600 hover:bg-sky-500/10 dark:text-sky-400"
                                         >
                                             <Eye size={13} />
                                             <span>Lihat Saja</span>
@@ -2980,19 +2985,19 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                             variant="outline"
                                             size="sm"
                                             onClick={() => applyPresetToSelected('none')}
-                                            className="h-8 px-2.5 text-xs font-semibold rounded-lg border-rose-500/30 text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 cursor-pointer"
+                                            className="h-8 cursor-pointer rounded-lg border-rose-500/30 px-2.5 text-xs font-semibold text-rose-600 hover:bg-rose-500/10 dark:text-rose-400"
                                         >
                                             <ShieldOff size={13} />
                                             <span>Kosongkan</span>
                                         </Button>
 
-                                        <div className="h-4 w-px bg-surface-border mx-1" />
+                                        <div className="bg-surface-border mx-1 h-4 w-px" />
 
                                         <Button
                                             variant="outline"
                                             size="sm"
                                             onClick={() => setIsBulkGranularModalOpen(true)}
-                                            className="h-8 px-3 text-xs font-semibold rounded-lg border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 cursor-pointer"
+                                            className="border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 h-8 cursor-pointer rounded-lg px-3 text-xs font-semibold"
                                         >
                                             <SlidersHorizontal size={13} />
                                             <span>Kelola Izin Granular</span>
@@ -3001,7 +3006,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                         <button
                                             type="button"
                                             onClick={() => setSelectedModuleIds([])}
-                                            className="p-1.5 rounded-lg text-text-desc hover:text-text-main hover:bg-surface-muted transition-colors cursor-pointer ml-1"
+                                            className="text-text-desc hover:text-text-main hover:bg-surface-muted ml-1 cursor-pointer rounded-lg p-1.5 transition-colors"
                                             title="Batalkan Pilihan"
                                         >
                                             <X size={15} />
@@ -3011,561 +3016,581 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                             )}
                         </div>
                     ) : (
-                <div className="p-4 flex-1 flex flex-col">
-                <DndContext
-                    sensors={sensors}
-                    collisionDetection={pointerWithin}
-                    onDragStart={handleDragStart}
-                    onDragOver={handleDragOver}
-                    onDragEnd={handleDragEnd}
-                >
-                    <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-12 flex-1">
-                        {/* COLUMN 1: Module Groups (col-span-4) */}
-                        <div className="col-span-12 lg:col-span-4 flex flex-col gap-2.5">
-                            <div className="flex items-center justify-between border-b border-surface-border pb-2 min-h-[36px]">
-                                <div className="flex items-center gap-2">
-                                    <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-surface-muted text-text-desc border border-surface-border">
-                                        <LayoutGrid size={13} />
-                                    </div>
-                                    <h3 className="text-xs font-bold uppercase tracking-wider text-text-main">Grup Menu</h3>
-                                    <span className="bg-primary/10 text-primary text-[10px] font-bold px-2 py-0.5 rounded-full border border-primary/20">
-                                        {navItems.length} Grup
-                                    </span>
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={() => openGroupModal()}
-                                    className="text-primary hover:bg-primary/10 border border-primary/30 flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition-all active:scale-95 cursor-pointer"
-                                    title="Tambah Grup Menu Baru"
-                                >
-                                    <Plus size={12} />
-                                    <span>Buat Grup</span>
-                                </button>
-                            </div>
-
-                            {/* Group Search Input */}
-                            <div className="relative">
-                                <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-desc" />
-                                <input
-                                    type="text"
-                                    value={navGroupSearch}
-                                    onChange={(e) => setNavGroupSearch(e.target.value)}
-                                    placeholder="Cari grup menu..."
-                                    className="w-full h-8 pl-7 pr-7 text-xs bg-surface-card border border-surface-border rounded-lg placeholder:text-text-desc/60 focus:outline-none focus:ring-1 focus:ring-primary text-text-main"
-                                />
-                                {navGroupSearch && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setNavGroupSearch('')}
-                                        className="absolute right-2 top-1/2 -translate-y-1/2 text-text-desc hover:text-text-main p-0.5 cursor-pointer"
-                                    >
-                                        <X size={12} />
-                                    </button>
-                                )}
-                            </div>
-
-                            {/* Group List Container */}
-                            <div className="h-[calc(100vh-320px)] min-h-[350px] overflow-y-auto scrollbar-hide space-y-1.5 p-2 border border-surface-border/80 rounded-xl bg-slate-50/40 dark:bg-zinc-900/30 flex flex-col">
-                                {(() => {
-                                    const filteredGroups = navGroupSearch.trim()
-                                        ? navItems.filter((g) => g.name.toLowerCase().includes(navGroupSearch.toLowerCase()))
-                                        : navItems;
-
-                                    return (
-                                        <>
-                                            <SortableContext id="groups-context" items={filteredGroups.map((g) => g.id)} strategy={verticalListSortingStrategy}>
-                                                {filteredGroups.map((group, index) => (
-                                                    <SortableNavGroupRow
-                                                        key={group.id}
-                                                        group={group}
-                                                        index={index}
-                                                        total={filteredGroups.length}
-                                                        isSelected={selectedGroupId === group.id}
-                                                        onSelect={() => setSelectedGroupId(group.id)}
-                                                        onMoveUp={() => handleMoveGroup(index, 'up')}
-                                                        onMoveDown={() => handleMoveGroup(index, 'down')}
-                                                        onEditGroup={() => openGroupModal(group)}
-                                                        onDeleteGroup={() => handleDeleteGroup(group.id)}
-                                                    />
-                                                ))}
-                                            </SortableContext>
-                                            {filteredGroups.length === 0 && (
-                                                <div className="flex flex-col items-center justify-center px-4 py-12 text-center text-text-desc">
-                                                    <LayoutGrid className="text-text-desc/40 mb-2" size={32} strokeWidth={1} />
-                                                    <p className="text-xs font-bold text-text-main">
-                                                        {navGroupSearch ? 'Tidak ada grup yang cocok' : 'Belum ada grup menu'}
-                                                    </p>
-                                                    <p className="text-[10px] text-text-desc mt-0.5">
-                                                        {navGroupSearch ? `Tidak ditemukan grup "${navGroupSearch}"` : 'Buat grup baru untuk mulai menyusun menu.'}
-                                                    </p>
+                        <div className="flex flex-1 flex-col p-4">
+                            <DndContext
+                                sensors={sensors}
+                                collisionDetection={pointerWithin}
+                                onDragStart={handleDragStart}
+                                onDragOver={handleDragOver}
+                                onDragEnd={handleDragEnd}
+                            >
+                                <div className="grid flex-1 grid-cols-1 items-start gap-4 lg:grid-cols-12">
+                                    {/* COLUMN 1: Module Groups (col-span-4) */}
+                                    <div className="col-span-12 flex flex-col gap-2.5 lg:col-span-4">
+                                        <div className="border-surface-border flex min-h-[36px] items-center justify-between border-b pb-2">
+                                            <div className="flex items-center gap-2">
+                                                <div className="bg-surface-muted text-text-desc border-surface-border flex h-6 w-6 items-center justify-center rounded-lg border">
+                                                    <LayoutGrid size={13} />
                                                 </div>
-                                            )}
-                                        </>
-                                    );
-                                })()}
-                            </div>
-                        </div>
-
-                        {/* COLUMN 2: List Module in Selected Group (col-span-4) */}
-                        <div className="col-span-12 lg:col-span-4 flex flex-col gap-2.5">
-                            {(() => {
-                                const currentActiveGroup = navItems.find((g) => g.id === selectedGroupId) || navItems[0];
-                                if (!currentActiveGroup) {
-                                    return (
-                                        <div className="border border-dashed border-surface-border rounded-xl p-8 text-center text-text-desc text-xs h-[calc(100vh-270px)] flex flex-col items-center justify-center">
-                                            <LayoutGrid size={36} className="text-text-desc/40 mb-2" />
-                                            <span className="font-bold text-text-main">Belum Ada Grup Menu</span>
-                                            <span className="text-[11px] text-text-desc mt-1">Silakan buat grup menu di sebelah kiri untuk mulai mengatur navigasi.</span>
-                                        </div>
-                                    );
-                                }
-
-                                const groupModules = currentActiveGroup.modules;
-                                const filteredGroupModules = activeGroupModuleSearch.trim()
-                                    ? groupModules.filter(
-                                          (m) =>
-                                              m.name.toLowerCase().includes(activeGroupModuleSearch.toLowerCase()) ||
-                                              (m.identifier && m.identifier.toLowerCase().includes(activeGroupModuleSearch.toLowerCase())) ||
-                                              (m.route && m.route.toLowerCase().includes(activeGroupModuleSearch.toLowerCase())),
-                                      )
-                                    : groupModules;
-
-                                return (
-                                    <>
-                                        <div className="flex items-center justify-between border-b border-surface-border pb-2 min-h-[36px]">
-                                            <div className="flex items-center gap-2 min-w-0">
-                                                <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/20 shrink-0">
-                                                    {currentActiveGroup.icon && SELECTABLE_ICONS[currentActiveGroup.icon]
-                                                        ? React.createElement(SELECTABLE_ICONS[currentActiveGroup.icon], { size: 13 })
-                                                        : <LayoutGrid size={13} />}
-                                                </div>
-                                                <h3 className="text-xs font-bold uppercase tracking-wider text-text-main truncate max-w-[240px]">
-                                                    Modul di {currentActiveGroup.name}
-                                                </h3>
-                                                <span className="bg-primary/10 text-primary text-[10px] font-bold px-2 py-0.5 rounded-full border border-primary/20 shrink-0">
-                                                    {groupModules.length} Modul
+                                                <h3 className="text-text-main text-xs font-bold tracking-wider uppercase">Grup Menu</h3>
+                                                <span className="bg-primary/10 text-primary border-primary/20 rounded-full border px-2 py-0.5 text-[10px] font-bold">
+                                                    {navItems.length} Grup
                                                 </span>
                                             </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => openGroupModal()}
+                                                className="text-primary hover:bg-primary/10 border-primary/30 flex cursor-pointer items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-bold transition-all active:scale-95"
+                                                title="Tambah Grup Menu Baru"
+                                            >
+                                                <Plus size={12} />
+                                                <span>Buat Grup</span>
+                                            </button>
                                         </div>
 
-                                        {/* Search in group modules */}
+                                        {/* Group Search Input */}
                                         <div className="relative">
-                                            <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-desc" />
+                                            <Search size={13} className="text-text-desc absolute top-1/2 left-2.5 -translate-y-1/2" />
                                             <input
                                                 type="text"
-                                                value={activeGroupModuleSearch}
-                                                onChange={(e) => setActiveGroupModuleSearch(e.target.value)}
-                                                placeholder={`Cari modul di ${currentActiveGroup.name}...`}
-                                                className="w-full h-8 pl-7 pr-7 text-xs bg-surface-card border border-surface-border rounded-lg placeholder:text-text-desc/60 focus:outline-none focus:ring-1 focus:ring-primary text-text-main"
+                                                value={navGroupSearch}
+                                                onChange={(e) => setNavGroupSearch(e.target.value)}
+                                                placeholder="Cari grup menu..."
+                                                className="bg-surface-card border-surface-border placeholder:text-text-desc/60 focus:ring-primary text-text-main h-8 w-full rounded-lg border pr-7 pl-7 text-xs focus:ring-1 focus:outline-none"
                                             />
-                                            {activeGroupModuleSearch && (
+                                            {navGroupSearch && (
                                                 <button
                                                     type="button"
-                                                    onClick={() => setActiveGroupModuleSearch('')}
-                                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-text-desc hover:text-text-main p-0.5 cursor-pointer"
+                                                    onClick={() => setNavGroupSearch('')}
+                                                    className="text-text-desc hover:text-text-main absolute top-1/2 right-2 -translate-y-1/2 cursor-pointer p-0.5"
                                                 >
                                                     <X size={12} />
                                                 </button>
                                             )}
                                         </div>
 
-                                        <div className="h-[calc(100vh-320px)] min-h-[350px] overflow-y-auto scrollbar-hide space-y-1.5 p-2 border border-surface-border/80 rounded-xl bg-slate-50/40 dark:bg-zinc-900/30 flex flex-col">
-                                            <SortableContext id={'context-' + currentActiveGroup.id} items={filteredGroupModules.map((m) => m.id)} strategy={verticalListSortingStrategy}>
-                                                {filteredGroupModules.map((module, mIdx) => (
-                                                    <SortableModuleItem
-                                                        key={module.id}
-                                                        module={module}
-                                                        onRemove={handleRemoveModule}
-                                                        index={mIdx}
-                                                        total={filteredGroupModules.length}
-                                                        onMoveUp={() => handleMoveModuleIndex(currentActiveGroup.id, mIdx, 'up')}
-                                                        onMoveDown={() => handleMoveModuleIndex(currentActiveGroup.id, mIdx, 'down')}
-                                                        onEditModule={openModuleModal}
-                                                        onMoveToGroup={handleMoveModuleToGroup}
-                                                        groups={navItems}
-                                                    />
-                                                ))}
-                                            </SortableContext>
-                                            {filteredGroupModules.length === 0 && (
-                                                <div className="flex flex-col items-center justify-center px-4 py-12 text-center text-text-desc border border-dashed border-surface-border/80 rounded-xl bg-surface-card/40 my-auto">
-                                                    <Layers className="text-text-desc/40 mb-2" size={32} strokeWidth={1} />
-                                                    <p className="text-xs font-bold text-text-main">
-                                                        {activeGroupModuleSearch ? 'Tidak ada modul yang cocok' : 'Grup ini masih kosong'}
-                                                    </p>
-                                                    <p className="text-[10px] text-text-desc mt-0.5 max-w-xs">
-                                                        {activeGroupModuleSearch
-                                                            ? `Tidak ditemukan modul "${activeGroupModuleSearch}" di grup ini.`
-                                                            : 'Klik tombol "+ Pasang" pada repository di sebelah kanan atau tarik modul ke sini.'}
-                                                    </p>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </>
-                                );
-                            })()}
-                        </div>
+                                        {/* Group List Container */}
+                                        <div className="scrollbar-hide border-surface-border/80 flex h-[calc(100vh-320px)] min-h-[350px] flex-col space-y-1.5 overflow-y-auto rounded-xl border bg-slate-50/40 p-2 dark:bg-zinc-900/30">
+                                            {(() => {
+                                                const filteredGroups = navGroupSearch.trim()
+                                                    ? navItems.filter((g) => g.name.toLowerCase().includes(navGroupSearch.toLowerCase()))
+                                                    : navItems;
 
-                        {/* COLUMN 3: Available Modules (col-span-4) */}
-                        <div className="col-span-12 lg:col-span-4">
-                            <AvailableListContainer
-                                modules={availableModules}
-                                activeGroupName={navItems.find((g) => g.id === selectedGroupId)?.name || navItems[0]?.name}
-                                onQuickAdd={(m) => {
-                                    const currentGroup = selectedGroupId || navItems[0]?.id;
-                                    if (!currentGroup) {
-                                        showToast('Buat grup navigasi terlebih dahulu', 'danger');
-                                        return;
-                                    }
-                                    setNavItems((prev) => prev.map((g) => (g.id === currentGroup ? { ...g, modules: [...g.modules, m] } : g)));
-                                    setAvailableModules((prev) => prev.filter((item) => item.id !== m.id));
-                                }}
-                                onEditModule={openModuleModal}
-                                onAddModule={() => openModuleModal(null)}
-                                onDeleteModule={handleDeleteModule}
-                            />
-                        </div>
-                    </div>
-
-                    <DragOverlay dropAnimation={{ sideEffects: defaultDropAnimationSideEffects({ styles: { active: { opacity: '0.5' } } }) }}>
-                        {activeId ? (
-                            activeType === 'group' ? (
-                                <div className="border-primary bg-card ring-primary/20 w-full md:w-[calc(100vw/2-3rem)] max-w-2xl cursor-grabbing overflow-hidden rounded-xl border opacity-95 shadow-2xl ring-4">
-                                    <div className="flex items-center justify-between border-b px-4 py-3.5 bg-card">
-                                        <div className="flex items-center gap-3">
-                                            <div className="bg-primary/10 text-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-lg shadow-inner">
-                                                <Layers size={14} strokeWidth={2.5} />
-                                            </div>
-                                            <div className="flex flex-col">
-                                                <h3 className="text-foreground text-sm font-normal  ">
-                                                    {navItems.find((g) => g.id === activeId)?.name}
-                                                </h3>
-                                                <span className="text-text-main text-sm font-normal  ">
-                                                    {navItems.find((g) => g.id === activeId)?.modules?.length || 0} MODUL TERDAFTAR
-                                                </span>
-                                            </div>
+                                                return (
+                                                    <>
+                                                        <SortableContext
+                                                            id="groups-context"
+                                                            items={filteredGroups.map((g) => g.id)}
+                                                            strategy={verticalListSortingStrategy}
+                                                        >
+                                                            {filteredGroups.map((group, index) => (
+                                                                <SortableNavGroupRow
+                                                                    key={group.id}
+                                                                    group={group}
+                                                                    index={index}
+                                                                    total={filteredGroups.length}
+                                                                    isSelected={selectedGroupId === group.id}
+                                                                    onSelect={() => setSelectedGroupId(group.id)}
+                                                                    onMoveUp={() => handleMoveGroup(index, 'up')}
+                                                                    onMoveDown={() => handleMoveGroup(index, 'down')}
+                                                                    onEditGroup={() => openGroupModal(group)}
+                                                                    onDeleteGroup={() => handleDeleteGroup(group.id)}
+                                                                />
+                                                            ))}
+                                                        </SortableContext>
+                                                        {filteredGroups.length === 0 && (
+                                                            <div className="text-text-desc flex flex-col items-center justify-center px-4 py-12 text-center">
+                                                                <LayoutGrid className="text-text-desc/40 mb-2" size={32} strokeWidth={1} />
+                                                                <p className="text-text-main text-xs font-bold">
+                                                                    {navGroupSearch ? 'Tidak ada grup yang cocok' : 'Belum ada grup menu'}
+                                                                </p>
+                                                                <p className="text-text-desc mt-0.5 text-[10px]">
+                                                                    {navGroupSearch
+                                                                        ? `Tidak ditemukan grup "${navGroupSearch}"`
+                                                                        : 'Buat grup baru untuk mulai menyusun menu.'}
+                                                                </p>
+                                                            </div>
+                                                        )}
+                                                    </>
+                                                );
+                                            })()}
                                         </div>
+                                    </div>
+
+                                    {/* COLUMN 2: List Module in Selected Group (col-span-4) */}
+                                    <div className="col-span-12 flex flex-col gap-2.5 lg:col-span-4">
+                                        {(() => {
+                                            const currentActiveGroup = navItems.find((g) => g.id === selectedGroupId) || navItems[0];
+                                            if (!currentActiveGroup) {
+                                                return (
+                                                    <div className="border-surface-border text-text-desc flex h-[calc(100vh-270px)] flex-col items-center justify-center rounded-xl border border-dashed p-8 text-center text-xs">
+                                                        <LayoutGrid size={36} className="text-text-desc/40 mb-2" />
+                                                        <span className="text-text-main font-bold">Belum Ada Grup Menu</span>
+                                                        <span className="text-text-desc mt-1 text-[11px]">
+                                                            Silakan buat grup menu di sebelah kiri untuk mulai mengatur navigasi.
+                                                        </span>
+                                                    </div>
+                                                );
+                                            }
+
+                                            const groupModules = currentActiveGroup.modules;
+                                            const filteredGroupModules = activeGroupModuleSearch.trim()
+                                                ? groupModules.filter(
+                                                      (m) =>
+                                                          m.name.toLowerCase().includes(activeGroupModuleSearch.toLowerCase()) ||
+                                                          (m.identifier &&
+                                                              m.identifier.toLowerCase().includes(activeGroupModuleSearch.toLowerCase())) ||
+                                                          (m.route && m.route.toLowerCase().includes(activeGroupModuleSearch.toLowerCase())),
+                                                  )
+                                                : groupModules;
+
+                                            return (
+                                                <>
+                                                    <div className="border-surface-border flex min-h-[36px] items-center justify-between border-b pb-2">
+                                                        <div className="flex min-w-0 items-center gap-2">
+                                                            <div className="bg-primary/10 text-primary border-primary/20 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border">
+                                                                {currentActiveGroup.icon && SELECTABLE_ICONS[currentActiveGroup.icon] ? (
+                                                                    React.createElement(SELECTABLE_ICONS[currentActiveGroup.icon], { size: 13 })
+                                                                ) : (
+                                                                    <LayoutGrid size={13} />
+                                                                )}
+                                                            </div>
+                                                            <h3 className="text-text-main max-w-[240px] truncate text-xs font-bold tracking-wider uppercase">
+                                                                Modul di {currentActiveGroup.name}
+                                                            </h3>
+                                                            <span className="bg-primary/10 text-primary border-primary/20 shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-bold">
+                                                                {groupModules.length} Modul
+                                                            </span>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Search in group modules */}
+                                                    <div className="relative">
+                                                        <Search size={13} className="text-text-desc absolute top-1/2 left-2.5 -translate-y-1/2" />
+                                                        <input
+                                                            type="text"
+                                                            value={activeGroupModuleSearch}
+                                                            onChange={(e) => setActiveGroupModuleSearch(e.target.value)}
+                                                            placeholder={`Cari modul di ${currentActiveGroup.name}...`}
+                                                            className="bg-surface-card border-surface-border placeholder:text-text-desc/60 focus:ring-primary text-text-main h-8 w-full rounded-lg border pr-7 pl-7 text-xs focus:ring-1 focus:outline-none"
+                                                        />
+                                                        {activeGroupModuleSearch && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setActiveGroupModuleSearch('')}
+                                                                className="text-text-desc hover:text-text-main absolute top-1/2 right-2 -translate-y-1/2 cursor-pointer p-0.5"
+                                                            >
+                                                                <X size={12} />
+                                                            </button>
+                                                        )}
+                                                    </div>
+
+                                                    <div className="scrollbar-hide border-surface-border/80 flex h-[calc(100vh-320px)] min-h-[350px] flex-col space-y-1.5 overflow-y-auto rounded-xl border bg-slate-50/40 p-2 dark:bg-zinc-900/30">
+                                                        <SortableContext
+                                                            id={'context-' + currentActiveGroup.id}
+                                                            items={filteredGroupModules.map((m) => m.id)}
+                                                            strategy={verticalListSortingStrategy}
+                                                        >
+                                                            {filteredGroupModules.map((module, mIdx) => (
+                                                                <SortableModuleItem
+                                                                    key={module.id}
+                                                                    module={module}
+                                                                    onRemove={handleRemoveModule}
+                                                                    index={mIdx}
+                                                                    total={filteredGroupModules.length}
+                                                                    onMoveUp={() => handleMoveModuleIndex(currentActiveGroup.id, mIdx, 'up')}
+                                                                    onMoveDown={() => handleMoveModuleIndex(currentActiveGroup.id, mIdx, 'down')}
+                                                                    onEditModule={openModuleModal}
+                                                                    onMoveToGroup={handleMoveModuleToGroup}
+                                                                    groups={navItems}
+                                                                />
+                                                            ))}
+                                                        </SortableContext>
+                                                        {filteredGroupModules.length === 0 && (
+                                                            <div className="text-text-desc border-surface-border/80 bg-surface-card/40 my-auto flex flex-col items-center justify-center rounded-xl border border-dashed px-4 py-12 text-center">
+                                                                <Layers className="text-text-desc/40 mb-2" size={32} strokeWidth={1} />
+                                                                <p className="text-text-main text-xs font-bold">
+                                                                    {activeGroupModuleSearch ? 'Tidak ada modul yang cocok' : 'Grup ini masih kosong'}
+                                                                </p>
+                                                                <p className="text-text-desc mt-0.5 max-w-xs text-[10px]">
+                                                                    {activeGroupModuleSearch
+                                                                        ? `Tidak ditemukan modul "${activeGroupModuleSearch}" di grup ini.`
+                                                                        : 'Klik tombol "+ Pasang" pada repository di sebelah kanan atau tarik modul ke sini.'}
+                                                                </p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </>
+                                            );
+                                        })()}
+                                    </div>
+
+                                    {/* COLUMN 3: Available Modules (col-span-4) */}
+                                    <div className="col-span-12 lg:col-span-4">
+                                        <AvailableListContainer
+                                            modules={availableModules}
+                                            activeGroupName={navItems.find((g) => g.id === selectedGroupId)?.name || navItems[0]?.name}
+                                            onQuickAdd={(m) => {
+                                                const currentGroup = selectedGroupId || navItems[0]?.id;
+                                                if (!currentGroup) {
+                                                    showToast('Buat grup navigasi terlebih dahulu', 'danger');
+                                                    return;
+                                                }
+                                                setNavItems((prev) =>
+                                                    prev.map((g) => (g.id === currentGroup ? { ...g, modules: [...g.modules, m] } : g)),
+                                                );
+                                                setAvailableModules((prev) => prev.filter((item) => item.id !== m.id));
+                                            }}
+                                            onEditModule={openModuleModal}
+                                            onAddModule={() => openModuleModal(null)}
+                                            onDeleteModule={handleDeleteModule}
+                                        />
                                     </div>
                                 </div>
-                            ) : (
-                                <div className="border-border bg-card flex w-[280px] scale-105 cursor-grabbing items-center gap-3 rounded-xl border p-3 opacity-95 shadow-2xl">
-                                    <GripVertical size={14} className="text-primary" />
-                                    <div className="min-w-0 flex-1">
-                                        <p className="text-foreground text-sm font-normal">{allModules.find((m) => m.id === activeId)?.name}</p>
-                                    </div>
-                                </div>
-                            )
-                        ) : null}
-                    </DragOverlay>
-                </DndContext>
-                </div>
-            )}
 
-            {/* Group CRUD Modal */}
-            <Dialog open={isGroupModalOpen} onOpenChange={setIsGroupModalOpen}>
-                <DialogContent className="rounded-2xl sm:max-w-[425px]">
-                    <DialogHeader>
-                        <DialogTitle className="text-foreground text-base font-normal  ">
-                            {editingGroup ? 'Ubah Grup Navigasi' : 'Tambah Grup Navigasi'}
-                        </DialogTitle>
-                        <DialogDescription className="text-text-main text-xs font-normal">
-                            {editingGroup ? 'Ganti nama grup navigasi yang sudah ada.' : 'Buat kontainer baru untuk mengelompokkan menu sidebar.'}
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                        <div className="flex flex-col gap-2">
-                            <label className="text-text-main text-sm font-normal  ">Nama Grup</label>
-                            <input
-                                value={groupName}
-                                onChange={(e) => setGroupName(e.target.value)}
-                                placeholder="Contoh: Manajemen Aset"
-                                className="border-surface-border bg-muted/30 focus:ring-primary/20 h-11 w-full rounded-xl border px-4 text-sm font-normal outline-hidden transition-all focus:ring-2"
-                            />
-                        </div>
-                        <div className="flex flex-col gap-2">
-                            <label className="text-text-main text-sm font-normal  ">Icon Grup</label>
-                            <Select value={groupIcon} onValueChange={setGroupIcon}>
-                                <SelectTrigger className="border-surface-border bg-muted/30 focus:ring-primary/20 text-foreground h-11 w-full rounded-xl border px-4 text-sm font-normal outline-hidden transition-all focus:ring-2">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent className="border-surface-border bg-card max-h-60 overflow-y-auto rounded-xl shadow-2xl">
-                                    {Object.keys(SELECTABLE_ICONS).map((iconName) => {
-                                        const IconComponent = SELECTABLE_ICONS[iconName];
-                                        return (
-                                            <SelectItem key={iconName} value={iconName} className="py-2.5 text-xs font-normal ">
-                                                <div className="flex items-center gap-2">
-                                                    {IconComponent && <IconComponent size={14} className="text-text-main/50" />}
-                                                    <span>{iconName}</span>
-                                                </div>
-                                            </SelectItem>
-                                        );
-                                    })}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
-                    <DialogFooter>
-                        <Button variant="ghost" onClick={() => setIsGroupModalOpen(false)} className="rounded-lg font-normal">
-                            BATAL
-                        </Button>
-                        <Button
-                            onClick={handleSaveGroup}
-                            disabled={isProcessingGroup || !groupName.trim()}
-                            className="rounded-lg font-normal"
-                            variant="primary"
-                        >
-                            {isProcessingGroup ? <RefreshCw className="mr-1.5 h-4 w-4 animate-spin" /> : <Save className="mr-1.5 h-4 w-4" />}
-                            SIMPAN PERUBAHAN
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
-            {/* Module CRUD Modal */}
-            <Dialog open={isModuleModalOpen} onOpenChange={setIsModuleModalOpen}>
-                <DialogContent className="rounded-2xl sm:max-w-[425px]">
-                    <DialogHeader>
-                        <DialogTitle className="text-foreground text-base font-normal  ">
-                            {editingModuleItem ? 'Ubah Modul' : 'Tambah Modul Baru'}
-                        </DialogTitle>
-                        <DialogDescription className="text-text-main text-xs font-normal">
-                            {editingModuleItem ? 'Sesuaikan nama dan path rute untuk modul ini.' : 'Daftarkan modul baru ke dalam repository sistem.'}
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                        <div className="flex flex-col gap-2">
-                            <label className="text-text-main text-sm font-normal  ">Nama Modul</label>
-                            <input
-                                value={moduleName}
-                                onChange={(e) => setModuleName(e.target.value)}
-                                placeholder="Contoh: Daftar Kontrak"
-                                className="border-surface-border bg-muted/30 focus:ring-primary/20 h-11 w-full rounded-xl border px-4 text-sm font-normal outline-hidden transition-all focus:ring-2"
-                            />
-                        </div>
-                        <div className="flex flex-col gap-2">
-                            <label className="text-text-main text-sm font-normal  ">Identifier</label>
-                            <input
-                                value={moduleIdentifier}
-                                onChange={(e) => setModuleIdentifier(e.target.value)}
-                                placeholder="Contoh: contract.index"
-                                disabled={!!editingModuleItem}
-                                className={cn(
-                                    'border-surface-border bg-muted/30 focus:ring-primary/20 h-11 w-full rounded-xl border px-4 text-sm font-normal outline-hidden transition-all focus:ring-2',
-                                    editingModuleItem && 'cursor-not-allowed opacity-60',
-                                )}
-                            />
-                        </div>
-                        <div className="flex flex-col gap-2">
-                            <label className="text-text-main text-sm font-normal  ">Path Rute / URL</label>
-                            <input
-                                value={moduleRoute}
-                                onChange={(e) => setModuleRoute(e.target.value)}
-                                placeholder="Contoh: /admin/contracts"
-                                className="border-surface-border bg-muted/30 focus:ring-primary/20 h-11 w-full rounded-xl border px-4 text-sm font-normal outline-hidden transition-all focus:ring-2"
-                            />
-                        </div>
-                        {!editingModuleItem && (
-                            <div className="flex flex-col gap-2">
-                                <label className="text-text-main text-sm font-normal  ">Grup Navigasi</label>
-                                <select
-                                    value={moduleGroupId}
-                                    onChange={(e) => setModuleGroupId(e.target.value)}
-                                    className="border-surface-border bg-muted/30 focus:ring-primary/20 text-foreground h-11 w-full rounded-xl border px-4 text-sm font-normal outline-hidden transition-all focus:ring-2"
+                                <DragOverlay
+                                    dropAnimation={{ sideEffects: defaultDropAnimationSideEffects({ styles: { active: { opacity: '0.5' } } }) }}
                                 >
-                                    <option value="" disabled>
-                                        Pilih Grup Menu
-                                    </option>
-                                    {navItems.map((g) => (
-                                        <option key={g.id} value={g.id} className="text-foreground bg-card">
-                                            {g.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                        )}
-                        <div className="flex flex-col gap-2">
-                            <label className="text-text-main text-sm font-normal  ">Icon Modul</label>
-                            <Select value={moduleIcon} onValueChange={setModuleIcon}>
-                                <SelectTrigger className="border-surface-border bg-muted/30 focus:ring-primary/20 text-foreground h-11 w-full rounded-xl border px-4 text-sm font-normal outline-hidden transition-all focus:ring-2">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent className="border-surface-border bg-card max-h-60 overflow-y-auto rounded-xl shadow-2xl">
-                                    {Object.keys(SELECTABLE_ICONS).map((iconName) => {
-                                        const IconComponent = SELECTABLE_ICONS[iconName];
-                                        return (
-                                            <SelectItem key={iconName} value={iconName} className="py-2.5 text-xs font-normal ">
-                                                <div className="flex items-center gap-2">
-                                                    {IconComponent && <IconComponent size={14} className="text-text-main/50" />}
-                                                    <span>{iconName}</span>
+                                    {activeId ? (
+                                        activeType === 'group' ? (
+                                            <div className="border-primary bg-card ring-primary/20 w-full max-w-2xl cursor-grabbing overflow-hidden rounded-xl border opacity-95 shadow-2xl ring-4 md:w-[calc(100vw/2-3rem)]">
+                                                <div className="bg-card flex items-center justify-between border-b px-4 py-3.5">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="bg-primary/10 text-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-lg shadow-inner">
+                                                            <Layers size={14} strokeWidth={2.5} />
+                                                        </div>
+                                                        <div className="flex flex-col">
+                                                            <h3 className="text-foreground text-sm font-normal">
+                                                                {navItems.find((g) => g.id === activeId)?.name}
+                                                            </h3>
+                                                            <span className="text-text-main text-sm font-normal">
+                                                                {navItems.find((g) => g.id === activeId)?.modules?.length || 0} MODUL TERDAFTAR
+                                                            </span>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                            </SelectItem>
-                                        );
-                                    })}
-                                </SelectContent>
-                            </Select>
+                                            </div>
+                                        ) : (
+                                            <div className="border-border bg-card flex w-[280px] scale-105 cursor-grabbing items-center gap-3 rounded-xl border p-3 opacity-95 shadow-2xl">
+                                                <GripVertical size={14} className="text-primary" />
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="text-foreground text-sm font-normal">
+                                                        {allModules.find((m) => m.id === activeId)?.name}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        )
+                                    ) : null}
+                                </DragOverlay>
+                            </DndContext>
                         </div>
-                        <div className="flex flex-col gap-2">
-                            <label className="text-text-main text-sm font-normal  ">Deskripsi Modul</label>
-                            <textarea
-                                value={moduleDescription}
-                                onChange={(e) => setModuleDescription(e.target.value)}
-                                placeholder="Contoh: Modul untuk mengelola seluruh dokumen kontrak"
-                                className="border-surface-border bg-muted/30 focus:ring-primary/20 text-foreground min-h-[80px] w-full resize-none rounded-xl border p-4 text-sm font-normal outline-hidden transition-all focus:ring-2"
-                            />
-                        </div>
-                    </div>
-                    <DialogFooter>
-                        <Button variant="ghost" onClick={() => setIsModuleModalOpen(false)} className="rounded-lg font-normal">
-                            BATAL
-                        </Button>
-                        <Button
-                            onClick={handleSaveModule}
-                            disabled={isProcessingModule || !moduleName.trim() || (!editingModuleItem && !moduleIdentifier.trim())}
-                            className="rounded-lg font-normal"
-                            variant="primary"
-                        >
-                            {isProcessingModule ? <RefreshCw className="mr-1.5 h-4 w-4 animate-spin" /> : <Save className="mr-1.5 h-4 w-4" />}
-                            SIMPAN
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                    )}
 
-            {/* Bulk Granular Permissions Dialog */}
-            <Dialog open={isBulkGranularModalOpen} onOpenChange={setIsBulkGranularModalOpen}>
-                <DialogContent className="rounded-2xl sm:max-w-[480px]">
-                    <DialogHeader>
-                        <DialogTitle className="text-foreground text-base font-bold flex items-center gap-2">
-                            <SlidersHorizontal size={18} className="text-primary" />
-                            <span>Bulk Edit Izin ({selectedModuleIds.length} Modul Terpilih)</span>
-                        </DialogTitle>
-                        <DialogDescription className="text-text-desc text-xs font-normal">
-                            Tentukan hak akses yang ingin diaktifkan atau dinonaktifkan untuk seluruh {selectedModuleIds.length} modul yang dipilih.
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    <div className="space-y-2 py-3">
-                        {PERMISSIONS.map((p) => {
-                            const cfg = PERMISSION_CONFIG[p];
-                            const Icon = cfg.icon;
-                            const isChecked = !!bulkPermissions[p];
-
-                            return (
-                                <div
-                                    key={p}
-                                    onClick={() =>
-                                        setBulkPermissions((prev) => ({
-                                            ...prev,
-                                            [p]: !isChecked,
-                                        }))
-                                    }
-                                    className={cn(
-                                        'flex items-center justify-between p-2.5 rounded-xl border transition-all cursor-pointer select-none',
-                                        isChecked
-                                            ? 'bg-primary/5 border-primary/30 text-text-main'
-                                            : 'bg-surface-card border-surface-border/80 hover:bg-surface-muted text-text-desc',
-                                    )}
-                                >
-                                    <div className="flex items-center gap-2.5 min-w-0">
-                                        <div
-                                            className={cn(
-                                                'flex h-7 w-7 items-center justify-center rounded-lg border shrink-0',
-                                                isChecked
-                                                    ? 'bg-primary/10 border-primary/20'
-                                                    : 'bg-surface-muted border-surface-border',
-                                            )}
-                                        >
-                                            <Icon size={14} className={cfg.colorClass} />
-                                        </div>
-                                        <div className="flex flex-col min-w-0">
-                                            <span className="text-xs font-bold text-text-main truncate">{cfg.label}</span>
-                                            <span className="text-[10px] text-text-desc truncate">{cfg.description}</span>
-                                        </div>
-                                    </div>
-
-                                    <Checkbox
-                                        checked={isChecked}
-                                        onCheckedChange={(checked) =>
-                                            setBulkPermissions((prev) => ({
-                                                ...prev,
-                                                [p]: !!checked,
-                                            }))
-                                        }
-                                        className="border-surface-border data-[state=checked]:bg-primary data-[state=checked]:border-primary h-4 w-4 rounded-md cursor-pointer shrink-0 ml-3"
+                    {/* Group CRUD Modal */}
+                    <Dialog open={isGroupModalOpen} onOpenChange={setIsGroupModalOpen}>
+                        <DialogContent className="rounded-2xl sm:max-w-[425px]">
+                            <DialogHeader>
+                                <DialogTitle className="text-foreground text-base font-normal">
+                                    {editingGroup ? 'Ubah Grup Navigasi' : 'Tambah Grup Navigasi'}
+                                </DialogTitle>
+                                <DialogDescription className="text-text-main text-xs font-normal">
+                                    {editingGroup
+                                        ? 'Ganti nama grup navigasi yang sudah ada.'
+                                        : 'Buat kontainer baru untuk mengelompokkan menu sidebar.'}
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-4 py-4">
+                                <div className="flex flex-col gap-2">
+                                    <label className="text-text-main text-sm font-normal">Nama Grup</label>
+                                    <input
+                                        value={groupName}
+                                        onChange={(e) => setGroupName(e.target.value)}
+                                        placeholder="Contoh: Manajemen Aset"
+                                        className="border-surface-border bg-muted/30 focus:ring-primary/20 h-11 w-full rounded-xl border px-4 text-sm font-normal outline-hidden transition-all focus:ring-2"
                                     />
                                 </div>
-                            );
-                        })}
-                    </div>
+                                <div className="flex flex-col gap-2">
+                                    <label className="text-text-main text-sm font-normal">Icon Grup</label>
+                                    <Select value={groupIcon} onValueChange={setGroupIcon}>
+                                        <SelectTrigger className="border-surface-border bg-muted/30 focus:ring-primary/20 text-foreground h-11 w-full rounded-xl border px-4 text-sm font-normal outline-hidden transition-all focus:ring-2">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent className="border-surface-border bg-card max-h-60 overflow-y-auto rounded-xl shadow-2xl">
+                                            {Object.keys(SELECTABLE_ICONS).map((iconName) => {
+                                                const IconComponent = SELECTABLE_ICONS[iconName];
+                                                return (
+                                                    <SelectItem key={iconName} value={iconName} className="py-2.5 text-xs font-normal">
+                                                        <div className="flex items-center gap-2">
+                                                            {IconComponent && <IconComponent size={14} className="text-text-main/50" />}
+                                                            <span>{iconName}</span>
+                                                        </div>
+                                                    </SelectItem>
+                                                );
+                                            })}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <Button variant="ghost" onClick={() => setIsGroupModalOpen(false)} className="rounded-lg font-normal">
+                                    BATAL
+                                </Button>
+                                <Button
+                                    onClick={handleSaveGroup}
+                                    disabled={isProcessingGroup || !groupName.trim()}
+                                    className="rounded-lg font-normal"
+                                    variant="primary"
+                                >
+                                    {isProcessingGroup ? <RefreshCw className="mr-1.5 h-4 w-4 animate-spin" /> : <Save className="mr-1.5 h-4 w-4" />}
+                                    SIMPAN PERUBAHAN
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
 
-                    <DialogFooter className="gap-2">
-                        <Button
-                            variant="ghost"
-                            onClick={() => setIsBulkGranularModalOpen(false)}
-                            className="rounded-lg text-xs font-semibold cursor-pointer"
-                        >
-                            Batal
-                        </Button>
-                        <Button
-                            onClick={handleBulkGranularApply}
-                            className="rounded-lg text-xs font-bold cursor-pointer"
-                            variant="primary"
-                        >
-                            <Save size={14} />
-                            <span>Terapkan ke {selectedModuleIds.length} Modul</span>
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                    {/* Module CRUD Modal */}
+                    <Dialog open={isModuleModalOpen} onOpenChange={setIsModuleModalOpen}>
+                        <DialogContent className="rounded-2xl sm:max-w-[425px]">
+                            <DialogHeader>
+                                <DialogTitle className="text-foreground text-base font-normal">
+                                    {editingModuleItem ? 'Ubah Modul' : 'Tambah Modul Baru'}
+                                </DialogTitle>
+                                <DialogDescription className="text-text-main text-xs font-normal">
+                                    {editingModuleItem
+                                        ? 'Sesuaikan nama dan path rute untuk modul ini.'
+                                        : 'Daftarkan modul baru ke dalam repository sistem.'}
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-4 py-4">
+                                <div className="flex flex-col gap-2">
+                                    <label className="text-text-main text-sm font-normal">Nama Modul</label>
+                                    <input
+                                        value={moduleName}
+                                        onChange={(e) => setModuleName(e.target.value)}
+                                        placeholder="Contoh: Daftar Kontrak"
+                                        className="border-surface-border bg-muted/30 focus:ring-primary/20 h-11 w-full rounded-xl border px-4 text-sm font-normal outline-hidden transition-all focus:ring-2"
+                                    />
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                    <label className="text-text-main text-sm font-normal">Identifier</label>
+                                    <input
+                                        value={moduleIdentifier}
+                                        onChange={(e) => setModuleIdentifier(e.target.value)}
+                                        placeholder="Contoh: contract.index"
+                                        disabled={!!editingModuleItem}
+                                        className={cn(
+                                            'border-surface-border bg-muted/30 focus:ring-primary/20 h-11 w-full rounded-xl border px-4 text-sm font-normal outline-hidden transition-all focus:ring-2',
+                                            editingModuleItem && 'cursor-not-allowed opacity-60',
+                                        )}
+                                    />
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                    <label className="text-text-main text-sm font-normal">Path Rute / URL</label>
+                                    <input
+                                        value={moduleRoute}
+                                        onChange={(e) => setModuleRoute(e.target.value)}
+                                        placeholder="Contoh: /admin/contracts"
+                                        className="border-surface-border bg-muted/30 focus:ring-primary/20 h-11 w-full rounded-xl border px-4 text-sm font-normal outline-hidden transition-all focus:ring-2"
+                                    />
+                                </div>
+                                {!editingModuleItem && (
+                                    <div className="flex flex-col gap-2">
+                                        <label className="text-text-main text-sm font-normal">Grup Navigasi</label>
+                                        <select
+                                            value={moduleGroupId}
+                                            onChange={(e) => setModuleGroupId(e.target.value)}
+                                            className="border-surface-border bg-muted/30 focus:ring-primary/20 text-foreground h-11 w-full rounded-xl border px-4 text-sm font-normal outline-hidden transition-all focus:ring-2"
+                                        >
+                                            <option value="" disabled>
+                                                Pilih Grup Menu
+                                            </option>
+                                            {navItems.map((g) => (
+                                                <option key={g.id} value={g.id} className="text-foreground bg-card">
+                                                    {g.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                )}
+                                <div className="flex flex-col gap-2">
+                                    <label className="text-text-main text-sm font-normal">Icon Modul</label>
+                                    <Select value={moduleIcon} onValueChange={setModuleIcon}>
+                                        <SelectTrigger className="border-surface-border bg-muted/30 focus:ring-primary/20 text-foreground h-11 w-full rounded-xl border px-4 text-sm font-normal outline-hidden transition-all focus:ring-2">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent className="border-surface-border bg-card max-h-60 overflow-y-auto rounded-xl shadow-2xl">
+                                            {Object.keys(SELECTABLE_ICONS).map((iconName) => {
+                                                const IconComponent = SELECTABLE_ICONS[iconName];
+                                                return (
+                                                    <SelectItem key={iconName} value={iconName} className="py-2.5 text-xs font-normal">
+                                                        <div className="flex items-center gap-2">
+                                                            {IconComponent && <IconComponent size={14} className="text-text-main/50" />}
+                                                            <span>{iconName}</span>
+                                                        </div>
+                                                    </SelectItem>
+                                                );
+                                            })}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                    <label className="text-text-main text-sm font-normal">Deskripsi Modul</label>
+                                    <textarea
+                                        value={moduleDescription}
+                                        onChange={(e) => setModuleDescription(e.target.value)}
+                                        placeholder="Contoh: Modul untuk mengelola seluruh dokumen kontrak"
+                                        className="border-surface-border bg-muted/30 focus:ring-primary/20 text-foreground min-h-[80px] w-full resize-none rounded-xl border p-4 text-sm font-normal outline-hidden transition-all focus:ring-2"
+                                    />
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <Button variant="ghost" onClick={() => setIsModuleModalOpen(false)} className="rounded-lg font-normal">
+                                    BATAL
+                                </Button>
+                                <Button
+                                    onClick={handleSaveModule}
+                                    disabled={isProcessingModule || !moduleName.trim() || (!editingModuleItem && !moduleIdentifier.trim())}
+                                    className="rounded-lg font-normal"
+                                    variant="primary"
+                                >
+                                    {isProcessingModule ? <RefreshCw className="mr-1.5 h-4 w-4 animate-spin" /> : <Save className="mr-1.5 h-4 w-4" />}
+                                    SIMPAN
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
 
-            {/* Delete Group Confirmation Modal */}
-            <ConfirmationModal
-                open={isDeleteGroupModalOpen}
-                onClose={() => {
-                    setIsDeleteGroupModalOpen(false);
-                    setDeletingGroupId(null);
-                }}
-                onConfirm={confirmDeleteGroup}
-                title="Hapus Grup Navigasi?"
-                description="Modul di dalam grup ini akan dipindahkan kembali ke repository."
-                confirmText="Ya, Hapus"
-                cancelText="Batal"
-                variant="danger"
-            />
+                    {/* Bulk Granular Permissions Dialog */}
+                    <Dialog open={isBulkGranularModalOpen} onOpenChange={setIsBulkGranularModalOpen}>
+                        <DialogContent className="rounded-2xl sm:max-w-[480px]">
+                            <DialogHeader>
+                                <DialogTitle className="text-foreground flex items-center gap-2 text-base font-bold">
+                                    <SlidersHorizontal size={18} className="text-primary" />
+                                    <span>Bulk Edit Izin ({selectedModuleIds.length} Modul Terpilih)</span>
+                                </DialogTitle>
+                                <DialogDescription className="text-text-desc text-xs font-normal">
+                                    Tentukan hak akses yang ingin diaktifkan atau dinonaktifkan untuk seluruh {selectedModuleIds.length} modul yang
+                                    dipilih.
+                                </DialogDescription>
+                            </DialogHeader>
 
-            {/* Delete Module Confirmation Modal */}
-            <ConfirmationModal
-                open={isDeleteModuleModalOpen}
-                onClose={() => {
-                    setIsDeleteModuleModalOpen(false);
-                    setDeletingModuleId(null);
-                }}
-                onConfirm={confirmDeleteModule}
-                title="Hapus Modul Secara Permanen?"
-                description="Tindakan ini akan menghapus modul secara permanen dari sistem dan tidak dapat dibatalkan."
-                confirmText="Ya, Hapus Permanen"
-                cancelText="Batal"
-                variant="danger"
-            />
+                            <div className="space-y-2 py-3">
+                                {PERMISSIONS.map((p) => {
+                                    const cfg = PERMISSION_CONFIG[p];
+                                    const Icon = cfg.icon;
+                                    const isChecked = !!bulkPermissions[p];
 
-            {/* Module Access Side Config (Sheet / Drawer Panel) */}
-            <ModuleAccessSideConfig
-                module={configuringModule}
-                role={role}
-                access={configuringModule ? accessForm.data.accesses.find((a) => a.module_id === configuringModule.id) : null}
-                onClose={() => setConfiguringModule(null)}
-                onToggle={updateAccess}
-                onSetPreset={applyPresetToModule}
-            />
+                                    return (
+                                        <div
+                                            key={p}
+                                            onClick={() =>
+                                                setBulkPermissions((prev) => ({
+                                                    ...prev,
+                                                    [p]: !isChecked,
+                                                }))
+                                            }
+                                            className={cn(
+                                                'flex cursor-pointer items-center justify-between rounded-xl border p-2.5 transition-all select-none',
+                                                isChecked
+                                                    ? 'bg-primary/5 border-primary/30 text-text-main'
+                                                    : 'bg-surface-card border-surface-border/80 hover:bg-surface-muted text-text-desc',
+                                            )}
+                                        >
+                                            <div className="flex min-w-0 items-center gap-2.5">
+                                                <div
+                                                    className={cn(
+                                                        'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border',
+                                                        isChecked ? 'bg-primary/10 border-primary/20' : 'bg-surface-muted border-surface-border',
+                                                    )}
+                                                >
+                                                    <Icon size={14} className={cfg.colorClass} />
+                                                </div>
+                                                <div className="flex min-w-0 flex-col">
+                                                    <span className="text-text-main truncate text-xs font-bold">{cfg.label}</span>
+                                                    <span className="text-text-desc truncate text-[10px]">{cfg.description}</span>
+                                                </div>
+                                            </div>
 
-            <style
-                dangerouslySetInnerHTML={{
-                    __html: `
+                                            <Checkbox
+                                                checked={isChecked}
+                                                onCheckedChange={(checked) =>
+                                                    setBulkPermissions((prev) => ({
+                                                        ...prev,
+                                                        [p]: !!checked,
+                                                    }))
+                                                }
+                                                className="border-surface-border data-[state=checked]:bg-primary data-[state=checked]:border-primary ml-3 h-4 w-4 shrink-0 cursor-pointer rounded-md"
+                                            />
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            <DialogFooter className="gap-2">
+                                <Button
+                                    variant="ghost"
+                                    onClick={() => setIsBulkGranularModalOpen(false)}
+                                    className="cursor-pointer rounded-lg text-xs font-semibold"
+                                >
+                                    Batal
+                                </Button>
+                                <Button onClick={handleBulkGranularApply} className="cursor-pointer rounded-lg text-xs font-bold" variant="primary">
+                                    <Save size={14} />
+                                    <span>Terapkan ke {selectedModuleIds.length} Modul</span>
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+
+                    {/* Delete Group Confirmation Modal */}
+                    <ConfirmationModal
+                        open={isDeleteGroupModalOpen}
+                        onClose={() => {
+                            setIsDeleteGroupModalOpen(false);
+                            setDeletingGroupId(null);
+                        }}
+                        onConfirm={confirmDeleteGroup}
+                        title="Hapus Grup Navigasi?"
+                        description="Modul di dalam grup ini akan dipindahkan kembali ke repository."
+                        confirmText="Ya, Hapus"
+                        cancelText="Batal"
+                        variant="danger"
+                    />
+
+                    {/* Delete Module Confirmation Modal */}
+                    <ConfirmationModal
+                        open={isDeleteModuleModalOpen}
+                        onClose={() => {
+                            setIsDeleteModuleModalOpen(false);
+                            setDeletingModuleId(null);
+                        }}
+                        onConfirm={confirmDeleteModule}
+                        title="Hapus Modul Secara Permanen?"
+                        description="Tindakan ini akan menghapus modul secara permanen dari sistem dan tidak dapat dibatalkan."
+                        confirmText="Ya, Hapus Permanen"
+                        cancelText="Batal"
+                        variant="danger"
+                    />
+
+                    {/* Module Access Side Config (Sheet / Drawer Panel) */}
+                    <ModuleAccessSideConfig
+                        module={configuringModule}
+                        role={role}
+                        access={configuringModule ? accessForm.data.accesses.find((a) => a.module_id === configuringModule.id) : null}
+                        onClose={() => setConfiguringModule(null)}
+                        onToggle={updateAccess}
+                        onSetPreset={applyPresetToModule}
+                    />
+
+                    <style
+                        dangerouslySetInnerHTML={{
+                            __html: `
                 .scrollbar-hide::-webkit-scrollbar { display: none; }
                 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
                 .content-visibility-auto { content-visibility: auto; contain-intrinsic-size: auto 60px; }
             `,
-                }}
-            />
+                        }}
+                    />
                 </FloatingPanel>
             </MasterPageLayout>
         </>

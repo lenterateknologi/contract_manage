@@ -2,9 +2,9 @@
 
 namespace App\Services\Contract;
 
-use App\Http\Formatters\ContractFormatter;
-use App\Models\Contract;
-use App\Models\User;
+use App\Http\Formatters\UserFormatter;
+use App\Models\Master\User;
+use App\Models\Transaction\Contract;
 
 class ContractMemberService
 {
@@ -32,7 +32,7 @@ class ContractMemberService
             $userId = (string) $user->id;
             if (! isset($membersMap[$userId])) {
                 $membersMap[$userId] = [
-                    'user' => ContractFormatter::formatUser($user),
+                    'user' => UserFormatter::format($user),
                     'roles' => [],
                 ];
             }

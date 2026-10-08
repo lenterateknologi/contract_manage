@@ -27,7 +27,7 @@ export default function ConfirmPassword() {
         >
             <Head title="Konfirmasi Kata Sandi" />
 
-            <div className="rounded-xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+            <div className="rounded-xl border border-slate-200/80 bg-white p-6 shadow-sm sm:p-8 dark:border-zinc-800 dark:bg-zinc-900">
                 <form onSubmit={submit} className="flex flex-col gap-6">
                     <AuthErrorAlert errors={errors} title="Konfirmasi Gagal" />
 

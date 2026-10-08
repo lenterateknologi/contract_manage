@@ -2,18 +2,17 @@
 
 namespace App\Http\Controllers\Report;
 
-use App\Exports\AuditReportExport;
-use App\Exports\ContractReportExport;
-use App\Exports\DivisionReportExport;
-use App\Exports\TeamReportExport;
+use App\Exports\Transaction\AuditReportExport;
+use App\Exports\Transaction\ContractReportExport;
+use App\Exports\Transaction\DivisionReportExport;
+use App\Exports\Transaction\TeamReportExport;
 use App\Http\Controllers\Controller;
 use App\Http\Queries\Master\UserQuery;
-use App\Models\CompanyGroup;
-use App\Models\Contract;
-use App\Models\ContractHistory;
-use App\Models\ContractType;
-use App\Models\Workflow;
-use App\Models\WorkflowStep;
+use App\Models\Master\CompanyGroup;
+use App\Models\Master\ContractType;
+use App\Models\Master\Workflow;
+use App\Models\Transaction\Contract;
+use App\Models\Transaction\ContractHistory;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -798,6 +797,7 @@ class ReportController extends Controller
             if ($b['total'] === $a['total']) {
                 return strcmp($a['org_group_name'], $b['org_group_name']);
             }
+
             return $b['total'] <=> $a['total'];
         });
 
@@ -1097,6 +1097,7 @@ class ReportController extends Controller
             if ($b['total'] === $a['total']) {
                 return strcmp($a['user_name'], $b['user_name']);
             }
+
             return $b['total'] <=> $a['total'];
         });
 

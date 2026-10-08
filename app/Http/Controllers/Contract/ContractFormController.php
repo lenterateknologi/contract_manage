@@ -4,13 +4,14 @@ namespace App\Http\Controllers\Contract;
 
 use App\Http\Controllers\Controller;
 use App\Http\Formatters\ContractFormatter;
+use App\Http\Formatters\UserFormatter;
 use App\Http\Queries\Contract\ContractDetailQuery;
-use App\Models\Contract;
-use App\Models\ContractHistory;
-use App\Models\FormSubmission;
-use App\Models\FormSubmissionHistory;
-use App\Models\FormTemplate;
-use App\Models\Vendor;
+use App\Models\Master\FormTemplate;
+use App\Models\Master\Vendor;
+use App\Models\Transaction\Contract;
+use App\Models\Transaction\ContractHistory;
+use App\Models\Transaction\FormSubmission;
+use App\Models\Transaction\FormSubmissionHistory;
 use App\Traits\ApiResponse;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
@@ -343,7 +344,7 @@ class ContractFormController extends Controller
                     'version_no' => $v->version_no,
                     'form_data' => $v->form_data,
                     'change_summary' => $v->change_summary,
-                    'created_by' => ContractFormatter::formatUser($v->createdBy),
+                    'created_by' => UserFormatter::format($v->createdBy),
                     'created_at' => $v->created_at->format('Y-m-d H:i'),
                 ]);
             } else {
@@ -354,7 +355,7 @@ class ContractFormController extends Controller
                     'version_no' => $v->version_no,
                     'form_data' => $v->form_data,
                     'change_summary' => $v->change_summary,
-                    'created_by' => ContractFormatter::formatUser($v->createdBy),
+                    'created_by' => UserFormatter::format($v->createdBy),
                     'created_at' => $v->created_at->format('Y-m-d H:i'),
                 ]);
             }

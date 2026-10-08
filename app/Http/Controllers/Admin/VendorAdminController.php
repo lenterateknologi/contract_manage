@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Exports\VendorsExport;
+use App\Exports\Master\VendorsExport;
 use App\Http\Controllers\Controller;
 use App\Http\Queries\Master\VendorQuery;
 use App\Http\Requests\Common\ImportFileRequest;
 use App\Http\Requests\Vendor\StoreVendorRequest;
 use App\Http\Requests\Vendor\UpdateVendorRequest;
-use App\Models\Vendor;
+use App\Models\Master\Vendor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;

@@ -6,24 +6,27 @@ use App\Http\Actions\Contract\ApproveContractAction;
 use App\Http\Actions\Contract\GetContractAvailableActionsAction;
 use App\Http\Actions\Contract\GetContractRequirementsAction;
 use App\Http\Controllers\Controller;
+use App\Http\Formatters\ApprovalTimelineFormatter;
 use App\Http\Formatters\ContractFormatter;
+use App\Http\Formatters\UserFormatter;
 use App\Http\Queries\Contract\ContractDetailQuery;
 use App\Http\Requests\Contract\AddAdhocApproverRequest;
 use App\Http\Requests\Contract\ApproveContractRequest;
 use App\Http\Requests\Contract\BulkApproveContractRequest;
 use App\Http\Requests\Contract\RejectContractRequest;
-use App\Models\Approval;
-use App\Models\Contract;
-use App\Models\ContractHistory;
-use App\Models\Role;
-use App\Models\User;
-use App\Models\Workflow;
-use App\Models\WorkflowStep;
+use App\Models\Master\Role;
+use App\Models\Master\User;
+use App\Models\Master\Workflow;
+use App\Models\Master\WorkflowStep;
+use App\Models\Transaction\Approval;
+use App\Models\Transaction\Contract;
+use App\Models\Transaction\ContractHistory;
 use App\Services\Workflow\ContractWorkflowService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class ContractApprovalController extends Controller
 {
@@ -75,13 +78,13 @@ class ContractApprovalController extends Controller
         $currentStep = $contract->workflowStep;
         $stepAction = null;
         if ($currentStep) {
-            if ($requestActionId && \Illuminate\Support\Str::isUuid($requestActionId)) {
+            if ($requestActionId && Str::isUuid($requestActionId)) {
                 $stepAction = $currentStep->actions()->where('id', $requestActionId)->first();
             }
             if (! $stepAction) {
                 $stepAction = $currentStep->actions()->where(function ($q) use ($actionCode) {
                     $q->where('action_code', $actionCode)
-                      ->orWhereIn('action_code', ['assign', 'assign_pic', 'approve']);
+                        ->orWhereIn('action_code', ['assign', 'assign_pic', 'approve']);
                 })->first();
             }
 
@@ -123,7 +126,9 @@ class ContractApprovalController extends Controller
             $filesToProcess = [$request->file('attachment')];
         }
         foreach ($filesToProcess as $file) {
-            if (! $file) continue;
+            if (! $file) {
+                continue;
+            }
             $path = $file->store("contracts/{$contract->id}/assignments", 'local');
             $contract->attachments()->create([
                 'label' => $file->getClientOriginalName(),
@@ -261,7 +266,9 @@ class ContractApprovalController extends Controller
 
         $isFirst = true;
         foreach ($filesToProcess as $file) {
-            if (! $file) continue;
+            if (! $file) {
+                continue;
+            }
             $path = $file->store("contracts/{$contract->id}/approvals", 'local');
             if ($isFirst) {
                 $attachmentPath = $path;
@@ -331,7 +338,9 @@ class ContractApprovalController extends Controller
 
         $isFirst = true;
         foreach ($filesToProcess as $file) {
-            if (! $file) continue;
+            if (! $file) {
+                continue;
+            }
             $path = $file->store("contracts/{$contract->id}/approvals", 'local');
             if ($isFirst) {
                 $attachmentPath = $path;
@@ -586,7 +595,9 @@ class ContractApprovalController extends Controller
             $firstAttachmentPath = null;
             $isFirstAttachment = true;
             foreach ($filesToProcess as $file) {
-                if (! $file) continue;
+                if (! $file) {
+                    continue;
+                }
                 $path = $file->store("contracts/{$contract->id}/adhoc", 'local');
                 if ($isFirstAttachment) {
                     $firstAttachmentPath = $path;
@@ -662,13 +673,13 @@ class ContractApprovalController extends Controller
 
                 $stepAction = null;
                 if ($currentStep) {
-                    if ($requestActionId && \Illuminate\Support\Str::isUuid($requestActionId)) {
+                    if ($requestActionId && Str::isUuid($requestActionId)) {
                         $stepAction = $currentStep->actions()->where('id', $requestActionId)->first();
                     }
                     if (! $stepAction) {
                         $stepAction = $currentStep->actions()->where(function ($q) use ($actionCodeInput) {
                             $q->where('action_code', $actionCodeInput)
-                              ->orWhere('action_code', 'add_adhoc');
+                                ->orWhere('action_code', 'add_adhoc');
                         })->first();
                     }
                 }
@@ -682,8 +693,8 @@ class ContractApprovalController extends Controller
                         ->where('status', 'pending')
                         ->where(function ($q) use ($contract) {
                             $q->where('user_id', Auth::id())
-                              ->orWhere('user_id', $contract->created_by)
-                              ->orWhere('user_id', $contract->initiated_by_id);
+                                ->orWhere('user_id', $contract->created_by)
+                                ->orWhere('user_id', $contract->initiated_by_id);
                         })
                         ->first();
 
@@ -792,7 +803,7 @@ class ContractApprovalController extends Controller
             'histories.actor.department',
         ]);
 
-        $approvals = ContractFormatter::mapApprovalTimeline($contract, true);
+        $approvals = ApprovalTimelineFormatter::map($contract, true);
 
         $historiesQuery = $contract->histories()->with('actor:id,name,role_id,email')->latest();
         if ($request->has('page') || $request->has('per_page')) {
@@ -804,7 +815,7 @@ class ContractApprovalController extends Controller
                 'description' => $h->description,
                 'actor_id' => $h->actor_id,
                 'created_at' => $h->created_at->format('Y-m-d H:i'),
-                'actor' => ContractFormatter::formatUser($h->actor),
+                'actor' => UserFormatter::format($h->actor),
             ]);
         }
 
@@ -928,5 +939,3 @@ class ContractApprovalController extends Controller
         return $this->getContractAvailableActionsAction->execute($contract, $request);
     }
 }
-
-

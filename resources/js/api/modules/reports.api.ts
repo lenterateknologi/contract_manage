@@ -148,31 +148,34 @@ export const reportsApi = {
     /**
      * Get Monthly Submissions by Division or Org Group Report Data
      */
-    getDivisionMonthly: (params: {
-        year?: number;
-        group_by?: 'division' | 'org_group';
-        division_ids?: string[];
-        organization_group_ids?: string[];
-        org_group_ids?: string[];
-        contract_type_ids?: string[];
-        statuses?: string[];
-        search?: string;
-    } = {}): Promise<DivisionReportResponse> =>
-        unwrapResponse(apiClient.post(API_ENDPOINTS.REPORTS.DIVISIONS, params)),
+    getDivisionMonthly: (
+        params: {
+            year?: number;
+            group_by?: 'division' | 'org_group';
+            division_ids?: string[];
+            organization_group_ids?: string[];
+            org_group_ids?: string[];
+            contract_type_ids?: string[];
+            statuses?: string[];
+            search?: string;
+        } = {},
+    ): Promise<DivisionReportResponse> => unwrapResponse(apiClient.post(API_ENDPOINTS.REPORTS.DIVISIONS, params)),
 
     /**
      * Build download URL for Division Monthly Report CSV Export
      */
-    getExportDivisionsUrl: (params: {
-        year?: number;
-        group_by?: 'division' | 'org_group';
-        division_ids?: string[];
-        organization_group_ids?: string[];
-        org_group_ids?: string[];
-        contract_type_ids?: string[];
-        statuses?: string[];
-        search?: string;
-    } = {}): string => {
+    getExportDivisionsUrl: (
+        params: {
+            year?: number;
+            group_by?: 'division' | 'org_group';
+            division_ids?: string[];
+            organization_group_ids?: string[];
+            org_group_ids?: string[];
+            contract_type_ids?: string[];
+            statuses?: string[];
+            search?: string;
+        } = {},
+    ): string => {
         const queryParams = new URLSearchParams();
         if (params.year) queryParams.append('year', String(params.year));
         if (params.group_by) queryParams.append('group_by', params.group_by);
@@ -200,23 +203,26 @@ export const reportsApi = {
     /**
      * Get Monthly Submissions / PIC Tasks by Org Group Team Report Data
      */
-    getTeamMonthly: (params: {
-        year?: number;
-        role_type?: 'creator' | 'pic';
-        org_group_id?: string;
-        search?: string;
-    } = {}): Promise<TeamReportResponse> =>
-        unwrapResponse(apiClient.post(API_ENDPOINTS.REPORTS.TEAM, params)),
+    getTeamMonthly: (
+        params: {
+            year?: number;
+            role_type?: 'creator' | 'pic';
+            org_group_id?: string;
+            search?: string;
+        } = {},
+    ): Promise<TeamReportResponse> => unwrapResponse(apiClient.post(API_ENDPOINTS.REPORTS.TEAM, params)),
 
     /**
      * Build download URL for Team Monthly Report CSV Export
      */
-    getExportTeamUrl: (params: {
-        year?: number;
-        role_type?: 'creator' | 'pic';
-        org_group_id?: string;
-        search?: string;
-    } = {}): string => {
+    getExportTeamUrl: (
+        params: {
+            year?: number;
+            role_type?: 'creator' | 'pic';
+            org_group_id?: string;
+            search?: string;
+        } = {},
+    ): string => {
         const queryParams = new URLSearchParams();
         if (params.year) queryParams.append('year', String(params.year));
         if (params.role_type) queryParams.append('role_type', params.role_type);
@@ -295,8 +301,7 @@ export const reportsApi = {
     /**
      * Backward-compatible combined data fetch
      */
-    getData: (params: ReportFilterParams = {}) =>
-        unwrapResponse(apiClient.post(API_ENDPOINTS.REPORTS.DATA, params)),
+    getData: (params: ReportFilterParams = {}) => unwrapResponse(apiClient.post(API_ENDPOINTS.REPORTS.DATA, params)),
 };
 
 export default reportsApi;

@@ -1,19 +1,41 @@
+import { formTemplatesApi } from '@/api';
+import { Button } from '@/components/ui/buttons/Button';
+import { ConfirmationModal } from '@/components/ui/dialogs/ConfirmationModal';
+import { ScrollArea } from '@/components/ui/utilities/ScrollArea';
+import { cn } from '@/lib/utils';
 import { CanvasArea } from '@/pages/form-builder/components/builder/CanvasArea';
 import { FIELD_TYPES } from '@/pages/form-builder/components/builder/constants';
-import { FormElement } from '@/pages/form-builder/components/fields/FormElement';
-import { JSONEditorPanel } from '@/pages/form-builder/components/builder/JSONEditorPanel';
 import { LibraryPanel } from '@/pages/form-builder/components/builder/LibraryPanel';
 import { PropertiesPanel } from '@/pages/form-builder/components/builder/PropertiesPanel';
 import { StructurePanel } from '@/pages/form-builder/components/builder/StructurePanel';
-import { Button } from '@/components/ui/buttons/Button';
-import { ScrollArea } from '@/components/ui/utilities/ScrollArea';
-import { ConfirmationModal } from '@/components/ui/dialogs/ConfirmationModal';
-import { cn } from '@/lib/utils';
+import { FormElement } from '@/pages/form-builder/components/fields/FormElement';
 import { closestCenter, DndContext, DragEndEvent, DragOverlay, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { formTemplatesApi } from '@/api';
-import { ArrowLeft, Clock, Download, Edit3, Eye, FileText, GitBranch, GitCommit, Grid, HelpCircle, Layout, List, Loader2, Play, Plus, Redo, RotateCcw, Rows, Save, Trash2, Undo, User } from 'lucide-react';
+import {
+    ArrowLeft,
+    Clock,
+    Download,
+    Edit3,
+    Eye,
+    FileText,
+    GitBranch,
+    GitCommit,
+    Grid,
+    HelpCircle,
+    Layout,
+    List,
+    Loader2,
+    Play,
+    Plus,
+    Redo,
+    RotateCcw,
+    Rows,
+    Save,
+    Trash2,
+    Undo,
+    User,
+} from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { TrashZone } from './components/TrashZone';
 
@@ -1145,11 +1167,13 @@ function FormBuilder({ template }: Props) {
     const [showShortcutsModal, setShowShortcutsModal] = useState(false);
     const [showVersionModal, setShowVersionModal] = useState(false);
     // Custom Presets State (Loaded from LocalStorage)
-    const [customPresets, setCustomPresets] = useState<{
-        value: string;
-        label: string;
-        fields: FormField[];
-    }[]>(() => {
+    const [customPresets, setCustomPresets] = useState<
+        {
+            value: string;
+            label: string;
+            fields: FormField[];
+        }[]
+    >(() => {
         try {
             const saved = localStorage.getItem('form_builder_custom_presets');
             return saved ? JSON.parse(saved) : [];
@@ -1220,22 +1244,24 @@ function FormBuilder({ template }: Props) {
 
     // Git Commit Log Versioning State
     const [commitMessageInput, setCommitMessageInput] = useState('');
-    const [commitLogs, setCommitLogs] = useState<{
-        hash: string;
-        message: string;
-        author: string;
-        timestamp: string;
-        fieldsCount: number;
-        fields: FormField[];
-    }[]>([
+    const [commitLogs, setCommitLogs] = useState<
+        {
+            hash: string;
+            message: string;
+            author: string;
+            timestamp: string;
+            fieldsCount: number;
+            fields: FormField[];
+        }[]
+    >([
         {
             hash: 'init-01',
             message: 'Initial commit: Template schema created',
             author: 'Wahyudi Ramadhan',
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             fieldsCount: (template?.fields || []).length,
-            fields: (template?.fields || []),
-        }
+            fields: template?.fields || [],
+        },
     ]);
     const [viewMode, setViewMode] = useState<'visual-editor' | 'interactive-form' | 'pdf-preview'>('visual-editor');
     const [pageLayout, setPageLayout] = useState<'paged' | 'continuous'>('paged');
@@ -1281,7 +1307,7 @@ function FormBuilder({ template }: Props) {
         title: '',
         description: '',
         variant: 'danger',
-        onConfirm: () => { },
+        onConfirm: () => {},
     });
     const closeDialog = () => setDialog((d) => ({ ...d, open: false }));
     const openDialog = (opts: Omit<typeof dialog, 'open'>) => setDialog({ ...opts, open: true });
@@ -1640,15 +1666,15 @@ function FormBuilder({ template }: Props) {
                 options:
                     typeValue === 'kop_surat'
                         ? {
-                            logo_url: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=2117&auto=format&fit=crop',
-                            logo_size: 80,
-                            logo_position: 'left',
-                            description:
-                                'Jl. Sudirman No. 123, SCBD, Jakarta Selatan, 12190\nTelp: (021) 5088 1234 • Fax: (021) 5088 5678\nEmail: info@company.com • Website: www.company.com',
-                        }
+                              logo_url: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=2117&auto=format&fit=crop',
+                              logo_size: 80,
+                              logo_position: 'left',
+                              description:
+                                  'Jl. Sudirman No. 123, SCBD, Jakarta Selatan, 12190\nTelp: (021) 5088 1234 • Fax: (021) 5088 5678\nEmail: info@company.com • Website: www.company.com',
+                          }
                         : typeValue === 'select' || typeValue === 'radio'
-                            ? ['Option 1', 'Option 2']
-                            : null,
+                          ? ['Option 1', 'Option 2']
+                          : null,
                 order: (data?.fields || []).length,
             };
 
@@ -2014,7 +2040,6 @@ function FormBuilder({ template }: Props) {
                     console.error('Polling PDF status failed:', err);
                 }
             }, 2000);
-
         } catch (error) {
             console.error('Export PDF failed:', error);
             setSaving(false);
@@ -2159,19 +2184,19 @@ function FormBuilder({ template }: Props) {
 
             <form onSubmit={handleSave} className="flex h-full flex-col overflow-hidden bg-slate-100/60 dark:bg-zinc-950">
                 {/* Header Bar */}
-                <header className="border-b border-slate-200/80 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 z-50 flex h-16 shrink-0 items-center justify-between px-5 backdrop-blur-md">
+                <header className="z-50 flex h-16 shrink-0 items-center justify-between border-b border-slate-200/80 bg-white/95 px-5 backdrop-blur-md dark:border-zinc-800 dark:bg-zinc-900/95">
                     {/* Left Brand & Title + Auto-Save Status */}
-                    <div className="flex items-center gap-3.5 min-w-0">
+                    <div className="flex min-w-0 items-center gap-3.5">
                         <Link
                             href={route('admin.form-templates.index')}
-                            className="p-2 border border-slate-200 dark:border-zinc-800 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors text-slate-700 dark:text-slate-300 shrink-0"
+                            className="shrink-0 rounded-xl border border-slate-200 p-2 text-slate-700 transition-colors hover:bg-slate-100 dark:border-zinc-800 dark:text-slate-300 dark:hover:bg-zinc-800"
                             title="Kembali ke Daftar Template"
                         >
                             <ArrowLeft size={16} />
                         </Link>
-                        <div className="flex flex-col min-w-0">
+                        <div className="flex min-w-0 flex-col">
                             <div className="flex items-center gap-2">
-                                <h1 className="text-slate-900 dark:text-white font-sans text-xs lg:text-sm font-bold tracking-tight uppercase truncate max-w-[180px] lg:max-w-[280px]">
+                                <h1 className="max-w-[180px] truncate font-sans text-xs font-bold tracking-tight text-slate-900 uppercase lg:max-w-[280px] lg:text-sm dark:text-white">
                                     {data.name}
                                 </h1>
                             </div>
@@ -2179,7 +2204,7 @@ function FormBuilder({ template }: Props) {
                                 <button
                                     type="button"
                                     onClick={() => setShowVersionModal(true)}
-                                    className="flex items-center gap-1 text-[9px] font-bold tracking-wider uppercase text-primary hover:underline"
+                                    className="text-primary flex items-center gap-1 text-[9px] font-bold tracking-wider uppercase hover:underline"
                                     title="Buka Git Commit History"
                                 >
                                     <GitCommit size={11} />
@@ -2188,8 +2213,8 @@ function FormBuilder({ template }: Props) {
                                 <span className="text-slate-300 dark:text-zinc-700">•</span>
                                 <div className="flex items-center gap-1.5 text-[9px] font-semibold text-emerald-600 dark:text-emerald-400">
                                     <span className="relative flex h-1.5 w-1.5">
-                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+                                        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
                                     </span>
                                     <span>Tersimpan</span>
                                 </div>
@@ -2200,14 +2225,14 @@ function FormBuilder({ template }: Props) {
                     {/* Center Mode Tabs & History Controls */}
                     <div className="flex items-center gap-3">
                         {/* Undo / Redo */}
-                        <div className="flex items-center gap-0.5 bg-slate-100/80 dark:bg-zinc-800/60 p-1 rounded-xl border border-slate-200/50 dark:border-zinc-700/50">
+                        <div className="flex items-center gap-0.5 rounded-xl border border-slate-200/50 bg-slate-100/80 p-1 dark:border-zinc-700/50 dark:bg-zinc-800/60">
                             <Button
                                 type="button"
                                 variant="ghost"
                                 size="icon"
                                 onClick={undo}
                                 disabled={historyIndex <= 0}
-                                className="h-7 w-7 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-zinc-700 transition-all active:scale-95 disabled:opacity-30"
+                                className="h-7 w-7 rounded-lg text-slate-700 transition-all hover:bg-white active:scale-95 disabled:opacity-30 dark:text-slate-300 dark:hover:bg-zinc-700"
                                 title="Undo (Ctrl+Z)"
                             >
                                 <Undo size={14} />
@@ -2218,7 +2243,7 @@ function FormBuilder({ template }: Props) {
                                 size="icon"
                                 onClick={redo}
                                 disabled={historyIndex >= history.length - 1}
-                                className="h-7 w-7 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-zinc-700 transition-all active:scale-95 disabled:opacity-30"
+                                className="h-7 w-7 rounded-lg text-slate-700 transition-all hover:bg-white active:scale-95 disabled:opacity-30 dark:text-slate-300 dark:hover:bg-zinc-700"
                                 title="Redo (Ctrl+Y)"
                             >
                                 <Redo size={14} />
@@ -2226,7 +2251,7 @@ function FormBuilder({ template }: Props) {
                         </div>
 
                         {/* View Mode Tabs */}
-                        <div className="flex bg-slate-200/60 dark:bg-zinc-800/80 p-1 rounded-xl border border-slate-200/80 dark:border-zinc-700/60 shadow-inner">
+                        <div className="flex rounded-xl border border-slate-200/80 bg-slate-200/60 p-1 shadow-inner dark:border-zinc-700/60 dark:bg-zinc-800/80">
                             {[
                                 { id: 'visual-editor', label: 'Visual Editor', icon: Edit3 },
                                 { id: 'interactive-form', label: 'Interactive Form', icon: Play },
@@ -2237,58 +2262,56 @@ function FormBuilder({ template }: Props) {
                                     type="button"
                                     onClick={() => setViewMode(mode.id as any)}
                                     className={cn(
-                                        'flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all uppercase cursor-pointer',
+                                        'flex cursor-pointer items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold uppercase transition-all',
                                         viewMode === mode.id
-                                            ? 'bg-white dark:bg-zinc-900 text-slate-900 dark:text-white shadow-xs'
+                                            ? 'bg-white text-slate-900 shadow-xs dark:bg-zinc-900 dark:text-white'
                                             : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200',
                                     )}
                                 >
                                     <mode.icon size={13} strokeWidth={2.2} />
-                                    <span className="hidden md:inline-block font-sans tracking-tight">
-                                        {mode.label}
-                                    </span>
+                                    <span className="hidden font-sans tracking-tight md:inline-block">{mode.label}</span>
                                 </button>
                             ))}
                         </div>
 
                         {/* Page Layout Toggle: Per Page vs Memanjang Kebawah */}
-                        <div className="flex bg-slate-200/60 dark:bg-zinc-800/80 p-1 rounded-xl border border-slate-200/80 dark:border-zinc-700/60 shadow-inner">
+                        <div className="flex rounded-xl border border-slate-200/80 bg-slate-200/60 p-1 shadow-inner dark:border-zinc-700/60 dark:bg-zinc-800/80">
                             <button
                                 type="button"
                                 onClick={() => setPageLayout('paged')}
                                 className={cn(
-                                    'flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold transition-all uppercase cursor-pointer',
+                                    'flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold uppercase transition-all',
                                     pageLayout === 'paged'
-                                        ? 'bg-white dark:bg-zinc-900 text-slate-900 dark:text-white shadow-xs'
+                                        ? 'bg-white text-slate-900 shadow-xs dark:bg-zinc-900 dark:text-white'
                                         : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200',
                                 )}
                                 title="Tampilan Per Halaman A4"
                             >
                                 <FileText size={13} strokeWidth={2.2} />
-                                <span className="hidden xl:inline-block font-sans tracking-tight">Per Halaman</span>
+                                <span className="hidden font-sans tracking-tight xl:inline-block">Per Halaman</span>
                             </button>
                             <button
                                 type="button"
                                 onClick={() => setPageLayout('continuous')}
                                 className={cn(
-                                    'flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold transition-all uppercase cursor-pointer',
+                                    'flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold uppercase transition-all',
                                     pageLayout === 'continuous'
-                                        ? 'bg-white dark:bg-zinc-900 text-slate-900 dark:text-white shadow-xs'
+                                        ? 'bg-white text-slate-900 shadow-xs dark:bg-zinc-900 dark:text-white'
                                         : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200',
                                 )}
                                 title="Tampilan Memanjang Kebawah (Continuous Scroll)"
                             >
                                 <Rows size={13} strokeWidth={2.2} />
-                                <span className="hidden xl:inline-block font-sans tracking-tight">Memanjang</span>
+                                <span className="hidden font-sans tracking-tight xl:inline-block">Memanjang</span>
                             </button>
                         </div>
 
                         {/* Zoom Controls */}
-                        <div className="hidden lg:flex items-center gap-1 bg-slate-100/80 dark:bg-zinc-800/60 p-1 rounded-xl border border-slate-200/50 dark:border-zinc-700/50 text-xs font-semibold">
+                        <div className="hidden items-center gap-1 rounded-xl border border-slate-200/50 bg-slate-100/80 p-1 text-xs font-semibold lg:flex dark:border-zinc-700/50 dark:bg-zinc-800/60">
                             <button
                                 type="button"
                                 onClick={() => setZoom((z) => Math.max(50, z - 10))}
-                                className="h-7 w-6 flex items-center justify-center rounded-lg hover:bg-white dark:hover:bg-zinc-700 transition-all cursor-pointer"
+                                className="flex h-7 w-6 cursor-pointer items-center justify-center rounded-lg transition-all hover:bg-white dark:hover:bg-zinc-700"
                                 title="Zoom Out"
                             >
                                 -
@@ -2296,7 +2319,7 @@ function FormBuilder({ template }: Props) {
                             <button
                                 type="button"
                                 onClick={() => setZoom(100)}
-                                className="h-7 px-1.5 flex items-center justify-center rounded-lg hover:bg-white dark:hover:bg-zinc-700 transition-all font-mono text-[11px] cursor-pointer"
+                                className="flex h-7 cursor-pointer items-center justify-center rounded-lg px-1.5 font-mono text-[11px] transition-all hover:bg-white dark:hover:bg-zinc-700"
                                 title="Reset Zoom"
                             >
                                 {zoom}%
@@ -2304,7 +2327,7 @@ function FormBuilder({ template }: Props) {
                             <button
                                 type="button"
                                 onClick={() => setZoom((z) => Math.min(150, z + 10))}
-                                className="h-7 w-6 flex items-center justify-center rounded-lg hover:bg-white dark:hover:bg-zinc-700 transition-all cursor-pointer"
+                                className="flex h-7 w-6 cursor-pointer items-center justify-center rounded-lg transition-all hover:bg-white dark:hover:bg-zinc-700"
                                 title="Zoom In"
                             >
                                 +
@@ -2320,7 +2343,7 @@ function FormBuilder({ template }: Props) {
                             variant="ghost"
                             size="icon"
                             onClick={() => setShowShortcutsModal(true)}
-                            className="h-9 w-9 rounded-xl border border-slate-200/80 dark:border-zinc-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-zinc-800"
+                            className="h-9 w-9 rounded-xl border border-slate-200/80 text-slate-600 hover:bg-slate-100 dark:border-zinc-800 dark:text-slate-400 dark:hover:bg-zinc-800"
                             title="Panduan Keyboard Shortcuts"
                         >
                             <HelpCircle size={16} />
@@ -2331,7 +2354,7 @@ function FormBuilder({ template }: Props) {
                             variant="outline"
                             onClick={handleTestDownload}
                             disabled={saving}
-                            className="h-9 px-3 text-xs font-semibold rounded-xl border-slate-200 dark:border-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-all"
+                            className="h-9 rounded-xl border-slate-200 px-3 text-xs font-semibold transition-all hover:bg-slate-100 dark:border-zinc-800 dark:hover:bg-zinc-800"
                         >
                             {saving ? <Loader2 size={14} className="mr-1.5 animate-spin" /> : <Download size={14} className="mr-1.5" />}
                             <span className="hidden sm:inline">{saving ? 'Exporting...' : 'PDF'}</span>
@@ -2340,7 +2363,7 @@ function FormBuilder({ template }: Props) {
                         <Button
                             type="submit"
                             variant="secondary"
-                            className="h-9 px-3.5 text-xs font-semibold rounded-xl border border-slate-200 dark:border-zinc-700 shadow-xs transition-all"
+                            className="h-9 rounded-xl border border-slate-200 px-3.5 text-xs font-semibold shadow-xs transition-all dark:border-zinc-700"
                             disabled={processing}
                             title="Simpan perubahan template langsung"
                         >
@@ -2352,7 +2375,7 @@ function FormBuilder({ template }: Props) {
                             type="button"
                             variant="primary"
                             onClick={() => setShowSaveCommitModal(true)}
-                            className="h-9 px-4 text-xs font-semibold rounded-xl shadow-xs transition-all flex items-center gap-1.5"
+                            className="flex h-9 items-center gap-1.5 rounded-xl px-4 text-xs font-semibold shadow-xs transition-all"
                             disabled={processing}
                             title="Simpan perubahan sekaligus buat Git commit log baru"
                         >
@@ -2363,7 +2386,7 @@ function FormBuilder({ template }: Props) {
                 </header>
 
                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-                    <main className="bg-slate-100/40 dark:bg-zinc-950 relative flex flex-1 overflow-hidden">
+                    <main className="relative flex flex-1 overflow-hidden bg-slate-100/40 dark:bg-zinc-950">
                         {/* CENTER: LIVE CANVAS (Takes full area background) */}
                         <CanvasArea
                             viewMode={viewMode}
@@ -2384,19 +2407,19 @@ function FormBuilder({ template }: Props) {
                         <aside
                             style={{ width: `${leftWidth}px` }}
                             className={cn(
-                                "absolute top-4 left-4 bottom-4 z-30 flex flex-col rounded-2xl border border-slate-200/80 dark:border-zinc-800 bg-white/90 dark:bg-zinc-900/90 shadow-2xl backdrop-blur-md overflow-hidden",
-                                isResizingLeft ? "select-none" : "transition-all"
+                                'absolute top-4 bottom-4 left-4 z-30 flex flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white/90 shadow-2xl backdrop-blur-md dark:border-zinc-800 dark:bg-zinc-900/90',
+                                isResizingLeft ? 'select-none' : 'transition-all',
                             )}
                         >
-                            <div className="border-b border-slate-100 dark:border-zinc-800/80 bg-slate-50/50 dark:bg-zinc-900/50 p-3 space-y-2.5">
+                            <div className="space-y-2.5 border-b border-slate-100 bg-slate-50/50 p-3 dark:border-zinc-800/80 dark:bg-zinc-900/50">
                                 <div className="flex items-center justify-between">
-                                    <h2 className="text-slate-400 dark:text-zinc-500 font-sans text-[10px] font-bold tracking-wider uppercase">
+                                    <h2 className="font-sans text-[10px] font-bold tracking-wider text-slate-400 uppercase dark:text-zinc-500">
                                         Workspace
                                     </h2>
-                                    <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[9px] font-bold uppercase text-primary">v2.0</span>
+                                    <span className="bg-primary/10 text-primary rounded-md px-2 py-0.5 text-[9px] font-bold uppercase">v2.0</span>
                                 </div>
 
-                                <div className="flex bg-slate-200/60 dark:bg-zinc-800 p-1 rounded-xl border border-slate-200/80 dark:border-zinc-700/60">
+                                <div className="flex rounded-xl border border-slate-200/80 bg-slate-200/60 p-1 dark:border-zinc-700/60 dark:bg-zinc-800">
                                     {[
                                         { id: 'library', label: 'Library', icon: Grid },
                                         { id: 'structure', label: 'Structure', icon: List },
@@ -2408,7 +2431,7 @@ function FormBuilder({ template }: Props) {
                                             className={cn(
                                                 'flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-semibold transition-all',
                                                 leftPanelTab === tab.id
-                                                    ? 'bg-white dark:bg-zinc-900 text-slate-900 dark:text-white shadow-xs'
+                                                    ? 'bg-white text-slate-900 shadow-xs dark:bg-zinc-900 dark:text-white'
                                                     : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200',
                                             )}
                                         >
@@ -2424,11 +2447,7 @@ function FormBuilder({ template }: Props) {
                             <ScrollArea className="flex-1">
                                 <div className="overflow-hidden p-3.5">
                                     {leftPanelTab === 'library' && (
-                                        <LibraryPanel
-                                            onAddField={addField}
-                                            customPresets={customPresets}
-                                            onRemoveCustomPreset={removeCustomPreset}
-                                        />
+                                        <LibraryPanel onAddField={addField} customPresets={customPresets} onRemoveCustomPreset={removeCustomPreset} />
                                     )}
 
                                     {leftPanelTab === 'structure' && (
@@ -2447,7 +2466,7 @@ function FormBuilder({ template }: Props) {
                             {/* Resizer */}
                             <div
                                 onMouseDown={() => setIsResizingLeft(true)}
-                                className="hover:bg-primary/50 absolute top-0 right-0 h-full w-2 cursor-col-resize transition-colors hover:w-2 z-40"
+                                className="hover:bg-primary/50 absolute top-0 right-0 z-40 h-full w-2 cursor-col-resize transition-colors hover:w-2"
                             />
                         </aside>
 
@@ -2455,12 +2474,12 @@ function FormBuilder({ template }: Props) {
                         <aside
                             style={{ width: `${rightWidth}px` }}
                             className={cn(
-                                "absolute top-4 right-4 bottom-4 z-30 flex flex-col rounded-2xl border border-slate-200/80 dark:border-zinc-800 bg-white/90 dark:bg-zinc-900/90 shadow-2xl backdrop-blur-md overflow-hidden",
-                                isResizingRight ? "select-none" : "transition-all"
+                                'absolute top-4 right-4 bottom-4 z-30 flex flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white/90 shadow-2xl backdrop-blur-md dark:border-zinc-800 dark:bg-zinc-900/90',
+                                isResizingRight ? 'select-none' : 'transition-all',
                             )}
                         >
-                            <div className="border-b border-slate-100 dark:border-zinc-800/80 bg-slate-50/50 dark:bg-zinc-900/50 flex items-center justify-between px-3.5 py-3">
-                                <h1 className="text-slate-400 dark:text-zinc-500 font-sans text-[10px] font-bold tracking-wider uppercase">
+                            <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/50 px-3.5 py-3 dark:border-zinc-800/80 dark:bg-zinc-900/50">
+                                <h1 className="font-sans text-[10px] font-bold tracking-wider text-slate-400 uppercase dark:text-zinc-500">
                                     {selectedFieldIds.length > 0 ? 'Block Properties' : 'Template Settings'}
                                 </h1>
                                 <Layout size={14} className="text-primary opacity-60" />
@@ -2489,7 +2508,7 @@ function FormBuilder({ template }: Props) {
                             {/* Resizer */}
                             <div
                                 onMouseDown={() => setIsResizingRight(true)}
-                                className="hover:bg-primary/50 absolute top-0 left-0 h-full w-2 cursor-col-resize transition-colors z-40"
+                                className="hover:bg-primary/50 absolute top-0 left-0 z-40 h-full w-2 cursor-col-resize transition-colors"
                             />
                         </aside>
                     </main>
@@ -2497,62 +2516,55 @@ function FormBuilder({ template }: Props) {
                     <TrashZone />
                     <DragOverlay>
                         {/* Dragging from Library */}
-                        {activeLibItem && (() => {
-                            const typeInfo = FIELD_TYPES.flatMap((c) => c.items).find((t) => t.value === activeLibItem);
-                            const isPreset = activeLibItem.startsWith('preset_');
+                        {activeLibItem &&
+                            (() => {
+                                const typeInfo = FIELD_TYPES.flatMap((c) => c.items).find((t) => t.value === activeLibItem);
+                                const isPreset = activeLibItem.startsWith('preset_');
 
-                            if (isPreset) {
+                                if (isPreset) {
+                                    return (
+                                        <div className="bg-primary border-primary-foreground/20 flex items-center gap-3 rounded-none border-2 px-6 py-4 font-sans text-[10px] font-semibold text-white uppercase backdrop-blur-md">
+                                            <Plus size={16} strokeWidth={3} /> New {typeInfo?.label || activeLibItem.replace('_', ' ')}
+                                        </div>
+                                    );
+                                }
+
+                                const dummyField: any = {
+                                    id: 'dummy-drag',
+                                    parent_id: null,
+                                    label: typeInfo?.defaultLabel || typeInfo?.label || `New ${activeLibItem}`,
+                                    name: `dummy_drag_field`,
+                                    type: activeLibItem,
+                                    placeholder: typeInfo?.defaultPlaceholder || '',
+                                    is_required: false,
+                                    width: '100',
+                                    options: {
+                                        ...(activeLibItem === 'select' || activeLibItem === 'searchable_select' || activeLibItem === 'radio'
+                                            ? { items: [{ label: 'Option 1', value: '1' }] }
+                                            : {}),
+                                        ...(typeInfo?.defaultOptions || {}),
+                                    },
+                                    order: 0,
+                                };
+
                                 return (
-                                    <div className="bg-primary border-primary-foreground/20 flex items-center gap-3 rounded-none border-2 px-6 py-4 font-sans text-[10px] font-semibold text-white uppercase backdrop-blur-md">
-                                        <Plus size={16} strokeWidth={3} /> New {typeInfo?.label || activeLibItem.replace('_', ' ')}
+                                    <div className="pointer-events-none w-[400px] origin-top-left scale-95 opacity-90 shadow-2xl">
+                                        <FormElement field={dummyField} allFields={[]} value="" isBuilder={true} />
                                     </div>
                                 );
-                            }
-
-                            const dummyField: any = {
-                                id: 'dummy-drag',
-                                parent_id: null,
-                                label: typeInfo?.defaultLabel || typeInfo?.label || `New ${activeLibItem}`,
-                                name: `dummy_drag_field`,
-                                type: activeLibItem,
-                                placeholder: typeInfo?.defaultPlaceholder || '',
-                                is_required: false,
-                                width: '100',
-                                options: {
-                                    ...(activeLibItem === 'select' || activeLibItem === 'searchable_select' || activeLibItem === 'radio' ? { items: [{ label: 'Option 1', value: '1' }] } : {}),
-                                    ...(typeInfo?.defaultOptions || {}),
-                                },
-                                order: 0,
-                            };
-
-                            return (
-                                <div className="pointer-events-none opacity-90 w-[400px] shadow-2xl scale-95 origin-top-left">
-                                    <FormElement
-                                        field={dummyField}
-                                        allFields={[]}
-                                        value=""
-                                        isBuilder={true}
-                                    />
-                                </div>
-                            );
-                        })()}
+                            })()}
 
                         {/* Dragging an existing field */}
-                        {activeFieldId && (() => {
-                            const draggingField = data.fields.find(f => f.id === activeFieldId);
-                            if (!draggingField) return null;
-                            return (
-                                <div className="pointer-events-none opacity-90 shadow-2xl scale-95 origin-top-left">
-                                    <FormElement
-                                        field={draggingField}
-                                        allFields={data.fields}
-                                        value=""
-                                        isBuilder={true}
-                                        isSelected={true}
-                                    />
-                                </div>
-                            );
-                        })()}
+                        {activeFieldId &&
+                            (() => {
+                                const draggingField = data.fields.find((f) => f.id === activeFieldId);
+                                if (!draggingField) return null;
+                                return (
+                                    <div className="pointer-events-none origin-top-left scale-95 opacity-90 shadow-2xl">
+                                        <FormElement field={draggingField} allFields={data.fields} value="" isBuilder={true} isSelected={true} />
+                                    </div>
+                                );
+                            })()}
                     </DragOverlay>
                 </DndContext>
 
@@ -2571,27 +2583,27 @@ function FormBuilder({ template }: Props) {
                         <div className="grid grid-cols-2 gap-2">
                             <div className="flex items-center justify-between border-b pb-1">
                                 <span className="text-muted-foreground">Undo:</span>
-                                <kbd className="bg-muted px-1.5 py-0.5 rounded font-mono text-[10px] font-bold">Ctrl + Z</kbd>
+                                <kbd className="bg-muted rounded px-1.5 py-0.5 font-mono text-[10px] font-bold">Ctrl + Z</kbd>
                             </div>
                             <div className="flex items-center justify-between border-b pb-1">
                                 <span className="text-muted-foreground">Redo:</span>
-                                <kbd className="bg-muted px-1.5 py-0.5 rounded font-mono text-[10px] font-bold">Ctrl + Y</kbd>
+                                <kbd className="bg-muted rounded px-1.5 py-0.5 font-mono text-[10px] font-bold">Ctrl + Y</kbd>
                             </div>
                             <div className="flex items-center justify-between border-b pb-1">
                                 <span className="text-muted-foreground">Geser Ke Atas:</span>
-                                <kbd className="bg-muted px-1.5 py-0.5 rounded font-mono text-[10px] font-bold">Arrow Up</kbd>
+                                <kbd className="bg-muted rounded px-1.5 py-0.5 font-mono text-[10px] font-bold">Arrow Up</kbd>
                             </div>
                             <div className="flex items-center justify-between border-b pb-1">
                                 <span className="text-muted-foreground">Geser Ke Bawah:</span>
-                                <kbd className="bg-muted px-1.5 py-0.5 rounded font-mono text-[10px] font-bold">Arrow Down</kbd>
+                                <kbd className="bg-muted rounded px-1.5 py-0.5 font-mono text-[10px] font-bold">Arrow Down</kbd>
                             </div>
                             <div className="flex items-center justify-between border-b pb-1">
                                 <span className="text-muted-foreground">Hapus Elemen:</span>
-                                <kbd className="bg-muted px-1.5 py-0.5 rounded font-mono text-[10px] font-bold">Delete / Backspace</kbd>
+                                <kbd className="bg-muted rounded px-1.5 py-0.5 font-mono text-[10px] font-bold">Delete / Backspace</kbd>
                             </div>
                             <div className="flex items-center justify-between border-b pb-1">
                                 <span className="text-muted-foreground">Batalkan Pilihan:</span>
-                                <kbd className="bg-muted px-1.5 py-0.5 rounded font-mono text-[10px] font-bold">Escape</kbd>
+                                <kbd className="bg-muted rounded px-1.5 py-0.5 font-mono text-[10px] font-bold">Escape</kbd>
                             </div>
                         </div>
                     </div>
@@ -2610,11 +2622,11 @@ function FormBuilder({ template }: Props) {
                     className="max-w-3xl"
                     icon={<GitBranch size={22} />}
                 >
-                    <div className="space-y-3 py-1 font-sans text-xs max-h-[420px] overflow-y-auto pr-1">
+                    <div className="max-h-[420px] space-y-3 overflow-y-auto py-1 pr-1 font-sans text-xs">
                         {/* New Commit Input Box */}
-                        <div className="bg-slate-100/80 dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700/60 p-2.5 rounded-xl space-y-2 text-left">
+                        <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-100/80 p-2.5 text-left dark:border-zinc-700/60 dark:bg-zinc-800/80">
                             <div className="flex items-center justify-between">
-                                <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 text-[11px]">
+                                <span className="flex items-center gap-1.5 text-[11px] font-bold text-slate-800 dark:text-slate-200">
                                     <GitCommit size={13} className="text-primary" /> Commit State Saat Ini
                                 </span>
                                 <div className="flex items-center gap-2">
@@ -2622,16 +2634,22 @@ function FormBuilder({ template }: Props) {
                                         <button
                                             type="button"
                                             onClick={() => {
-                                                if (confirm('Apakah Anda yakin ingin menghapus seluruh riwayat commit log (kecuali commit HEAD saat ini)?')) {
+                                                if (
+                                                    confirm(
+                                                        'Apakah Anda yakin ingin menghapus seluruh riwayat commit log (kecuali commit HEAD saat ini)?',
+                                                    )
+                                                ) {
                                                     setCommitLogs((prev) => prev.slice(0, 1));
                                                 }
                                             }}
-                                            className="text-[10px] font-semibold text-red-600 dark:text-red-400 hover:underline flex items-center gap-1"
+                                            className="flex items-center gap-1 text-[10px] font-semibold text-red-600 hover:underline dark:text-red-400"
                                         >
                                             <Trash2 size={11} /> Hapus Riwayat
                                         </button>
                                     )}
-                                    <span className="font-mono text-[10px] text-muted-foreground bg-slate-200/60 dark:bg-zinc-700 px-1.5 py-0.5 rounded">branch: main</span>
+                                    <span className="text-muted-foreground rounded bg-slate-200/60 px-1.5 py-0.5 font-mono text-[10px] dark:bg-zinc-700">
+                                        branch: main
+                                    </span>
                                 </div>
                             </div>
                             <div className="flex gap-2">
@@ -2640,7 +2658,7 @@ function FormBuilder({ template }: Props) {
                                     placeholder="Tulis pesan commit (mis: Tambah input NIK & TTD)..."
                                     value={commitMessageInput}
                                     onChange={(e) => setCommitMessageInput(e.target.value)}
-                                    className="flex-1 rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-1 text-xs focus:ring-1 focus:ring-primary focus:outline-none"
+                                    className="focus:ring-primary flex-1 rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs focus:ring-1 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900"
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter') {
                                             e.preventDefault();
@@ -2682,7 +2700,7 @@ function FormBuilder({ template }: Props) {
                                         ]);
                                         setCommitMessageInput('');
                                     }}
-                                    className="h-7 text-[10px] px-3 font-semibold rounded-lg shrink-0"
+                                    className="h-7 shrink-0 rounded-lg px-3 text-[10px] font-semibold"
                                 >
                                     Commit
                                 </Button>
@@ -2690,63 +2708,72 @@ function FormBuilder({ template }: Props) {
                         </div>
 
                         {/* Compact Timeline List */}
-                        <div className="relative border-l-2 border-slate-200 dark:border-zinc-800 ml-3 space-y-2 pt-1 pb-1 text-left">
+                        <div className="relative ml-3 space-y-2 border-l-2 border-slate-200 pt-1 pb-1 text-left dark:border-zinc-800">
                             {commitLogs.map((commit, idx) => (
                                 <div key={commit.hash} className="relative pl-4">
                                     {/* Commit Dot */}
                                     <div
                                         className={cn(
-                                            'absolute -left-[5px] top-2.5 h-2.5 w-2.5 rounded-full border-2 bg-white dark:bg-zinc-950',
+                                            'absolute top-2.5 -left-[5px] h-2.5 w-2.5 rounded-full border-2 bg-white dark:bg-zinc-950',
                                             idx === 0
                                                 ? 'border-emerald-500 bg-emerald-500 ring-2 ring-emerald-500/20'
                                                 : 'border-slate-300 dark:border-zinc-700',
                                         )}
                                     />
 
-                                    <div className="flex items-center justify-between border border-slate-200/80 dark:border-zinc-800 p-2.5 rounded-xl bg-white dark:bg-zinc-900/60 hover:border-slate-300 dark:hover:border-zinc-700 transition-colors">
-                                        <div className="space-y-1 min-w-0 pr-3 flex-1">
-                                            <div className="flex items-center gap-2 flex-wrap">
-                                                <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-zinc-800 text-primary shrink-0">
+                                    <div className="flex items-center justify-between rounded-xl border border-slate-200/80 bg-white p-2.5 transition-colors hover:border-slate-300 dark:border-zinc-800 dark:bg-zinc-900/60 dark:hover:border-zinc-700">
+                                        <div className="min-w-0 flex-1 space-y-1 pr-3">
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <span className="text-primary shrink-0 rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] font-bold dark:bg-zinc-800">
                                                     {commit.hash}
                                                 </span>
                                                 {idx === 0 && (
-                                                    <span className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[9px] font-bold px-1.5 py-0.2 rounded uppercase tracking-wider shrink-0">
+                                                    <span className="py-0.2 shrink-0 rounded bg-emerald-500/10 px-1.5 text-[9px] font-bold tracking-wider text-emerald-600 uppercase dark:text-emerald-400">
                                                         HEAD
                                                     </span>
                                                 )}
-                                                <h4 className="font-semibold text-slate-900 dark:text-white text-xs leading-none truncate">
+                                                <h4 className="truncate text-xs leading-none font-semibold text-slate-900 dark:text-white">
                                                     {commit.message}
                                                 </h4>
                                             </div>
 
-                                            <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 pt-0.5">
+                                            <div className="flex items-center justify-between pt-0.5 text-[10px] text-slate-500 dark:text-slate-400">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="flex items-center gap-1 font-medium"><User size={10} /> {commit.author}</span>
+                                                    <span className="flex items-center gap-1 font-medium">
+                                                        <User size={10} /> {commit.author}
+                                                    </span>
                                                     <span>•</span>
-                                                    <span className="flex items-center gap-1"><Clock size={10} /> {commit.timestamp}</span>
+                                                    <span className="flex items-center gap-1">
+                                                        <Clock size={10} /> {commit.timestamp}
+                                                    </span>
                                                     <span>•</span>
-                                                    <span className="font-semibold text-slate-700 dark:text-slate-300">{commit.fieldsCount} Elements</span>
+                                                    <span className="font-semibold text-slate-700 dark:text-slate-300">
+                                                        {commit.fieldsCount} Elements
+                                                    </span>
                                                 </div>
 
                                                 {/* Compact Inline Change Badges */}
-                                                <div className="hidden sm:flex items-center gap-1">
+                                                <div className="hidden items-center gap-1 sm:flex">
                                                     {commit.fields.slice(0, 3).map((f) => (
-                                                        <span key={f.id} className="bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-400 px-1.5 py-0.2 rounded text-[9px] font-mono truncate max-w-[80px]">
+                                                        <span
+                                                            key={f.id}
+                                                            className="py-0.2 max-w-[80px] truncate rounded bg-slate-100 px-1.5 font-mono text-[9px] text-slate-600 dark:bg-zinc-800 dark:text-slate-400"
+                                                        >
                                                             {f.label || f.name}
                                                         </span>
                                                     ))}
                                                     {commit.fields.length > 3 && (
-                                                        <span className="text-slate-400 text-[9px] italic">+{commit.fields.length - 3}</span>
+                                                        <span className="text-[9px] text-slate-400 italic">+{commit.fields.length - 3}</span>
                                                     )}
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <div className="flex items-center gap-1.5 shrink-0">
+                                        <div className="flex shrink-0 items-center gap-1.5">
                                             <Button
                                                 type="button"
                                                 size="sm"
-                                                variant={idx === 0 ? "ghost" : "outline"}
+                                                variant={idx === 0 ? 'ghost' : 'outline'}
                                                 disabled={idx === 0}
                                                 onClick={() => {
                                                     const selectedCommit = commit;
@@ -2763,7 +2790,7 @@ function FormBuilder({ template }: Props) {
                                                     setCommitLogs((prev) => [newHeadCommit, ...prev]);
                                                     setShowVersionModal(false);
                                                 }}
-                                                className="h-7 text-[10px] px-2.5 font-semibold rounded-lg"
+                                                className="h-7 rounded-lg px-2.5 text-[10px] font-semibold"
                                             >
                                                 <RotateCcw size={11} className="mr-1" /> Checkout
                                             </Button>
@@ -2776,7 +2803,7 @@ function FormBuilder({ template }: Props) {
                                                     onClick={() => {
                                                         setCommitLogs((prev) => prev.filter((c) => c.hash !== commit.hash));
                                                     }}
-                                                    className="h-7 w-7 p-0 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg"
+                                                    className="h-7 w-7 rounded-lg p-0 text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
                                                     title="Hapus Commit Ini"
                                                 >
                                                     <Trash2 size={12} />
@@ -2804,15 +2831,13 @@ function FormBuilder({ template }: Props) {
                     icon={<GitCommit size={22} />}
                 >
                     <div className="space-y-3 py-2 text-left font-sans text-xs">
-                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                            Catatan Perubahan (Commit Message):
-                        </label>
+                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">Catatan Perubahan (Commit Message):</label>
                         <textarea
                             rows={3}
                             placeholder="Contoh: Menambahkan field NIK, TTD, dan menyesuaikan margin halaman..."
                             value={saveCommitNote}
                             onChange={(e) => setSaveCommitNote(e.target.value)}
-                            className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-2.5 text-xs text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/50 focus:outline-none"
+                            className="focus:ring-primary/50 w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-900 focus:ring-2 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
                                     e.preventDefault();
@@ -2820,8 +2845,9 @@ function FormBuilder({ template }: Props) {
                                 }
                             }}
                         />
-                        <span className="text-[10px] text-muted-foreground block italic">
-                            Tekan <kbd className="font-mono bg-muted px-1 py-0.5 rounded text-[9px]">Ctrl+Enter</kbd> atau klik Simpan & Commit untuk menyimpan.
+                        <span className="text-muted-foreground block text-[10px] italic">
+                            Tekan <kbd className="bg-muted rounded px-1 py-0.5 font-mono text-[9px]">Ctrl+Enter</kbd> atau klik Simpan & Commit untuk
+                            menyimpan.
                         </span>
                     </div>
                 </ConfirmationModal>

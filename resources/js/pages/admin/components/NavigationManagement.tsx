@@ -1,24 +1,16 @@
 import { Button } from '@/components/ui/buttons/Button';
-import { Column, DataTable } from '@/components/ui/tables/DataTable';
-import { useToast } from '@/components/ui/feedback/Toast';
-import { CompactInput } from '@/components/ui/inputs/CompactInput';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/selection/Select';
 import { ConfirmationModal } from '@/components/ui/dialogs/ConfirmationModal';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialogs/Dialog';
+import { useToast } from '@/components/ui/feedback/Toast';
+import { Icons, type LucideIcon } from '@/components/ui/icons';
+import { CompactInput } from '@/components/ui/inputs/CompactInput';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/selection/Select';
+import { Column, DataTable } from '@/components/ui/tables/DataTable';
 import { usePermissions } from '@/hooks/use-permissions';
 import { router, useForm } from '@inertiajs/react';
-import { AppIcon, Icons, type LucideIcon } from '@/components/ui/icons';
 import React, { useMemo } from 'react';
 
-const {
-    Folder,
-    LayoutGrid,
-    Link: LinkIcon,
-    Pencil,
-    Plus,
-    Shield,
-    Trash2,
-} = Icons;
+const { Folder, LayoutGrid, Link: LinkIcon, Pencil, Plus, Shield, Trash2 } = Icons;
 
 export const SELECTABLE_ICONS: Record<string, LucideIcon> = {
     LayoutGrid: Icons.LayoutGrid,
@@ -53,10 +45,10 @@ interface NavigationManagementProps {
 }
 
 const GroupNameCell = ({ name, icon }: Readonly<{ name: string; icon?: string | null }>) => {
-    const IconComp = (icon && SELECTABLE_ICONS[icon]) ? SELECTABLE_ICONS[icon] : Folder;
+    const IconComp = icon && SELECTABLE_ICONS[icon] ? SELECTABLE_ICONS[icon] : Folder;
     return (
         <div className="group flex items-center gap-4">
-            <div className="bg-primary flex h-10 w-10 items-center justify-center rounded-xl transition-all text-white">
+            <div className="bg-primary flex h-10 w-10 items-center justify-center rounded-xl text-white transition-all">
                 <IconComp size={16} />
             </div>
             <span className="text-text-main text-[13px] font-semibold tracking-tight uppercase">{name}</span>
@@ -80,7 +72,7 @@ const ModuleNameCell = ({
     const IconComp = icon && SELECTABLE_ICONS[icon] ? SELECTABLE_ICONS[icon] : LayoutGrid;
     return (
         <div className="group flex items-start gap-3">
-            <div className="bg-primary mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-all text-white">
+            <div className="bg-primary mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white transition-all">
                 <IconComp size={14} />
             </div>
             <div className="flex flex-col gap-0.5">
@@ -243,45 +235,45 @@ export function NavigationManagement({ groups, modules, isModuleView = false, fi
                 bulkActions={
                     canUpdate
                         ? [
-                            {
-                                label: 'Hapus Terpilih',
-                                icon: Trash2,
-                                variant: 'destructive',
-                                onClick: (ids: string[] | number[]) => {
-                                    const typeLabel = isModuleView ? 'modul' : 'grup menu';
-                                    if (confirm(`Hapus ${ids.length} ${typeLabel} terpilih? Tindakan ini akan menghapus akses permanen.`)) {
-                                        const path = isModuleView ? 'modules' : 'module-groups';
-                                        router.post(
-                                            `/admin/${path}/bulk-delete`,
-                                            { ids },
-                                            {
-                                                onSuccess: () => showToast(`${ids.length} ${typeLabel} telah dihapus dari sistem`, 'success'),
-                                            },
-                                        );
-                                    }
-                                },
-                            },
-                        ]
+                              {
+                                  label: 'Hapus Terpilih',
+                                  icon: Trash2,
+                                  variant: 'destructive',
+                                  onClick: (ids: string[] | number[]) => {
+                                      const typeLabel = isModuleView ? 'modul' : 'grup menu';
+                                      if (confirm(`Hapus ${ids.length} ${typeLabel} terpilih? Tindakan ini akan menghapus akses permanen.`)) {
+                                          const path = isModuleView ? 'modules' : 'module-groups';
+                                          router.post(
+                                              `/admin/${path}/bulk-delete`,
+                                              { ids },
+                                              {
+                                                  onSuccess: () => showToast(`${ids.length} ${typeLabel} telah dihapus dari sistem`, 'success'),
+                                              },
+                                          );
+                                      }
+                                  },
+                              },
+                          ]
                         : undefined
                 }
                 pagination={
                     isModuleView && modules && modules.meta
                         ? {
-                            currentPage: modules.meta.current_page || 1,
-                            lastPage: modules.meta.last_page || 1,
-                            total: modules.meta.total || 0,
-                            onPageChange: (page: number) =>
-                                router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
-                        }
+                              currentPage: modules.meta.current_page || 1,
+                              lastPage: modules.meta.last_page || 1,
+                              total: modules.meta.total || 0,
+                              onPageChange: (page: number) =>
+                                  router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
+                          }
                         : groups && groups.meta
-                            ? {
+                          ? {
                                 currentPage: groups.meta.current_page || 1,
                                 lastPage: groups.meta.last_page || 1,
                                 total: groups.meta.total || 0,
                                 onPageChange: (page: number) =>
                                     router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
                             }
-                            : undefined
+                          : undefined
                 }
                 rowActions={(row: any) => (
                     <div className="flex items-center justify-end gap-1">
@@ -328,8 +320,8 @@ export function NavigationManagement({ groups, modules, isModuleView = false, fi
             />
 
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                <DialogContent className="border-slate-200/80 dark:border-zinc-700/80 bg-slate-100/90 dark:bg-zinc-800/90 text-slate-800 dark:text-zinc-100 max-w-[480px] overflow-hidden rounded-[2.5rem] border p-0 shadow-2xl">
-                    <div className="relative overflow-hidden px-8 py-6 bg-slate-100/90 dark:bg-zinc-800/90 border-b border-slate-200/80 dark:border-zinc-700/80 text-slate-800 dark:text-zinc-200">
+                <DialogContent className="max-w-[480px] overflow-hidden rounded-[2.5rem] border border-slate-200/80 bg-slate-100/90 p-0 text-slate-800 shadow-2xl dark:border-zinc-700/80 dark:bg-zinc-800/90 dark:text-zinc-100">
+                    <div className="relative overflow-hidden border-b border-slate-200/80 bg-slate-100/90 px-8 py-6 text-slate-800 dark:border-zinc-700/80 dark:bg-zinc-800/90 dark:text-zinc-200">
                         <div className="absolute top-0 right-0 rotate-12 p-8 opacity-5">
                             <LayoutGrid size={120} strokeWidth={1} />
                         </div>
@@ -447,13 +439,8 @@ export function NavigationManagement({ groups, modules, isModuleView = false, fi
                                         icon={Folder}
                                     />
                                     <div className="space-y-2">
-                                        <label className="text-text-desc flex items-center gap-2 text-[10px] font-medium uppercase">
-                                            Icon Grup
-                                        </label>
-                                        <Select
-                                            value={groupForm.data.icon || 'Folder'}
-                                            onValueChange={(v: string) => groupForm.setData('icon', v)}
-                                        >
+                                        <label className="text-text-desc flex items-center gap-2 text-[10px] font-medium uppercase">Icon Grup</label>
+                                        <Select value={groupForm.data.icon || 'Folder'} onValueChange={(v: string) => groupForm.setData('icon', v)}>
                                             <SelectTrigger className="border-surface-border bg-primary/5 focus:border-primary h-10 rounded-xl text-xs font-medium transition-all">
                                                 <SelectValue />
                                             </SelectTrigger>
@@ -461,11 +448,7 @@ export function NavigationManagement({ groups, modules, isModuleView = false, fi
                                                 {Object.keys(SELECTABLE_ICONS).map((iconName) => {
                                                     const IconComponent = SELECTABLE_ICONS[iconName];
                                                     return (
-                                                        <SelectItem
-                                                            key={iconName}
-                                                            value={iconName}
-                                                            className="py-2.5 text-xs font-medium uppercase"
-                                                        >
+                                                        <SelectItem key={iconName} value={iconName} className="py-2.5 text-xs font-medium uppercase">
                                                             <div className="flex items-center gap-2">
                                                                 {IconComponent && <IconComponent size={14} className="text-text-main/50" />}
                                                                 <span>{iconName}</span>

@@ -2,9 +2,9 @@
 
 namespace App\Services\Crud;
 
-use App\Models\CompanyGroup;
-use App\Models\JobLevelGroup;
-use App\Models\OrganizationGroup;
+use App\Models\Master\CompanyGroup;
+use App\Models\Master\JobLevelGroup;
+use App\Models\Master\OrganizationGroup;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Http\Request;

@@ -2,18 +2,13 @@
 
 namespace App\Core\Crud\Resources;
 
-use App\Core\Crud\Columns\BooleanColumn;
 use App\Core\Crud\Columns\TextColumn;
-use App\Core\Crud\Fields\SelectInput;
 use App\Core\Crud\Fields\TextareaInput;
 use App\Core\Crud\Fields\TextInput;
-use App\Core\Crud\Fields\ToggleInput;
 use App\Core\Crud\Resource;
-use App\Exports\RolesExport;
+use App\Exports\Master\RolesExport;
 use App\Imports\RolesImport;
-use App\Models\ContractFilterTemplate;
-use App\Models\DashboardType;
-use App\Models\Role;
+use App\Models\Master\Role;
 
 class RoleResource extends Resource
 {

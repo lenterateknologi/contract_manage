@@ -2,7 +2,7 @@
 
 namespace App\Imports;
 
-use App\Models\CompanyGroup;
+use App\Models\Master\CompanyGroup;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;

@@ -2,11 +2,11 @@
 
 namespace Database\Seeders\System;
 
-use App\Models\ContractType;
-use App\Models\DashboardType;
-use App\Models\Role;
+use App\Models\Master\ContractType;
+use App\Models\Master\DashboardType;
+use App\Models\Master\Division;
+use App\Models\Master\Role;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 
 class DashboardTypeSeeder extends Seeder
 {
@@ -34,7 +34,10 @@ class DashboardTypeSeeder extends Seeder
 
         // Collect IDs including children for precise filtering
         $getDescendants = function ($parent) {
-            if (! $parent) return [];
+            if (! $parent) {
+                return [];
+            }
+
             return ContractType::where('id', $parent->id)
                 ->orWhere('parent_id', $parent->id)
                 ->pluck('id')
@@ -44,7 +47,7 @@ class DashboardTypeSeeder extends Seeder
         $nonContractIds = $getDescendants($nonContractType);
         $contractAndNdaIds = array_merge($getDescendants($contractType), $getDescendants($ndaType));
 
-        $legalDivision = \App\Models\Division::where('name', 'Legal')->orWhere('code', 'lga')->first();
+        $legalDivision = Division::where('name', 'Legal')->orWhere('code', 'lga')->first();
 
         // -------------------------------------------------------------
         // Tipe 1: Dashboard Staff (Umum / Terisolasi Antar Divisi)

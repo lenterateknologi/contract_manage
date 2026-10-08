@@ -2,9 +2,9 @@
 
 namespace App\Http\Actions\Workflow;
 
-use App\Models\Workflow;
-use App\Models\WorkflowStep;
-use App\Models\WorkflowStepAction;
+use App\Models\Master\Workflow;
+use App\Models\Master\WorkflowStep;
+use App\Models\Master\WorkflowStepAction;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 

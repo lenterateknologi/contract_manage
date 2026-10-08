@@ -1,5 +1,5 @@
-import { Input } from '@/components/ui/inputs/Input';
 import { Label } from '@/components/ui/forms/Label';
+import { Input } from '@/components/ui/inputs/Input';
 import { Textarea } from '@/components/ui/inputs/Textarea';
 import { Image as ImageIcon, X } from 'lucide-react';
 import React from 'react';
@@ -27,9 +27,11 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ selectedField,
                                 }
                             }}
                             value=""
-                            className="text-[9px] bg-transparent text-primary hover:underline cursor-pointer border-none p-0 h-auto font-sans focus:ring-0"
+                            className="text-primary h-auto cursor-pointer border-none bg-transparent p-0 font-sans text-[9px] hover:underline focus:ring-0"
                         >
-                            <option value="" disabled>-- Pilih Key Presets --</option>
+                            <option value="" disabled>
+                                -- Pilih Key Presets --
+                            </option>
                             <optgroup label="Header & Nomor">
                                 <option value="meta_nomor">Nomor Form (meta_nomor)</option>
                                 <option value="meta_no_kontrak">No. Kontrak (meta_no_kontrak)</option>
@@ -112,7 +114,7 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ selectedField,
                         <Textarea
                             value={selectedField.label || ''}
                             onChange={(e) => updateField(selectedField.id, 'label', e.target.value)}
-                            className="min-h-[60px] font-sans text-[10px] font-medium resize-y"
+                            className="min-h-[60px] resize-y font-sans text-[10px] font-medium"
                             placeholder="Masukkan label di sini..."
                         />
                     ) : (
@@ -141,11 +143,9 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ selectedField,
                 </div>
             )}
 
-
-
             {selectedField.type === 'labeled_value' && (
                 <div className="space-y-2.5">
-                    <Label className="text-slate-500 dark:text-zinc-400 font-sans text-[8px] font-bold uppercase tracking-wider block border-b border-border/50 pb-1">
+                    <Label className="border-border/50 block border-b pb-1 font-sans text-[8px] font-bold tracking-wider text-slate-500 uppercase dark:text-zinc-400">
                         Pengaturan Labeled Value
                     </Label>
 
@@ -160,7 +160,7 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ selectedField,
                                         field_style: e.target.value,
                                     })
                                 }
-                                className="border-input bg-background h-7 w-full rounded-md border px-2 py-0.5 font-sans text-[10px] font-medium shadow-xs focus:ring-1 focus:ring-primary outline-none"
+                                className="border-input bg-background focus:ring-primary h-7 w-full rounded-md border px-2 py-0.5 font-sans text-[10px] font-medium shadow-xs outline-none focus:ring-1"
                             >
                                 <option value="dashed_bottom">Putus-putus Bawah</option>
                                 <option value="solid_bottom">Garis Bawah Solid</option>
@@ -181,13 +181,13 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ selectedField,
                                         label_width: e.target.value,
                                     })
                                 }
-                                className="h-7 font-sans text-[10px] px-2"
+                                className="h-7 px-2 font-sans text-[10px]"
                                 placeholder="150px"
                             />
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 items-end">
+                    <div className="grid grid-cols-2 items-end gap-2">
                         {/* Value Input Type */}
                         <div className="space-y-1">
                             <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Tipe Input Nilai</Label>
@@ -198,7 +198,7 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ selectedField,
                                         value_type: e.target.value,
                                     })
                                 }
-                                className="border-input bg-background h-7 w-full rounded-md border px-2 py-0.5 font-sans text-[10px] font-medium shadow-xs focus:ring-1 focus:ring-primary outline-none"
+                                className="border-input bg-background focus:ring-primary h-7 w-full rounded-md border px-2 py-0.5 font-sans text-[10px] font-medium shadow-xs outline-none focus:ring-1"
                             >
                                 <option value="textfield">Teks Singkat</option>
                                 <option value="textarea">Textarea (Multi Baris)</option>
@@ -210,12 +210,17 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ selectedField,
                         </div>
 
                         {/* Show Colon toggle */}
-                        <div className="flex items-center justify-between h-7 px-1.5 bg-background rounded-md border border-input">
-                            <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase cursor-pointer" onClick={() =>
-                                bulkUpdateOptions(selectedIds, {
-                                    show_colon: selectedField.options?.show_colon === false ? true : false,
-                                })
-                            }>Titik Dua (:)</Label>
+                        <div className="bg-background border-input flex h-7 items-center justify-between rounded-md border px-1.5">
+                            <Label
+                                className="text-muted-foreground cursor-pointer font-sans text-[8px] font-medium uppercase"
+                                onClick={() =>
+                                    bulkUpdateOptions(selectedIds, {
+                                        show_colon: selectedField.options?.show_colon === false ? true : false,
+                                    })
+                                }
+                            >
+                                Titik Dua (:)
+                            </Label>
                             <button
                                 type="button"
                                 onClick={() =>
@@ -223,12 +228,14 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ selectedField,
                                         show_colon: selectedField.options?.show_colon === false ? true : false,
                                     })
                                 }
-                                className={`relative inline-flex h-4 w-7 cursor-pointer rounded-full border border-transparent transition-colors focus:outline-none ${selectedField.options?.show_colon !== false ? 'bg-primary' : 'bg-muted-foreground/30'
-                                    }`}
+                                className={`relative inline-flex h-4 w-7 cursor-pointer rounded-full border border-transparent transition-colors focus:outline-none ${
+                                    selectedField.options?.show_colon !== false ? 'bg-primary' : 'bg-muted-foreground/30'
+                                }`}
                             >
                                 <span
-                                    className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow-xs transition duration-200 ease-in-out ${selectedField.options?.show_colon !== false ? 'translate-x-3' : 'translate-x-0'
-                                        }`}
+                                    className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow-xs transition duration-200 ease-in-out ${
+                                        selectedField.options?.show_colon !== false ? 'translate-x-3' : 'translate-x-0'
+                                    }`}
                                 />
                             </button>
                         </div>
@@ -240,14 +247,15 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ selectedField,
                         <Input
                             value={selectedField.placeholder || ''}
                             onChange={(e) => updateField(selectedField.id, 'placeholder', e.target.value)}
-                            className="h-7 font-sans text-[10px] px-2"
+                            className="h-7 px-2 font-sans text-[10px]"
                             placeholder="Contoh: Masukkan nilai di sini..."
                         />
                     </div>
 
                     {/* Max lines / jumlah baris garis */}
-                    {(selectedField.options?.value_type === 'textarea' || ['dashed_bottom', 'solid_bottom'].includes(selectedField.options?.field_style || 'dashed_bottom')) && (
-                        <div className="space-y-1 border-t border-border/50 pt-2">
+                    {(selectedField.options?.value_type === 'textarea' ||
+                        ['dashed_bottom', 'solid_bottom'].includes(selectedField.options?.field_style || 'dashed_bottom')) && (
+                        <div className="border-border/50 space-y-1 border-t pt-2">
                             <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Jumlah Baris Garis (Max Lines)</Label>
                             <input
                                 type="number"
@@ -259,18 +267,18 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ selectedField,
                                         max_lines: parseNumber(e.target.value, 1),
                                     })
                                 }
-                                className="border-input bg-background h-7 w-full rounded-md border px-2 font-sans text-[10px] outline-none shadow-xs focus:ring-1 focus:ring-primary"
+                                className="border-input bg-background focus:ring-primary h-7 w-full rounded-md border px-2 font-sans text-[10px] shadow-xs outline-none focus:ring-1"
                                 placeholder="1"
                             />
                         </div>
                     )}
 
                     {/* Editable / Direct Edit toggle for labeled_value */}
-                    <div className="space-y-3 border-t border-border/50 pt-3">
+                    <div className="border-border/50 space-y-3 border-t pt-3">
                         <div className="flex items-center justify-between">
                             <div className="flex flex-col">
                                 <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Dapat Diedit (Editable)</Label>
-                                <span className="text-[7px] text-muted-foreground">
+                                <span className="text-muted-foreground text-[7px]">
                                     {selectedField.options?.value_type === 'select' || selectedField.options?.value_type === 'date'
                                         ? 'Izinkan ketik manual / pengisian selain dari picker'
                                         : 'Izinkan pengisian / pengeditan nilai field ini'}
@@ -283,19 +291,21 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ selectedField,
                                         allow_direct_edit: selectedField.options?.allow_direct_edit === false ? true : false,
                                     })
                                 }
-                                className={`relative inline-flex h-5 w-9 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${selectedField.options?.allow_direct_edit !== false ? 'bg-primary' : 'bg-muted-foreground/30'
-                                    }`}
+                                className={`relative inline-flex h-5 w-9 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${
+                                    selectedField.options?.allow_direct_edit !== false ? 'bg-primary' : 'bg-muted-foreground/30'
+                                }`}
                             >
                                 <span
-                                    className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${selectedField.options?.allow_direct_edit !== false ? 'translate-x-4' : 'translate-x-0'
-                                        }`}
+                                    className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                                        selectedField.options?.allow_direct_edit !== false ? 'translate-x-4' : 'translate-x-0'
+                                    }`}
                                 />
                             </button>
                         </div>
                     </div>
 
                     {selectedField.options?.value_type === 'select' && (
-                        <div className="space-y-3 border-t border-border/50 pt-3">
+                        <div className="border-border/50 space-y-3 border-t pt-3">
                             {/* Multiselect Toggle */}
                             <div className="flex items-center justify-between">
                                 <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Pilih Banyak (Multiselect)</Label>
@@ -306,12 +316,14 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ selectedField,
                                             is_multiselect: !selectedField.options?.is_multiselect,
                                         })
                                     }
-                                    className={`relative inline-flex h-5 w-9 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${selectedField.options?.is_multiselect === true ? 'bg-primary' : 'bg-muted-foreground/30'
-                                        }`}
+                                    className={`relative inline-flex h-5 w-9 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${
+                                        selectedField.options?.is_multiselect === true ? 'bg-primary' : 'bg-muted-foreground/30'
+                                    }`}
                                 >
                                     <span
-                                        className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${selectedField.options?.is_multiselect === true ? 'translate-x-4' : 'translate-x-0'
-                                            }`}
+                                        className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                                            selectedField.options?.is_multiselect === true ? 'translate-x-4' : 'translate-x-0'
+                                        }`}
                                     />
                                 </button>
                             </div>
@@ -333,7 +345,7 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ selectedField,
                                     </button>
                                 </div>
 
-                                <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                                <div className="max-h-48 space-y-1.5 overflow-y-auto pr-1">
                                     {(selectedField.options?.items || []).map((item: any, idx: number) => (
                                         <div key={idx} className="flex items-center gap-1">
                                             <input
@@ -345,7 +357,7 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ selectedField,
                                                     newItems[idx] = { ...newItems[idx], label: e.target.value };
                                                     bulkUpdateOptions(selectedIds, { items: newItems });
                                                 }}
-                                                className="border-input bg-background focus:ring-1 focus:ring-primary h-7 flex-1 rounded border px-1.5 font-sans text-[10px] outline-none shadow-xs"
+                                                className="border-input bg-background focus:ring-primary h-7 flex-1 rounded border px-1.5 font-sans text-[10px] shadow-xs outline-none focus:ring-1"
                                             />
                                             <input
                                                 type="text"
@@ -356,7 +368,7 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ selectedField,
                                                     newItems[idx] = { ...newItems[idx], value: e.target.value };
                                                     bulkUpdateOptions(selectedIds, { items: newItems });
                                                 }}
-                                                className="border-input bg-background focus:ring-1 focus:ring-primary h-7 w-16 rounded border px-1.5 font-mono text-[9px] outline-none shadow-xs"
+                                                className="border-input bg-background focus:ring-primary h-7 w-16 rounded border px-1.5 font-mono text-[9px] shadow-xs outline-none focus:ring-1"
                                             />
                                             <button
                                                 type="button"
@@ -364,7 +376,7 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ selectedField,
                                                     const newItems = (selectedField.options?.items || []).filter((_: any, i: number) => i !== idx);
                                                     bulkUpdateOptions(selectedIds, { items: newItems });
                                                 }}
-                                                className="text-muted-foreground/50 hover:text-red-500 rounded p-1 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors shrink-0"
+                                                className="text-muted-foreground/50 shrink-0 rounded p-1 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/10"
                                                 title="Hapus Opsi"
                                             >
                                                 <X size={12} />
@@ -372,7 +384,9 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ selectedField,
                                         </div>
                                     ))}
                                     {(selectedField.options?.items || []).length === 0 && (
-                                        <span className="text-muted-foreground/30 block py-2 text-[9px] font-medium uppercase text-center border border-dashed rounded-lg">Belum Ada Pilihan</span>
+                                        <span className="text-muted-foreground/30 block rounded-lg border border-dashed py-2 text-center text-[9px] font-medium uppercase">
+                                            Belum Ada Pilihan
+                                        </span>
                                     )}
                                 </div>
                             </div>
@@ -477,7 +491,7 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ selectedField,
                     </div>
 
                     {/* Position type: Grid (default) / Free (absolute) */}
-                    <div className="space-y-4 border-t border-border/50 pt-4">
+                    <div className="border-border/50 space-y-4 border-t pt-4">
                         <div className="space-y-1.5">
                             <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Tipe Posisi (Layout Position)</Label>
                             <select
@@ -495,8 +509,10 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ selectedField,
                         </div>
 
                         {selectedField.options?.position_type === 'free' && (
-                            <div className="space-y-2 border-t border-border/30 pt-3">
-                                <Label className="text-muted-foreground font-sans text-[8px] font-semibold uppercase">Koordinat Posisi Bebas (px)</Label>
+                            <div className="border-border/30 space-y-2 border-t pt-3">
+                                <Label className="text-muted-foreground font-sans text-[8px] font-semibold uppercase">
+                                    Koordinat Posisi Bebas (px)
+                                </Label>
                                 <div className="grid grid-cols-2 gap-2">
                                     <div className="space-y-1">
                                         <Label className="text-muted-foreground font-sans text-[7px] font-medium uppercase">Top</Label>

@@ -1,7 +1,6 @@
 import { ChipIcon } from '@/components/ui/feedback/ChipIcon';
 import { cn } from '@/lib/utils';
 import { AlertTriangle, Clock, FileText, ShieldCheck } from 'lucide-react';
-import React from 'react';
 import { DashboardMetrics } from './types';
 
 interface KpiCardProps {
@@ -19,22 +18,16 @@ function KpiCard({ label, value, subtext, icon, accentClass, bgClass, onClick }:
         <div
             onClick={onClick}
             className={cn(
-                'group bg-white dark:bg-surface-base border border-surface-border/60 relative flex flex-col gap-4 overflow-hidden rounded-lg p-5 transition-all duration-300',
-                onClick && 'cursor-pointer hover:bg-muted/10',
+                'group dark:bg-surface-base border-surface-border/60 relative flex flex-col gap-4 overflow-hidden rounded-lg border bg-white p-5 transition-all duration-300',
+                onClick && 'hover:bg-muted/10 cursor-pointer',
             )}
         >
             <div className="flex items-start justify-between">
-                <ChipIcon
-                    icon={icon}
-                    size="md"
-                    bg={accentClass}
-                    shape="rounded"
-                    className="shadow-none group-hover:scale-105"
-                />
-                <span className="text-text-desc text-[9px] font-medium  uppercase">{subtext}</span>
+                <ChipIcon icon={icon} size="md" bg={accentClass} shape="rounded" className="shadow-none group-hover:scale-105" />
+                <span className="text-text-desc text-[9px] font-medium uppercase">{subtext}</span>
             </div>
             <div>
-                <p className="text-text-desc mb-0.5 text-[10px] font-medium  uppercase">{label}</p>
+                <p className="text-text-desc mb-0.5 text-[10px] font-medium uppercase">{label}</p>
                 <span className="text-text-main text-2xl font-extrabold tracking-tight tabular-nums">{value}</span>
             </div>
         </div>

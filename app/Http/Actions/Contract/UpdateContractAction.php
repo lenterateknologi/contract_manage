@@ -2,12 +2,13 @@
 
 namespace App\Http\Actions\Contract;
 
-use App\Models\Contract;
-use App\Models\ContractHistory;
-use App\Models\ContractType;
-use App\Models\SubmissionType;
-use App\Models\User;
-use App\Models\Vendor;
+use App\Models\Master\ContractType;
+use App\Models\Master\SubmissionType;
+use App\Models\Master\User;
+use App\Models\Master\Vendor;
+use App\Models\Transaction\Approval;
+use App\Models\Transaction\Contract;
+use App\Models\Transaction\ContractHistory;
 use App\Services\Workflow\ContractWorkflowService;
 use Illuminate\Support\Facades\Auth;
 
@@ -81,7 +82,7 @@ class UpdateContractAction
             }
             $newPic = User::find($newPicId);
             if ($newPic) {
-                $picApprovals = \App\Models\Approval::where('contract_id', $contract->id)
+                $picApprovals = Approval::where('contract_id', $contract->id)
                     ->whereIn('status', ['pending', 'waiting'])
                     ->where(function ($q) {
                         $q->whereHas('workflowStep', function ($sq) {
@@ -103,7 +104,7 @@ class UpdateContractAction
         $changes = $this->calculateChanges($oldAttributes, $contract->getAttributes());
 
         if (! empty($changes)) {
-            $desc = 'Informasi kontrak diperbarui: ' . implode(', ', $changes);
+            $desc = 'Informasi kontrak diperbarui: '.implode(', ', $changes);
         } else {
             $desc = 'Informasi kontrak diperbarui';
         }
@@ -151,6 +152,7 @@ class UpdateContractAction
                     $newText = $newBool ? 'Ya' : 'Tidak';
                     $changes[] = "{$label} diubah dari \"{$oldText}\" menjadi \"{$newText}\"";
                 }
+
                 continue;
             }
 
@@ -162,6 +164,7 @@ class UpdateContractAction
                     $newText = $newDate ?: '-';
                     $changes[] = "{$label} diubah dari \"{$oldText}\" menjadi \"{$newText}\"";
                 }
+
                 continue;
             }
 
@@ -171,6 +174,7 @@ class UpdateContractAction
                     $newVendor = $newVal ? Vendor::find($newVal)?->name : '-';
                     $changes[] = "{$label} diubah dari \"{$oldVendor}\" menjadi \"{$newVendor}\"";
                 }
+
                 continue;
             }
 
@@ -180,6 +184,7 @@ class UpdateContractAction
                     $newType = $newVal ? ContractType::find($newVal)?->name : '-';
                     $changes[] = "{$label} diubah dari \"{$oldType}\" menjadi \"{$newType}\"";
                 }
+
                 continue;
             }
 
@@ -189,6 +194,7 @@ class UpdateContractAction
                     $newSub = $newVal ? SubmissionType::find($newVal)?->name : '-';
                     $changes[] = "{$label} diubah dari \"{$oldSub}\" menjadi \"{$newSub}\"";
                 }
+
                 continue;
             }
 
@@ -198,6 +204,7 @@ class UpdateContractAction
                     $newUser = $newVal ? User::find($newVal)?->name : '-';
                     $changes[] = "{$label} diubah dari \"{$oldUser}\" menjadi \"{$newUser}\"";
                 }
+
                 continue;
             }
 
@@ -206,8 +213,8 @@ class UpdateContractAction
             $newStr = trim((string) ($newVal ?? ''));
 
             if ($oldStr !== $newStr) {
-                $oldDisplay = $oldStr !== '' ? (strlen($oldStr) > 40 ? substr($oldStr, 0, 37) . '...' : $oldStr) : '-';
-                $newDisplay = $newStr !== '' ? (strlen($newStr) > 40 ? substr($newStr, 0, 37) . '...' : $newStr) : '-';
+                $oldDisplay = $oldStr !== '' ? (strlen($oldStr) > 40 ? substr($oldStr, 0, 37).'...' : $oldStr) : '-';
+                $newDisplay = $newStr !== '' ? (strlen($newStr) > 40 ? substr($newStr, 0, 37).'...' : $newStr) : '-';
                 $changes[] = "{$label} diubah dari \"{$oldDisplay}\" menjadi \"{$newDisplay}\"";
             }
         }
@@ -215,4 +222,3 @@ class UpdateContractAction
         return $changes;
     }
 }
-

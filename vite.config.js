@@ -1,15 +1,9 @@
+import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import laravel from 'laravel-vite-plugin';
-import {
-    defineConfig
-} from 'vite';
-import tailwindcss from "@tailwindcss/vite";
-import { globSync } from 'node:fs';
+import { defineConfig } from 'vite';
 
-const pageInputs = [
-    'resources/css/app.css',
-    'resources/js/app.tsx',
-];
+const pageInputs = ['resources/css/app.css', 'resources/js/app.tsx'];
 
 export default defineConfig({
     resolve: {

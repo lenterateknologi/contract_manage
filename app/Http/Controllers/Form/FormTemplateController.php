@@ -4,9 +4,10 @@ namespace App\Http\Controllers\Form;
 
 use App\Http\Controllers\Controller;
 use App\Jobs\GeneratePdfJob;
-use App\Models\ContractType;
-use App\Models\FormField;
-use App\Models\FormTemplate;
+use App\Models\Master\ContractType;
+use App\Models\Master\FormField;
+use App\Models\Master\FormTemplate;
+use App\Services\Utils\PdfService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -208,29 +209,9 @@ class FormTemplateController extends Controller
                 $printUrl = str_replace('localhost', '127.0.0.1', $printUrl);
             }
 
-            // High-Fidelity PDF rendering via Browsershot (Turbo Optimized)
-            $chromePath = file_exists('/Applications/Brave Browser.app/Contents/MacOS/Brave Browser')
-                ? '/Applications/Brave Browser.app/Contents/MacOS/Brave Browser'
-                : '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-
-            $pdfContent = Browsershot::url($printUrl)
-                ->setNodeBinary('/opt/homebrew/bin/node')
-                ->setNpmBinary('/opt/homebrew/bin/npm')
-                ->setChromePath($chromePath)
-                ->noSandbox()
-                ->addChromiumArguments([
-                    'disable-gpu',
-                    'disable-dev-shm-usage',
-                    'disable-setuid-sandbox',
-                    'no-first-run',
-                    'disable-extensions',
-                ])
-                ->timeout(180)
-                ->paperSize(210, 297, 'mm')
-                ->margins(0, 0, 0, 0)
-                ->showBackground()
+            // High-Fidelity PDF rendering via PdfService
+            $pdfContent = PdfService::browsershotUrl($printUrl, 180)
                 ->waitForSelector('#pdf-render-complete')
-                ->setDelay(1000)
                 ->pdf();
 
             return response($pdfContent)
@@ -404,29 +385,9 @@ class FormTemplateController extends Controller
                 $printUrl = str_replace('localhost', '127.0.0.1', $printUrl);
             }
 
-            // High-Fidelity PDF rendering via Browsershot (Turbo Optimized)
-            $chromePath = file_exists('/Applications/Brave Browser.app/Contents/MacOS/Brave Browser')
-                ? '/Applications/Brave Browser.app/Contents/MacOS/Brave Browser'
-                : '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-
-            $pdfContent = Browsershot::url($printUrl)
-                ->setNodeBinary('/opt/homebrew/bin/node')
-                ->setNpmBinary('/opt/homebrew/bin/npm')
-                ->setChromePath($chromePath)
-                ->noSandbox()
-                ->addChromiumArguments([
-                    'disable-gpu',
-                    'disable-dev-shm-usage',
-                    'disable-setuid-sandbox',
-                    'no-first-run',
-                    'disable-extensions',
-                ])
-                ->timeout(180)
-                ->paperSize(210, 297, 'mm')
-                ->margins(0, 0, 0, 0)
-                ->showBackground()
+            // High-Fidelity PDF rendering via PdfService
+            $pdfContent = PdfService::browsershotUrl($printUrl, 180)
                 ->waitForSelector('#pdf-render-complete')
-                ->setDelay(1000)
                 ->pdf();
 
             return response($pdfContent)
@@ -460,29 +421,9 @@ class FormTemplateController extends Controller
                 $printUrl = str_replace('localhost', '127.0.0.1', $printUrl);
             }
 
-            // High-Fidelity Preview via Browsershot (Turbo Optimized)
-            $chromePath = file_exists('/Applications/Brave Browser.app/Contents/MacOS/Brave Browser')
-                ? '/Applications/Brave Browser.app/Contents/MacOS/Brave Browser'
-                : '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-
-            $pdfContent = Browsershot::url($printUrl)
-                ->setNodeBinary('/opt/homebrew/bin/node')
-                ->setNpmBinary('/opt/homebrew/bin/npm')
-                ->setChromePath($chromePath)
-                ->noSandbox()
-                ->addChromiumArguments([
-                    'disable-gpu',
-                    'disable-dev-shm-usage',
-                    'disable-setuid-sandbox',
-                    'no-first-run',
-                    'disable-extensions',
-                ])
-                ->timeout(180)
-                ->paperSize(210, 297, 'mm')
-                ->margins(0, 0, 0, 0)
-                ->showBackground()
+            // High-Fidelity Preview via PdfService
+            $pdfContent = PdfService::browsershotUrl($printUrl, 180)
                 ->waitForSelector('#pdf-render-complete')
-                ->setDelay(1000)
                 ->pdf();
 
             return response($pdfContent)
@@ -536,7 +477,7 @@ class FormTemplateController extends Controller
             foreach ($fields as $field) {
                 /** @var FormField $field */
                 $newField = $field->replicate();
-                /* @var \App\Models\FormField $newField */
+                /* @var \App\Models\Master\FormField $newField */
                 $newField->form_template_id = $newTemplate->id;
                 $newField->save();
                 $idMapping[$field->id] = $newField->id;
@@ -565,7 +506,7 @@ class FormTemplateController extends Controller
         $template->load(['fields' => fn ($q) => $q->orderBy('order')]);
 
         $fields = $template->fields->map(function ($field) {
-            /* @var \App\Models\FormField $field */
+            /* @var \App\Models\Master\FormField $field */
             return [
                 'id' => $field->id,
                 'parent_id' => $field->parent_id,

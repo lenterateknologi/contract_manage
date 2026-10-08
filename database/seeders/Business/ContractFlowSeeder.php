@@ -3,19 +3,11 @@
 namespace Database\Seeders\Business;
 
 use App\Enums\WorkflowAction;
-use App\Models\Authority;
-use App\Models\Company;
-use App\Models\CompanyGroup;
-use App\Models\ContractType;
-use App\Models\Department;
-use App\Models\Division;
-use App\Models\Location;
-use App\Models\Region;
-use App\Models\Role;
-use App\Models\User;
-use App\Models\Workflow;
-use App\Models\WorkflowStep;
-use App\Models\WorkflowStepAction;
+use App\Models\Master\Authority;
+use App\Models\Master\Role;
+use App\Models\Master\Workflow;
+use App\Models\Master\WorkflowStep;
+use App\Models\Master\WorkflowStepAction;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -40,7 +32,7 @@ class ContractFlowSeeder extends Seeder
 
         $existingWfIds = Workflow::whereIn('name', $workflowNames)->pluck('id')->toArray();
 
-        if (!empty($existingWfIds)) {
+        if (! empty($existingWfIds)) {
             Authority::where('context_type', Authority::CONTEXT_WORKFLOW_STEP)
                 ->whereIn('context_id', function ($q) use ($existingWfIds) {
                     $q->select('id')->from('m_workflow_steps')->whereIn('workflow_id', $existingWfIds);
@@ -271,7 +263,6 @@ class ContractFlowSeeder extends Seeder
             'is_active' => true,
         ]);
 
-
         // =========================================================================
         // SUB-WORKFLOW 1: PERMOHONAN & VERIFIKASI AWAL (WF PATH 1)
         // =========================================================================
@@ -434,7 +425,6 @@ class ContractFlowSeeder extends Seeder
             'transition_config' => ['type' => 'initial_step'],
             'is_active' => true,
         ]);
-
 
         // =========================================================================
         // WORKFLOW UTAMA (MASTER ORCHESTRATOR - DENGAN STEP PENGHUBUNG)

@@ -3,12 +3,17 @@
 namespace App\Http\Actions\Workflow;
 
 use App\Enums\WorkflowAction;
-use App\Models\Department;
-use App\Models\Division;
-use App\Models\Role;
-use App\Models\User;
-use App\Models\WorkflowStep;
-use App\Models\WorkflowStepAction;
+use App\Models\Master\Company;
+use App\Models\Master\CompanyGroup;
+use App\Models\Master\Department;
+use App\Models\Master\Division;
+use App\Models\Master\Location;
+use App\Models\Master\OrganizationGroup;
+use App\Models\Master\Region;
+use App\Models\Master\Role;
+use App\Models\Master\User;
+use App\Models\Master\WorkflowStep;
+use App\Models\Master\WorkflowStepAction;
 use Illuminate\Support\Facades\Auth;
 
 trait HasWorkflowHelpers
@@ -211,7 +216,7 @@ trait HasWorkflowHelpers
                 $resolvedRegId = ! empty($auth['region_id']) ? $this->resolveRegionId($auth['region_id']) : null;
 
                 // If group authority specified a role that no longer exists and no initiator flag, skip invalid record
-                if (($auth['authority_type'] ?? '') === 'group' && !empty($auth['role_id']) && empty($resolvedRoleId) && empty($auth['role_use_initiator'])) {
+                if (($auth['authority_type'] ?? '') === 'group' && ! empty($auth['role_id']) && empty($resolvedRoleId) && empty($auth['role_use_initiator'])) {
                     continue;
                 }
 
@@ -371,6 +376,7 @@ trait HasWorkflowHelpers
             if ($exists) {
                 return $exists;
             }
+
             return Division::where('id', $identifier)->value('id');
         }
 
@@ -429,10 +435,10 @@ trait HasWorkflowHelpers
         }
 
         if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $identifier)) {
-            return \App\Models\OrganizationGroup::where('id', $identifier)->value('id');
+            return OrganizationGroup::where('id', $identifier)->value('id');
         }
 
-        return \App\Models\OrganizationGroup::where('code', $identifier)->orWhere('name', $identifier)->value('id');
+        return OrganizationGroup::where('code', $identifier)->orWhere('name', $identifier)->value('id');
     }
 
     protected function resolveLocationId(?string $identifier): ?string
@@ -442,10 +448,10 @@ trait HasWorkflowHelpers
         }
 
         if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $identifier)) {
-            return \App\Models\Location::where('id', $identifier)->value('id');
+            return Location::where('id', $identifier)->value('id');
         }
 
-        return \App\Models\Location::where('code', $identifier)->value('id');
+        return Location::where('code', $identifier)->value('id');
     }
 
     protected function resolveCompanyGroupId(?string $identifier): ?string
@@ -455,10 +461,10 @@ trait HasWorkflowHelpers
         }
 
         if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $identifier)) {
-            return \App\Models\CompanyGroup::where('id', $identifier)->value('id');
+            return CompanyGroup::where('id', $identifier)->value('id');
         }
 
-        return \App\Models\CompanyGroup::where('name', $identifier)->value('id');
+        return CompanyGroup::where('name', $identifier)->value('id');
     }
 
     protected function resolveCompanyId(?string $identifier): ?string
@@ -468,10 +474,10 @@ trait HasWorkflowHelpers
         }
 
         if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $identifier)) {
-            return \App\Models\Company::where('id', $identifier)->value('id');
+            return Company::where('id', $identifier)->value('id');
         }
 
-        return \App\Models\Company::where('name', $identifier)->value('id');
+        return Company::where('name', $identifier)->value('id');
     }
 
     protected function resolveRegionId(?string $identifier): ?string
@@ -481,9 +487,9 @@ trait HasWorkflowHelpers
         }
 
         if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $identifier)) {
-            return \App\Models\Region::where('id', $identifier)->value('id');
+            return Region::where('id', $identifier)->value('id');
         }
 
-        return \App\Models\Region::where('name', $identifier)->value('id');
+        return Region::where('name', $identifier)->value('id');
     }
 }

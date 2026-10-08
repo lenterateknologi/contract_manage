@@ -44,22 +44,22 @@ return new class extends Migration
 
         // Backfill existing approvals with workflow_id, step_number, approver_type from m_workflow_steps
         try {
-            DB::statement("
+            DB::statement('
                 UPDATE t_approvals a
                 SET workflow_id = ws.workflow_id,
                     step_number = ws.step,
                     approver_type = ws.approver_type
                 FROM m_workflow_steps ws
                 WHERE a.workflow_step_id = ws.id
-            ");
+            ');
 
             // Backfill contracts current_step_number from active workflow_step_id
-            DB::statement("
+            DB::statement('
                 UPDATE t_contracts c
                 SET current_step_number = ws.step
                 FROM m_workflow_steps ws
                 WHERE c.workflow_step_id = ws.id
-            ");
+            ');
 
             // Mark current active pending/waiting approvals as is_current_step
             DB::statement("
@@ -73,7 +73,7 @@ return new class extends Migration
                 SET is_adhoc = true
                 WHERE role IN ('Persetujuan Tambahan', 'Penandatangan')
             ");
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             // Ignore backfill error on empty/fresh setups
         }
     }

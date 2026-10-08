@@ -1,4 +1,3 @@
-import { cn } from '@/lib/utils';
 import { UserAvatar } from '@/components/profile/UserAvatar';
 
 export { UserAvatar as Avatar };

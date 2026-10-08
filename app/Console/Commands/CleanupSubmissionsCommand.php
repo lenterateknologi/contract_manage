@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Contract;
+use App\Models\Transaction\Contract;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;

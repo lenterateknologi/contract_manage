@@ -1,8 +1,7 @@
 import { ChipIcon } from '@/components/ui/feedback/ChipIcon';
-import { cn, formatRelativeTime } from '@/lib/utils';
+import { formatRelativeTime } from '@/lib/utils';
 import { router } from '@inertiajs/react';
 import { BarChart3, CheckCircle2, FileEdit, FilePlus, FileText, FileX, History, Send, Upload } from 'lucide-react';
-import React from 'react';
 import { SectionTitle } from './SectionTitle';
 import { ActivityItem } from './types';
 
@@ -27,7 +26,7 @@ interface ActivityFeedProps {
 
 export function ActivityFeed({ items }: ActivityFeedProps) {
     return (
-        <div className="bg-white dark:bg-surface-base border border-surface-border/60 rounded-lg animate-in fade-in w-full duration-300 select-none">
+        <div className="dark:bg-surface-base border-surface-border/60 animate-in fade-in w-full rounded-lg border bg-white duration-300 select-none">
             <div className="border-surface-border/60 flex items-center justify-between border-b px-6 py-4">
                 <SectionTitle>Aktivitas Terbaru</SectionTitle>
                 <span className="bg-success flex h-2 w-2 animate-pulse rounded-full" />
@@ -43,13 +42,7 @@ export function ActivityFeed({ items }: ActivityFeedProps) {
                         const cfg = getActionConfig(act.action);
                         return (
                             <div key={act.id} className="hover:bg-surface-muted/40 group flex items-start gap-4 px-6 py-4 transition-colors">
-                                <ChipIcon
-                                    icon={cfg.icon}
-                                    size="md"
-                                    bg={cfg.bg}
-                                    shape="circle"
-                                    className="mt-0.5 border-transparent shadow-none"
-                                />
+                                <ChipIcon icon={cfg.icon} size="md" bg={cfg.bg} shape="circle" className="mt-0.5 border-transparent shadow-none" />
                                 <div className="min-w-0 flex-1">
                                     <p className="text-text-main text-[12px] font-medium tracking-tight">{act.description}</p>
                                     <div className="mt-1 flex flex-wrap items-center gap-1.5">

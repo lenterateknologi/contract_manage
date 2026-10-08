@@ -1,11 +1,10 @@
 import { Input } from '@/components/ui/inputs/Input';
 import { cn } from '@/lib/utils';
-import { ChevronDown, FileText, Layout, Search, Trash2, X, GripVertical } from 'lucide-react';
+import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { FileText, GripVertical, Search, Trash2, X } from 'lucide-react';
 import React, { useState } from 'react';
 import { FIELD_TYPES } from './constants';
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 
 interface StructurePanelProps {
     fieldTree: any[];
@@ -41,25 +40,22 @@ const SortableStructureNode = ({ item, selectedFieldIds, onSelectField, onRemove
                 className={cn(
                     'group flex items-center gap-1.5 rounded px-1.5 py-1 text-[10px] transition-all select-none',
                     isSelected
-                        ? 'bg-primary/10 text-primary font-bold ring-primary/20 ring-1'
+                        ? 'bg-primary/10 text-primary ring-primary/20 font-bold ring-1'
                         : 'hover:bg-muted/70 text-muted-foreground hover:text-foreground',
                 )}
             >
                 {/* Drag Handle */}
-                <div 
-                    {...attributes} 
-                    {...listeners} 
-                    className="flex cursor-grab active:cursor-grabbing items-center justify-center opacity-0 group-hover:opacity-60 transition-opacity"
+                <div
+                    {...attributes}
+                    {...listeners}
+                    className="flex cursor-grab items-center justify-center opacity-0 transition-opacity group-hover:opacity-60 active:cursor-grabbing"
                 >
                     <GripVertical size={10} />
                 </div>
-                
-                <div 
-                    className="flex flex-1 items-center gap-1.5 cursor-pointer min-w-0"
-                    onClick={(e) => onSelectField(item.id, e)}
-                >
+
+                <div className="flex min-w-0 flex-1 cursor-pointer items-center gap-1.5" onClick={(e) => onSelectField(item.id, e)}>
                     <Icon size={12} className={cn('shrink-0', isSelected ? 'text-primary' : 'text-muted-foreground/60')} />
-                    <span className={cn('flex-1 truncate font-sans text-[10px] uppercase tracking-tight', isSelected && 'text-primary')}>
+                    <span className={cn('flex-1 truncate font-sans text-[10px] tracking-tight uppercase', isSelected && 'text-primary')}>
                         {item.label || item.type.replace('_', ' ')}
                     </span>
                     {onRemoveField && (
@@ -69,7 +65,7 @@ const SortableStructureNode = ({ item, selectedFieldIds, onSelectField, onRemove
                                 e.stopPropagation();
                                 onRemoveField(item.id);
                             }}
-                            className="text-muted-foreground/40 hover:text-destructive rounded p-0.5 opacity-0 transition-opacity group-hover:opacity-100 z-10 shrink-0"
+                            className="text-muted-foreground/40 hover:text-destructive z-10 shrink-0 rounded p-0.5 opacity-0 transition-opacity group-hover:opacity-100"
                         >
                             <Trash2 size={10} />
                         </button>
@@ -77,7 +73,7 @@ const SortableStructureNode = ({ item, selectedFieldIds, onSelectField, onRemove
                 </div>
             </div>
             {item.children?.length > 0 && (
-                <div className="border-border/40 ml-2.5 space-y-0.5 border-l pl-1.5 pt-0.5">
+                <div className="border-border/40 ml-2.5 space-y-0.5 border-l pt-0.5 pl-1.5">
                     <SortableContext items={item.children.map((c: any) => `struct_${c.id}`)} strategy={verticalListSortingStrategy}>
                         {item.children.map((child: any) => (
                             <SortableStructureNode
@@ -129,16 +125,14 @@ export const StructurePanel: React.FC<StructurePanelProps> = ({
     return (
         <div className="animate-in fade-in slide-in-from-left-4 space-y-2.5 duration-200">
             {/* Action Header */}
-            <div className="flex items-center justify-between gap-1 pb-1 border-b border-border/50">
-                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">
-                    Total: {fieldsCount}
-                </span>
+            <div className="border-border/50 flex items-center justify-between gap-1 border-b pb-1">
+                <span className="text-[9px] font-bold tracking-wider text-slate-500 uppercase">Total: {fieldsCount}</span>
                 <div className="flex items-center gap-1">
                     {onRemoveAll && fieldsCount > 0 && (
                         <button
                             type="button"
                             onClick={onRemoveAll}
-                            className="px-1.5 py-0.5 text-[8px] font-bold uppercase rounded text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                            className="rounded px-1.5 py-0.5 text-[8px] font-bold text-rose-500 uppercase transition-colors hover:bg-rose-50 dark:hover:bg-rose-950/40"
                         >
                             Reset
                         </button>
@@ -147,7 +141,7 @@ export const StructurePanel: React.FC<StructurePanelProps> = ({
                         <button
                             type="button"
                             onClick={onRemoveSelected}
-                            className="px-1.5 py-0.5 text-[8px] font-bold uppercase rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                            className="bg-primary/10 text-primary hover:bg-primary/20 rounded px-1.5 py-0.5 text-[8px] font-bold uppercase transition-colors"
                         >
                             Hapus ({selectedFieldIds.length})
                         </button>
@@ -157,19 +151,19 @@ export const StructurePanel: React.FC<StructurePanelProps> = ({
 
             {/* Search Input */}
             <div className="relative">
-                <Search size={12} className="text-slate-400 absolute top-1/2 left-2.5 -translate-y-1/2" />
+                <Search size={12} className="absolute top-1/2 left-2.5 -translate-y-1/2 text-slate-400" />
                 <Input
                     type="text"
                     placeholder="Cari..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="h-7 pr-7 pl-8 font-sans text-[10px] rounded-lg border-slate-200 dark:border-zinc-800"
+                    className="h-7 rounded-lg border-slate-200 pr-7 pl-8 font-sans text-[10px] dark:border-zinc-800"
                 />
                 {searchQuery && (
                     <button
                         type="button"
                         onClick={() => setSearchQuery('')}
-                        className="text-slate-400 hover:text-slate-600 absolute top-1/2 right-2 -translate-y-1/2"
+                        className="absolute top-1/2 right-2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                     >
                         <X size={10} />
                     </button>

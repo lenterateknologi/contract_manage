@@ -1,13 +1,13 @@
+import { approvalsApi, contractsApi, subresourcesApi } from '@/api';
 import { Icons } from '@/components/ui';
 import { Button } from '@/components/ui/buttons/Button';
 import LoadingLottie from '@/components/ui/feedback/LoadingLottie';
 import { useToast } from '@/components/ui/feedback/Toast';
 import { SearchInput } from '@/components/ui/inputs/SearchInput';
+import { useContractPermissions } from '@/hooks/use-contract-permissions';
 import { useDebounce } from '@/hooks/use-debounce';
 import { cn } from '@/lib/utils';
-import { Contract, CLOSED_STATUSES } from '@/pages/contracts/types';
-import { contractsApi, approvalsApi, subresourcesApi } from '@/api';
-import { useContractPermissions } from '@/hooks/use-contract-permissions';
+import { Contract } from '@/pages/contracts/types';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 const { ArrowRight, Diff, Download, ExternalLink, FileText, History, Loader2, Maximize2, Minimize2, MoreVertical, PenTool, RefreshCw, Upload } =
@@ -147,11 +147,7 @@ export default function AgreementView({
         }
     }, [contractVersionsCount]);
 
-    const { canEdit, isCreator, isApprover, isSigner, activeSignerApproval } = useContractPermissions(
-        contract,
-        effectiveDocType,
-        meId,
-    );
+    const { canEdit, isCreator, isApprover, isSigner, activeSignerApproval } = useContractPermissions(contract, effectiveDocType, meId);
     const stepDownloaded = activeSignerApproval ? contract.metadata?.[`downloaded_step_${activeSignerApproval.id}`] : null;
 
     const handleDownload = async (vId?: string) => {

@@ -1,0 +1,49 @@
+<?php
+
+namespace App\Models\Master;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
+
+class Role extends Model
+{
+    protected $table = 'm_roles';
+
+    use SoftDeletes;
+
+    public $incrementing = false;
+
+    protected $keyType = 'string';
+
+    protected $fillable = [
+        'id',
+        'company_id',
+        'name',
+        'description',
+        'can_create_on_behalf',
+    ];
+
+    protected $casts = [
+        'can_create_on_behalf' => 'boolean',
+    ];
+
+    public function company()
+    {
+        return $this->belongsTo(Company::class, 'company_id');
+    }
+
+    public function users()
+    {
+        return $this->hasMany(User::class, 'role_id');
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function ($model) {
+            if (empty($model->id)) {
+                $model->id = (string) Str::uuid();
+            }
+        });
+    }
+}

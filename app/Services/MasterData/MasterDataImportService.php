@@ -4,25 +4,25 @@ declare(strict_types=1);
 
 namespace App\Services\MasterData;
 
-use App\Models\AccessModule;
-use App\Models\Company;
-use App\Models\CompanyGroup;
-use App\Models\ContractStatus;
-use App\Models\ContractType;
-use App\Models\Department;
-use App\Models\Division;
-use App\Models\FormField;
-use App\Models\FormTemplate;
-use App\Models\Module;
-use App\Models\ModuleGroup;
-use App\Models\Region;
-use App\Models\Role;
-use App\Models\RoleModuleGroup;
-use App\Models\User;
-use App\Models\Authority;
-use App\Models\Workflow;
-use App\Models\WorkflowStep;
-use App\Models\WorkflowStepAction;
+use App\Models\Master\AccessModule;
+use App\Models\Master\Authority;
+use App\Models\Master\Company;
+use App\Models\Master\CompanyGroup;
+use App\Models\Master\ContractStatus;
+use App\Models\Master\ContractType;
+use App\Models\Master\Department;
+use App\Models\Master\Division;
+use App\Models\Master\FormField;
+use App\Models\Master\FormTemplate;
+use App\Models\Master\Module;
+use App\Models\Master\ModuleGroup;
+use App\Models\Master\Region;
+use App\Models\Master\Role;
+use App\Models\Master\RoleModuleGroup;
+use App\Models\Master\User;
+use App\Models\Master\Workflow;
+use App\Models\Master\WorkflowStep;
+use App\Models\Master\WorkflowStepAction;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -32,24 +32,40 @@ use Illuminate\Support\Str;
 class MasterDataImportService
 {
     private array $counts = [];
+
     private ?string $adminId = null;
 
     // ID translation maps
     private array $roleMap = [];
+
     private array $roleIdMap = [];
+
     private array $moduleMap = [];
+
     private array $moduleGroupMap = [];
+
     private array $groupMap = [];
+
     private array $companyGroupIdMap = [];
+
     private array $regionMap = [];
+
     private array $regionIdMap = [];
+
     private array $companyMap = [];
+
     private array $companyIdMap = [];
+
     private array $deptMap = [];
+
     private array $departmentIdMap = [];
+
     private array $divisionMap = [];
+
     private array $divisionIdMap = [];
+
     private array $workflowIdMap = [];
+
     private array $workflowStepIdMap = [];
 
     /**

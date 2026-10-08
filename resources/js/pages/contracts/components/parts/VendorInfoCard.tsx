@@ -7,12 +7,13 @@ export function VendorInfoCard({ selected, isTabView = false }: { selected: Cont
     const [minimized, setMinimized] = useState(false);
     const secondParty = (selected as any)?.vendor || {};
     const initUser = selected.initiator || selected.creator;
-    const isInternalParty = !selected.vendor_id && !selected.vendor?.id && (
-        selected.metadata?.second_party_id === 'internal' ||
-        selected.metadata?.p2_vendor_id === 'internal' ||
-        selected.p2_entity === initUser?.company?.name ||
-        selected.p2_entity === initUser?.company_name
-    );
+    const isInternalParty =
+        !selected.vendor_id &&
+        !selected.vendor?.id &&
+        (selected.metadata?.second_party_id === 'internal' ||
+            selected.metadata?.p2_vendor_id === 'internal' ||
+            selected.p2_entity === initUser?.company?.name ||
+            selected.p2_entity === initUser?.company_name);
 
     const detail = (secondParty?.vendor_detail || secondParty?.detail || {}) as Record<string, any>;
     const tax = (detail.tax || {}) as Record<string, any>;
@@ -21,11 +22,38 @@ export function VendorInfoCard({ selected, isTabView = false }: { selected: Cont
     const paymentMethods = (Array.isArray(detail.paymentMethod) ? detail.paymentMethod : []) as Record<string, any>[];
     const businessFields = (Array.isArray(detail.businessFields) ? detail.businessFields : []) as Record<string, any>[];
 
-    const partyName = secondParty?.name || secondParty?.vendor_name || detail?.name || selected.metadata?.meta_p2_entity || selected.p2_entity || (isInternalParty ? (initUser?.company?.name || initUser?.company_name || 'PT. Lentera Teknologi (Internal)') : 'Nama Pihak Kedua Tidak Tersedia');
-    const picName = secondParty?.pic_name || detail?.pic || selected.metadata?.meta_p2_signer || selected.p2_signer || (isInternalParty ? (initUser?.name || '—') : '—');
-    const picPosition = secondParty?.pic_position || detail?.pic_position || detail?.jobTitle || selected.metadata?.meta_p2_signer_position || selected.p2_signer_position || (isInternalParty ? (initUser?.jobtitle_name || initUser?.role_name || 'Direktur') : '—');
-    const address = secondParty?.address || detail?.address || selected.metadata?.meta_p2_alamat || selected.p2_address || (isInternalParty ? (initUser?.company?.address || initUser?.address || 'The Manhattan Square Mid Tower Lt. 12, Jl. TB Simatupang No.1, Jakarta Selatan') : '—');
-    const partyCode = secondParty?.vendor_code || detail?.registrationNumber || (isInternalParty ? (initUser?.employee_id || initUser?.nip || 'INTERNAL') : '-');
+    const partyName =
+        secondParty?.name ||
+        secondParty?.vendor_name ||
+        detail?.name ||
+        selected.metadata?.meta_p2_entity ||
+        selected.p2_entity ||
+        (isInternalParty
+            ? initUser?.company?.name || initUser?.company_name || 'PT. Lentera Teknologi (Internal)'
+            : 'Nama Pihak Kedua Tidak Tersedia');
+    const picName =
+        secondParty?.pic_name ||
+        detail?.pic ||
+        selected.metadata?.meta_p2_signer ||
+        selected.p2_signer ||
+        (isInternalParty ? initUser?.name || '—' : '—');
+    const picPosition =
+        secondParty?.pic_position ||
+        detail?.pic_position ||
+        detail?.jobTitle ||
+        selected.metadata?.meta_p2_signer_position ||
+        selected.p2_signer_position ||
+        (isInternalParty ? initUser?.jobtitle_name || initUser?.role_name || 'Direktur' : '—');
+    const address =
+        secondParty?.address ||
+        detail?.address ||
+        selected.metadata?.meta_p2_alamat ||
+        selected.p2_address ||
+        (isInternalParty
+            ? initUser?.company?.address || initUser?.address || 'The Manhattan Square Mid Tower Lt. 12, Jl. TB Simatupang No.1, Jakarta Selatan'
+            : '—');
+    const partyCode =
+        secondParty?.vendor_code || detail?.registrationNumber || (isInternalParty ? initUser?.employee_id || initUser?.nip || 'INTERNAL' : '-');
 
     const renderDocRow = (label: string, value: any, isFile = false) => {
         let display: React.ReactNode = '-';
@@ -36,18 +64,23 @@ export function VendorInfoCard({ selected, isTabView = false }: { selected: Cont
                 display = value ? 'Ya' : 'Tidak';
             } else if (Array.isArray(value)) {
                 display = value.length > 0 ? value.join(', ') : '-';
-            } else if (isFile || (typeof value === 'string' && (/\.(pdf|png|jpe?g|jfif|webp|gif|svg|docx?|xlsx?|pptx?|zip|rar|txt|csv)$/i.test(value) || value.includes('__')))) {
+            } else if (
+                isFile ||
+                (typeof value === 'string' &&
+                    (/\.(pdf|png|jpe?g|jfif|webp|gif|svg|docx?|xlsx?|pptx?|zip|rar|txt|csv)$/i.test(value) || value.includes('__')))
+            ) {
                 const valStr = String(value).trim();
                 display = (
                     <button
                         type="button"
                         onClick={() => {
-                            const fileUrl = valStr.startsWith('http') || valStr.startsWith('/')
-                                ? valStr
-                                : `/admin/core/vendors/file-download?fileName=${encodeURIComponent(valStr)}`;
+                            const fileUrl =
+                                valStr.startsWith('http') || valStr.startsWith('/')
+                                    ? valStr
+                                    : `/admin/core/vendors/file-download?fileName=${encodeURIComponent(valStr)}`;
                             window.open(fileUrl, '_blank');
                         }}
-                        className="inline-flex items-center gap-1.5 font-semibold text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 underline hover:no-underline transition-all cursor-pointer text-left"
+                        className="inline-flex cursor-pointer items-center gap-1.5 text-left font-semibold text-blue-600 underline transition-all hover:text-blue-800 hover:no-underline dark:text-blue-400 dark:hover:text-blue-300"
                         title="Klik untuk membuka/preview berkas"
                     >
                         <span className="break-all">{valStr.split('/').pop()?.split('__').pop() || valStr}</span>
@@ -60,18 +93,18 @@ export function VendorInfoCard({ selected, isTabView = false }: { selected: Cont
         }
 
         return (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 py-2 border-b border-border/50 text-xs font-sans">
+            <div className="border-border/50 grid grid-cols-1 gap-2 border-b py-2 font-sans text-xs sm:grid-cols-3">
                 <span className="text-muted-foreground font-medium">{label}</span>
-                <span className="sm:col-span-2 text-foreground break-words">{display}</span>
+                <span className="text-foreground break-words sm:col-span-2">{display}</span>
             </div>
         );
     };
 
     const fullDocumentContent = (
-        <div className="p-6 space-y-6">
+        <div className="space-y-6 p-6">
             {/* Section 1: Informasi Umum */}
             <div className="space-y-2">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-foreground border-b border-border pb-1">
+                <h3 className="text-foreground border-border border-b pb-1 text-xs font-bold tracking-wider uppercase">
                     I. Informasi Umum Pihak Kedua
                 </h3>
                 <div>
@@ -88,7 +121,7 @@ export function VendorInfoCard({ selected, isTabView = false }: { selected: Cont
 
             {/* Section 2: Alamat & Domisili */}
             <div className="space-y-2">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-foreground border-b border-border pb-1">
+                <h3 className="text-foreground border-border border-b pb-1 text-xs font-bold tracking-wider uppercase">
                     II. Alamat & Domisili Kantor
                 </h3>
                 <div>
@@ -103,7 +136,7 @@ export function VendorInfoCard({ selected, isTabView = false }: { selected: Cont
 
             {/* Section 3: Kontak & Penandatangan / PIC */}
             <div className="space-y-2">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-foreground border-b border-border pb-1">
+                <h3 className="text-foreground border-border border-b pb-1 text-xs font-bold tracking-wider uppercase">
                     III. Informasi Kontak & Penandatangan Pihak Kedua
                 </h3>
                 <div>
@@ -121,9 +154,7 @@ export function VendorInfoCard({ selected, isTabView = false }: { selected: Cont
 
             {/* Section 4: Perpajakan */}
             <div className="space-y-2">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-foreground border-b border-border pb-1">
-                    IV. Data Perpajakan
-                </h3>
+                <h3 className="text-foreground border-border border-b pb-1 text-xs font-bold tracking-wider uppercase">IV. Data Perpajakan</h3>
                 <div>
                     {renderDocRow('Status NPWP', tax.typeNpwp)}
                     {renderDocRow('Nomor NPWP', tax.npwp)}
@@ -141,48 +172,55 @@ export function VendorInfoCard({ selected, isTabView = false }: { selected: Cont
             </div>
 
             {/* Section 5: Bidang Usaha & Bank */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <div className="space-y-2">
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-foreground border-b border-border pb-1">
-                        V. Bidang Usaha
-                    </h3>
+                    <h3 className="text-foreground border-border border-b pb-1 text-xs font-bold tracking-wider uppercase">V. Bidang Usaha</h3>
                     <div className="space-y-2 font-sans">
-                        <p className="text-xs font-medium text-muted-foreground">Lokal:</p>
-                        <ul className="list-disc list-inside text-xs text-foreground space-y-1">
-                            {businessFields.length > 0 ? businessFields.map((bf, idx) => (
-                                <li key={idx}>{bf.businessField}</li>
-                            )) : <li>-</li>}
+                        <p className="text-muted-foreground text-xs font-medium">Lokal:</p>
+                        <ul className="text-foreground list-inside list-disc space-y-1 text-xs">
+                            {businessFields.length > 0 ? businessFields.map((bf, idx) => <li key={idx}>{bf.businessField}</li>) : <li>-</li>}
                         </ul>
                         {detail.businessFieldsForeign && (
-                            <div className="pt-2 border-t border-border">
-                                <p className="text-xs font-medium text-muted-foreground">Asing:</p>
-                                <p className="text-xs text-foreground">{detail.businessFieldsForeign}</p>
+                            <div className="border-border border-t pt-2">
+                                <p className="text-muted-foreground text-xs font-medium">Asing:</p>
+                                <p className="text-foreground text-xs">{detail.businessFieldsForeign}</p>
                             </div>
                         )}
                     </div>
                 </div>
 
                 <div className="space-y-2">
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-foreground border-b border-border pb-1">
+                    <h3 className="text-foreground border-border border-b pb-1 text-xs font-bold tracking-wider uppercase">
                         VI. Perbankan & Pembayaran
                     </h3>
                     <div className="space-y-2 font-sans">
                         <div>
-                            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Rekening Bank</p>
-                            {bankList.length > 0 ? bankList.map((b, idx) => (
-                                <div key={idx} className="text-xs border-b border-border/60 py-1 last:border-none">
-                                    <p className="font-semibold text-foreground">{b.bankName}</p>
-                                    <p className="text-muted-foreground">No. Rek: <span className="font-mono font-semibold text-foreground">{b.accountNumber}</span> a/n {b.accountName}</p>
-                                </div>
-                            )) : <p className="text-xs text-muted-foreground">-</p>}
+                            <p className="text-muted-foreground mb-1 text-[11px] font-semibold tracking-wider uppercase">Rekening Bank</p>
+                            {bankList.length > 0 ? (
+                                bankList.map((b, idx) => (
+                                    <div key={idx} className="border-border/60 border-b py-1 text-xs last:border-none">
+                                        <p className="text-foreground font-semibold">{b.bankName}</p>
+                                        <p className="text-muted-foreground">
+                                            No. Rek: <span className="text-foreground font-mono font-semibold">{b.accountNumber}</span> a/n{' '}
+                                            {b.accountName}
+                                        </p>
+                                    </div>
+                                ))
+                            ) : (
+                                <p className="text-muted-foreground text-xs">-</p>
+                            )}
                         </div>
                         <div>
-                            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Metode Pembayaran</p>
-                            {paymentMethods.length > 0 ? paymentMethods.map((p, idx) => (
-                                <p key={idx} className="text-xs text-foreground">
-                                    TOP: <strong>{p.top ?? '-'} hari</strong> | Full Payment: <strong>{p.fullPayment ?? '-'}%</strong>
-                                </p>
-                            )) : <p className="text-xs text-muted-foreground">-</p>}
+                            <p className="text-muted-foreground mb-1 text-[11px] font-semibold tracking-wider uppercase">Metode Pembayaran</p>
+                            {paymentMethods.length > 0 ? (
+                                paymentMethods.map((p, idx) => (
+                                    <p key={idx} className="text-foreground text-xs">
+                                        TOP: <strong>{p.top ?? '-'} hari</strong> | Full Payment: <strong>{p.fullPayment ?? '-'}%</strong>
+                                    </p>
+                                ))
+                            ) : (
+                                <p className="text-muted-foreground text-xs">-</p>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -190,9 +228,7 @@ export function VendorInfoCard({ selected, isTabView = false }: { selected: Cont
 
             {/* Section 6: Legalitas & Perizinan */}
             <div className="space-y-2">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-foreground border-b border-border pb-1">
-                    VII. Perizinan Legalitas
-                </h3>
+                <h3 className="text-foreground border-border border-b pb-1 text-xs font-bold tracking-wider uppercase">VII. Perizinan Legalitas</h3>
                 <div>
                     {renderDocRow('Nomor Induk Berusaha (NIB)', legality.nib)}
                     {renderDocRow('Tgl Kadaluarsa NIB', legality.nibexpiredDate)}
@@ -210,7 +246,7 @@ export function VendorInfoCard({ selected, isTabView = false }: { selected: Cont
 
             {/* Section 7: Berkas & Lampiran Dokumen */}
             <div className="space-y-2">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-foreground border-b border-border pb-1">
+                <h3 className="text-foreground border-border border-b pb-1 text-xs font-bold tracking-wider uppercase">
                     VIII. Berkas & Lampiran Dokumen
                 </h3>
                 <div>
@@ -245,9 +281,9 @@ export function VendorInfoCard({ selected, isTabView = false }: { selected: Cont
 
     if (isTabView) {
         return (
-            <div className="flex flex-col flex-1 p-3 lg:p-4 gap-3 h-full min-h-0">
-                <div className="bg-primary text-primary-foreground flex h-9.5 min-h-[38px] max-h-[38px] shrink-0 items-center justify-between px-4 rounded-xl shadow-xs">
-                    <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-tight text-primary-foreground">
+            <div className="flex h-full min-h-0 flex-1 flex-col gap-3 p-3 lg:p-4">
+                <div className="bg-primary text-primary-foreground flex h-9.5 max-h-[38px] min-h-[38px] shrink-0 items-center justify-between rounded-xl px-4 shadow-xs">
+                    <div className="text-primary-foreground flex items-center gap-2 text-xs font-semibold tracking-tight uppercase">
                         <Building2 size={15} className="text-primary-foreground/90" /> Detail Profil & Dokumen Legalitas Pihak Kedua
                     </div>
                     {secondParty?.id && (
@@ -255,7 +291,7 @@ export function VendorInfoCard({ selected, isTabView = false }: { selected: Cont
                             href={`/admin/core/vendors/${secondParty.id}/document`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 rounded-lg bg-white/15 hover:bg-white/25 border border-white/20 px-2.5 py-1 text-[11px] font-medium text-white transition-all active:scale-95 cursor-pointer"
+                            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/20 bg-white/15 px-2.5 py-1 text-[11px] font-medium text-white transition-all hover:bg-white/25 active:scale-95"
                             title="Buka di Halaman Baru"
                         >
                             <span>Buka di Tab Baru</span>
@@ -263,17 +299,15 @@ export function VendorInfoCard({ selected, isTabView = false }: { selected: Cont
                         </a>
                     )}
                 </div>
-                <Card className="flex-1 overflow-y-auto custom-scrollbar border-border/80">
-                    {fullDocumentContent}
-                </Card>
+                <Card className="custom-scrollbar border-border/80 flex-1 overflow-y-auto">{fullDocumentContent}</Card>
             </div>
         );
     }
 
     return (
         <Card className="border-border/80 shadow-xs">
-            <CardHeader className="p-3 bg-primary text-primary-foreground flex flex-row items-center justify-between rounded-t-lg space-y-0">
-                <CardTitle className="text-xs font-semibold uppercase tracking-tight text-primary-foreground flex items-center gap-2">
+            <CardHeader className="bg-primary text-primary-foreground flex flex-row items-center justify-between space-y-0 rounded-t-lg p-3">
+                <CardTitle className="text-primary-foreground flex items-center gap-2 text-xs font-semibold tracking-tight uppercase">
                     <Building2 size={15} className="text-primary-foreground/90" /> Detail Profil & Legalitas Pihak Kedua
                 </CardTitle>
                 <div className="flex items-center gap-1.5">
@@ -282,7 +316,7 @@ export function VendorInfoCard({ selected, isTabView = false }: { selected: Cont
                             href={`/admin/core/vendors/${secondParty.id}/document`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="bg-white/15 hover:bg-white/25 text-white border border-white/20 h-6 px-2 flex items-center gap-1 rounded-md text-[10px] font-medium transition-all active:scale-95 cursor-pointer"
+                            className="flex h-6 cursor-pointer items-center gap-1 rounded-md border border-white/20 bg-white/15 px-2 text-[10px] font-medium text-white transition-all hover:bg-white/25 active:scale-95"
                             title="Buka di Tab Baru"
                         >
                             <span>Dokumen</span>
@@ -292,18 +326,14 @@ export function VendorInfoCard({ selected, isTabView = false }: { selected: Cont
                     <button
                         type="button"
                         onClick={() => setMinimized(!minimized)}
-                        className="bg-white/15 hover:bg-white/25 text-white border border-white/20 h-6 w-6 flex items-center justify-center rounded-md transition-all active:scale-95 cursor-pointer"
+                        className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-md border border-white/20 bg-white/15 text-white transition-all hover:bg-white/25 active:scale-95"
                     >
                         {minimized ? <ChevronDown size={13} /> : <ChevronUp size={13} />}
                     </button>
                 </div>
             </CardHeader>
 
-            {!minimized && (
-                <CardContent className="p-0 max-h-[500px] overflow-y-auto custom-scrollbar">
-                    {fullDocumentContent}
-                </CardContent>
-            )}
+            {!minimized && <CardContent className="custom-scrollbar max-h-[500px] overflow-y-auto p-0">{fullDocumentContent}</CardContent>}
         </Card>
     );
 }

@@ -1,7 +1,7 @@
-import { useMemo } from 'react';
-import { Contract, TERMINAL_STATUSES, CLOSED_STATUSES } from '@/pages/contracts/types';
+import { CLOSED_STATUSES, Contract, TERMINAL_STATUSES } from '@/pages/contracts/types';
 import { SharedData } from '@/types';
 import { usePage } from '@inertiajs/react';
+import { useMemo } from 'react';
 
 export interface ContractPermissionResult {
     canEdit: boolean;
@@ -52,12 +52,11 @@ export function useContractPermissions(
         const isTerminal = (TERMINAL_STATUSES as readonly string[]).includes(contract.status);
         const isClosed = (CLOSED_STATUSES as readonly string[]).includes(contract.status);
 
-        const activeSignerApproval = (contract.approvals || []).find(
-            (a: any) =>
-                a.status === 'pending' &&
-                a.user_id === meId &&
-                (a.role === 'Pihak 1' || a.role === 'Pihak 2' || a.role === 'Penandatangan'),
-        ) || null;
+        const activeSignerApproval =
+            (contract.approvals || []).find(
+                (a: any) =>
+                    a.status === 'pending' && a.user_id === meId && (a.role === 'Pihak 1' || a.role === 'Pihak 2' || a.role === 'Penandatangan'),
+            ) || null;
 
         const isSigner = Boolean(activeSignerApproval);
         const isParticipant = isApprover || isCreator || isAssignedPic || isSigner || isAdmin;

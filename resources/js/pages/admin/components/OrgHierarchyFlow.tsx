@@ -1,52 +1,45 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { cn } from '@/lib/utils';
+import { router } from '@inertiajs/react';
 import {
-    ReactFlow,
     Background,
-    Controls,
-    MiniMap,
-    Handle,
-    Position,
-    Node,
-    Edge,
     BackgroundVariant,
-    NodeProps,
+    Controls,
+    Edge,
+    Handle,
     MarkerType,
+    MiniMap,
+    Node,
+    NodeProps,
+    Position,
+    ReactFlow,
     ReactFlowInstance,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import {
-    Building2,
-    MapPin,
-    Building,
     Briefcase,
-    Users,
-    ChevronRight,
-    Search,
-    SlidersHorizontal,
-    Layers,
-    UserCheck,
-    Mail,
-    IdCard,
-    X,
-    Filter,
+    Building,
+    Building2,
     Check,
-    User as UserIcon,
-    UserX,
     ChevronDown,
-    RotateCcw,
-    ChevronUp,
+    ChevronRight,
     Crosshair,
-    Navigation,
-    Network,
-    Save,
-    Shield,
-    RefreshCw,
     FolderClosed,
     FolderTree,
     GitBranch,
+    IdCard,
+    Layers,
+    Mail,
+    MapPin,
+    Network,
+    Search,
+    Shield,
+    UserCheck,
+    User as UserIcon,
+    Users,
+    UserX,
+    X,
 } from 'lucide-react';
-import { router } from '@inertiajs/react';
-import { cn } from '@/lib/utils';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 const STORAGE_KEY = 'org_hierarchy_view_settings_v1';
 
@@ -117,7 +110,20 @@ export interface HierarchyUser {
     idreporting_to?: string | number;
 }
 
-export type HierarchyLevelKey = 'group' | 'org_group' | 'region' | 'location' | 'company' | 'division' | 'department' | 'subdepartment' | 'section' | 'job_level' | 'job_title' | 'role' | 'employee';
+export type HierarchyLevelKey =
+    | 'group'
+    | 'org_group'
+    | 'region'
+    | 'location'
+    | 'company'
+    | 'division'
+    | 'department'
+    | 'subdepartment'
+    | 'section'
+    | 'job_level'
+    | 'job_title'
+    | 'role'
+    | 'employee';
 
 export interface LevelConfig {
     key: HierarchyLevelKey;
@@ -129,19 +135,109 @@ export interface LevelConfig {
 }
 
 export const ALL_LEVELS: LevelConfig[] = [
-    { key: 'group', label: 'Company Group', field: 'group_name', icon: Layers, color: 'text-indigo-600 dark:text-indigo-400', badgeBg: 'bg-indigo-50 border-indigo-200 text-indigo-700 dark:bg-indigo-950/40 dark:border-indigo-800 dark:text-indigo-300' },
-    { key: 'org_group', label: 'Group Organisasi', field: 'org_group_name', icon: FolderClosed, color: 'text-sky-600 dark:text-sky-400', badgeBg: 'bg-sky-50 border-sky-200 text-sky-700 dark:bg-sky-950/40 dark:border-sky-800 dark:text-sky-300' },
-    { key: 'region', label: 'Region', field: 'region_name', icon: MapPin, color: 'text-emerald-600 dark:text-emerald-400', badgeBg: 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-300' },
-    { key: 'location', label: 'Location', field: 'location_name', icon: Building2, color: 'text-amber-600 dark:text-amber-400', badgeBg: 'bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-950/40 dark:border-amber-800 dark:text-amber-300' },
-    { key: 'company', label: 'Company', field: 'company_name', icon: Building, color: 'text-blue-600 dark:text-blue-400', badgeBg: 'bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-950/40 dark:border-blue-800 dark:text-blue-300' },
-    { key: 'division', label: 'Division', field: 'division_name', icon: Network, color: 'text-teal-600 dark:text-teal-400', badgeBg: 'bg-teal-50 border-teal-200 text-teal-700 dark:bg-teal-950/40 dark:border-teal-800 dark:text-teal-300' },
-    { key: 'department', label: 'Department', field: 'department_name', icon: Briefcase, color: 'text-purple-600 dark:text-purple-400', badgeBg: 'bg-purple-50 border-purple-200 text-purple-700 dark:bg-purple-950/40 dark:border-purple-800 dark:text-purple-300' },
-    { key: 'subdepartment', label: 'Sub-Departemen', field: 'subdepartment_name', icon: FolderTree, color: 'text-fuchsia-600 dark:text-fuchsia-400', badgeBg: 'bg-fuchsia-50 border-fuchsia-200 text-fuchsia-700 dark:bg-fuchsia-950/40 dark:border-fuchsia-800 dark:text-fuchsia-300' },
-    { key: 'section', label: 'Seksi / Rayon', field: 'section_name', icon: GitBranch, color: 'text-pink-600 dark:text-pink-400', badgeBg: 'bg-pink-50 border-pink-200 text-pink-700 dark:bg-pink-950/40 dark:border-pink-800 dark:text-pink-300' },
-    { key: 'job_level', label: 'Job Level', field: 'job_level_name', icon: Layers, color: 'text-orange-600 dark:text-orange-400', badgeBg: 'bg-orange-50 border-orange-200 text-orange-700 dark:bg-orange-950/40 dark:border-orange-800 dark:text-orange-300' },
-    { key: 'job_title', label: 'Job Title', field: 'job_title_name', icon: UserCheck, color: 'text-rose-600 dark:text-rose-400', badgeBg: 'bg-rose-50 border-rose-200 text-rose-700 dark:bg-rose-950/40 dark:border-rose-800 dark:text-rose-300' },
-    { key: 'role', label: 'Role Akses', field: 'role_name', icon: Shield, color: 'text-violet-600 dark:text-violet-400', badgeBg: 'bg-violet-50 border-violet-200 text-violet-700 dark:bg-violet-950/40 dark:border-violet-800 dark:text-violet-300' },
-    { key: 'employee', label: 'List Employee (Orang)', icon: UserIcon, color: 'text-cyan-600 dark:text-cyan-400', badgeBg: 'bg-cyan-50 border-cyan-200 text-cyan-700 dark:bg-cyan-950/40 dark:border-cyan-800 dark:text-cyan-300' },
+    {
+        key: 'group',
+        label: 'Company Group',
+        field: 'group_name',
+        icon: Layers,
+        color: 'text-indigo-600 dark:text-indigo-400',
+        badgeBg: 'bg-indigo-50 border-indigo-200 text-indigo-700 dark:bg-indigo-950/40 dark:border-indigo-800 dark:text-indigo-300',
+    },
+    {
+        key: 'org_group',
+        label: 'Group Organisasi',
+        field: 'org_group_name',
+        icon: FolderClosed,
+        color: 'text-sky-600 dark:text-sky-400',
+        badgeBg: 'bg-sky-50 border-sky-200 text-sky-700 dark:bg-sky-950/40 dark:border-sky-800 dark:text-sky-300',
+    },
+    {
+        key: 'region',
+        label: 'Region',
+        field: 'region_name',
+        icon: MapPin,
+        color: 'text-emerald-600 dark:text-emerald-400',
+        badgeBg: 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-300',
+    },
+    {
+        key: 'location',
+        label: 'Location',
+        field: 'location_name',
+        icon: Building2,
+        color: 'text-amber-600 dark:text-amber-400',
+        badgeBg: 'bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-950/40 dark:border-amber-800 dark:text-amber-300',
+    },
+    {
+        key: 'company',
+        label: 'Company',
+        field: 'company_name',
+        icon: Building,
+        color: 'text-blue-600 dark:text-blue-400',
+        badgeBg: 'bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-950/40 dark:border-blue-800 dark:text-blue-300',
+    },
+    {
+        key: 'division',
+        label: 'Division',
+        field: 'division_name',
+        icon: Network,
+        color: 'text-teal-600 dark:text-teal-400',
+        badgeBg: 'bg-teal-50 border-teal-200 text-teal-700 dark:bg-teal-950/40 dark:border-teal-800 dark:text-teal-300',
+    },
+    {
+        key: 'department',
+        label: 'Department',
+        field: 'department_name',
+        icon: Briefcase,
+        color: 'text-purple-600 dark:text-purple-400',
+        badgeBg: 'bg-purple-50 border-purple-200 text-purple-700 dark:bg-purple-950/40 dark:border-purple-800 dark:text-purple-300',
+    },
+    {
+        key: 'subdepartment',
+        label: 'Sub-Departemen',
+        field: 'subdepartment_name',
+        icon: FolderTree,
+        color: 'text-fuchsia-600 dark:text-fuchsia-400',
+        badgeBg: 'bg-fuchsia-50 border-fuchsia-200 text-fuchsia-700 dark:bg-fuchsia-950/40 dark:border-fuchsia-800 dark:text-fuchsia-300',
+    },
+    {
+        key: 'section',
+        label: 'Seksi / Rayon',
+        field: 'section_name',
+        icon: GitBranch,
+        color: 'text-pink-600 dark:text-pink-400',
+        badgeBg: 'bg-pink-50 border-pink-200 text-pink-700 dark:bg-pink-950/40 dark:border-pink-800 dark:text-pink-300',
+    },
+    {
+        key: 'job_level',
+        label: 'Job Level',
+        field: 'job_level_name',
+        icon: Layers,
+        color: 'text-orange-600 dark:text-orange-400',
+        badgeBg: 'bg-orange-50 border-orange-200 text-orange-700 dark:bg-orange-950/40 dark:border-orange-800 dark:text-orange-300',
+    },
+    {
+        key: 'job_title',
+        label: 'Job Title',
+        field: 'job_title_name',
+        icon: UserCheck,
+        color: 'text-rose-600 dark:text-rose-400',
+        badgeBg: 'bg-rose-50 border-rose-200 text-rose-700 dark:bg-rose-950/40 dark:border-rose-800 dark:text-rose-300',
+    },
+    {
+        key: 'role',
+        label: 'Role Akses',
+        field: 'role_name',
+        icon: Shield,
+        color: 'text-violet-600 dark:text-violet-400',
+        badgeBg: 'bg-violet-50 border-violet-200 text-violet-700 dark:bg-violet-950/40 dark:border-violet-800 dark:text-violet-300',
+    },
+    {
+        key: 'employee',
+        label: 'List Employee (Orang)',
+        icon: UserIcon,
+        color: 'text-cyan-600 dark:text-cyan-400',
+        badgeBg: 'bg-cyan-50 border-cyan-200 text-cyan-700 dark:bg-cyan-950/40 dark:border-cyan-800 dark:text-cyan-300',
+    },
 ];
 
 interface TreeNodeData extends Record<string, unknown> {
@@ -169,48 +265,56 @@ function OrgHierarchyNode({ data }: NodeProps<Node<TreeNodeData>>) {
         <div
             onClick={() => onSelect(data)}
             className={cn(
-                'w-[240px] rounded-2xl border p-3.5 shadow-sm transition-all duration-200 cursor-pointer bg-white dark:bg-zinc-900 relative',
+                'relative w-[240px] cursor-pointer rounded-2xl border bg-white p-3.5 shadow-sm transition-all duration-200 dark:bg-zinc-900',
                 isCurrentMatch
-                    ? 'border-amber-500 ring-4 ring-amber-400/50 shadow-xl scale-105 z-30 bg-amber-50/20 dark:bg-amber-950/30 animate-pulse'
+                    ? 'z-30 scale-105 animate-pulse border-amber-500 bg-amber-50/20 shadow-xl ring-4 ring-amber-400/50 dark:bg-amber-950/30'
                     : isHighlighted
-                        ? 'border-amber-400 ring-2 ring-amber-300/40 shadow-md'
-                        : isSelected
-                            ? 'border-primary ring-2 ring-primary/20 shadow-md scale-102'
-                            : 'border-slate-200/80 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 hover:shadow-md'
+                      ? 'border-amber-400 shadow-md ring-2 ring-amber-300/40'
+                      : isSelected
+                        ? 'border-primary ring-primary/20 scale-102 shadow-md ring-2'
+                        : 'border-slate-200/80 hover:border-slate-300 hover:shadow-md dark:border-zinc-800 dark:hover:border-zinc-700',
             )}
         >
             {isCurrentMatch && (
-                <div className="absolute -top-3 -right-2 bg-amber-500 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full shadow-md flex items-center gap-1 z-10 animate-bounce">
+                <div className="absolute -top-3 -right-2 z-10 flex animate-bounce items-center gap-1 rounded-full bg-amber-500 px-2 py-0.5 text-[9px] font-extrabold text-white shadow-md">
                     <Crosshair size={10} /> DITEMUKAN
                 </div>
             )}
-            <Handle type="target" position={Position.Top} className="!w-2.5 !h-2.5 !bg-slate-400 dark:!bg-zinc-600 border-2 border-white dark:border-zinc-900" />
+            <Handle
+                type="target"
+                position={Position.Top}
+                className="!h-2.5 !w-2.5 border-2 border-white !bg-slate-400 dark:border-zinc-900 dark:!bg-zinc-600"
+            />
 
-            <div className="flex items-center justify-between gap-2 mb-2">
-                <span className={cn('text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border', badgeBg)}>
-                    {levelLabel}
-                </span>
-                <span className={cn(
-                    'inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full',
-                    isMasterUsed
-                        ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60'
-                        : 'text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-zinc-800'
-                )}>
+            <div className="mb-2 flex items-center justify-between gap-2">
+                <span className={cn('rounded-md border px-2 py-0.5 text-[9px] font-bold tracking-wider uppercase', badgeBg)}>{levelLabel}</span>
+                <span
+                    className={cn(
+                        'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold',
+                        isMasterUsed
+                            ? 'border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800/60 dark:bg-emerald-950/40 dark:text-emerald-300'
+                            : 'bg-slate-100 text-slate-500 dark:bg-zinc-800 dark:text-slate-400',
+                    )}
+                >
                     {hasUser ? <Users size={11} className="text-slate-400" /> : <UserX size={11} className="text-amber-500" />}
                     {totalUsers} orang
                 </span>
             </div>
 
-            <div className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate leading-tight" title={title}>
+            <div className="truncate text-xs leading-tight font-bold text-slate-900 dark:text-slate-100" title={title}>
                 {title}
             </div>
 
-            <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-zinc-800/80 flex items-center justify-between text-[10px] text-slate-500">
+            <div className="mt-2.5 flex items-center justify-between border-t border-slate-100 pt-2 text-[10px] text-slate-500 dark:border-zinc-800/80">
                 <span className="font-medium text-slate-400">{hasUser ? 'Klik untuk list lengkap' : 'Belum ada anggota'}</span>
                 {hasUser && <ChevronRight size={13} className="text-slate-400" />}
             </div>
 
-            <Handle type="source" position={Position.Bottom} className="!w-2.5 !h-2.5 !bg-slate-400 dark:!bg-zinc-600 border-2 border-white dark:border-zinc-900" />
+            <Handle
+                type="source"
+                position={Position.Bottom}
+                className="!h-2.5 !w-2.5 border-2 border-white !bg-slate-400 dark:border-zinc-900 dark:!bg-zinc-600"
+            />
         </div>
     );
 }
@@ -223,61 +327,63 @@ function EmployeeListNode({ data }: NodeProps<Node<TreeNodeData>>) {
     const displayed = useMemo(() => {
         if (!filterText.trim()) return users.slice(0, 50);
         const q = filterText.toLowerCase();
-        return users.filter(u => u.name?.toLowerCase().includes(q) || u.nik?.toLowerCase().includes(q) || u.job_title_name?.toLowerCase().includes(q)).slice(0, 50);
+        return users
+            .filter((u) => u.name?.toLowerCase().includes(q) || u.nik?.toLowerCase().includes(q) || u.job_title_name?.toLowerCase().includes(q))
+            .slice(0, 50);
     }, [users, filterText]);
 
     return (
         <div
             className={cn(
-                'w-[340px] rounded-2xl border p-3.5 shadow-lg bg-white dark:bg-zinc-900 text-left transition-all duration-200 relative',
+                'relative w-[340px] rounded-2xl border bg-white p-3.5 text-left shadow-lg transition-all duration-200 dark:bg-zinc-900',
                 isCurrentMatch
-                    ? 'border-amber-500 ring-4 ring-amber-400/50 shadow-2xl scale-102 z-30 bg-amber-50/10 dark:bg-amber-950/20'
+                    ? 'z-30 scale-102 border-amber-500 bg-amber-50/10 shadow-2xl ring-4 ring-amber-400/50 dark:bg-amber-950/20'
                     : isHighlighted
-                        ? 'border-amber-400 ring-2 ring-amber-300/40'
-                        : isSelected
-                            ? 'border-primary ring-2 ring-primary/20'
-                            : 'border-slate-200/90 dark:border-zinc-800 hover:border-slate-300'
+                      ? 'border-amber-400 ring-2 ring-amber-300/40'
+                      : isSelected
+                        ? 'border-primary ring-primary/20 ring-2'
+                        : 'border-slate-200/90 hover:border-slate-300 dark:border-zinc-800',
             )}
         >
             {isCurrentMatch && (
-                <div className="absolute -top-3 -right-2 bg-amber-500 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full shadow-md flex items-center gap-1 z-10 animate-bounce">
+                <div className="absolute -top-3 -right-2 z-10 flex animate-bounce items-center gap-1 rounded-full bg-amber-500 px-2 py-0.5 text-[9px] font-extrabold text-white shadow-md">
                     <Crosshair size={10} /> DITEMUKAN
                 </div>
             )}
-            <Handle type="target" position={Position.Top} className="!w-2.5 !h-2.5 !bg-slate-400 dark:!bg-zinc-600 border-2 border-white dark:border-zinc-900" />
+            <Handle
+                type="target"
+                position={Position.Top}
+                className="!h-2.5 !w-2.5 border-2 border-white !bg-slate-400 dark:border-zinc-900 dark:!bg-zinc-600"
+            />
 
-            <div className="flex items-center justify-between gap-2 mb-2 pb-2 border-b border-slate-100 dark:border-zinc-800">
+            <div className="mb-2 flex items-center justify-between gap-2 border-b border-slate-100 pb-2 dark:border-zinc-800">
                 <div>
-                    <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border bg-cyan-50 border-cyan-200 text-cyan-700 dark:bg-cyan-950/40 dark:border-cyan-800 dark:text-cyan-300">
+                    <span className="rounded-md border border-cyan-200 bg-cyan-50 px-2 py-0.5 text-[9px] font-bold tracking-wider text-cyan-700 uppercase dark:border-cyan-800 dark:bg-cyan-950/40 dark:text-cyan-300">
                         List Employee
                     </span>
-                    <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate mt-1">
-                        {title}
-                    </h4>
+                    <h4 className="mt-1 truncate text-xs font-bold text-slate-900 dark:text-slate-100">{title}</h4>
                 </div>
-                <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full shrink-0">
+                <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600 dark:bg-zinc-800 dark:text-slate-300">
                     {totalUsers} orang
                 </span>
             </div>
 
             {/* Quick mini search within node */}
             <div className="relative mb-2">
-                <Search size={11} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Search size={11} className="absolute top-1/2 left-2 -translate-y-1/2 text-slate-400" />
                 <input
                     type="text"
                     placeholder="Cari orang di list ini..."
                     value={filterText}
                     onChange={(e) => setFilterText(e.target.value)}
-                    className="h-6 w-full rounded-lg border border-slate-200 bg-slate-50 pl-6 pr-2 text-[10px] text-slate-900 focus:border-primary focus:bg-white focus:outline-none dark:border-zinc-800 dark:bg-zinc-800 dark:text-slate-100"
+                    className="focus:border-primary h-6 w-full rounded-lg border border-slate-200 bg-slate-50 pr-2 pl-6 text-[10px] text-slate-900 focus:bg-white focus:outline-none dark:border-zinc-800 dark:bg-zinc-800 dark:text-slate-100"
                 />
             </div>
 
             {/* Scrollable list of people inside the node */}
-            <div className="max-h-[360px] overflow-y-auto space-y-1.5 pr-1 [scrollbar-width:thin]">
+            <div className="max-h-[360px] [scrollbar-width:thin] space-y-1.5 overflow-y-auto pr-1">
                 {displayed.length === 0 ? (
-                    <div className="py-6 text-center text-xs text-slate-400">
-                        Belum ada data anggota.
-                    </div>
+                    <div className="py-6 text-center text-xs text-slate-400">Belum ada data anggota.</div>
                 ) : (
                     displayed.map((u) => (
                         <div
@@ -286,17 +392,15 @@ function EmployeeListNode({ data }: NodeProps<Node<TreeNodeData>>) {
                                 e.stopPropagation();
                                 onSelect(data);
                             }}
-                            className="p-1.5 rounded-lg bg-slate-50 dark:bg-zinc-800/60 hover:bg-slate-100 dark:hover:bg-zinc-800 flex items-center gap-2 cursor-pointer transition-colors"
+                            className="flex cursor-pointer items-center gap-2 rounded-lg bg-slate-50 p-1.5 transition-colors hover:bg-slate-100 dark:bg-zinc-800/60 dark:hover:bg-zinc-800"
                         >
-                            <div className="h-6 w-6 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-[10px] shrink-0 border border-primary/20">
+                            <div className="bg-primary/10 text-primary border-primary/20 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-[10px] font-bold">
                                 {u.name.charAt(0).toUpperCase()}
                             </div>
                             <div className="min-w-0 flex-1">
-                                <div className="text-[11px] font-semibold text-slate-900 dark:text-slate-100 truncate">
-                                    {u.name}
-                                </div>
-                                <div className="text-[9px] text-slate-500 dark:text-slate-400 truncate flex items-center gap-1">
-                                    <span className="text-primary font-medium truncate">{u.job_title_name}</span>
+                                <div className="truncate text-[11px] font-semibold text-slate-900 dark:text-slate-100">{u.name}</div>
+                                <div className="flex items-center gap-1 truncate text-[9px] text-slate-500 dark:text-slate-400">
+                                    <span className="text-primary truncate font-medium">{u.job_title_name}</span>
                                     <span>·</span>
                                     <span className="font-mono">{u.nik}</span>
                                 </div>
@@ -307,7 +411,7 @@ function EmployeeListNode({ data }: NodeProps<Node<TreeNodeData>>) {
                 {totalUsers > 50 && !filterText && (
                     <div
                         onClick={() => onSelect(data)}
-                        className="text-center py-1.5 text-[10px] font-bold text-primary hover:underline cursor-pointer"
+                        className="text-primary cursor-pointer py-1.5 text-center text-[10px] font-bold hover:underline"
                     >
                         + Lihat {totalUsers - 50} orang lainnya di panel...
                     </div>
@@ -331,13 +435,7 @@ export interface MultiSelectDropdownProps {
     icon: React.ElementType;
 }
 
-export function MultiSelectDropdown({
-    title,
-    options,
-    selectedValues,
-    onChange,
-    icon: Icon,
-}: MultiSelectDropdownProps) {
+export function MultiSelectDropdown({ title, options, selectedValues, onChange, icon: Icon }: MultiSelectDropdownProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const containerRef = useRef<HTMLDivElement>(null);
@@ -370,9 +468,7 @@ export function MultiSelectDropdown({
         return filteredOptions.map((o) => o.name).filter(Boolean);
     }, [filteredOptions]);
 
-    const isAllFilteredChecked =
-        displayedOptionNames.length > 0 &&
-        displayedOptionNames.every((name) => selectedValues.includes(name));
+    const isAllFilteredChecked = displayedOptionNames.length > 0 && displayedOptionNames.every((name) => selectedValues.includes(name));
 
     const handleSelectAll = () => {
         if (isAllFilteredChecked) {
@@ -392,10 +488,10 @@ export function MultiSelectDropdown({
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
                 className={cn(
-                    'inline-flex items-center gap-1.5 h-8 px-2.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer bg-white dark:bg-zinc-800',
+                    'inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-xl border bg-white px-2.5 text-xs font-semibold transition-all dark:bg-zinc-800',
                     selectedValues.length > 0
-                        ? 'border-primary text-primary ring-2 ring-primary/10'
-                        : 'border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-slate-200 hover:border-slate-300'
+                        ? 'border-primary text-primary ring-primary/10 ring-2'
+                        : 'border-slate-200 text-slate-700 hover:border-slate-300 dark:border-zinc-700 dark:text-slate-200',
                 )}
             >
                 <Icon size={12} className={selectedValues.length > 0 ? 'text-primary' : 'text-slate-400'} />
@@ -406,38 +502,37 @@ export function MultiSelectDropdown({
             </button>
 
             {isOpen && (
-                <div className="absolute left-0 mt-1 w-64 rounded-xl border border-slate-200 bg-white p-2 shadow-xl dark:border-zinc-800 dark:bg-zinc-900 z-50 animate-in fade-in duration-100">
+                <div className="animate-in fade-in absolute left-0 z-50 mt-1 w-64 rounded-xl border border-slate-200 bg-white p-2 shadow-xl duration-100 dark:border-zinc-800 dark:bg-zinc-900">
                     <div className="relative mb-2">
-                        <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <Search size={12} className="absolute top-1/2 left-2.5 -translate-y-1/2 text-slate-400" />
                         <input
                             type="text"
                             placeholder={`Cari ${title}...`}
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="h-7 w-full rounded-lg border border-slate-200 bg-slate-50 pl-7 pr-2 text-xs focus:border-primary focus:outline-none dark:border-zinc-800 dark:bg-zinc-800 dark:text-slate-100"
+                            className="focus:border-primary h-7 w-full rounded-lg border border-slate-200 bg-slate-50 pr-2 pl-7 text-xs focus:outline-none dark:border-zinc-800 dark:bg-zinc-800 dark:text-slate-100"
                         />
                     </div>
 
-                    <div className="flex items-center justify-between px-1 py-1 text-[11px] font-semibold border-b border-slate-100 dark:border-zinc-800 mb-1">
+                    <div className="mb-1 flex items-center justify-between border-b border-slate-100 px-1 py-1 text-[11px] font-semibold dark:border-zinc-800">
                         <button
                             type="button"
                             onClick={handleSelectAll}
-                            className={cn('text-xs cursor-pointer hover:underline', isAllFilteredChecked ? 'text-primary font-bold' : 'text-slate-600 hover:text-slate-900')}
+                            className={cn(
+                                'cursor-pointer text-xs hover:underline',
+                                isAllFilteredChecked ? 'text-primary font-bold' : 'text-slate-600 hover:text-slate-900',
+                            )}
                         >
                             {isAllFilteredChecked ? 'Batalkan Semua' : 'Pilih Semua'}
                         </button>
                         {selectedValues.length > 0 && (
-                            <button
-                                type="button"
-                                onClick={() => onChange([])}
-                                className="text-xs text-rose-500 hover:underline cursor-pointer"
-                            >
+                            <button type="button" onClick={() => onChange([])} className="cursor-pointer text-xs text-rose-500 hover:underline">
                                 Reset ({selectedValues.length})
                             </button>
                         )}
                     </div>
 
-                    <div className="max-h-52 overflow-y-auto space-y-1 [scrollbar-width:thin]">
+                    <div className="max-h-52 [scrollbar-width:thin] space-y-1 overflow-y-auto">
                         {filteredOptions.length === 0 ? (
                             <div className="p-2 text-center text-xs text-slate-400">Tidak ditemukan</div>
                         ) : (
@@ -447,14 +542,12 @@ export function MultiSelectDropdown({
                                     <div
                                         key={opt.id}
                                         onClick={() => toggleOption(opt.name)}
-                                        className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 cursor-pointer text-xs"
+                                        className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 text-xs hover:bg-slate-100 dark:hover:bg-zinc-800"
                                     >
                                         <div
                                             className={cn(
-                                                'w-3.5 h-3.5 rounded flex items-center justify-center border text-[9px] shrink-0',
-                                                isChecked
-                                                    ? 'bg-primary text-white border-primary'
-                                                    : 'border-slate-300 dark:border-zinc-700'
+                                                'flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border text-[9px]',
+                                                isChecked ? 'bg-primary border-primary text-white' : 'border-slate-300 dark:border-zinc-700',
                                             )}
                                         >
                                             {isChecked && <Check size={10} strokeWidth={3} />}
@@ -539,9 +632,7 @@ export function OrgHierarchyFlow({
 
     // Enabled levels state (Default: group + employee list or restored from cache)
     const [internalEnabledLevelKeys, setInternalEnabledLevelKeys] = useState<HierarchyLevelKey[]>(() => {
-        return savedInitial.enabledLevelKeys && savedInitial.enabledLevelKeys.length > 0
-            ? savedInitial.enabledLevelKeys
-            : ['group', 'employee'];
+        return savedInitial.enabledLevelKeys && savedInitial.enabledLevelKeys.length > 0 ? savedInitial.enabledLevelKeys : ['group', 'employee'];
     });
     const enabledLevelKeys = extEnabledLevelKeys ?? internalEnabledLevelKeys;
 
@@ -579,13 +670,15 @@ export function OrgHierarchyFlow({
                 preserveState: false,
                 preserveScroll: true,
                 onFinish: () => setIsSyncing(false),
-            }
+            },
         );
     };
 
     // Multiple Select Filter States (restored from cache)
     const [internalSelectedGroups, setInternalSelectedGroups] = useState<string[]>(() => savedInitial.selectedGroups || []);
-    const [internalSelectedOrganizationGroups, setInternalSelectedOrganizationGroups] = useState<string[]>(() => savedInitial.selectedOrganizationGroups || []);
+    const [internalSelectedOrganizationGroups, setInternalSelectedOrganizationGroups] = useState<string[]>(
+        () => savedInitial.selectedOrganizationGroups || [],
+    );
     const [internalSelectedRegions, setInternalSelectedRegions] = useState<string[]>(() => savedInitial.selectedRegions || []);
     const [internalSelectedLocations, setInternalSelectedLocations] = useState<string[]>(() => savedInitial.selectedLocations || []);
     const [internalSelectedCompanies, setInternalSelectedCompanies] = useState<string[]>(() => savedInitial.selectedCompanies || []);
@@ -678,7 +771,20 @@ export function OrgHierarchyFlow({
             job_title: createMap(masterJobTitles),
             role: createMap(masterRoles),
         };
-    }, [masterGroups, masterOrganizationGroups, masterRegions, masterLocations, masterCompanies, masterDivisions, masterDepartments, masterSubdepartments, masterSections, masterJobLevels, masterJobTitles, masterRoles]);
+    }, [
+        masterGroups,
+        masterOrganizationGroups,
+        masterRegions,
+        masterLocations,
+        masterCompanies,
+        masterDivisions,
+        masterDepartments,
+        masterSubdepartments,
+        masterSections,
+        masterJobLevels,
+        masterJobTitles,
+        masterRoles,
+    ]);
 
     // Available options filtered by usedFilter
     const getFilteredMaster = (items: any[]) => {
@@ -759,7 +865,21 @@ export function OrgHierarchyFlow({
         } else if (type === 'company-employee') {
             setEnabledLevelKeys(['company', 'employee']);
         } else if (type === 'full') {
-            setEnabledLevelKeys(['group', 'org_group', 'region', 'location', 'company', 'division', 'department', 'subdepartment', 'section', 'job_level', 'job_title', 'role', 'employee']);
+            setEnabledLevelKeys([
+                'group',
+                'org_group',
+                'region',
+                'location',
+                'company',
+                'division',
+                'department',
+                'subdepartment',
+                'section',
+                'job_level',
+                'job_title',
+                'role',
+                'employee',
+            ]);
         }
     };
 
@@ -783,7 +903,10 @@ export function OrgHierarchyFlow({
                 return false;
             }
             // Organization Group Filter
-            if (selectedOrganizationGroups.length > 0 && !selectedOrganizationGroups.some((og) => og.toLowerCase() === (u.org_group_name || '').toLowerCase())) {
+            if (
+                selectedOrganizationGroups.length > 0 &&
+                !selectedOrganizationGroups.some((og) => og.toLowerCase() === (u.org_group_name || '').toLowerCase())
+            ) {
                 return false;
             }
             // Region Filter
@@ -807,7 +930,10 @@ export function OrgHierarchyFlow({
                 return false;
             }
             // Subdepartment Filter
-            if (selectedSubdepartments.length > 0 && !selectedSubdepartments.some((sub) => sub.toLowerCase() === (u.subdepartment_name || '').toLowerCase())) {
+            if (
+                selectedSubdepartments.length > 0 &&
+                !selectedSubdepartments.some((sub) => sub.toLowerCase() === (u.subdepartment_name || '').toLowerCase())
+            ) {
                 return false;
             }
             // Section Filter
@@ -967,7 +1093,9 @@ export function OrgHierarchyFlow({
             } else if (firstLevel.key === 'org_group') {
                 masterList =
                     selectedOrganizationGroups.length > 0
-                        ? masterOrganizationGroups.filter((og) => selectedOrganizationGroups.some((sog) => sog.toLowerCase() === og.name?.toLowerCase()))
+                        ? masterOrganizationGroups.filter((og) =>
+                              selectedOrganizationGroups.some((sog) => sog.toLowerCase() === og.name?.toLowerCase()),
+                          )
                         : masterOrganizationGroups;
             } else if (firstLevel.key === 'region') masterList = masterRegions;
             else if (firstLevel.key === 'location') masterList = masterLocations;
@@ -1063,8 +1191,7 @@ export function OrgHierarchyFlow({
             treeNode.x = x;
             treeNode.y = y;
 
-            const isSelected =
-                selectedNode?.title === treeNode.title && selectedNode?.levelKey === treeNode.levelConfig.key;
+            const isSelected = selectedNode?.title === treeNode.title && selectedNode?.levelKey === treeNode.levelConfig.key;
 
             nodesList.push({
                 id: treeNode.id,
@@ -1107,7 +1234,7 @@ export function OrgHierarchyFlow({
                 let currentLeft = leftOffset;
                 const childrenTotalWidth = Array.from(treeNode.children.values()).reduce(
                     (acc, c, idx) => acc + (c.subtreeWidth || orgNodeWidth) + (idx > 0 ? nodeGap : 0),
-                    0
+                    0,
                 );
                 if (childrenTotalWidth < currentSubtreeWidth) {
                     currentLeft += (currentSubtreeWidth - childrenTotalWidth) / 2;
@@ -1202,7 +1329,7 @@ export function OrgHierarchyFlow({
                     u.job_title_name?.toLowerCase().includes(q) ||
                     u.company_name?.toLowerCase().includes(q) ||
                     (u.division_name && u.division_name.toLowerCase().includes(q)) ||
-                    u.department_name?.toLowerCase().includes(q)
+                    u.department_name?.toLowerCase().includes(q),
             );
             return titleMatch || userMatch;
         });
@@ -1236,11 +1363,10 @@ export function OrgHierarchyFlow({
             if (firstNode && reactFlowInstanceRef.current) {
                 const nodeWidth = firstNode.type === 'employeeListNode' ? 340 : 240;
                 const nodeHeight = firstNode.type === 'employeeListNode' ? 200 : 100;
-                reactFlowInstanceRef.current.setCenter(
-                    firstNode.position.x + nodeWidth / 2,
-                    firstNode.position.y + nodeHeight / 2,
-                    { zoom: Math.max(reactFlowInstanceRef.current.getZoom(), 0.95), duration: 700 }
-                );
+                reactFlowInstanceRef.current.setCenter(firstNode.position.x + nodeWidth / 2, firstNode.position.y + nodeHeight / 2, {
+                    zoom: Math.max(reactFlowInstanceRef.current.getZoom(), 0.95),
+                    duration: 700,
+                });
             }
         }
     }, [cardFindQuery]);
@@ -1271,19 +1397,19 @@ export function OrgHierarchyFlow({
                 u.name?.toLowerCase().includes(q) ||
                 u.nik?.toLowerCase().includes(q) ||
                 u.email?.toLowerCase().includes(q) ||
-                u.job_title_name?.toLowerCase().includes(q)
+                u.job_title_name?.toLowerCase().includes(q),
         );
     }, [selectedNode, userSearchText]);
 
     return (
-        <div className="flex h-full w-full flex-col bg-slate-50 dark:bg-zinc-950 relative overflow-hidden">
+        <div className="relative flex h-full w-full flex-col overflow-hidden bg-slate-50 dark:bg-zinc-950">
             {/* React Flow Viewport Canvas */}
-            <div className="flex-1 w-full h-full relative">
+            <div className="relative h-full w-full flex-1">
                 {nodes.length === 0 ? (
-                    <div className="flex h-full w-full flex-col items-center justify-center text-center p-8">
-                        <Users className="h-12 w-12 text-slate-300 mb-3" />
+                    <div className="flex h-full w-full flex-col items-center justify-center p-8 text-center">
+                        <Users className="mb-3 h-12 w-12 text-slate-300" />
                         <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Tidak ada data yang cocok</h3>
-                        <p className="text-xs text-slate-400 mt-1 max-w-sm">
+                        <p className="mt-1 max-w-sm text-xs text-slate-400">
                             Coba sesuaikan pilihan multi-select filter atau klik tombol "Reset Filter" di atas.
                         </p>
                     </div>
@@ -1301,9 +1427,9 @@ export function OrgHierarchyFlow({
                         defaultEdgeOptions={{ type: 'smoothstep' }}
                     >
                         <Background variant={BackgroundVariant.Dots} gap={16} size={1} color="#94a3b8" className="opacity-40" />
-                        <Controls className="!bg-white dark:!bg-zinc-900 !border-slate-200 dark:!border-zinc-800 !rounded-xl !shadow-sm" />
+                        <Controls className="!rounded-xl !border-slate-200 !bg-white !shadow-sm dark:!border-zinc-800 dark:!bg-zinc-900" />
                         <MiniMap
-                            className="!bg-white dark:!bg-zinc-900 !border-slate-200 dark:!border-zinc-800 !rounded-xl"
+                            className="!rounded-xl !border-slate-200 !bg-white dark:!border-zinc-800 dark:!bg-zinc-900"
                             nodeStrokeColor="#64748b"
                             nodeColor="#f1f5f9"
                             zoomable
@@ -1314,43 +1440,46 @@ export function OrgHierarchyFlow({
 
                 {/* Right Slideout Drawer for Data List of People */}
                 {selectedNode && (
-                    <div className="absolute top-0 right-0 h-full w-full max-w-md bg-white dark:bg-zinc-900 border-l border-slate-200 dark:border-zinc-800 shadow-2xl z-20 flex flex-col animate-in slide-in-from-right duration-200">
+                    <div className="animate-in slide-in-from-right absolute top-0 right-0 z-20 flex h-full w-full max-w-md flex-col border-l border-slate-200 bg-white shadow-2xl duration-200 dark:border-zinc-800 dark:bg-zinc-900">
                         {/* Drawer Header */}
-                        <div className="p-4 border-b border-slate-200 dark:border-zinc-800 flex items-start justify-between bg-slate-50 dark:bg-zinc-900">
+                        <div className="flex items-start justify-between border-b border-slate-200 bg-slate-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
                             <div>
-                                <span className={cn('text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border', selectedNode.badgeBg)}>
+                                <span
+                                    className={cn(
+                                        'rounded-md border px-2 py-0.5 text-[9px] font-bold tracking-wider uppercase',
+                                        selectedNode.badgeBg,
+                                    )}
+                                >
                                     {selectedNode.levelLabel}
                                 </span>
-                                <h2 className="text-sm font-bold text-slate-900 dark:text-white mt-1 break-words">
-                                    {selectedNode.title}
-                                </h2>
-                                <p className="text-[11px] text-slate-500 mt-0.5">
+                                <h2 className="mt-1 text-sm font-bold break-words text-slate-900 dark:text-white">{selectedNode.title}</h2>
+                                <p className="mt-0.5 text-[11px] text-slate-500">
                                     Total <strong>{selectedNode.totalUsers}</strong> orang terdaftar di node ini
                                 </p>
                             </div>
                             <button
                                 onClick={() => setSelectedNode(null)}
-                                className="p-1.5 rounded-xl hover:bg-slate-200 dark:hover:bg-zinc-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                                className="cursor-pointer rounded-xl p-1.5 text-slate-400 transition-colors hover:bg-slate-200 hover:text-slate-700 dark:hover:bg-zinc-800 dark:hover:text-slate-200"
                             >
                                 <X size={16} />
                             </button>
                         </div>
 
                         {/* Search inside Drawer */}
-                        <div className="p-3 border-b border-slate-100 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+                        <div className="border-b border-slate-100 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900">
                             <div className="relative">
-                                <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                <Search size={13} className="absolute top-1/2 left-2.5 -translate-y-1/2 text-slate-400" />
                                 <input
                                     type="text"
                                     placeholder="Filter nama atau NIK di list ini..."
                                     value={userSearchText}
                                     onChange={(e) => setUserSearchText(e.target.value)}
-                                    className="h-8 w-full rounded-xl border border-slate-200 bg-slate-50 pl-8 pr-3 text-xs text-slate-900 focus:border-primary focus:bg-white focus:outline-none dark:border-zinc-800 dark:bg-zinc-800 dark:text-slate-100"
+                                    className="focus:border-primary h-8 w-full rounded-xl border border-slate-200 bg-slate-50 pr-3 pl-8 text-xs text-slate-900 focus:bg-white focus:outline-none dark:border-zinc-800 dark:bg-zinc-800 dark:text-slate-100"
                                 />
                                 {userSearchText && (
                                     <button
                                         onClick={() => setUserSearchText('')}
-                                        className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                                        className="absolute top-1/2 right-2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-slate-600"
                                     >
                                         <X size={12} />
                                     </button>
@@ -1359,51 +1488,47 @@ export function OrgHierarchyFlow({
                         </div>
 
                         {/* List of People */}
-                        <div className="flex-1 overflow-y-auto p-4 space-y-2.5 divide-y divide-slate-100 dark:divide-zinc-800/60 [scrollbar-width:thin]">
+                        <div className="flex-1 [scrollbar-width:thin] space-y-2.5 divide-y divide-slate-100 overflow-y-auto p-4 dark:divide-zinc-800/60">
                             {displayedUsersInDrawer.length === 0 ? (
-                                <div className="text-center py-10 text-xs text-slate-400">
-                                    Tidak ada orang ditemukan dengan filter pencarian ini.
-                                </div>
+                                <div className="py-10 text-center text-xs text-slate-400">Tidak ada orang ditemukan dengan filter pencarian ini.</div>
                             ) : (
                                 displayedUsersInDrawer.map((u) => (
-                                    <div key={u.id} className="pt-2.5 first:pt-0 flex items-start gap-3">
-                                        <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs shrink-0 border border-primary/20">
+                                    <div key={u.id} className="flex items-start gap-3 pt-2.5 first:pt-0">
+                                        <div className="bg-primary/10 text-primary border-primary/20 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-xs font-bold">
                                             {u.name.charAt(0).toUpperCase()}
                                         </div>
                                         <div className="min-w-0 flex-1">
                                             <div className="flex items-center justify-between gap-1">
-                                                <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate" title={u.name}>
+                                                <h4 className="truncate text-xs font-bold text-slate-900 dark:text-slate-100" title={u.name}>
                                                     {u.name}
                                                 </h4>
-                                                <span className="text-[10px] font-semibold px-1.5 py-0.2 bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300 rounded">
+                                                <span className="py-0.2 rounded bg-slate-100 px-1.5 text-[10px] font-semibold text-slate-600 dark:bg-zinc-800 dark:text-slate-300">
                                                     {u.role_name || 'Staff'}
                                                 </span>
                                             </div>
 
-                                            <div className="flex items-center gap-1.5 mt-0.5">
-                                                <p className="text-[11px] font-medium text-primary truncate">
-                                                    {u.job_title_name}
-                                                </p>
+                                            <div className="mt-0.5 flex items-center gap-1.5">
+                                                <p className="text-primary truncate text-[11px] font-medium">{u.job_title_name}</p>
                                                 {u.job_level_name && (
-                                                    <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-orange-50 border border-orange-200 text-orange-700 dark:bg-orange-950/40 dark:border-orange-800 dark:text-orange-300 shrink-0">
+                                                    <span className="shrink-0 rounded border border-orange-200 bg-orange-50 px-1.5 py-0.5 text-[9px] font-semibold text-orange-700 dark:border-orange-800 dark:bg-orange-950/40 dark:text-orange-300">
                                                         {u.job_level_name}
                                                     </span>
                                                 )}
                                             </div>
 
-                                            <div className="mt-1 space-y-0.5 text-[10px] text-slate-500 dark:text-slate-400 font-mono">
+                                            <div className="mt-1 space-y-0.5 font-mono text-[10px] text-slate-500 dark:text-slate-400">
                                                 {u.reporting_to && (
-                                                    <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-sans font-semibold">
+                                                    <div className="flex items-center gap-1.5 font-sans font-semibold text-amber-600 dark:text-amber-400">
                                                         <UserCheck size={11} className="shrink-0" />
                                                         <span className="truncate">Atasan: {u.reporting_to}</span>
                                                     </div>
                                                 )}
                                                 <div className="flex items-center gap-1.5">
-                                                    <IdCard size={11} className="text-slate-400 shrink-0" />
+                                                    <IdCard size={11} className="shrink-0 text-slate-400" />
                                                     <span>NIK: {u.nik}</span>
                                                 </div>
                                                 <div className="flex items-center gap-1.5 truncate">
-                                                    <Mail size={11} className="text-slate-400 shrink-0" />
+                                                    <Mail size={11} className="shrink-0 text-slate-400" />
                                                     <a href={`mailto:${u.email}`} className="hover:text-primary truncate">
                                                         {u.email}
                                                     </a>
@@ -1427,10 +1552,10 @@ export function OrgHierarchyFlow({
                         </div>
 
                         {/* Drawer Footer */}
-                        <div className="p-3 border-t border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900 text-right">
+                        <div className="border-t border-slate-200 bg-slate-50 p-3 text-right dark:border-zinc-800 dark:bg-zinc-900">
                             <button
                                 onClick={() => setSelectedNode(null)}
-                                className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-zinc-800 cursor-pointer"
+                                className="cursor-pointer rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 dark:border-zinc-700 dark:text-slate-200 dark:hover:bg-zinc-800"
                             >
                                 Tutup Panel
                             </button>

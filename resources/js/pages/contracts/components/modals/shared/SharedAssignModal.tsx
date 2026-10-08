@@ -3,9 +3,9 @@ import { Modal } from '@/components/ui/dialogs/Modal';
 import { FormTextarea } from '@/components/ui/inputs/FormTextarea';
 import { CompactSwitch } from '@/components/ui/selection/CompactSwitch';
 import { SearchableMultiSelect } from '@/components/ui/selection/SearchableMultiSelect';
+import { parseApiErrorMessage } from '@/lib/utils';
 import { contractApi } from '@/pages/contracts/utils';
 import { matchUserAgainstWorkflowPool } from '@/pages/workflows/workflow-filter';
-import { parseApiErrorMessage } from '@/lib/utils';
 import { CheckCircle2, Loader2, UserCheck, Users, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -170,14 +170,7 @@ export function SharedAssignModal({ open, onClose, contract, onUpdate, showToast
 
         setLoading(true);
         try {
-            const updatedContract = await contractApi.assignPic(
-                contract.id,
-                selectedUserIds[0],
-                note || undefined,
-                undefined,
-                actionCode,
-                actionId,
-            );
+            const updatedContract = await contractApi.assignPic(contract.id, selectedUserIds[0], note || undefined, undefined, actionCode, actionId);
 
             onUpdate(updatedContract);
             showToast(`Penugasan ${ROLE_NAME} berhasil diperbarui.`, 'success');

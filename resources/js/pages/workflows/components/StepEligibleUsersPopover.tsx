@@ -1,9 +1,9 @@
-import React, { useState, useMemo } from 'react';
-import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/dialogs/Popover';
-import { Badge } from '@/components/ui/feedback/Badge';
 import { Button } from '@/components/ui/buttons/Button';
-import { UserCheck, Users, Search, Shield, Sparkles, User, Building2, Briefcase, Copy, Check } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/dialogs/Popover';
+import { Badge } from '@/components/ui/feedback/Badge';
 import { cn } from '@/lib/utils';
+import { Briefcase, Building2, Check, Copy, Search, Shield, Sparkles, User, UserCheck, Users } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
 
 interface StepEligibleUsersPopoverProps {
     step: any;
@@ -100,8 +100,11 @@ export function StepEligibleUsersPopover({
         // 1. Prioritas: Cek jika menggunakan Tabel Otoritas Aktor (approver_authorities)
         if (authorities && authorities.length > 0) {
             authorities.forEach((auth: any) => {
-                if (auth.authority_type === 'custom' || ['initiator', 'assigned_pic', 'creator', 'atasan', 'adhoc_approvers', 'adhoc'].includes(auth.authority_type)) {
-                    const customType = auth.authority_type === 'custom' ? (auth.role_id || auth.user_id) : auth.authority_type;
+                if (
+                    auth.authority_type === 'custom' ||
+                    ['initiator', 'assigned_pic', 'creator', 'atasan', 'adhoc_approvers', 'adhoc'].includes(auth.authority_type)
+                ) {
+                    const customType = auth.authority_type === 'custom' ? auth.role_id || auth.user_id : auth.authority_type;
                     if (customType === 'initiator') {
                         criteriaParts.push('Inisiator');
                         dynamicList.push({
@@ -196,14 +199,15 @@ export function StepEligibleUsersPopover({
                         auth.region_id ||
                         auth.region_use_initiator ||
                         auth.organization_group_id ||
-                        auth.organization_group_use_initiator
+                        auth.organization_group_use_initiator,
                     );
 
                     if (hasFilters) {
                         const ruleParts: string[] = [];
                         if (auth.role_use_initiator) ruleParts.push('Role Inisiator');
                         else if (auth.role_id) {
-                            const rName = roles.find((r: any) => String(r.id) === String(auth.role_id) || r.name === auth.role_id)?.name || auth.role_id;
+                            const rName =
+                                roles.find((r: any) => String(r.id) === String(auth.role_id) || r.name === auth.role_id)?.name || auth.role_id;
                             ruleParts.push(`Role: ${rName}`);
                         }
 
@@ -221,13 +225,24 @@ export function StepEligibleUsersPopover({
 
                         if (auth.location_use_initiator) ruleParts.push('Lokasi Inisiator');
                         else if (auth.location_id) {
-                            const lName = locations.find((l: any) => String(l.id) === String(auth.location_id) || l.code === auth.location_id || l.name === auth.location_id)?.name || auth.location_id;
+                            const lName =
+                                locations.find(
+                                    (l: any) =>
+                                        String(l.id) === String(auth.location_id) || l.code === auth.location_id || l.name === auth.location_id,
+                                )?.name || auth.location_id;
                             ruleParts.push(`Lokasi: ${lName}`);
                         }
 
                         if (auth.organization_group_use_initiator) ruleParts.push('Org Group Inisiator');
                         else if (auth.organization_group_id) {
-                            const ogName = organizationGroups.find((og: any) => String(og.id) === String(auth.organization_group_id) || String(og.idorg_group) === String(auth.organization_group_id) || og.code === auth.organization_group_id || og.name === auth.organization_group_id)?.name || auth.organization_group_id;
+                            const ogName =
+                                organizationGroups.find(
+                                    (og: any) =>
+                                        String(og.id) === String(auth.organization_group_id) ||
+                                        String(og.idorg_group) === String(auth.organization_group_id) ||
+                                        og.code === auth.organization_group_id ||
+                                        og.name === auth.organization_group_id,
+                                )?.name || auth.organization_group_id;
                             ruleParts.push(`Org Group: ${ogName}`);
                         }
 
@@ -281,16 +296,23 @@ export function StepEligibleUsersPopover({
                             if (match && auth.location_use_initiator) {
                                 if (!simInitiatorUser) match = false;
                                 else {
-                                    const initLocId = String(simInitiatorUser.location_id || simInitiatorUser.idlocation || simInitiatorUser.location?.id || '');
-                                    const initLocName = (simInitiatorUser.location_name || simInitiatorUser.location?.name || '').toLowerCase().trim();
+                                    const initLocId = String(
+                                        simInitiatorUser.location_id || simInitiatorUser.idlocation || simInitiatorUser.location?.id || '',
+                                    );
+                                    const initLocName = (simInitiatorUser.location_name || simInitiatorUser.location?.name || '')
+                                        .toLowerCase()
+                                        .trim();
                                     const userLocName = (user.location_name || user.location?.name || '').toLowerCase().trim();
-                                    const isLocMatch = (initLocId && userLocId && initLocId === userLocId) ||
-                                                       (initLocName && userLocName && initLocName === userLocName);
+                                    const isLocMatch =
+                                        (initLocId && userLocId && initLocId === userLocId) ||
+                                        (initLocName && userLocName && initLocName === userLocName);
                                     if (!isLocMatch) match = false;
                                 }
                             } else if (match && auth.location_id) {
                                 const targetLocId = String(auth.location_id);
-                                const targetLoc = locations.find((l: any) => String(l.id) === targetLocId || l.code === targetLocId || l.name === targetLocId);
+                                const targetLoc = locations.find(
+                                    (l: any) => String(l.id) === targetLocId || l.code === targetLocId || l.name === targetLocId,
+                                );
                                 const matchLocId = targetLoc ? String(targetLoc.id) : targetLocId;
                                 const matchLocName = targetLoc ? targetLoc.name.toLowerCase() : targetLocId.toLowerCase();
                                 const userLocName = (user.location_name || user.location?.name || '').toLowerCase().trim();
@@ -330,44 +352,63 @@ export function StepEligibleUsersPopover({
 
                             if (match && (auth.organization_group_use_initiator || auth.organization_group_id)) {
                                 const userOrgId = String(user.department?.organization_group_id || user.organization_group_id || '');
-                                const userIdOrgGroup = user.department?.idorg_group !== undefined && user.department?.idorg_group !== null
-                                    ? String(user.department.idorg_group)
-                                    : (user.idorg_group !== undefined && user.idorg_group !== null ? String(user.idorg_group) : '');
+                                const userIdOrgGroup =
+                                    user.department?.idorg_group !== undefined && user.department?.idorg_group !== null
+                                        ? String(user.department.idorg_group)
+                                        : user.idorg_group !== undefined && user.idorg_group !== null
+                                          ? String(user.idorg_group)
+                                          : '';
                                 const userOrgGroupName = (user.org_group_name || user.department?.org_group_name || '').toLowerCase().trim();
 
-                                const userOgObj = organizationGroups.find((og: any) => 
-                                    (userOrgId && String(og.id) === userOrgId) ||
-                                    (userIdOrgGroup && String(og.idorg_group) === userIdOrgGroup) ||
-                                    (userOrgGroupName && og.name?.toLowerCase().trim() === userOrgGroupName)
+                                const userOgObj = organizationGroups.find(
+                                    (og: any) =>
+                                        (userOrgId && String(og.id) === userOrgId) ||
+                                        (userIdOrgGroup && String(og.idorg_group) === userIdOrgGroup) ||
+                                        (userOrgGroupName && og.name?.toLowerCase().trim() === userOrgGroupName),
                                 );
                                 const resolvedUserOgId = userOgObj ? String(userOgObj.id) : userOrgId;
-                                const resolvedUserIdOrgGroup = userOgObj && userOgObj.idorg_group !== undefined && userOgObj.idorg_group !== null
-                                    ? String(userOgObj.idorg_group)
-                                    : userIdOrgGroup;
+                                const resolvedUserIdOrgGroup =
+                                    userOgObj && userOgObj.idorg_group !== undefined && userOgObj.idorg_group !== null
+                                        ? String(userOgObj.idorg_group)
+                                        : userIdOrgGroup;
                                 const resolvedUserOgName = (userOgObj?.name || userOrgGroupName).toLowerCase().trim();
 
                                 if (auth.organization_group_use_initiator) {
                                     if (!simInitiatorUser) {
                                         match = false;
                                     } else {
-                                        const initOrgId = String(simInitiatorUser.department?.organization_group_id || simInitiatorUser.organization_group_id || '');
-                                        const initIdOrgGroup = simInitiatorUser.department?.idorg_group !== undefined && simInitiatorUser.department?.idorg_group !== null
-                                            ? String(simInitiatorUser.department.idorg_group)
-                                            : (simInitiatorUser.idorg_group !== undefined && simInitiatorUser.idorg_group !== null ? String(simInitiatorUser.idorg_group) : '');
-                                        const initOrgGroupName = (simInitiatorUser.org_group_name || simInitiatorUser.department?.org_group_name || '').toLowerCase().trim();
+                                        const initOrgId = String(
+                                            simInitiatorUser.department?.organization_group_id || simInitiatorUser.organization_group_id || '',
+                                        );
+                                        const initIdOrgGroup =
+                                            simInitiatorUser.department?.idorg_group !== undefined &&
+                                            simInitiatorUser.department?.idorg_group !== null
+                                                ? String(simInitiatorUser.department.idorg_group)
+                                                : simInitiatorUser.idorg_group !== undefined && simInitiatorUser.idorg_group !== null
+                                                  ? String(simInitiatorUser.idorg_group)
+                                                  : '';
+                                        const initOrgGroupName = (
+                                            simInitiatorUser.org_group_name ||
+                                            simInitiatorUser.department?.org_group_name ||
+                                            ''
+                                        )
+                                            .toLowerCase()
+                                            .trim();
 
-                                        const initOgObj = organizationGroups.find((og: any) => 
-                                            (initOrgId && String(og.id) === initOrgId) ||
-                                            (initIdOrgGroup && String(og.idorg_group) === initIdOrgGroup) ||
-                                            (initOrgGroupName && og.name?.toLowerCase().trim() === initOrgGroupName)
+                                        const initOgObj = organizationGroups.find(
+                                            (og: any) =>
+                                                (initOrgId && String(og.id) === initOrgId) ||
+                                                (initIdOrgGroup && String(og.idorg_group) === initIdOrgGroup) ||
+                                                (initOrgGroupName && og.name?.toLowerCase().trim() === initOrgGroupName),
                                         );
                                         const resolvedInitOgId = initOgObj ? String(initOgObj.id) : initOrgId;
-                                        const resolvedInitIdOrgGroup = initOgObj && initOgObj.idorg_group !== undefined && initOgObj.idorg_group !== null
-                                            ? String(initOgObj.idorg_group)
-                                            : initIdOrgGroup;
+                                        const resolvedInitIdOrgGroup =
+                                            initOgObj && initOgObj.idorg_group !== undefined && initOgObj.idorg_group !== null
+                                                ? String(initOgObj.idorg_group)
+                                                : initIdOrgGroup;
                                         const resolvedInitOgName = (initOgObj?.name || initOrgGroupName).toLowerCase().trim();
 
-                                        const isOrgGroupMatch = 
+                                        const isOrgGroupMatch =
                                             (resolvedInitOgId && resolvedUserOgId && resolvedInitOgId === resolvedUserOgId) ||
                                             (resolvedInitIdOrgGroup && resolvedUserIdOrgGroup && resolvedInitIdOrgGroup === resolvedUserIdOrgGroup) ||
                                             (resolvedInitOgName && resolvedUserOgName && resolvedInitOgName === resolvedUserOgName);
@@ -375,19 +416,21 @@ export function StepEligibleUsersPopover({
                                         if (!isOrgGroupMatch) match = false;
                                     }
                                 } else if (auth.organization_group_id) {
-                                    const targetOg = organizationGroups.find((og: any) => 
-                                        String(og.id) === String(auth.organization_group_id) ||
-                                        String(og.idorg_group) === String(auth.organization_group_id) ||
-                                        og.code === auth.organization_group_id ||
-                                        og.name === auth.organization_group_id
+                                    const targetOg = organizationGroups.find(
+                                        (og: any) =>
+                                            String(og.id) === String(auth.organization_group_id) ||
+                                            String(og.idorg_group) === String(auth.organization_group_id) ||
+                                            og.code === auth.organization_group_id ||
+                                            og.name === auth.organization_group_id,
                                     );
                                     const targetOgId = targetOg ? String(targetOg.id) : String(auth.organization_group_id);
-                                    const targetIdOrgGroup = targetOg && targetOg.idorg_group !== undefined && targetOg.idorg_group !== null
-                                        ? String(targetOg.idorg_group)
-                                        : null;
+                                    const targetIdOrgGroup =
+                                        targetOg && targetOg.idorg_group !== undefined && targetOg.idorg_group !== null
+                                            ? String(targetOg.idorg_group)
+                                            : null;
                                     const targetOgName = (targetOg?.name || String(auth.organization_group_id)).toLowerCase().trim();
 
-                                    const isOrgGroupMatch = 
+                                    const isOrgGroupMatch =
                                         (targetOgId && resolvedUserOgId && targetOgId === resolvedUserOgId) ||
                                         (targetIdOrgGroup !== null && resolvedUserIdOrgGroup && targetIdOrgGroup === resolvedUserIdOrgGroup) ||
                                         (targetOgName && resolvedUserOgName && targetOgName === resolvedUserOgName) ||
@@ -409,15 +452,10 @@ export function StepEligibleUsersPopover({
         } else {
             // 2. Fallback jika approver_authorities belum diisi, periksa approver_config atau approver_type
             const customActors = cfg.custom || (['initiator', 'assigned_pic', 'creator'].includes(step.approver_type) ? [step.approver_type] : []);
-            const explicitUsers = cfg.users && cfg.users.length > 0 
-                ? cfg.users 
-                : (step.approver_type === 'user' ? (step.user_ids || []) : []);
-            const targetRoles: string[] = cfg.roles && cfg.roles.length > 0 
-                ? cfg.roles 
-                : (step.approver_type === 'role' ? (step.role || []) : []);
-            const targetDepts: string[] = cfg.departments && cfg.departments.length > 0 
-                ? cfg.departments 
-                : (step.approver_type === 'role' ? (step.department_ids || []) : []);
+            const explicitUsers = cfg.users && cfg.users.length > 0 ? cfg.users : step.approver_type === 'user' ? step.user_ids || [] : [];
+            const targetRoles: string[] = cfg.roles && cfg.roles.length > 0 ? cfg.roles : step.approver_type === 'role' ? step.role || [] : [];
+            const targetDepts: string[] =
+                cfg.departments && cfg.departments.length > 0 ? cfg.departments : step.approver_type === 'role' ? step.department_ids || [] : [];
 
             const hasAnyConfig = customActors.length > 0 || explicitUsers.length > 0 || targetRoles.length > 0 || targetDepts.length > 0;
 
@@ -502,10 +540,10 @@ export function StepEligibleUsersPopover({
 
                         if (targetRoles.length > 0) {
                             const userRole = (u.role || '').toLowerCase();
-                            const userRolesList = Array.isArray(u.roles) 
-                                ? u.roles.map((r: any) => (typeof r === 'string' ? r : r.name || '').toLowerCase()) 
+                            const userRolesList = Array.isArray(u.roles)
+                                ? u.roles.map((r: any) => (typeof r === 'string' ? r : r.name || '').toLowerCase())
                                 : [];
-                            
+
                             roleMatch = targetRoles.some((r: string) => {
                                 const lowR = r.toLowerCase();
                                 return userRole === lowR || userRolesList.includes(lowR);
@@ -581,16 +619,16 @@ export function StepEligibleUsersPopover({
                             type="button"
                             onClick={(e) => e.stopPropagation()}
                             className={cn(
-                                "relative flex h-7 items-center justify-center gap-1 px-1.5 rounded-md transition-all cursor-pointer select-none",
+                                'relative flex h-7 cursor-pointer items-center justify-center gap-1 rounded-md px-1.5 transition-all select-none',
                                 totalCount > 0
-                                    ? "text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40"
-                                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                    ? 'text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-950/40'
+                                    : 'text-muted-foreground hover:bg-muted hover:text-foreground',
                             )}
                             title={`Daftar Pengguna Berhak Akses (${totalCount} orang)`}
                         >
                             <UserCheck size={12} />
                             {totalCount > 0 && (
-                                <span className="flex h-4 min-w-4 px-1 items-center justify-center rounded-md bg-indigo-600 dark:bg-indigo-500 text-[9.5px] font-medium text-white shadow-2xs leading-none">
+                                <span className="flex h-4 min-w-4 items-center justify-center rounded-md bg-indigo-600 px-1 text-[9.5px] leading-none font-medium text-white shadow-2xs dark:bg-indigo-500">
                                     {totalCount}
                                 </span>
                             )}
@@ -598,37 +636,34 @@ export function StepEligibleUsersPopover({
 
                         <PopoverContent
                             align="end"
-                            className="w-84 sm:w-96 p-3 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-slate-900 dark:text-zinc-100 shadow-2xl space-y-2.5 z-[9999]"
+                            className="z-[9999] w-84 space-y-2.5 rounded-xl border border-slate-200 bg-white p-3 text-slate-900 shadow-2xl sm:w-96 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
                         >
                             {/* Header */}
-                            <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-zinc-800">
+                            <div className="flex items-center justify-between border-b border-slate-100 pb-2 dark:border-zinc-800">
                                 <div className="flex items-center gap-1.5">
                                     <div className="flex h-6 w-6 items-center justify-center rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
                                         <Users size={13} />
                                     </div>
                                     <div>
-                                        <h4 className="text-xs font-medium text-slate-900 dark:text-zinc-100 leading-none">
-                                            Pengguna Berhak Akses
-                                        </h4>
-                                        <span className="text-[10px] text-muted-foreground mt-0.5 inline-block">
-                                            Tahap #{step.step || idx + 1}
-                                        </span>
+                                        <h4 className="text-xs leading-none font-medium text-slate-900 dark:text-zinc-100">Pengguna Berhak Akses</h4>
+                                        <span className="text-muted-foreground mt-0.5 inline-block text-[10px]">Tahap #{step.step || idx + 1}</span>
                                     </div>
                                 </div>
-                                <Badge variant="outline" className="text-[10px] font-medium px-2 py-0.5 rounded-md border-indigo-500/20 bg-indigo-500/10 text-indigo-700 dark:text-indigo-300">
+                                <Badge
+                                    variant="outline"
+                                    className="rounded-md border-indigo-500/20 bg-indigo-500/10 px-2 py-0.5 text-[10px] font-medium text-indigo-700 dark:text-indigo-300"
+                                >
                                     {totalCount} Pengguna
                                 </Badge>
                             </div>
 
                             {/* Kriteria Akses Singkat */}
-                            <div className="rounded-lg bg-slate-50 dark:bg-zinc-900 p-2 border border-slate-100 dark:border-zinc-800 text-[11px] space-y-1">
-                                <div className="flex items-center gap-1 text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
+                            <div className="space-y-1 rounded-lg border border-slate-100 bg-slate-50 p-2 text-[11px] dark:border-zinc-800 dark:bg-zinc-900">
+                                <div className="text-muted-foreground flex items-center gap-1 text-[10px] font-medium tracking-wider uppercase">
                                     <Shield size={10} className="text-primary" />
                                     <span>Kriteria Otoritas Aktor</span>
                                 </div>
-                                <p className="text-slate-800 dark:text-zinc-200 leading-snug font-medium line-clamp-2">
-                                    {criteriaSummary}
-                                </p>
+                                <p className="line-clamp-2 leading-snug font-medium text-slate-800 dark:text-zinc-200">{criteriaSummary}</p>
                             </div>
 
                             {/* Info Peran Dinamis (Inisiator / PIC / Atasan) */}
@@ -637,21 +672,17 @@ export function StepEligibleUsersPopover({
                                     {dynamicRoles.map((dr, dIdx) => (
                                         <div
                                             key={dIdx}
-                                            className="flex items-start justify-between gap-2 p-2 rounded-lg bg-amber-500/5 border border-amber-500/20 text-[11px]"
+                                            className="flex items-start justify-between gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-2 text-[11px]"
                                         >
-                                            <div className="space-y-0.5 min-w-0 flex-1">
+                                            <div className="min-w-0 flex-1 space-y-0.5">
                                                 <div className="flex items-center gap-1.5">
-                                                    <Sparkles size={11} className="text-amber-600 dark:text-amber-400 shrink-0" />
-                                                    <span className="font-medium text-amber-900 dark:text-amber-300">
-                                                        {dr.label}
-                                                    </span>
+                                                    <Sparkles size={11} className="shrink-0 text-amber-600 dark:text-amber-400" />
+                                                    <span className="font-medium text-amber-900 dark:text-amber-300">{dr.label}</span>
                                                 </div>
-                                                <p className="text-[10px] text-muted-foreground line-clamp-1">
-                                                    {dr.description}
-                                                </p>
+                                                <p className="text-muted-foreground line-clamp-1 text-[10px]">{dr.description}</p>
                                                 {dr.activeUser && (
-                                                    <div className="text-[10.5px] text-emerald-700 dark:text-emerald-400 font-medium pt-0.5 space-y-0.5">
-                                                        <div className="flex items-center gap-1.5 flex-wrap">
+                                                    <div className="space-y-0.5 pt-0.5 text-[10.5px] font-medium text-emerald-700 dark:text-emerald-400">
+                                                        <div className="flex flex-wrap items-center gap-1.5">
                                                             <UserCheck size={11} className="shrink-0" />
                                                             <span className="font-semibold">Terpilih: {dr.activeUser.name}</span>
                                                             {(dr.activeUser.nik || dr.activeUser.username) && (
@@ -660,23 +691,28 @@ export function StepEligibleUsersPopover({
                                                                     onClick={(e) => handleCopyNik(e, dr.activeUser.nik || dr.activeUser.username)}
                                                                     title="Klik untuk menyalin NIK"
                                                                     className={cn(
-                                                                        "group/nik inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[9px] font-mono font-semibold transition-all cursor-pointer border select-all",
+                                                                        'group/nik py-0.2 inline-flex cursor-pointer items-center gap-1 rounded border px-1.5 font-mono text-[9px] font-semibold transition-all select-all',
                                                                         copiedNik === (dr.activeUser.nik || dr.activeUser.username)
-                                                                            ? "bg-emerald-100 text-emerald-800 border-emerald-400 dark:bg-emerald-900/60 dark:text-emerald-200"
-                                                                            : "bg-white/80 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border-slate-200 dark:border-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-700"
+                                                                            ? 'border-emerald-400 bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-200'
+                                                                            : 'border-slate-200 bg-white/80 text-slate-700 hover:bg-slate-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700',
                                                                     )}
                                                                 >
-                                                                    <span className="text-[8px] font-sans font-bold text-muted-foreground uppercase">NIK:</span>
+                                                                    <span className="text-muted-foreground font-sans text-[8px] font-bold uppercase">
+                                                                        NIK:
+                                                                    </span>
                                                                     <span>{dr.activeUser.nik || dr.activeUser.username}</span>
                                                                     {copiedNik === (dr.activeUser.nik || dr.activeUser.username) ? (
-                                                                        <Check size={9} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                                                        <Check size={9} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
                                                                     ) : (
-                                                                        <Copy size={9} className="text-muted-foreground opacity-60 group-hover/nik:opacity-100 shrink-0" />
+                                                                        <Copy
+                                                                            size={9}
+                                                                            className="text-muted-foreground shrink-0 opacity-60 group-hover/nik:opacity-100"
+                                                                        />
                                                                     )}
                                                                 </button>
                                                             )}
                                                         </div>
-                                                        <div className="flex flex-wrap items-center gap-1 text-[9.5px] text-muted-foreground pl-3.5">
+                                                        <div className="text-muted-foreground flex flex-wrap items-center gap-1 pl-3.5 text-[9.5px]">
                                                             {dr.activeUser.role && <span>{dr.activeUser.role}</span>}
                                                             {getDeptName(dr.activeUser) && (
                                                                 <>
@@ -703,7 +739,7 @@ export function StepEligibleUsersPopover({
                                                         close();
                                                         onOpenSimulationModal();
                                                     }}
-                                                    className="h-6 text-[10px] px-2 font-medium text-amber-700 dark:text-amber-300 border-amber-500/30 hover:bg-amber-500/10 shrink-0 cursor-pointer"
+                                                    className="h-6 shrink-0 cursor-pointer border-amber-500/30 px-2 text-[10px] font-medium text-amber-700 hover:bg-amber-500/10 dark:text-amber-300"
                                                 >
                                                     Simulasi
                                                 </Button>
@@ -716,28 +752,28 @@ export function StepEligibleUsersPopover({
                             {/* Search Box */}
                             {totalCount > 4 && (
                                 <div className="relative">
-                                    <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                                    <Search size={13} className="text-muted-foreground absolute top-1/2 left-2.5 -translate-y-1/2" />
                                     <input
                                         type="text"
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                         placeholder="Cari nama, NIK, role, unit, atau divisi..."
-                                        className="w-full h-8 pl-8 pr-3 text-[11px] rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-muted-foreground"
+                                        className="focus:ring-primary placeholder:text-muted-foreground h-8 w-full rounded-md border border-slate-200 bg-white pr-3 pl-8 text-[11px] focus:ring-1 focus:outline-none dark:border-zinc-800 dark:bg-zinc-900"
                                     />
                                 </div>
                             )}
 
                             {/* User List */}
-                            <div className="space-y-1 max-h-60 overflow-y-auto custom-scrollbar p-0.5">
+                            <div className="custom-scrollbar max-h-60 space-y-1 overflow-y-auto p-0.5">
                                 {filteredEligibleUsers.length === 0 ? (
-                                    <div className="py-6 text-center text-muted-foreground space-y-1">
+                                    <div className="text-muted-foreground space-y-1 py-6 text-center">
                                         <User size={20} className="mx-auto opacity-40" />
                                         <p className="text-xs font-medium">
                                             {searchQuery ? 'Pengguna tidak ditemukan' : 'Belum ada pengguna yang berhak akses'}
                                         </p>
                                         <p className="text-[10px]">
-                                            {searchQuery 
-                                                ? 'Coba gunakan kata kunci lain' 
+                                            {searchQuery
+                                                ? 'Coba gunakan kata kunci lain'
                                                 : 'Atur aktor & otoritas di tab Konfigurasi Langkah untuk memberi hak akses'}
                                         </p>
                                     </div>
@@ -750,15 +786,15 @@ export function StepEligibleUsersPopover({
                                         return (
                                             <div
                                                 key={user.id || uIdx}
-                                                className="flex items-start justify-between gap-2 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-zinc-900 border border-transparent hover:border-slate-200/60 dark:hover:border-zinc-800 transition-colors"
+                                                className="flex items-start justify-between gap-2 rounded-lg border border-transparent p-2 transition-colors hover:border-slate-200/60 hover:bg-slate-50 dark:hover:border-zinc-800 dark:hover:bg-zinc-900"
                                             >
-                                                <div className="flex items-start gap-2 min-w-0 flex-1">
-                                                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-secondary text-secondary-foreground text-[10.5px] font-medium border border-border/50 uppercase mt-0.5">
+                                                <div className="flex min-w-0 flex-1 items-start gap-2">
+                                                    <div className="bg-secondary text-secondary-foreground border-border/50 mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md border text-[10.5px] font-medium uppercase">
                                                         {(user.name || user.email || 'U').substring(0, 2)}
                                                     </div>
                                                     <div className="min-w-0 flex-1 space-y-0.5">
-                                                        <div className="flex items-center gap-1.5 flex-wrap">
-                                                            <p className="text-xs font-semibold text-slate-800 dark:text-zinc-200 truncate leading-tight">
+                                                        <div className="flex flex-wrap items-center gap-1.5">
+                                                            <p className="truncate text-xs leading-tight font-semibold text-slate-800 dark:text-zinc-200">
                                                                 {user.name}
                                                             </p>
                                                             {userNik && (
@@ -767,41 +803,46 @@ export function StepEligibleUsersPopover({
                                                                     onClick={(e) => handleCopyNik(e, userNik)}
                                                                     title="Klik untuk menyalin NIK"
                                                                     className={cn(
-                                                                        "group/nik inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[9px] font-mono font-semibold transition-all cursor-pointer border select-all",
+                                                                        'group/nik py-0.2 inline-flex cursor-pointer items-center gap-1 rounded border px-1.5 font-mono text-[9px] font-semibold transition-all select-all',
                                                                         copiedNik === userNik
-                                                                            ? "bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800"
-                                                                            : "bg-slate-100/90 text-slate-700 border-slate-200 hover:bg-slate-200 hover:text-slate-900 dark:bg-zinc-800/80 dark:text-zinc-300 dark:border-zinc-700 dark:hover:bg-zinc-700"
+                                                                            ? 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300'
+                                                                            : 'border-slate-200 bg-slate-100/90 text-slate-700 hover:bg-slate-200 hover:text-slate-900 dark:border-zinc-700 dark:bg-zinc-800/80 dark:text-zinc-300 dark:hover:bg-zinc-700',
                                                                     )}
                                                                 >
-                                                                    <span className="text-[8px] font-sans font-bold text-muted-foreground uppercase">NIK:</span>
+                                                                    <span className="text-muted-foreground font-sans text-[8px] font-bold uppercase">
+                                                                        NIK:
+                                                                    </span>
                                                                     <span>{userNik}</span>
                                                                     {copiedNik === userNik ? (
-                                                                        <Check size={9} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                                                        <Check size={9} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
                                                                     ) : (
-                                                                        <Copy size={9} className="text-muted-foreground opacity-60 group-hover/nik:opacity-100 shrink-0" />
+                                                                        <Copy
+                                                                            size={9}
+                                                                            className="text-muted-foreground shrink-0 opacity-60 group-hover/nik:opacity-100"
+                                                                        />
                                                                     )}
                                                                 </button>
                                                             )}
                                                         </div>
-                                                        
+
                                                         {/* Role & Email */}
-                                                        <p className="text-[10px] text-muted-foreground truncate leading-tight">
+                                                        <p className="text-muted-foreground truncate text-[10px] leading-tight">
                                                             {user.role || 'User'} {user.email && <span className="opacity-70">({user.email})</span>}
                                                         </p>
 
                                                         {/* Department & Division */}
                                                         {(deptName || divName) && (
-                                                            <div className="flex flex-wrap items-center gap-1 text-[9.5px] text-slate-500 dark:text-zinc-400 pt-0.5">
+                                                            <div className="flex flex-wrap items-center gap-1 pt-0.5 text-[9.5px] text-slate-500 dark:text-zinc-400">
                                                                 {deptName && (
-                                                                    <span className="inline-flex items-center gap-0.5 bg-slate-100 dark:bg-zinc-800/60 px-1.5 py-0.2 rounded text-[9px] border border-slate-200/50 dark:border-zinc-700/50">
+                                                                    <span className="py-0.2 inline-flex items-center gap-0.5 rounded border border-slate-200/50 bg-slate-100 px-1.5 text-[9px] dark:border-zinc-700/50 dark:bg-zinc-800/60">
                                                                         <Building2 size={9} className="text-primary/70 shrink-0" />
-                                                                        <span className="truncate max-w-[130px]">{deptName}</span>
+                                                                        <span className="max-w-[130px] truncate">{deptName}</span>
                                                                     </span>
                                                                 )}
                                                                 {divName && (
-                                                                    <span className="inline-flex items-center gap-0.5 bg-slate-100 dark:bg-zinc-800/60 px-1.5 py-0.2 rounded text-[9px] border border-slate-200/50 dark:border-zinc-700/50">
-                                                                        <Briefcase size={9} className="text-indigo-500/70 shrink-0" />
-                                                                        <span className="truncate max-w-[130px]">{divName}</span>
+                                                                    <span className="py-0.2 inline-flex items-center gap-0.5 rounded border border-slate-200/50 bg-slate-100 px-1.5 text-[9px] dark:border-zinc-700/50 dark:bg-zinc-800/60">
+                                                                        <Briefcase size={9} className="shrink-0 text-indigo-500/70" />
+                                                                        <span className="max-w-[130px] truncate">{divName}</span>
                                                                     </span>
                                                                 )}
                                                             </div>
@@ -809,12 +850,12 @@ export function StepEligibleUsersPopover({
                                                     </div>
                                                 </div>
 
-                                                <div className="flex flex-col items-end gap-0.5 shrink-0 pt-0.5">
+                                                <div className="flex shrink-0 flex-col items-end gap-0.5 pt-0.5">
                                                     {reasons.map((r, rIdx) => (
                                                         <Badge
                                                             key={rIdx}
                                                             variant="secondary"
-                                                            className="text-[9px] font-medium px-1.5 py-0.2 rounded-md border-border/50 text-muted-foreground max-w-[110px] truncate"
+                                                            className="py-0.2 border-border/50 text-muted-foreground max-w-[110px] truncate rounded-md px-1.5 text-[9px] font-medium"
                                                         >
                                                             {r}
                                                         </Badge>
@@ -827,7 +868,7 @@ export function StepEligibleUsersPopover({
                             </div>
 
                             {/* Footer */}
-                            <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-zinc-800 text-[10px] text-muted-foreground">
+                            <div className="text-muted-foreground flex items-center justify-between border-t border-slate-100 pt-2 text-[10px] dark:border-zinc-800">
                                 <span>Total {totalCount} orang berhak akses</span>
                                 <Button
                                     type="button"

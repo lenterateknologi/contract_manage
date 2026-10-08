@@ -1,0 +1,58 @@
+<?php
+
+namespace App\Models\Master;
+
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
+
+class Division extends Model
+{
+    use HasUuids, SoftDeletes;
+
+    protected $table = 'm_division';
+
+    const CODE_LEGAL = 'lga';
+
+    protected $fillable = [
+        'code',
+        'id_portal_master',
+        'name',
+        'department_id',
+        'is_active',
+        'created_by',
+        'updated_by',
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
+
+    protected static function booted(): void
+    {
+        static::creating(function ($division) {
+            if (empty($division->code)) {
+                $division->code = (string) Str::uuid();
+            }
+        });
+    }
+
+    /**
+     * @return BelongsTo<Department, Division>
+     */
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(Department::class, 'department_id');
+    }
+
+    /**
+     * @return HasMany<User, Division>
+     */
+    public function users(): HasMany
+    {
+        return $this->hasMany(User::class, 'division_id');
+    }
+}

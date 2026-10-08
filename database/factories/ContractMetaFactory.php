@@ -2,8 +2,8 @@
 
 namespace Database\Factories;
 
-use App\Models\Contract;
-use App\Models\ContractMeta;
+use App\Models\Transaction\Contract;
+use App\Models\Transaction\ContractMeta;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

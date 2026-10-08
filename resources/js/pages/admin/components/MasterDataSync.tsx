@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/buttons/Button';
-import { Checkbox } from '@/components/ui/selection/Checkbox';
 import { useToast } from '@/components/ui/feedback/Toast';
+import { Checkbox } from '@/components/ui/selection/Checkbox';
 import { cn } from '@/lib/utils';
 import { router } from '@inertiajs/react';
 import {
@@ -87,42 +87,114 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
         {
             groupName: 'Struktur Organisasi & Korporasi',
             items: [
-                { id: 'company_groups', label: 'Holding / Group', count: activeCounts.company_groups, icon: Layers, desc: 'Struktur korporasi utama' },
+                {
+                    id: 'company_groups',
+                    label: 'Holding / Group',
+                    count: activeCounts.company_groups,
+                    icon: Layers,
+                    desc: 'Struktur korporasi utama',
+                },
                 { id: 'regions', label: 'Regional', count: activeCounts.regions, icon: MapPin, desc: 'Wilayah administrasi operasional' },
-                { id: 'companies', label: 'Perusahaan PT', count: activeCounts.companies, icon: Building2, desc: 'Entitas hukum terdaftar (Bergantung pada Group & Region)' },
-                { id: 'departments', label: 'Unit / Departemen', count: activeCounts.departments, icon: Network, desc: 'Unit kerja operasional (Bergantung pada Perusahaan)' },
-                { id: 'divisions', label: 'Divisi', count: activeCounts.divisions ?? 0, icon: Users, desc: 'Sub-unit kerja spesifik (Bergantung pada Departemen)' },
-                { id: 'job_level_groups', label: 'Group Job Level', count: activeCounts.job_level_groups ?? 0, icon: Layers, desc: 'Golongan besar level (Non Staff, Staff, Mgmt)' },
+                {
+                    id: 'companies',
+                    label: 'Perusahaan PT',
+                    count: activeCounts.companies,
+                    icon: Building2,
+                    desc: 'Entitas hukum terdaftar (Bergantung pada Group & Region)',
+                },
+                {
+                    id: 'departments',
+                    label: 'Unit / Departemen',
+                    count: activeCounts.departments,
+                    icon: Network,
+                    desc: 'Unit kerja operasional (Bergantung pada Perusahaan)',
+                },
+                {
+                    id: 'divisions',
+                    label: 'Divisi',
+                    count: activeCounts.divisions ?? 0,
+                    icon: Users,
+                    desc: 'Sub-unit kerja spesifik (Bergantung pada Departemen)',
+                },
+                {
+                    id: 'job_level_groups',
+                    label: 'Group Job Level',
+                    count: activeCounts.job_level_groups ?? 0,
+                    icon: Layers,
+                    desc: 'Golongan besar level (Non Staff, Staff, Mgmt)',
+                },
                 { id: 'job_levels', label: 'Job Level', count: activeCounts.job_levels ?? 0, icon: Tags, desc: 'Tingkatan level jabatan karyawan' },
                 { id: 'job_titles', label: 'Job Title', count: activeCounts.job_titles ?? 0, icon: Users, desc: 'Nama posisi / jabatan karyawan' },
-            ]
+            ],
         },
         {
             groupName: 'Konfigurasi Alur & Kategori Kontrak',
             items: [
-                { id: 'contract_statuses', label: 'Status Alur', count: activeCounts.contract_statuses, icon: CheckSquare, desc: 'Status siklus hidup kontrak' },
-                { id: 'contract_types', label: 'Tipe Kategori Kontrak', count: activeCounts.contract_types, icon: FileSpreadsheet, desc: 'Definisi kategori kontrak (Hierarki Parent-Child)' },
-                { id: 'workflows', label: 'Alur Kerja (Workflows)', count: activeCounts.workflows, icon: GitBranch, desc: 'Definisi tahapan persetujuan/approval' },
-                { id: 'form_templates', label: 'Custom Formulir (F1 & F2)', count: activeCounts.form_templates, icon: FileJson, desc: 'Templat dan field dinamis untuk input formulir' },
-            ]
+                {
+                    id: 'contract_statuses',
+                    label: 'Status Alur',
+                    count: activeCounts.contract_statuses,
+                    icon: CheckSquare,
+                    desc: 'Status siklus hidup kontrak',
+                },
+                {
+                    id: 'contract_types',
+                    label: 'Tipe Kategori Kontrak',
+                    count: activeCounts.contract_types,
+                    icon: FileSpreadsheet,
+                    desc: 'Definisi kategori kontrak (Hierarki Parent-Child)',
+                },
+                {
+                    id: 'workflows',
+                    label: 'Alur Kerja (Workflows)',
+                    count: activeCounts.workflows,
+                    icon: GitBranch,
+                    desc: 'Definisi tahapan persetujuan/approval',
+                },
+                {
+                    id: 'form_templates',
+                    label: 'Custom Formulir (F1 & F2)',
+                    count: activeCounts.form_templates,
+                    icon: FileJson,
+                    desc: 'Templat dan field dinamis untuk input formulir',
+                },
+            ],
         },
         {
             groupName: 'Hak Akses & Pengguna',
             items: [
                 { id: 'roles', label: 'Peran (Roles)', count: activeCounts.roles, icon: ShieldCheck, desc: 'Definisi jabatan & wewenang sistem' },
-                { id: 'access_mappings', label: 'Hak Akses & Menu', count: activeCounts.access_mappings + activeCounts.navigation_mappings, icon: ShieldCheck, desc: 'Otorisasi modul dan struktur menu navigasi per peran' },
-                { id: 'users', label: 'Pengguna (Users)', count: activeCounts.users ?? 0, icon: Users, desc: 'Daftar akun pengguna aktif dan helpdesk' },
-            ]
+                {
+                    id: 'access_mappings',
+                    label: 'Hak Akses & Menu',
+                    count: activeCounts.access_mappings + activeCounts.navigation_mappings,
+                    icon: ShieldCheck,
+                    desc: 'Otorisasi modul dan struktur menu navigasi per peran',
+                },
+                {
+                    id: 'users',
+                    label: 'Pengguna (Users)',
+                    count: activeCounts.users ?? 0,
+                    icon: Users,
+                    desc: 'Daftar akun pengguna aktif dan helpdesk',
+                },
+            ],
         },
         {
             groupName: 'Data Transaksional',
             items: [
-                { id: 'contracts', label: 'Transaksi Kontrak', count: activeCounts.contracts ?? 0, icon: FileText, desc: 'Kontrak, riwayat persetujuan, attachment, & versi dokumen' },
-            ]
-        }
+                {
+                    id: 'contracts',
+                    label: 'Transaksi Kontrak',
+                    count: activeCounts.contracts ?? 0,
+                    icon: FileText,
+                    desc: 'Kontrak, riwayat persetujuan, attachment, & versi dokumen',
+                },
+            ],
+        },
     ];
 
-    const allEntityIds = groupedEntities.flatMap(g => g.items.map(i => i.id));
+    const allEntityIds = groupedEntities.flatMap((g) => g.items.map((i) => i.id));
 
     const toggleEntity = (id: string) => {
         setSelectedEntities((prev) => (prev.includes(id) ? prev.filter((e) => e !== id) : [...prev, id]));
@@ -272,9 +344,7 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
                     </div>
                     <div className="flex flex-col">
                         <h1 className="text-text-main text-base font-semibold tracking-tight uppercase italic">Sync & Control Center</h1>
-                        <p className="text-text-desc text-[10px] font-medium  uppercase">
-                            Manajemen migrasi dan granular export-import data master
-                        </p>
+                        <p className="text-text-desc text-[10px] font-medium uppercase">Manajemen migrasi dan granular export-import data master</p>
                     </div>
                 </div>
             </div>
@@ -282,7 +352,7 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
             <div className="grid grid-cols-1 gap-8 px-5 select-none lg:grid-cols-12">
                 {/* Left: Entity Table */}
                 <div className="lg:col-span-8">
-                    <div className="overflow-hidden rounded-2xl bg-surface-base/10">
+                    <div className="bg-surface-base/10 overflow-hidden rounded-2xl">
                         <table className="w-full text-left">
                             <thead>
                                 <tr className="bg-surface-muted/20 border-surface-border border-b">
@@ -293,18 +363,16 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
                                             onCheckedChange={toggleAll}
                                         />
                                     </th>
-                                    <th className="text-text-desc px-4 py-3.5 text-[11px] font-medium  uppercase">Entitas Data</th>
-                                    <th className="text-text-desc px-4 py-3.5 text-center text-[11px] font-medium  uppercase">
-                                        Volume
-                                    </th>
-                                    <th className="text-text-desc px-4 py-3.5 text-[11px] font-medium  uppercase">Deskripsi & Dependensi</th>
+                                    <th className="text-text-desc px-4 py-3.5 text-[11px] font-medium uppercase">Entitas Data</th>
+                                    <th className="text-text-desc px-4 py-3.5 text-center text-[11px] font-medium uppercase">Volume</th>
+                                    <th className="text-text-desc px-4 py-3.5 text-[11px] font-medium uppercase">Deskripsi & Dependensi</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-surface-border/30 divide-y">
                                 {groupedEntities.map((group) => (
                                     <React.Fragment key={group.groupName}>
                                         <tr className="bg-surface-muted/10 border-surface-border border-y">
-                                            <td colSpan={4} className="px-4 py-2 text-[10px] font-bold text-text-desc uppercase tracking-wider">
+                                            <td colSpan={4} className="text-text-desc px-4 py-2 text-[10px] font-bold tracking-wider uppercase">
                                                 {group.groupName}
                                             </td>
                                         </tr>
@@ -345,13 +413,12 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
                     </div>
                 </div>
 
-
                 {/* Right: Actions */}
                 <div className="flex flex-col gap-6 lg:col-span-4">
                     {/* Export Card */}
-                    <div className="rounded-2xl bg-surface-base/10 p-6">
+                    <div className="bg-surface-base/10 rounded-2xl p-6">
                         <div className="mb-4 flex items-center justify-between">
-                            <h3 className="text-text-main text-[11px] font-semibold  uppercase">Export Configuration</h3>
+                            <h3 className="text-text-main text-[11px] font-semibold uppercase">Export Configuration</h3>
                             <span className="bg-primary/10 text-primary rounded-lg px-2 py-0.5 text-[10px] font-semibold">
                                 {selectedEntities.length} Terpilih
                             </span>
@@ -359,20 +426,15 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
                         <p className="text-text-desc mb-6 text-[11px] leading-relaxed font-medium">
                             Pilih entitas di tabel samping untuk disertakan dalam berkas ekspor JSON.
                         </p>
-                        <Button
-                            onClick={handleExport}
-                            disabled={selectedEntities.length === 0}
-                            className="w-full"
-                            variant="primary"
-                        >
+                        <Button onClick={handleExport} disabled={selectedEntities.length === 0} className="w-full" variant="primary">
                             <Download size={14} className="mr-2" />
                             EXPORT DATA TERPILIH
                         </Button>
                     </div>
 
                     {/* Import Card */}
-                    <div className="rounded-2xl bg-surface-base/10 p-6">
-                        <h3 className="text-text-main mb-4 text-[11px] font-semibold  uppercase">Quick Import</h3>
+                    <div className="bg-surface-base/10 rounded-2xl p-6">
+                        <h3 className="text-text-main mb-4 text-[11px] font-semibold uppercase">Quick Import</h3>
                         <div
                             onDragEnter={handleDrag}
                             onDragOver={handleDrag}
@@ -380,12 +442,12 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
                             onDrop={handleDrop}
                             onClick={() => fileInputRef.current?.click()}
                             className={cn(
-                                'relative flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed p-8 transition-all duration-200 border-surface-border hover:bg-surface-muted/20',
+                                'border-surface-border hover:bg-surface-muted/20 relative flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed p-8 transition-all duration-200',
                                 dragActive && 'border-primary bg-primary/5',
                             )}
                         >
                             <input ref={fileInputRef} type="file" accept=".json" onChange={handleChange} className="hidden" disabled={loading} />
-                            <div className="bg-surface-muted/60 border border-surface-border mb-2 rounded-xl p-2.5">
+                            <div className="bg-surface-muted/60 border-surface-border mb-2 rounded-xl border p-2.5">
                                 {file ? <FileJson size={20} className="text-primary" /> : <Upload size={20} className="text-text-soft" />}
                             </div>
                             <p className="text-text-main line-clamp-1 text-[11px] font-semibold">{file ? file.name : 'Drop file JSON di sini'}</p>
@@ -393,7 +455,7 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
 
                         {file && (
                             <div className="mt-4 flex flex-col gap-3">
-                                <div className="bg-success/5 border border-success/20 text-success flex items-center gap-2 rounded-xl p-3 text-[10px] font-semibold">
+                                <div className="bg-success/5 border-success/20 text-success flex items-center gap-2 rounded-xl border p-3 text-[10px] font-semibold">
                                     <CheckCircle2 size={12} /> Berkas siap disinkronkan
                                 </div>
                                 <div className="flex gap-2">
@@ -410,11 +472,11 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
                     </div>
 
                     {/* Danger Zone: Clean Data Master Card */}
-                    <div className="rounded-2xl bg-danger/[0.02] p-6">
+                    <div className="bg-danger/[0.02] rounded-2xl p-6">
                         <div className="mb-4 flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <AlertTriangle size={16} className="text-danger" />
-                                <h3 className="text-danger text-[11px] font-semibold  uppercase">Danger Zone</h3>
+                                <h3 className="text-danger text-[11px] font-semibold uppercase">Danger Zone</h3>
                             </div>
                             <span className="bg-danger/10 text-danger rounded-lg px-2 py-0.5 text-[10px] font-semibold">
                                 {selectedEntities.length} Terpilih

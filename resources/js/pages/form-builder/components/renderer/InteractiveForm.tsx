@@ -2,7 +2,6 @@ import { cn } from '@/lib/utils';
 import { FileText } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 import { FormElement, FormField } from '../fields/FormElement';
-import { Button } from '@/components/ui/buttons/Button';
 
 export interface FormTemplate {
     id?: string;
@@ -71,7 +70,10 @@ export const InteractiveForm: React.FC<InteractiveFormProps> = ({
         let currentPageIdx = 0;
 
         rootFields.forEach((field) => {
-            if (resultPages[currentPageIdx].length > 0 && resultPages[currentPageIdx][resultPages[currentPageIdx].length - 1]?.type === 'page_break') {
+            if (
+                resultPages[currentPageIdx].length > 0 &&
+                resultPages[currentPageIdx][resultPages[currentPageIdx].length - 1]?.type === 'page_break'
+            ) {
                 currentPageIdx++;
                 resultPages[currentPageIdx] = [field];
             } else {
@@ -124,7 +126,7 @@ export const InteractiveForm: React.FC<InteractiveFormProps> = ({
     return (
         <div
             ref={setNodeRef}
-            className={cn('mx-auto w-full relative', isBuilder ? 'max-w-[210mm] min-h-[500px]' : 'max-w-none', className)}
+            className={cn('relative mx-auto w-full', isBuilder ? 'min-h-[500px] max-w-[210mm]' : 'max-w-none', className)}
             onClick={(e) => {
                 if (isBuilder && e.target === e.currentTarget) {
                     onSelect?.('');
@@ -142,30 +144,36 @@ export const InteractiveForm: React.FC<InteractiveFormProps> = ({
                             showMargins={isBuilder}
                             isBuilder={isBuilder}
                             pageLayout={pageLayout}
-                            className={cn(isBuilder ? 'hover:ring-primary/20 hover:ring-2' : '', 'relative overflow-hidden mb-6')}
+                            className={cn(isBuilder ? 'hover:ring-primary/20 hover:ring-2' : '', 'relative mb-6 overflow-hidden')}
                         >
                             {/* Page Content */}
                             {pageFields.map(renderField)}
 
                             {/* Drop Indicator for Canvas Area */}
                             {isBuilder && isOver && pageFields.length > 0 && idx === pages.length - 1 && (
-                                <div className="absolute right-0 -bottom-1 left-0 z-40 h-1 animate-pulse rounded-full bg-primary" />
+                                <div className="bg-primary absolute right-0 -bottom-1 left-0 z-40 h-1 animate-pulse rounded-full" />
                             )}
 
                             {isBuilder && pages.length === 1 && pageFields.length === 0 && (
-                                <div className={cn("border-border bg-muted/30 hover:border-primary/30 hover:bg-primary/5 flex h-[180mm] w-full flex-col items-center justify-center rounded-3xl border-2 border-dashed p-12 text-center transition-all", isOver && "border-primary bg-primary/10")}>
+                                <div
+                                    className={cn(
+                                        'border-border bg-muted/30 hover:border-primary/30 hover:bg-primary/5 flex h-[180mm] w-full flex-col items-center justify-center rounded-3xl border-2 border-dashed p-12 text-center transition-all',
+                                        isOver && 'border-primary bg-primary/10',
+                                    )}
+                                >
                                     <div className="bg-primary/10 ring-primary/20 mb-6 flex h-20 w-20 items-center justify-center rounded-none ring-1">
                                         <FileText className="text-primary" size={32} />
                                     </div>
                                     <div className="max-w-[280px]">
-                                        <h3 className="text-foreground/80 mb-2 text-sm font-semibold tracking-tight uppercase">Kanvas Kontrak Kosong</h3>
+                                        <h3 className="text-foreground/80 mb-2 text-sm font-semibold tracking-tight uppercase">
+                                            Kanvas Kontrak Kosong
+                                        </h3>
                                         <p className="text-muted-foreground text-[10px] leading-relaxed font-medium">
                                             Tarik elemen dari library di sebelah kiri untuk mulai menyusun isi kontrak utama Anda secara presisi.
                                         </p>
                                     </div>
                                 </div>
                             )}
-
                         </Page>
                     );
                 })}
@@ -176,10 +184,10 @@ export const InteractiveForm: React.FC<InteractiveFormProps> = ({
                 <div
                     ref={setBottomDropRef}
                     className={cn(
-                        "mt-8 flex h-24 w-full items-center justify-center rounded-xl border-2 border-dashed transition-all",
+                        'mt-8 flex h-24 w-full items-center justify-center rounded-xl border-2 border-dashed transition-all',
                         isBottomOver
-                            ? "border-primary bg-primary/10 ring-2 ring-primary/20"
-                            : "border-border bg-muted/10 hover:border-primary/50 hover:bg-primary/5"
+                            ? 'border-primary bg-primary/10 ring-primary/20 ring-2'
+                            : 'border-border bg-muted/10 hover:border-primary/50 hover:bg-primary/5',
                     )}
                 >
                     <span className="text-muted-foreground/30 font-sans text-xs font-semibold tracking-widest uppercase">

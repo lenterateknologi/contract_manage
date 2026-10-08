@@ -138,7 +138,14 @@ export const getAutofillValue = (field: any, contract: Contract, docType?: 'f1' 
                             label: cleanLabel || key.toUpperCase(),
                             file_name: val.trim(),
                         });
-                    } else if (typeof val === 'object' && val !== null && !Array.isArray(val) && key !== 'businessFields' && key !== 'bank' && key !== 'paymentMethod') {
+                    } else if (
+                        typeof val === 'object' &&
+                        val !== null &&
+                        !Array.isArray(val) &&
+                        key !== 'businessFields' &&
+                        key !== 'bank' &&
+                        key !== 'paymentMethod'
+                    ) {
                         results = results.concat(extractAttachments(val, key.toUpperCase()));
                     } else if (Array.isArray(val) && (lowerKey === 'documents' || lowerKey === 'berkas' || lowerKey === 'files')) {
                         results = results.concat(extractAttachments(val, key.toUpperCase()));
@@ -175,17 +182,26 @@ export const getAutofillValue = (field: any, contract: Contract, docType?: 'f1' 
         },
         meta_p1_signer_position: () => {
             const initUser = (contract as any)?.initiator || (contract as any)?.creator;
-            return contract.p1_signer_position || initUser?.jobtitle_name || initUser?.job_position_name || initUser?.role || initUser?.role_name || '';
+            return (
+                contract.p1_signer_position || initUser?.jobtitle_name || initUser?.job_position_name || initUser?.role || initUser?.role_name || ''
+            );
         },
         meta_p1_alamat: () => {
             const initUser = (contract as any)?.initiator || (contract as any)?.creator;
-            const addr = contract.p1_address || initUser?.company?.address || initUser?.location_name || initUser?.address || 'The Manhattan Square Mid Tower Lt. 12, Jl. TB Simatupang No.1, Jakarta Selatan';
+            const addr =
+                contract.p1_address ||
+                initUser?.company?.address ||
+                initUser?.location_name ||
+                initUser?.address ||
+                'The Manhattan Square Mid Tower Lt. 12, Jl. TB Simatupang No.1, Jakarta Selatan';
             return cleanSingleLineText(addr);
         },
         meta_p2_entity: () => contract.p2_entity ?? vendor?.name ?? vendor?.vendor_name ?? '',
         meta_p2_signer: () => contract.p2_signer ?? vendor?.pic_name ?? vendor?.pic ?? vendor?.detail?.pic ?? '',
-        meta_p2_signer_position: () => contract.p2_signer_position ?? vendor?.pic_position ?? vendor?.detail?.pic_position ?? vendor?.detail?.jobTitle?.[0] ?? '',
-        meta_p2_alamat: () => cleanSingleLineText(contract.p2_address ?? vendor?.address ?? vendor?.detail?.address ?? vendor?.detail?.mailingAddress),
+        meta_p2_signer_position: () =>
+            contract.p2_signer_position ?? vendor?.pic_position ?? vendor?.detail?.pic_position ?? vendor?.detail?.jobTitle?.[0] ?? '',
+        meta_p2_alamat: () =>
+            cleanSingleLineText(contract.p2_address ?? vendor?.address ?? vendor?.detail?.address ?? vendor?.detail?.mailingAddress),
 
         // Vendor / Pihak II Legality Auto-Resolvers
         meta_p2_nib: () => vendor?.detail?.legality?.nib ?? vendor?.nib ?? '',
@@ -203,7 +219,7 @@ export const getAutofillValue = (field: any, contract: Contract, docType?: 'f1' 
         meta_p2_npwp_status: () => vendor?.detail?.tax?.typeNpwp ?? '',
         meta_p2_pkp_status: () => vendor?.detail?.tax?.typePkp ?? (vendor?.is_pkp ? 'PKP' : 'NON PKP'),
         meta_p2_pkp_no: () => vendor?.detail?.tax?.pkp ?? '',
-        meta_p2_ppn_tarif: () => (vendor?.detail?.tax?.ppn !== null && vendor?.detail?.tax?.ppn !== undefined) ? `${vendor.detail.tax.ppn}%` : '',
+        meta_p2_ppn_tarif: () => (vendor?.detail?.tax?.ppn !== null && vendor?.detail?.tax?.ppn !== undefined ? `${vendor.detail.tax.ppn}%` : ''),
         meta_p2_pp23_no: () => vendor?.detail?.tax?.pp23number ?? '',
 
         // Vendor / Pihak II Bank Auto-Resolvers
@@ -240,22 +256,58 @@ export const getAutofillValue = (field: any, contract: Contract, docType?: 'f1' 
         f2_price: () => contract.metadata?.meta_harga ?? (contract as any).amount ?? '',
         meta_f2_price: () => contract.metadata?.meta_harga ?? (contract as any).amount ?? '',
         meta_mekanisme_pembayaran: () => (contract as any).payment_terms ?? '',
-        meta_tax_required: () => ((contract.metadata?.tax_required as any) === true || (contract.metadata?.tax_required as any) === '1' || (contract.metadata?.tax_required as any) === 1 || (contract.metadata?.tax_required as any) === 'Ya') ? 'Ya' : 'Tidak',
-        meta_pajak: () => ((contract.metadata?.tax_required as any) === true || (contract.metadata?.tax_required as any) === '1' || (contract.metadata?.tax_required as any) === 1 || (contract.metadata?.tax_required as any) === 'Ya') ? 'Ya' : 'Tidak',
-        pajak: () => ((contract.metadata?.tax_required as any) === true || (contract.metadata?.tax_required as any) === '1' || (contract.metadata?.tax_required as any) === 1 || (contract.metadata?.tax_required as any) === 'Ya') ? 'Ya' : 'Tidak',
-        tax_required: () => ((contract.metadata?.tax_required as any) === true || (contract.metadata?.tax_required as any) === '1' || (contract.metadata?.tax_required as any) === 1 || (contract.metadata?.tax_required as any) === 'Ya') ? 'Ya' : 'Tidak',
-        field_tanggal_mulai: () => contract.contract_date ? String(contract.contract_date).split('T')[0].split(' ')[0] : '',
-        field_tanggal_berakhir: () => contract.end_date ? String(contract.end_date).split('T')[0].split(' ')[0] : '',
-        field_tanggal_mulai_pelaksanaan_jasa_18: () => contract.contract_date ? String(contract.contract_date).split('T')[0].split(' ')[0] : '',
-        field_tanggal_berakhir_pelaksanaan_jasa_19: () => contract.end_date ? String(contract.end_date).split('T')[0].split(' ')[0] : '',
-        field_tanggal_mulai_pelaksanaan_jasa_23: () => contract.contract_date ? String(contract.contract_date).split('T')[0].split(' ')[0] : '',
-        field_tanggal_berakhir_pelaksanaan_jasa_24: () => contract.end_date ? String(contract.end_date).split('T')[0].split(' ')[0] : '',
-        field_tanggal_mulai_berlaku_20: () => contract.contract_date ? String(contract.contract_date).split('T')[0].split(' ')[0] : '',
-        field_tanggal_berakhir_21: () => contract.end_date ? String(contract.end_date).split('T')[0].split(' ')[0] : '',
+        meta_tax_required: () =>
+            (contract.metadata?.tax_required as any) === true ||
+            (contract.metadata?.tax_required as any) === '1' ||
+            (contract.metadata?.tax_required as any) === 1 ||
+            (contract.metadata?.tax_required as any) === 'Ya'
+                ? 'Ya'
+                : 'Tidak',
+        meta_pajak: () =>
+            (contract.metadata?.tax_required as any) === true ||
+            (contract.metadata?.tax_required as any) === '1' ||
+            (contract.metadata?.tax_required as any) === 1 ||
+            (contract.metadata?.tax_required as any) === 'Ya'
+                ? 'Ya'
+                : 'Tidak',
+        pajak: () =>
+            (contract.metadata?.tax_required as any) === true ||
+            (contract.metadata?.tax_required as any) === '1' ||
+            (contract.metadata?.tax_required as any) === 1 ||
+            (contract.metadata?.tax_required as any) === 'Ya'
+                ? 'Ya'
+                : 'Tidak',
+        tax_required: () =>
+            (contract.metadata?.tax_required as any) === true ||
+            (contract.metadata?.tax_required as any) === '1' ||
+            (contract.metadata?.tax_required as any) === 1 ||
+            (contract.metadata?.tax_required as any) === 'Ya'
+                ? 'Ya'
+                : 'Tidak',
+        field_tanggal_mulai: () => (contract.contract_date ? String(contract.contract_date).split('T')[0].split(' ')[0] : ''),
+        field_tanggal_berakhir: () => (contract.end_date ? String(contract.end_date).split('T')[0].split(' ')[0] : ''),
+        field_tanggal_mulai_pelaksanaan_jasa_18: () => (contract.contract_date ? String(contract.contract_date).split('T')[0].split(' ')[0] : ''),
+        field_tanggal_berakhir_pelaksanaan_jasa_19: () => (contract.end_date ? String(contract.end_date).split('T')[0].split(' ')[0] : ''),
+        field_tanggal_mulai_pelaksanaan_jasa_23: () => (contract.contract_date ? String(contract.contract_date).split('T')[0].split(' ')[0] : ''),
+        field_tanggal_berakhir_pelaksanaan_jasa_24: () => (contract.end_date ? String(contract.end_date).split('T')[0].split(' ')[0] : ''),
+        field_tanggal_mulai_berlaku_20: () => (contract.contract_date ? String(contract.contract_date).split('T')[0].split(' ')[0] : ''),
+        field_tanggal_berakhir_21: () => (contract.end_date ? String(contract.end_date).split('T')[0].split(' ')[0] : ''),
         field_harga_jasa_23: () => contract.metadata?.meta_harga ?? (contract as any).amount ?? '',
         field_harga_jasa_28: () => contract.metadata?.meta_harga ?? (contract as any).amount ?? '',
-        field_pajak_26: () => ((contract.metadata?.tax_required as any) === true || (contract.metadata?.tax_required as any) === '1' || (contract.metadata?.tax_required as any) === 1 || (contract.metadata?.tax_required as any) === 'Ya') ? 'Ya' : 'Tidak',
-        field_pajak_31: () => ((contract.metadata?.tax_required as any) === true || (contract.metadata?.tax_required as any) === '1' || (contract.metadata?.tax_required as any) === 1 || (contract.metadata?.tax_required as any) === 'Ya') ? 'Ya' : 'Tidak',
+        field_pajak_26: () =>
+            (contract.metadata?.tax_required as any) === true ||
+            (contract.metadata?.tax_required as any) === '1' ||
+            (contract.metadata?.tax_required as any) === 1 ||
+            (contract.metadata?.tax_required as any) === 'Ya'
+                ? 'Ya'
+                : 'Tidak',
+        field_pajak_31: () =>
+            (contract.metadata?.tax_required as any) === true ||
+            (contract.metadata?.tax_required as any) === '1' ||
+            (contract.metadata?.tax_required as any) === 1 ||
+            (contract.metadata?.tax_required as any) === 'Ya'
+                ? 'Ya'
+                : 'Tidak',
     };
 
     if (resolvers[name]) {

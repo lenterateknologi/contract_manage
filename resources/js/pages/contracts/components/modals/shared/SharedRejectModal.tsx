@@ -1,7 +1,1 @@
-export {
-    SharedRejectModal,
-    SharedActionModal,
-    type SharedRejectModalProps,
-    type SharedActionModalProps,
-} from './SharedApproveModal';
-
+export { SharedActionModal, SharedRejectModal, type SharedActionModalProps, type SharedRejectModalProps } from './SharedApproveModal';

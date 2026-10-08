@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { Head, router } from '@inertiajs/react';
-import { Database, Download, Trash2, Play, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/buttons/Button';
 import { PageTable } from '@/components/ui/navigation/PageTable';
+import { Head, router } from '@inertiajs/react';
+import { AlertCircle, CheckCircle2, Database, Download, Play, RefreshCw, Trash2 } from 'lucide-react';
+import { useState } from 'react';
 
 interface BackupFile {
     filename: string;
@@ -28,9 +28,13 @@ export default function Index({ backups, errors, flash }: Props) {
 
     const triggerScript = (scriptKey: string) => {
         setRunningScript(scriptKey);
-        router.post('/admin/backups/run', { script: scriptKey }, {
-            onFinish: () => setRunningScript(null),
-        });
+        router.post(
+            '/admin/backups/run',
+            { script: scriptKey },
+            {
+                onFinish: () => setRunningScript(null),
+            },
+        );
     };
 
     const handleDelete = (filename: string) => {
@@ -40,11 +44,19 @@ export default function Index({ backups, errors, flash }: Props) {
     };
 
     const handleRestore = (filename: string) => {
-        if (confirm(`PERINGATAN: Apakah Anda yakin ingin melakukan restore database menggunakan file "${filename}"?\nTindakan ini akan menimpa data database Anda saat ini.`)) {
+        if (
+            confirm(
+                `PERINGATAN: Apakah Anda yakin ingin melakukan restore database menggunakan file "${filename}"?\nTindakan ini akan menimpa data database Anda saat ini.`,
+            )
+        ) {
             setRestoringFile(filename);
-            router.post('/admin/backups/restore', { filename }, {
-                onFinish: () => setRestoringFile(null),
-            });
+            router.post(
+                '/admin/backups/restore',
+                { filename },
+                {
+                    onFinish: () => setRestoringFile(null),
+                },
+            );
         }
     };
 
@@ -58,42 +70,41 @@ export default function Index({ backups, errors, flash }: Props) {
     return (
         <>
             <Head title="Backup & Restore" />
-            <PageTable
-                title="Backup & Restore"
-                subtitle="Manajemen ekspor dan impor data database sistem secara manual"
-                icon={Database}
-            >
-                <div className="flex-1 overflow-auto p-6 space-y-6">
+            <PageTable title="Backup & Restore" subtitle="Manajemen ekspor dan impor data database sistem secara manual" icon={Database}>
+                <div className="flex-1 space-y-6 overflow-auto p-6">
                     {/* Flash messages */}
                     {flash?.success && (
-                        <div className="flex items-center gap-2 p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 rounded-xl text-xs font-medium animate-in fade-in">
+                        <div className="animate-in fade-in flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-xs font-medium text-emerald-500">
                             <CheckCircle2 size={16} />
                             <span>{flash.success}</span>
                         </div>
                     )}
                     {(errors?.error || flash?.error) && (
-                        <div className="flex items-center gap-2 p-3 bg-rose-500/10 border border-rose-500/20 text-rose-500 rounded-xl text-xs font-medium animate-in fade-in">
+                        <div className="animate-in fade-in flex items-center gap-2 rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 text-xs font-medium text-rose-500">
                             <AlertCircle size={16} />
                             <span>{errors?.error || flash?.error}</span>
                         </div>
                     )}
 
                     {/* Trigger Scripts Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
                         {scripts.map((script) => {
                             const isRunning = runningScript === script.key;
                             return (
-                                <div key={script.key} className="border border-surface-border bg-card/40 rounded-2xl p-4 flex flex-col justify-between hover:border-primary/40 hover:shadow-lg transition-all duration-300 backdrop-blur-sm">
+                                <div
+                                    key={script.key}
+                                    className="border-surface-border bg-card/40 hover:border-primary/40 flex flex-col justify-between rounded-2xl border p-4 backdrop-blur-sm transition-all duration-300 hover:shadow-lg"
+                                >
                                     <div className="space-y-1">
-                                        <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">{script.name}</h3>
-                                        <p className="text-[11px] text-muted-foreground leading-relaxed">{script.description}</p>
+                                        <h3 className="text-foreground text-xs font-bold tracking-wider uppercase">{script.name}</h3>
+                                        <p className="text-muted-foreground text-[11px] leading-relaxed">{script.description}</p>
                                     </div>
-                                    <div className="mt-4 pt-3 border-t border-surface-border/40 flex justify-end">
+                                    <div className="border-surface-border/40 mt-4 flex justify-end border-t pt-3">
                                         <Button
-                                            variant={isRunning ? "white" : "primary"}
+                                            variant={isRunning ? 'white' : 'primary'}
                                             onClick={() => triggerScript(script.key)}
                                             disabled={runningScript !== null || restoringFile !== null}
-                                            className="h-8 px-3 gap-1.5 text-[11px] font-medium rounded-lg uppercase tracking-wider"
+                                            className="h-8 gap-1.5 rounded-lg px-3 text-[11px] font-medium tracking-wider uppercase"
                                         >
                                             {isRunning ? (
                                                 <>
@@ -112,40 +123,40 @@ export default function Index({ backups, errors, flash }: Props) {
                     </div>
 
                     {/* Backups List */}
-                    <div className="bg-card border border-surface-border rounded-2xl overflow-hidden flex flex-col">
-                        <div className="px-5 py-4 border-b border-surface-border flex items-center justify-between">
-                            <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">Daftar File SQL Dump</h3>
-                            <span className="text-[10px] bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-full font-medium">
+                    <div className="bg-card border-surface-border flex flex-col overflow-hidden rounded-2xl border">
+                        <div className="border-surface-border flex items-center justify-between border-b px-5 py-4">
+                            <h3 className="text-foreground text-xs font-bold tracking-wider uppercase">Daftar File SQL Dump</h3>
+                            <span className="bg-primary/10 text-primary border-primary/20 rounded-full border px-2 py-0.5 text-[10px] font-medium">
                                 {backups.length} file ditemukan
                             </span>
                         </div>
                         <div className="p-0">
                             {backups.length === 0 ? (
-                                <div className="p-8 text-center text-xs text-muted-foreground flex flex-col items-center justify-center gap-2">
+                                <div className="text-muted-foreground flex flex-col items-center justify-center gap-2 p-8 text-center text-xs">
                                     <Database size={24} className="text-muted-foreground/40" />
                                     <span>Belum ada file backup database (.sql) ditemukan di folder root.</span>
                                 </div>
                             ) : (
-                                <table className="w-full text-left border-collapse">
+                                <table className="w-full border-collapse text-left">
                                     <thead>
-                                        <tr className="border-b border-surface-border bg-muted/20 text-[10px] uppercase text-muted-foreground tracking-wider font-bold">
+                                        <tr className="border-surface-border bg-muted/20 text-muted-foreground border-b text-[10px] font-bold tracking-wider uppercase">
                                             <th className="px-5 py-3">Nama File</th>
                                             <th className="px-5 py-3">Ukuran</th>
                                             <th className="px-5 py-3">Waktu Backup</th>
                                             <th className="px-5 py-3 text-right">Aksi</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-surface-border/40">
+                                    <tbody className="divide-surface-border/40 divide-y">
                                         {backups.map((row) => (
                                             <tr key={row.filename} className="hover:bg-muted/10 transition-colors">
                                                 <td className="px-5 py-3.5">
                                                     <div className="flex items-center gap-2">
                                                         <Database size={14} className="text-primary/70 shrink-0" />
-                                                        <span className="font-medium text-foreground text-xs">{row.filename}</span>
+                                                        <span className="text-foreground text-xs font-medium">{row.filename}</span>
                                                     </div>
                                                 </td>
-                                                <td className="px-5 py-3.5 text-xs text-muted-foreground">{row.formatted_size}</td>
-                                                <td className="px-5 py-3.5 text-xs text-muted-foreground">{row.last_modified}</td>
+                                                <td className="text-muted-foreground px-5 py-3.5 text-xs">{row.formatted_size}</td>
+                                                <td className="text-muted-foreground px-5 py-3.5 text-xs">{row.last_modified}</td>
                                                 <td className="px-5 py-3.5 text-right">
                                                     <div className="flex items-center justify-end gap-2">
                                                         <Button
@@ -154,7 +165,7 @@ export default function Index({ backups, errors, flash }: Props) {
                                                             onClick={() => handleRestore(row.filename)}
                                                             disabled={runningScript !== null || restoringFile !== null}
                                                             title="Restore Database"
-                                                            className="h-8 w-8 hover:text-amber-500 text-muted-foreground hover:border-amber-200 rounded-lg border border-surface-border"
+                                                            className="text-muted-foreground border-surface-border h-8 w-8 rounded-lg border hover:border-amber-200 hover:text-amber-500"
                                                         >
                                                             {restoringFile === row.filename ? (
                                                                 <RefreshCw size={14} className="animate-spin" />
@@ -163,7 +174,12 @@ export default function Index({ backups, errors, flash }: Props) {
                                                             )}
                                                         </Button>
                                                         <a href={`/admin/backups/download/${row.filename}`}>
-                                                            <Button variant="white" size="icon" className="h-8 w-8 hover:text-primary rounded-lg border border-surface-border" title="Download File">
+                                                            <Button
+                                                                variant="white"
+                                                                size="icon"
+                                                                className="hover:text-primary border-surface-border h-8 w-8 rounded-lg border"
+                                                                title="Download File"
+                                                            >
                                                                 <Download size={14} />
                                                             </Button>
                                                         </a>
@@ -171,7 +187,7 @@ export default function Index({ backups, errors, flash }: Props) {
                                                             variant="white"
                                                             size="icon"
                                                             onClick={() => handleDelete(row.filename)}
-                                                            className="h-8 w-8 hover:text-red-500 text-muted-foreground hover:border-red-200 rounded-lg border border-surface-border"
+                                                            className="text-muted-foreground border-surface-border h-8 w-8 rounded-lg border hover:border-red-200 hover:text-red-500"
                                                             title="Hapus File"
                                                         >
                                                             <Trash2 size={14} />

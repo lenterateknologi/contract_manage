@@ -6,11 +6,11 @@ use App\Core\Crud\Columns\BooleanColumn;
 use App\Core\Crud\Columns\TextColumn;
 use App\Core\Crud\Fields\TextInput;
 use App\Core\Crud\Fields\ToggleInput;
-use App\Core\Crud\Filters\Filter;
+use App\Core\Crud\Filter;
 use App\Core\Crud\Resource;
-use App\Exports\VendorsExport;
+use App\Exports\Master\VendorsExport;
 use App\Imports\VendorsImport;
-use App\Models\Vendor;
+use App\Models\Master\Vendor;
 
 class VendorResource extends Resource
 {

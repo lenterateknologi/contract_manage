@@ -4,13 +4,14 @@ namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\ProfileUpdateRequest;
-use App\Models\Contract;
-use App\Models\User;
+use App\Models\Master\User;
+use App\Traits\ApiResponse;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Traits\ApiResponse;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -21,7 +22,7 @@ class ProfileController extends Controller
     /**
      * Show the user's profile settings page.
      */
-    public function edit(Request $request): Response|\Illuminate\Http\JsonResponse
+    public function edit(Request $request): Response|JsonResponse
     {
         $user = $request->user();
         $formattedUser = $this->formatUserProfile($user);
@@ -79,8 +80,8 @@ class ProfileController extends Controller
 
         if ($request->hasFile('photo')) {
             // Delete old photo if stored in storage
-            if ($user->image_src && !str_starts_with($user->image_src, 'http') && \Illuminate\Support\Facades\Storage::disk('public')->exists($user->image_src)) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($user->image_src);
+            if ($user->image_src && ! str_starts_with($user->image_src, 'http') && Storage::disk('public')->exists($user->image_src)) {
+                Storage::disk('public')->delete($user->image_src);
             }
 
             $path = $request->file('photo')->store('avatars', 'public');
@@ -95,7 +96,7 @@ class ProfileController extends Controller
             }
         }
         // Handle alias phone -> phone_number
-        if (isset($validated['phone']) && !isset($validated['phone_number'])) {
+        if (isset($validated['phone']) && ! isset($validated['phone_number'])) {
             $updatableData['phone_number'] = $validated['phone'];
         }
 

@@ -1,6 +1,6 @@
+import { PaginatedData } from '@/pages/contracts/types';
 import { apiClient, unwrapResponse } from '../client';
 import { API_ENDPOINTS } from '../endpoints';
-import { PaginatedData } from '@/pages/contracts/types';
 
 export interface AppNotification {
     id: string;
@@ -31,24 +31,20 @@ export const notificationsApi = {
     /**
      * Get unread notifications count
      */
-    getUnreadCount: (): Promise<{ count: number }> =>
-        unwrapResponse(apiClient.get(API_ENDPOINTS.NOTIFICATIONS.UNREAD_COUNT)),
+    getUnreadCount: (): Promise<{ count: number }> => unwrapResponse(apiClient.get(API_ENDPOINTS.NOTIFICATIONS.UNREAD_COUNT)),
 
     /**
      * Mark all notifications as read
      */
-    markAllRead: (): Promise<{ marked_count: number }> =>
-        unwrapResponse(apiClient.post(API_ENDPOINTS.NOTIFICATIONS.MARK_ALL_READ)),
+    markAllRead: (): Promise<{ marked_count: number }> => unwrapResponse(apiClient.post(API_ENDPOINTS.NOTIFICATIONS.MARK_ALL_READ)),
 
     /**
      * Mark single notification as read
      */
-    markSingleRead: (id: string): Promise<AppNotification> =>
-        unwrapResponse(apiClient.post(API_ENDPOINTS.NOTIFICATIONS.MARK_READ(id))),
+    markSingleRead: (id: string): Promise<AppNotification> => unwrapResponse(apiClient.post(API_ENDPOINTS.NOTIFICATIONS.MARK_READ(id))),
 
     /**
      * Dismiss / delete notification
      */
-    dismiss: (id: string): Promise<any> =>
-        unwrapResponse(apiClient.delete(API_ENDPOINTS.NOTIFICATIONS.DISMISS(id))),
+    dismiss: (id: string): Promise<any> => unwrapResponse(apiClient.delete(API_ENDPOINTS.NOTIFICATIONS.DISMISS(id))),
 };

@@ -54,8 +54,7 @@ export function DraftEditableInfoCard({
 }: DraftEditableInfoCardProps) {
     // ponytail: Full read-only if user has no active action on the current step / draft ownership
     const hasAction = Boolean(
-        selected.can_approve ||
-        (selected.status === 'draft' && (selected.created_by === meId || selected.initiated_by_id === meId))
+        selected.can_approve || (selected.status === 'draft' && (selected.created_by === meId || selected.initiated_by_id === meId)),
     );
     const is_readonly =
         !hasAction ||
@@ -410,7 +409,9 @@ export function DraftEditableInfoCard({
                             onTaxRequiredChange={(newVal) => {
                                 setTaxRequired(newVal);
                             }}
-                            canEditFirstParty={!is_readonly && selected.allow?.first_party_edit !== false && selected.allow_first_party_edit !== false}
+                            canEditFirstParty={
+                                !is_readonly && selected.allow?.first_party_edit !== false && selected.allow_first_party_edit !== false
+                            }
                             canEditVendor={!is_readonly && selected.allow?.vendor_edit !== false && selected.allow_vendor_edit !== false}
                             canEditCategory={canEditCategory}
                             canEditPrice={!is_readonly && selected.allow?.price_edit !== false && selected.allow_price_edit !== false}

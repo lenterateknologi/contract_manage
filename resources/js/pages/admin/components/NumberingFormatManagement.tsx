@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/buttons/Button';
-import { Checkbox } from '@/components/ui/selection/Checkbox';
 import { CompactInput } from '@/components/ui/inputs/CompactInput';
+import { Checkbox } from '@/components/ui/selection/Checkbox';
 import { cn } from '@/lib/utils';
 import { useForm } from '@inertiajs/react';
 import { CalendarDays, FileText, Hash, Info, LayoutGrid, Loader2, Save, Settings2 } from 'lucide-react';
@@ -57,7 +57,9 @@ export function NumberingFormatManagement({ formats }: Readonly<Props>) {
                     </div>
                     <div className="flex flex-col gap-8">
                         <div className="flex flex-col">
-                            <span className="text-text-main mb-2 text-[11px] font-semibold tracking-[0.3em] uppercase">Panduan Sintaks Placeholder</span>
+                            <span className="text-text-main mb-2 text-[11px] font-semibold tracking-[0.3em] uppercase">
+                                Panduan Sintaks Placeholder
+                            </span>
                             <p className="text-text-desc text-[9px] font-bold uppercase">
                                 Gunakan tag di bawah ini untuk membangun pola penomoran dokumen yang dinamis
                             </p>
@@ -181,7 +183,7 @@ function FormatCard({ format }: Readonly<{ format: NumberingFormat }>) {
                                 className="bg-primary/[0.03] border-surface-border group hover:bg-primary/[0.05] flex cursor-pointer items-center gap-4 rounded-xl border p-4 transition-colors"
                                 onClick={() => setData('is_active', !data.is_active)}
                             >
-                                <Checkbox checked={data.is_active} onCheckedChange={() => { }} />
+                                <Checkbox checked={data.is_active} onCheckedChange={() => {}} />
                                 <div className="flex flex-col">
                                     <span className="text-text-main text-[10px] font-semibold uppercase">Aktivasi Sistem</span>
                                     <span className="text-text-main/30 mt-0.5 text-[8px] font-bold uppercase">Aktifkan generator nomor otomatis</span>
@@ -230,7 +232,9 @@ function FormatCard({ format }: Readonly<{ format: NumberingFormat }>) {
                         </div>
                         <div className="grid grid-cols-2 gap-6 lg:col-span-5">
                             <div className="border-surface-border bg-surface-muted rounded-[1.5rem] border p-6 shadow-sm transition-all hover:shadow-md">
-                                <span className="text-text-main/30 mb-4 block text-[9px] font-semibold tracking-[0.2em] uppercase">Index Terakhir</span>
+                                <span className="text-text-main/30 mb-4 block text-[9px] font-semibold tracking-[0.2em] uppercase">
+                                    Index Terakhir
+                                </span>
                                 <div className="flex items-baseline gap-2">
                                     <span className="text-text-main text-4xl leading-none font-semibold tracking-tighter tabular-nums">
                                         {format.current_number}
@@ -239,7 +243,9 @@ function FormatCard({ format }: Readonly<{ format: NumberingFormat }>) {
                                 </div>
                             </div>
                             <div className="border-surface-border bg-surface-muted rounded-[1.5rem] border p-6 shadow-sm transition-all hover:shadow-md">
-                                <span className="text-text-main/30 mb-4 block text-[9px] font-semibold tracking-[0.2em] uppercase">Padding Digit</span>
+                                <span className="text-text-main/30 mb-4 block text-[9px] font-semibold tracking-[0.2em] uppercase">
+                                    Padding Digit
+                                </span>
                                 <div className="flex items-baseline gap-2">
                                     <span className="text-text-main text-4xl leading-none font-semibold tracking-tighter tabular-nums">
                                         {format.padding}

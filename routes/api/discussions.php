@@ -25,4 +25,3 @@ Route::prefix('contracts/{contractId}/messages')->controller(ChatController::cla
 Route::get('/messages/{messageId}', [ChatController::class, 'getMessageDetail']);
 Route::post('/messages/{messageId}/reaction', [ChatController::class, 'toggleReaction']);
 Route::get('/messages/attachment/{messageId}', [ChatController::class, 'downloadAttachment'])->name('contracts.message-attachment');
-

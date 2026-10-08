@@ -1,17 +1,10 @@
-import React, { useState } from 'react';
 import { Button } from '@/components/ui/buttons/Button';
 import { FormInput } from '@/components/ui/inputs/FormInput';
 import { cn } from '@/lib/utils';
 import { Contract, ContractPurchaseOrder } from '@/pages/contracts/types';
 import { contractApi } from '@/pages/contracts/utils';
-import {
-    Edit3,
-    Loader2,
-    Plus,
-    ShoppingCart,
-    Trash2,
-    X,
-} from 'lucide-react';
+import { Edit3, Loader2, Plus, ShoppingCart, Trash2, X } from 'lucide-react';
+import React, { useState } from 'react';
 
 interface ContractPurchaseOrdersProps {
     contract: Contract;
@@ -22,18 +15,9 @@ interface ContractPurchaseOrdersProps {
     vendors?: any[];
 }
 
-export default function ContractPurchaseOrders({
-    contract,
-    canUpdate,
-    onUpdate,
-    processing,
-    meId,
-}: ContractPurchaseOrdersProps) {
+export default function ContractPurchaseOrders({ contract, canUpdate, onUpdate, processing, meId }: ContractPurchaseOrdersProps) {
     // ponytail: workflow configuration is the strict source of truth for PO references
-    const allowReference =
-        contract.allow?.reference ??
-        (contract as any).allow_reference ??
-        (contract.workflow_step as any)?.meta?.allow_reference;
+    const allowReference = contract.allow?.reference ?? (contract as any).allow_reference ?? (contract.workflow_step as any)?.meta?.allow_reference;
     const isActor =
         (contract as any).can_approve ||
         (contract as any).is_current_actor ||
@@ -113,17 +97,15 @@ export default function ContractPurchaseOrders({
     };
 
     return (
-        <div className="bg-surface-base flex flex-1 flex-col overflow-hidden p-3 lg:p-4 gap-3">
+        <div className="bg-surface-base flex flex-1 flex-col gap-3 overflow-hidden p-3 lg:p-4">
             {/* Compact Header Bar */}
-            <div className="bg-primary text-primary-foreground shrink-0 flex h-9.5 min-h-[38px] max-h-[38px] items-center justify-between px-4 rounded-xl shadow-xs">
+            <div className="bg-primary text-primary-foreground flex h-9.5 max-h-[38px] min-h-[38px] shrink-0 items-center justify-between rounded-xl px-4 shadow-xs">
                 <div className="flex items-center gap-3">
                     <div className="flex items-center gap-2">
                         <ShoppingCart size={15} className="text-primary-foreground/90" />
-                        <h4 className="text-xs font-semibold tracking-tight text-primary-foreground uppercase">
-                            Catatan Purchase Order (PO)
-                        </h4>
+                        <h4 className="text-primary-foreground text-xs font-semibold tracking-tight uppercase">Catatan Purchase Order (PO)</h4>
                         {purchaseOrders.length > 0 && (
-                            <span className="rounded bg-white/20 border border-white/30 px-1.5 py-0.2 text-[9px] font-bold text-white">
+                            <span className="py-0.2 rounded border border-white/30 bg-white/20 px-1.5 text-[9px] font-bold text-white">
                                 {purchaseOrders.length} Nomor PO
                             </span>
                         )}
@@ -135,7 +117,7 @@ export default function ContractPurchaseOrders({
                         <button
                             type="button"
                             onClick={openCreateModal}
-                            className="bg-white text-primary hover:bg-white/90 h-7 px-3 text-xs font-bold rounded-lg shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                            className="text-primary flex h-7 cursor-pointer items-center gap-1.5 rounded-lg bg-white px-3 text-xs font-bold shadow-xs transition-all hover:bg-white/90"
                         >
                             <Plus size={13} />
                             <span>Tambah PO</span>
@@ -145,36 +127,34 @@ export default function ContractPurchaseOrders({
             </div>
 
             {/* Content List */}
-            <div className={cn('p-6 custom-scrollbar flex-1 overflow-y-auto flex flex-col gap-4', purchaseOrders.length === 0 && 'justify-center')}>
+            <div className={cn('custom-scrollbar flex flex-1 flex-col gap-4 overflow-y-auto p-6', purchaseOrders.length === 0 && 'justify-center')}>
                 {purchaseOrders.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
                         {purchaseOrders.map((po) => {
                             return (
                                 <div
                                     key={po.id}
-                                    className="group relative overflow-hidden rounded-xl border border-border/80 bg-card p-4 shadow-2xs transition-all hover:border-primary/40 hover:shadow-xs flex items-center justify-between gap-3"
+                                    className="group border-border/80 bg-card hover:border-primary/40 relative flex items-center justify-between gap-3 overflow-hidden rounded-xl border p-4 shadow-2xs transition-all hover:shadow-xs"
                                 >
-                                    <div className="flex items-center gap-3 min-w-0">
+                                    <div className="flex min-w-0 items-center gap-3">
                                         <div className="bg-primary/10 text-primary flex size-9 shrink-0 items-center justify-center rounded-lg font-bold">
                                             <ShoppingCart size={17} />
                                         </div>
                                         <div className="min-w-0">
-                                            <span className="text-[9.5px] font-mono font-bold uppercase tracking-wider text-muted-foreground block">
+                                            <span className="text-muted-foreground block font-mono text-[9.5px] font-bold tracking-wider uppercase">
                                                 NO. PURCHASE ORDER
                                             </span>
-                                            <h5 className="font-mono text-sm font-bold text-foreground truncate select-all">
-                                                {po.po_number}
-                                            </h5>
+                                            <h5 className="text-foreground truncate font-mono text-sm font-bold select-all">{po.po_number}</h5>
                                         </div>
                                     </div>
 
                                     {canModify && (
-                                        <div className="flex items-center gap-1 shrink-0 opacity-80 group-hover:opacity-100 transition-opacity">
+                                        <div className="flex shrink-0 items-center gap-1 opacity-80 transition-opacity group-hover:opacity-100">
                                             <Button
                                                 size="sm"
                                                 variant="ghost"
                                                 onClick={() => openEditModal(po)}
-                                                className="size-7 p-0 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg"
+                                                className="text-muted-foreground hover:text-foreground hover:bg-muted size-7 rounded-lg p-0"
                                                 title="Edit No. PO"
                                             >
                                                 <Edit3 size={13} />
@@ -183,7 +163,7 @@ export default function ContractPurchaseOrders({
                                                 size="sm"
                                                 variant="ghost"
                                                 onClick={() => handleDelete(po.id)}
-                                                className="size-7 p-0 text-muted-foreground hover:text-rose-600 hover:bg-rose-50 rounded-lg"
+                                                className="text-muted-foreground size-7 rounded-lg p-0 hover:bg-rose-50 hover:text-rose-600"
                                                 title="Hapus No. PO"
                                             >
                                                 <Trash2 size={13} />
@@ -196,12 +176,10 @@ export default function ContractPurchaseOrders({
                     </div>
                 ) : (
                     <div className="flex flex-col items-center justify-center rounded-2xl px-6 py-10 text-center">
-                        <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
+                        <div className="bg-muted text-muted-foreground mb-3 flex h-14 w-14 items-center justify-center rounded-2xl">
                             <ShoppingCart size={24} />
                         </div>
-                        <h4 className="text-foreground text-[12px] font-bold uppercase">
-                            Belum Ada Nomor Purchase Order (PO)
-                        </h4>
+                        <h4 className="text-foreground text-[12px] font-bold uppercase">Belum Ada Nomor Purchase Order (PO)</h4>
                         <p className="text-muted-foreground mt-1 max-w-[320px] text-xs leading-relaxed">
                             Catat nomor PO yang diterbitkan untuk kontrak ini.
                         </p>
@@ -209,7 +187,7 @@ export default function ContractPurchaseOrders({
                             <Button
                                 size="sm"
                                 onClick={openCreateModal}
-                                className="bg-primary hover:bg-primary/90 mt-4 h-8.5 rounded-xl px-4 text-xs font-bold text-primary-foreground uppercase shadow-xs cursor-pointer"
+                                className="bg-primary hover:bg-primary/90 text-primary-foreground mt-4 h-8.5 cursor-pointer rounded-xl px-4 text-xs font-bold uppercase shadow-xs"
                             >
                                 <Plus size={14} className="mr-1" /> Catat Nomor PO
                             </Button>
@@ -226,19 +204,17 @@ export default function ContractPurchaseOrders({
                         onClick={() => !saving && setIsModalOpen(false)}
                     />
 
-                    <div className="animate-in zoom-in-95 relative flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl duration-200">
-                        <div className="flex items-center justify-between border-b border-border bg-card px-6 py-4">
+                    <div className="animate-in zoom-in-95 border-border bg-card relative flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border shadow-2xl duration-200">
+                        <div className="border-border bg-card flex items-center justify-between border-b px-6 py-4">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-primary/10 rounded-xl text-primary">
+                                <div className="bg-primary/10 text-primary rounded-xl p-2">
                                     <ShoppingCart size={18} strokeWidth={2.5} />
                                 </div>
                                 <div>
                                     <h3 className="text-foreground text-sm font-bold tracking-wide uppercase">
                                         {editingPo ? 'Edit Nomor Purchase Order (PO)' : 'Catat Nomor Purchase Order (PO)'}
                                     </h3>
-                                    <p className="text-muted-foreground text-xs font-normal">
-                                        Masukkan nomor PO yang terkait dengan kontrak ini
-                                    </p>
+                                    <p className="text-muted-foreground text-xs font-normal">Masukkan nomor PO yang terkait dengan kontrak ini</p>
                                 </div>
                             </div>
                             <Button
@@ -246,15 +222,15 @@ export default function ContractPurchaseOrders({
                                 size="sm"
                                 disabled={saving}
                                 onClick={() => setIsModalOpen(false)}
-                                className="text-muted-foreground hover:text-foreground h-8 w-8 rounded-xl p-0 hover:bg-muted"
+                                className="text-muted-foreground hover:text-foreground hover:bg-muted h-8 w-8 rounded-xl p-0"
                             >
                                 <X size={16} strokeWidth={3} />
                             </Button>
                         </div>
 
-                        <form onSubmit={handleSave} className="p-6 space-y-4">
+                        <form onSubmit={handleSave} className="space-y-4 p-6">
                             {errorMsg && (
-                                <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-600 rounded-xl text-xs font-semibold">
+                                <div className="rounded-xl border border-rose-200 bg-rose-50 p-3.5 text-xs font-semibold text-rose-600">
                                     {errorMsg}
                                 </div>
                             )}
@@ -270,24 +246,24 @@ export default function ContractPurchaseOrders({
                                 />
                             </div>
 
-                            <div className="pt-4 border-t border-border flex items-center justify-end gap-3">
+                            <div className="border-border flex items-center justify-end gap-3 border-t pt-4">
                                 <Button
                                     type="button"
                                     variant="outline"
                                     disabled={saving}
                                     onClick={() => setIsModalOpen(false)}
-                                    className="text-xs h-9.5 rounded-xl font-bold px-5"
+                                    className="h-9.5 rounded-xl px-5 text-xs font-bold"
                                 >
                                     Batal
                                 </Button>
                                 <Button
                                     type="submit"
                                     disabled={saving}
-                                    className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs h-9.5 rounded-xl font-bold px-6 shadow-xs cursor-pointer"
+                                    className="bg-primary hover:bg-primary/90 text-primary-foreground h-9.5 cursor-pointer rounded-xl px-6 text-xs font-bold shadow-xs"
                                 >
                                     {saving ? (
                                         <>
-                                            <Loader2 size={14} className="animate-spin mr-1.5" /> Menyimpan...
+                                            <Loader2 size={14} className="mr-1.5 animate-spin" /> Menyimpan...
                                         </>
                                     ) : editingPo ? (
                                         'Simpan Perubahan'

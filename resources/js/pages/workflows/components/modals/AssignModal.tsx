@@ -14,8 +14,8 @@ interface AssignModalProps {
 export function AssignModal({ isOpen, onClose, assigneeOptions, showToast, action, step, idx, actionAlias }: AssignModalProps) {
     const mockContract = {
         workflow_step: {
-            step: (idx !== undefined ? idx + 1 : 1),
-            actions: action ? [action] : (step?.actions || []),
+            step: idx !== undefined ? idx + 1 : 1,
+            actions: action ? [action] : step?.actions || [],
             description: step?.description || step?.label,
         },
         workflow_step_id: step?.id,

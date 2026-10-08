@@ -1,24 +1,13 @@
+import { Icons } from '@/components/ui';
 import { Button } from '@/components/ui/buttons/Button';
 import { StatusBadge } from '@/components/ui/feedback/StatusBadge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/selection/DropdownMenu';
 import { cn, formatDate, formatDateAndTimeParts } from '@/lib/utils';
-import { UserAvatar, UserAvatarIcon, UserAvatarWithName, UserAvatarWithRole } from '@/components/profile/UserAvatar';
 import { Contract, ContractType } from '@/pages/contracts/types';
-import { AppIcon, Icons } from '@/components/ui';
 import type { LucideIcon } from 'lucide-react';
-
-const {
-    AlertCircle,
-    AlertTriangle,
-    Check,
-    CheckCircle2,
-    Clock,
-    Eye,
-    FileEdit,
-    MoreVertical,
-    Trash2,
-} = Icons;
 import { memo, useEffect, useState } from 'react';
+
+const { AlertCircle, AlertTriangle, Check, CheckCircle2, Clock, Eye, FileEdit, MoreVertical, Trash2 } = Icons;
 
 export function isStatusTerminal(status?: string | null): boolean {
     return ['approved', 'rejected', 'archived', 'expired', 'cancelled'].includes((status || '').toLowerCase());
@@ -226,7 +215,13 @@ export function ExpiryBadge({ endDate, className }: Readonly<{ endDate: string |
     const { countdownLabel, color, icon: Icon } = config;
 
     return (
-        <div className={cn('inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[10px] font-semibold border shadow-2xs whitespace-nowrap', color, className)}>
+        <div
+            className={cn(
+                'inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[10px] font-semibold whitespace-nowrap shadow-2xs',
+                color,
+                className,
+            )}
+        >
             <Icon size={11} strokeWidth={2.5} className="shrink-0" />
             <span>{countdownLabel}</span>
         </div>
@@ -259,12 +254,7 @@ export const SLACountdown = ({ deadline, status }: Readonly<{ deadline: string |
     };
 
     return (
-        <div
-            className={cn(
-                'flex w-fit items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-semibold ring-1',
-                getUrgencyStyles(),
-            )}
-        >
+        <div className={cn('flex w-fit items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-semibold ring-1', getUrgencyStyles())}>
             <Clock size={10} className={config.urgency === 'danger' ? 'animate-pulse' : ''} />
             {config.timeLeft}
         </div>
@@ -272,32 +262,28 @@ export const SLACountdown = ({ deadline, status }: Readonly<{ deadline: string |
 };
 
 export const ContractInfoCell = ({ c }: Readonly<{ c: Contract }>) => (
-    <div className="flex flex-col gap-1 py-1 max-w-[360px]">
-        <div className="flex items-center gap-1.5 min-w-0">
-            <span className="text-text-main font-semibold text-[12.5px] leading-snug line-clamp-1" title={c.title}>
+    <div className="flex max-w-[360px] flex-col gap-1 py-1">
+        <div className="flex min-w-0 items-center gap-1.5">
+            <span className="text-text-main line-clamp-1 text-[12.5px] leading-snug font-semibold" title={c.title}>
                 {c.title}
             </span>
             {!!c.current_version && c.current_version > 0 && (
-                <span className="shrink-0 inline-flex items-center px-1.5 py-0.2 rounded text-[8.5px] font-bold font-mono bg-primary/10 text-primary border border-primary/20 leading-tight">
+                <span className="py-0.2 bg-primary/10 text-primary border-primary/20 inline-flex shrink-0 items-center rounded border px-1.5 font-mono text-[8.5px] leading-tight font-bold">
                     v{c.current_version}
                 </span>
             )}
         </div>
-        <div className="flex items-center gap-1.5 text-[10px] text-text-desc flex-wrap">
+        <div className="text-text-desc flex flex-wrap items-center gap-1.5 text-[10px]">
             {c.contract_type && (
-                <span className="font-semibold uppercase bg-surface-muted/60 dark:bg-slate-800/80 px-1.5 py-0.5 rounded border border-surface-border/60 leading-none">
+                <span className="bg-surface-muted/60 border-surface-border/60 rounded border px-1.5 py-0.5 leading-none font-semibold uppercase dark:bg-slate-800/80">
                     {c.contract_type}
                 </span>
             )}
-            {c.form_no && (
-                <span className="font-mono text-text-soft leading-none">
-                    {c.form_no}
-                </span>
-            )}
+            {c.form_no && <span className="text-text-soft font-mono leading-none">{c.form_no}</span>}
             {c.vendor?.name && (
                 <>
                     <span className="text-text-soft/40">•</span>
-                    <span className="text-text-soft truncate max-w-[140px] leading-none">{c.vendor.name}</span>
+                    <span className="text-text-soft max-w-[140px] truncate leading-none">{c.vendor.name}</span>
                 </>
             )}
         </div>
@@ -317,21 +303,15 @@ export const ProgressCell = ({ c }: Readonly<{ c: Contract }>) => (
 export const CreatedAtCell = ({ c }: Readonly<{ c: Contract }>) => {
     const raw = (c as any).created_at_raw || c.created_at;
     if (!raw) {
-        return <span className="text-zinc-400 text-[11px] font-normal">—</span>;
+        return <span className="text-[11px] font-normal text-zinc-400">—</span>;
     }
 
     const { dateStr, timeStr } = formatDateAndTimeParts(raw, c.created_at);
 
     return (
-        <div className="flex flex-col py-0.5 min-w-[95px] text-left">
-            <div className="text-zinc-900 dark:text-zinc-100 text-[12px] font-semibold leading-tight">
-                {dateStr}
-            </div>
-            {!!timeStr && (
-                <div className="text-zinc-800 dark:text-zinc-200 text-[11px] font-medium leading-tight mt-0.5">
-                    {timeStr}
-                </div>
-            )}
+        <div className="flex min-w-[95px] flex-col py-0.5 text-left">
+            <div className="text-[12px] leading-tight font-semibold text-zinc-900 dark:text-zinc-100">{dateStr}</div>
+            {!!timeStr && <div className="mt-0.5 text-[11px] leading-tight font-medium text-zinc-800 dark:text-zinc-200">{timeStr}</div>}
         </div>
     );
 };
@@ -351,35 +331,29 @@ export const ContractNoAndTitleCell = memo(({ c, types = [] }: Readonly<{ c: Con
     const cleanTypeName = typeName ? typeName.replace('Perjanjian ', '').replace('Addendum / ', '') : '';
 
     return (
-        <div className="flex flex-col gap-0.5 py-0.5 max-w-[340px]">
-            <div className="flex items-center gap-1.5 min-w-0">
+        <div className="flex max-w-[340px] flex-col gap-0.5 py-0.5">
+            <div className="flex min-w-0 items-center gap-1.5">
                 <span
-                    className="text-text-main group-hover:text-primary font-semibold text-[12px] leading-snug line-clamp-1 transition-colors"
+                    className="text-text-main group-hover:text-primary line-clamp-1 text-[12px] leading-snug font-semibold transition-colors"
                     title={c.title}
                 >
                     {c.title}
                 </span>
                 {!!c.current_version && c.current_version > 0 && (
-                    <span className="shrink-0 px-1 py-0.2 rounded text-[8.5px] font-bold font-mono bg-primary/10 text-primary leading-tight">
+                    <span className="py-0.2 bg-primary/10 text-primary shrink-0 rounded px-1 font-mono text-[8.5px] leading-tight font-bold">
                         v{c.current_version}
                     </span>
                 )}
             </div>
 
-            <div className="flex items-center gap-1.5 text-[10px] text-text-desc font-medium truncate">
-                {cleanTypeName && (
-                    <span className="font-semibold uppercase text-text-soft">
-                        {cleanTypeName}
-                    </span>
-                )}
+            <div className="text-text-desc flex items-center gap-1.5 truncate text-[10px] font-medium">
+                {cleanTypeName && <span className="text-text-soft font-semibold uppercase">{cleanTypeName}</span>}
                 {cleanTypeName && <span className="text-text-soft/40">•</span>}
-                <span className="font-mono text-text-desc">
-                    {c.form_no || 'N/A'}
-                </span>
+                <span className="text-text-desc font-mono">{c.form_no || 'N/A'}</span>
                 {c.contract_no && c.contract_no !== c.form_no && (
                     <>
                         <span className="text-text-soft/40">•</span>
-                        <span className="font-mono text-[9.5px] text-text-soft truncate" title={`No. Kontrak: ${c.contract_no}`}>
+                        <span className="text-text-soft truncate font-mono text-[9.5px]" title={`No. Kontrak: ${c.contract_no}`}>
                             {c.contract_no}
                         </span>
                     </>
@@ -397,9 +371,7 @@ export const VendorCell = memo(({ c }: Readonly<{ c: Contract }>) => (
 ));
 VendorCell.displayName = 'VendorCell';
 
-export const TypeAndVendorCell = memo(({ c, types }: Readonly<{ c: Contract; types: ContractType[] }>) => (
-    <VendorCell c={c} />
-));
+export const TypeAndVendorCell = memo(({ c, types }: Readonly<{ c: Contract; types: ContractType[] }>) => <VendorCell c={c} />);
 TypeAndVendorCell.displayName = 'TypeAndVendorCell';
 
 export const InitiatorCell = memo(({ c }: Readonly<{ c: Contract }>) => {
@@ -410,11 +382,11 @@ export const InitiatorCell = memo(({ c }: Readonly<{ c: Contract }>) => {
     const sub = c.initiator.department_name || c.initiator.role || 'UMUM';
 
     return (
-        <div className="flex flex-col min-w-0 max-w-[170px] leading-tight">
-            <span className="text-[11px] font-medium text-text-main truncate" title={c.initiator.name}>
+        <div className="flex max-w-[170px] min-w-0 flex-col leading-tight">
+            <span className="text-text-main truncate text-[11px] font-medium" title={c.initiator.name}>
                 {c.initiator.name}
             </span>
-            <span className="text-[9.5px] text-text-desc truncate" title={sub}>
+            <span className="text-text-desc truncate text-[9.5px]" title={sub}>
                 {sub}
             </span>
         </div>
@@ -444,12 +416,12 @@ export const AssignedByCell = memo(({ c }: Readonly<{ c: Contract }>) => {
     const sub = c.assigned_by.department_name || c.assigned_by.role || '';
 
     return (
-        <div className="flex flex-col min-w-0 max-w-[170px] leading-tight">
-            <span className="text-[11px] font-medium text-text-main truncate" title={c.assigned_by.name}>
+        <div className="flex max-w-[170px] min-w-0 flex-col leading-tight">
+            <span className="text-text-main truncate text-[11px] font-medium" title={c.assigned_by.name}>
                 {c.assigned_by.name}
             </span>
             {sub && (
-                <span className="text-[9.5px] text-text-desc truncate" title={sub}>
+                <span className="text-text-desc truncate text-[9.5px]" title={sub}>
                     {sub}
                 </span>
             )}
@@ -466,12 +438,12 @@ export const AssignedPicCell = memo(({ c }: Readonly<{ c: Contract }>) => {
     const sub = c.assigned_pic.department_name || c.assigned_pic.role || '';
 
     return (
-        <div className="flex flex-col min-w-0 max-w-[170px] leading-tight">
-            <span className="text-[11px] font-medium text-text-main truncate" title={c.assigned_pic.name}>
+        <div className="flex max-w-[170px] min-w-0 flex-col leading-tight">
+            <span className="text-text-main truncate text-[11px] font-medium" title={c.assigned_pic.name}>
                 {c.assigned_pic.name}
             </span>
             {sub && (
-                <span className="text-[9.5px] text-text-desc truncate" title={sub}>
+                <span className="text-text-desc truncate text-[9.5px]" title={sub}>
                     {sub}
                 </span>
             )}
@@ -491,15 +463,15 @@ export const ContractPeriodCell = memo(({ c, isExpiryView }: Readonly<{ c: Contr
     const showExpiry = Boolean(isExpiryView || (typeof window !== 'undefined' && window.location.pathname.includes('/contracts/expiry')));
 
     return (
-        <div className="flex flex-col gap-0.5 py-0.5 min-w-[130px]">
+        <div className="flex min-w-[130px] flex-col gap-0.5 py-0.5">
             <div className="flex flex-col gap-0.5">
-                <div className="flex items-center gap-1 text-[11px] leading-tight font-medium text-text-normal">
-                    <span className="text-text-desc text-[9.5px] uppercase font-semibold">Mulai:</span>
+                <div className="text-text-normal flex items-center gap-1 text-[11px] leading-tight font-medium">
+                    <span className="text-text-desc text-[9.5px] font-semibold uppercase">Mulai:</span>
                     <span>{startDate || '—'}</span>
                 </div>
-                <div className="flex items-center gap-1 text-[11px] leading-tight font-medium text-text-normal">
-                    <span className="text-text-desc text-[9.5px] uppercase font-semibold">S/d:</span>
-                    <span className={cn(c.end_date ? 'font-semibold text-text-main' : '')}>{endDate || '—'}</span>
+                <div className="text-text-normal flex items-center gap-1 text-[11px] leading-tight font-medium">
+                    <span className="text-text-desc text-[9.5px] font-semibold uppercase">S/d:</span>
+                    <span className={cn(c.end_date ? 'text-text-main font-semibold' : '')}>{endDate || '—'}</span>
                 </div>
             </div>
             {showExpiry && c.end_date && (
@@ -540,7 +512,7 @@ export const BulkActions = ({
             <Button
                 variant="white"
                 size="sm"
-                className="border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-emerald-400 h-8 px-4 text-[10px] font-semibold uppercase shadow-sm"
+                className="h-8 border-zinc-700 bg-zinc-800 px-4 text-[10px] font-semibold text-emerald-400 uppercase shadow-sm hover:bg-zinc-700"
                 onClick={() => handleBulkApprove(selectedRows)}
             >
                 <Check className="mr-1.5 h-3 w-3 text-emerald-400" /> Approve
@@ -550,7 +522,7 @@ export const BulkActions = ({
             <Button
                 variant="white"
                 size="sm"
-                className="border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-rose-400 h-8 px-4 text-[10px] font-semibold uppercase shadow-sm"
+                className="h-8 border-zinc-700 bg-zinc-800 px-4 text-[10px] font-semibold text-rose-400 uppercase shadow-sm hover:bg-zinc-700"
                 onClick={() => handleBulkDelete(selectedRows)}
             >
                 <Trash2 className="mr-1.5 h-3 w-3 text-rose-400" /> Hapus

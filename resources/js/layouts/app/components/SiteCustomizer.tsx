@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/buttons/Button';
-import { ScrollArea } from '@/components/ui/utilities/ScrollArea';
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/dialogs/Sheet';
+import { ScrollArea } from '@/components/ui/utilities/ScrollArea';
 import { cn } from '@/lib/utils';
 import { Check, Maximize2, Palette, Settings2, Type } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -82,9 +82,7 @@ export function SiteCustomizer() {
                             <p className="text-sidebar-foreground/30 mt-0.5 text-[8px] font-semibold tracking-[0.2em] uppercase">Personalisasi</p>
                         </div>
                     </div>
-                    <p className="text-sidebar-foreground/40 text-[10px] leading-relaxed font-bold  uppercase">
-                        Sesuaikan tampilan platform Anda.
-                    </p>
+                    <p className="text-sidebar-foreground/40 text-[10px] leading-relaxed font-bold uppercase">Sesuaikan tampilan platform Anda.</p>
                 </div>
 
                 {/* Categories - Compact Layout */}

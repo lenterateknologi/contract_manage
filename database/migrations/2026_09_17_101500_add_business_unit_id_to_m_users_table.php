@@ -16,7 +16,7 @@ return new class extends Migration
         });
 
         // Backfill business_unit_id in m_users matching on company and location in PostgreSQL
-        DB::statement("
+        DB::statement('
             UPDATE m_users
             SET business_unit_id = m_business_units.id
             FROM m_business_units
@@ -25,7 +25,7 @@ return new class extends Migration
                 OR (m_users.company_id IS NOT NULL AND m_users.location_id IS NOT NULL AND m_users.company_id = m_business_units.company_id AND m_users.location_id = m_business_units.location_id)
             )
             AND m_users.business_unit_id IS NULL
-        ");
+        ');
     }
 
     public function down(): void

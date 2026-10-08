@@ -1,3 +1,4 @@
+import { workflowsApi } from '@/api';
 import { Icons } from '@/components/ui';
 import { Button } from '@/components/ui/buttons/Button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from '@/components/ui/dialogs/Dialog';
@@ -13,7 +14,6 @@ import { closestCenter, DndContext, DragEndEvent, KeyboardSensor, PointerSensor,
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { Head, router, useForm } from '@inertiajs/react';
-import { workflowsApi } from '@/api';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import AuthorityTableManager from './components/AuthorityTableManager';
 import ContractTypeTableManager from './components/ContractTypeTableManager';

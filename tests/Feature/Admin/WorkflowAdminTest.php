@@ -1,12 +1,12 @@
 <?php
 
-use App\Models\ContractType;
-use App\Models\Department;
-use App\Models\Role;
-use App\Models\User;
-use App\Models\Workflow;
-use App\Models\WorkflowStep;
-use App\Models\WorkflowStepAction;
+use App\Models\Master\ContractType;
+use App\Models\Master\Department;
+use App\Models\Master\Role;
+use App\Models\Master\User;
+use App\Models\Master\Workflow;
+use App\Models\Master\WorkflowStep;
+use App\Models\Master\WorkflowStepAction;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 

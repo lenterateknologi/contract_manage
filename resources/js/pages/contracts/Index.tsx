@@ -57,7 +57,8 @@ const EditContractModal = lazy(() => import('@/pages/contracts/components/modals
 const PreviewModal = lazy(() => import('@/pages/contracts/components/modals/PreviewModal'));
 const SendApprovalModal = lazy(() => import('@/pages/contracts/components/modals/SendApprovalModal'));
 
-type View = 'dashboard' | 'contracts' | 'organization' | 'pending' | 'audit' | 'f1' | 'f2' | 'profile' | 'mine' | 'expiry' | 'archived' | 'in_progress';
+type View =
+    'dashboard' | 'contracts' | 'organization' | 'pending' | 'audit' | 'f1' | 'f2' | 'profile' | 'mine' | 'expiry' | 'archived' | 'in_progress';
 
 import { ConfirmationModal, ContractCardSkeleton, ContractTableSkeleton, StatusBadge } from '@/components/ui';
 import { DashboardSkeleton } from '@/components/ui/feedback/DashboardSkeleton';
@@ -347,7 +348,10 @@ const DASHBOARD_TAB_TO_SLUG: Record<string, string> = {
     master_data: 'master-data',
 };
 
-const SLUG_TO_DASHBOARD_TAB: Record<string, 'overview' | 'overview_contract' | 'overview_non_contract' | 'overview_nda' | 'workload' | 'master_data'> = {
+const SLUG_TO_DASHBOARD_TAB: Record<
+    string,
+    'overview' | 'overview_contract' | 'overview_non_contract' | 'overview_nda' | 'workload' | 'master_data'
+> = {
     ringkasan: 'overview',
     overview: 'overview',
     'ringkasan-kontrak': 'overview_contract',
@@ -422,19 +426,20 @@ function ContractPage({
         return 'overview_contract';
     });
 
-    const handleDashboardTabChange = useCallback((
-        newTab: 'overview' | 'overview_contract' | 'overview_non_contract' | 'overview_nda' | 'workload' | 'master_data',
-    ) => {
-        setDashboardTab(newTab);
-        setClientPref('dashboard_active_tab', newTab);
-        if (typeof window !== 'undefined' && (window.location.pathname.startsWith('/dashboard') || window.location.pathname === '/')) {
-            const slug = DASHBOARD_TAB_TO_SLUG[newTab] || newTab;
-            const targetUrl = `/dashboard/${slug}${window.location.search}`;
-            if (window.location.pathname !== `/dashboard/${slug}`) {
-                window.history.pushState({}, '', targetUrl);
+    const handleDashboardTabChange = useCallback(
+        (newTab: 'overview' | 'overview_contract' | 'overview_non_contract' | 'overview_nda' | 'workload' | 'master_data') => {
+            setDashboardTab(newTab);
+            setClientPref('dashboard_active_tab', newTab);
+            if (typeof window !== 'undefined' && (window.location.pathname.startsWith('/dashboard') || window.location.pathname === '/')) {
+                const slug = DASHBOARD_TAB_TO_SLUG[newTab] || newTab;
+                const targetUrl = `/dashboard/${slug}${window.location.search}`;
+                if (window.location.pathname !== `/dashboard/${slug}`) {
+                    window.history.pushState({}, '', targetUrl);
+                }
             }
-        }
-    }, []);
+        },
+        [],
+    );
 
     useEffect(() => {
         const handlePopState = () => {
@@ -483,23 +488,26 @@ function ContractPage({
         const hasContractFromUfs = !hasUfsCategories || ufsCats.includes('contract') || ufsCats.includes('kontrak');
         const hasNdaFromUfs = !hasUfsCategories || ufsCats.includes('nda');
 
-        const showContract = cfg?.show_overview_contract !== undefined
-            ? Boolean(cfg.show_overview_contract)
-            : ufs?.show_overview_contract !== undefined
-              ? Boolean(ufs.show_overview_contract)
-              : hasContractFromUfs;
+        const showContract =
+            cfg?.show_overview_contract !== undefined
+                ? Boolean(cfg.show_overview_contract)
+                : ufs?.show_overview_contract !== undefined
+                  ? Boolean(ufs.show_overview_contract)
+                  : hasContractFromUfs;
 
-        const showNonContract = cfg?.show_overview_non_contract !== undefined
-            ? Boolean(cfg.show_overview_non_contract)
-            : ufs?.show_overview_non_contract !== undefined
-              ? Boolean(ufs.show_overview_non_contract)
-              : hasNonContractFromUfs;
+        const showNonContract =
+            cfg?.show_overview_non_contract !== undefined
+                ? Boolean(cfg.show_overview_non_contract)
+                : ufs?.show_overview_non_contract !== undefined
+                  ? Boolean(ufs.show_overview_non_contract)
+                  : hasNonContractFromUfs;
 
-        const showNda = cfg?.show_overview_nda !== undefined
-            ? Boolean(cfg.show_overview_nda)
-            : ufs?.show_overview_nda !== undefined
-              ? Boolean(ufs.show_overview_nda)
-              : hasNdaFromUfs;
+        const showNda =
+            cfg?.show_overview_nda !== undefined
+                ? Boolean(cfg.show_overview_nda)
+                : ufs?.show_overview_nda !== undefined
+                  ? Boolean(ufs.show_overview_nda)
+                  : hasNdaFromUfs;
 
         return {
             show_overview: Boolean(cfg?.show_overview ?? true),
@@ -798,12 +806,9 @@ function ContractPage({
         setSelected(initialSelected ?? null);
     }, [initialSelected]);
 
-    const updateContract = useCallback(
-        (c: Contract) => {
-            setSelected(c);
-        },
-        [],
-    );
+    const updateContract = useCallback((c: Contract) => {
+        setSelected(c);
+    }, []);
 
     const openDetail = useCallback((c: Contract) => {
         setSelected(c);
@@ -1242,7 +1247,13 @@ function ContractPage({
     );
 
     const renderCategoryTabs = () => {
-        let tabs: { key: string; label: string; count: number; icon?: React.ComponentType<{ className?: string; size?: number | string }> | React.ReactNode; isActive: boolean }[] = [];
+        let tabs: {
+            key: string;
+            label: string;
+            count: number;
+            icon?: React.ComponentType<{ className?: string; size?: number | string }> | React.ReactNode;
+            isActive: boolean;
+        }[] = [];
         const activeView = (currentView || view) as string;
 
         const buildTabs = (
@@ -1269,11 +1280,9 @@ function ContractPage({
                 ];
             }
 
-            const rootTypes = (types as DBContractType[] || []).filter((t) => !t.parent_id || String(t.parent_id) === String(t.id));
+            const rootTypes = ((types as DBContractType[]) || []).filter((t) => !t.parent_id || String(t.parent_id) === String(t.id));
 
-            const tabsList = [
-                { key: '', label: 'Semua', count: counts?.all ?? 0, icon: LayoutGrid, isActive: !activeKey },
-            ];
+            const tabsList = [{ key: '', label: 'Semua', count: counts?.all ?? 0, icon: LayoutGrid, isActive: !activeKey }];
 
             if (rootTypes.length > 0) {
                 rootTypes.forEach((rt) => {
@@ -1418,7 +1427,7 @@ function ContractPage({
                                 'group relative -mb-px flex h-full shrink-0 cursor-pointer items-center gap-2 border-b-2 text-xs font-bold transition-all duration-150 select-none',
                                 tab.isActive
                                     ? 'border-primary text-primary'
-                                    : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground',
+                                    : 'text-muted-foreground hover:border-border hover:text-foreground border-transparent',
                             )}
                         >
                             {TabIcon && (

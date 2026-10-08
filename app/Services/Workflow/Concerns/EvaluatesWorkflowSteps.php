@@ -3,8 +3,8 @@
 namespace App\Services\Workflow\Concerns;
 
 use App\Http\Formatters\ContractFormatter;
-use App\Models\Contract;
-use App\Models\WorkflowStep;
+use App\Models\Master\WorkflowStep;
+use App\Models\Transaction\Contract;
 
 trait EvaluatesWorkflowSteps
 {

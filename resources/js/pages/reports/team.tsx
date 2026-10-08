@@ -1,3 +1,4 @@
+import { reportsApi, TeamMatrixItem, TeamReportResponse } from '@/api';
 import { Button } from '@/components/ui/buttons/Button';
 import { useToast } from '@/components/ui/feedback/Toast';
 import { SearchInput } from '@/components/ui/inputs/SearchInput';
@@ -5,21 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { cn } from '@/lib/utils';
 import { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
-import { reportsApi, TeamReportResponse, TeamMatrixItem } from '@/api';
-import {
-    Users,
-    Calendar,
-    FileSpreadsheet,
-    Loader2,
-    Search,
-    UserCheck,
-    Send,
-    Network,
-    ArrowUpDown,
-    ArrowUp,
-    ArrowDown,
-} from 'lucide-react';
-import React, { useEffect, useMemo, useState } from 'react';
+import { ArrowDown, ArrowUp, ArrowUpDown, Calendar, FileSpreadsheet, Loader2, Send, UserCheck, Users } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 
 const MONTH_NAMES = [
     { num: 1, short: 'Jan', full: 'Januari' },
@@ -175,7 +163,7 @@ export default function TeamReportsPage({ breadcrumbs }: { breadcrumbs?: Breadcr
     const renderSortIcon = (field: string | number) => {
         const isActive = sortField === field;
         if (!isActive) {
-            return <ArrowUpDown size={11} className="text-zinc-400 opacity-40 group-hover:opacity-100 transition-opacity shrink-0" />;
+            return <ArrowUpDown size={11} className="shrink-0 text-zinc-400 opacity-40 transition-opacity group-hover:opacity-100" />;
         }
         return sortDirection === 'asc' ? (
             <ArrowUp size={11} className="text-primary shrink-0" />
@@ -191,24 +179,25 @@ export default function TeamReportsPage({ breadcrumbs }: { breadcrumbs?: Breadcr
         <>
             <Head title={`Laporan Rekapitulasi Tim (${roleLabel})`} />
 
-            <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-surface-base select-none">
+            <div className="bg-surface-base flex h-full min-h-0 flex-1 flex-col overflow-hidden select-none">
                 {/* --- HEADER BAR (Height h-16 matching sidebar/sub-sidebar header) --- */}
-                <div className="flex h-16 min-h-[64px] max-h-[64px] shrink-0 items-center justify-between border-b border-surface-border bg-white px-5 dark:bg-zinc-900 box-border">
-                    <div className="flex items-center gap-2.5 min-w-0 mr-4">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[4px] bg-primary/10 text-primary dark:bg-primary/20">
+                <div className="border-surface-border box-border flex h-16 max-h-[64px] min-h-[64px] shrink-0 items-center justify-between border-b bg-white px-5 dark:bg-zinc-900">
+                    <div className="mr-4 flex min-w-0 items-center gap-2.5">
+                        <div className="bg-primary/10 text-primary dark:bg-primary/20 flex h-8 w-8 shrink-0 items-center justify-center rounded-[4px]">
                             {roleType === 'pic' ? <UserCheck size={16} /> : <Send size={16} />}
                         </div>
-                        <div className="flex flex-col justify-center min-w-0">
+                        <div className="flex min-w-0 flex-col justify-center">
                             <div className="flex items-center gap-2">
-                                <h1 className="text-sm font-bold text-black dark:text-white leading-tight truncate">
+                                <h1 className="truncate text-sm leading-tight font-bold text-black dark:text-white">
                                     Laporan Rekapitulasi Tim ({roleLabel})
                                 </h1>
-                                <span className="rounded-[4px] bg-primary/10 px-1.5 py-0.2 text-[10px] font-bold text-primary">
+                                <span className="bg-primary/10 py-0.2 text-primary rounded-[4px] px-1.5 text-[10px] font-bold">
                                     {currentOrgGroupName}
                                 </span>
                             </div>
-                            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-tight truncate mt-0.5">
-                                Rekapitulasi bulanan jumlah {roleType === 'pic' ? 'pengerjaan PIC' : 'pengajuan'} kontrak per anggota dalam group yang sama.
+                            <p className="mt-0.5 truncate text-[11px] leading-tight text-zinc-500 dark:text-zinc-400">
+                                Rekapitulasi bulanan jumlah {roleType === 'pic' ? 'pengerjaan PIC' : 'pengajuan'} kontrak per anggota dalam group yang
+                                sama.
                             </p>
                         </div>
                     </div>
@@ -217,17 +206,14 @@ export default function TeamReportsPage({ breadcrumbs }: { breadcrumbs?: Breadcr
                     <div className="flex flex-wrap items-center gap-2">
                         {/* Year Selector */}
                         <div className="w-28">
-                            <Select
-                                value={String(selectedYear)}
-                                onValueChange={(val) => setSelectedYear(Number(val))}
-                            >
-                                <SelectTrigger className="h-8 rounded-[4px] border-surface-border bg-surface-muted/20 text-xs font-semibold shadow-none dark:bg-zinc-900">
+                            <Select value={String(selectedYear)} onValueChange={(val) => setSelectedYear(Number(val))}>
+                                <SelectTrigger className="border-surface-border bg-surface-muted/20 h-8 rounded-[4px] text-xs font-semibold shadow-none dark:bg-zinc-900">
                                     <div className="flex items-center gap-1.5 truncate">
-                                        <Calendar size={13} className="text-zinc-500 shrink-0" />
+                                        <Calendar size={13} className="shrink-0 text-zinc-500" />
                                         <SelectValue placeholder="Tahun" />
                                     </div>
                                 </SelectTrigger>
-                                <SelectContent className="rounded-[4px] border-surface-border bg-white text-xs shadow-none dark:bg-zinc-900">
+                                <SelectContent className="border-surface-border rounded-[4px] bg-white text-xs shadow-none dark:bg-zinc-900">
                                     {(data?.availableYears || [new Date().getFullYear()]).map((y) => (
                                         <SelectItem key={y} value={String(y)} className="rounded-[2px] text-xs">
                                             {y}
@@ -243,7 +229,7 @@ export default function TeamReportsPage({ breadcrumbs }: { breadcrumbs?: Breadcr
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder="Cari nama anggota..."
-                                className="h-8 rounded-[4px] border-surface-border bg-surface-muted/20 text-xs shadow-none placeholder:text-zinc-400 focus:border-primary dark:bg-zinc-900"
+                                className="border-surface-border bg-surface-muted/20 focus:border-primary h-8 rounded-[4px] text-xs shadow-none placeholder:text-zinc-400 dark:bg-zinc-900"
                             />
                         </div>
 
@@ -253,13 +239,13 @@ export default function TeamReportsPage({ breadcrumbs }: { breadcrumbs?: Breadcr
                             size="sm"
                             onClick={handleExport}
                             disabled={exportLoading || loading}
-                            className="h-8 gap-1.5 rounded-[4px] px-3 text-xs font-semibold border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-700 dark:text-zinc-200 hover:bg-emerald-50/60 hover:border-emerald-300 hover:text-emerald-700 dark:hover:bg-emerald-950/30 dark:hover:border-emerald-800 dark:hover:text-emerald-400 shadow-none transition-all cursor-pointer"
+                            className="h-8 cursor-pointer gap-1.5 rounded-[4px] border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-none transition-all hover:border-emerald-300 hover:bg-emerald-50/60 hover:text-emerald-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:border-emerald-800 dark:hover:bg-emerald-950/30 dark:hover:text-emerald-400"
                             title="Export laporan rekapitulasi tim ke format Excel"
                         >
                             {exportLoading ? (
                                 <Loader2 size={13} className="animate-spin text-emerald-600" />
                             ) : (
-                                <FileSpreadsheet size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                <FileSpreadsheet size={13} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
                             )}
                             <span>{exportLoading ? 'Mengunduh...' : 'Export Excel'}</span>
                         </Button>
@@ -267,7 +253,7 @@ export default function TeamReportsPage({ breadcrumbs }: { breadcrumbs?: Breadcr
                 </div>
 
                 {/* --- UNDERLINE TAB BAR (DI ATAS KONTEN DAN DI BAWAH NAVBAR) --- */}
-                <div className="flex shrink-0 items-center gap-6 border-b border-surface-border bg-white px-5 dark:bg-zinc-900">
+                <div className="border-surface-border flex shrink-0 items-center gap-6 border-b bg-white px-5 dark:bg-zinc-900">
                     <button
                         type="button"
                         onClick={() => handleRoleTypeChange('creator')}
@@ -275,7 +261,7 @@ export default function TeamReportsPage({ breadcrumbs }: { breadcrumbs?: Breadcr
                             'relative -mb-px flex items-center gap-2 border-b-2 py-3 text-xs font-bold transition-all',
                             roleType === 'creator'
                                 ? 'border-primary text-primary'
-                                : 'border-transparent text-zinc-500 hover:text-black dark:text-zinc-400 dark:hover:text-white'
+                                : 'border-transparent text-zinc-500 hover:text-black dark:text-zinc-400 dark:hover:text-white',
                         )}
                     >
                         <Send size={13} />
@@ -288,7 +274,7 @@ export default function TeamReportsPage({ breadcrumbs }: { breadcrumbs?: Breadcr
                             'relative -mb-px flex items-center gap-2 border-b-2 py-3 text-xs font-bold transition-all',
                             roleType === 'pic'
                                 ? 'border-primary text-primary'
-                                : 'border-transparent text-zinc-500 hover:text-black dark:text-zinc-400 dark:hover:text-white'
+                                : 'border-transparent text-zinc-500 hover:text-black dark:text-zinc-400 dark:hover:text-white',
                         )}
                     >
                         <UserCheck size={13} />
@@ -297,18 +283,22 @@ export default function TeamReportsPage({ breadcrumbs }: { breadcrumbs?: Breadcr
                 </div>
 
                 {/* --- MAIN CONTENT BODY (TABLE ONLY) --- */}
-                <div className="flex-1 overflow-auto p-5 custom-scrollbar">
+                <div className="custom-scrollbar flex-1 overflow-auto p-5">
                     {loading ? (
-                        <div className="flex h-64 flex-col items-center justify-center gap-2 text-primary">
+                        <div className="text-primary flex h-64 flex-col items-center justify-center gap-2">
                             <Loader2 size={32} className="animate-spin" />
                             <span className="text-xs font-bold text-black dark:text-white">Memuat data rekapitulasi tim...</span>
                         </div>
                     ) : (
-                        <div className="rounded-[4px] border border-surface-border bg-white dark:bg-zinc-900">
-                            <div className="flex items-center justify-between border-b border-surface-border p-3">
+                        <div className="border-surface-border rounded-[4px] border bg-white dark:bg-zinc-900">
+                            <div className="border-surface-border flex items-center justify-between border-b p-3">
                                 <div className="flex items-center gap-2">
-                                    {roleType === 'pic' ? <UserCheck size={16} className="text-primary" /> : <Users size={16} className="text-primary" />}
-                                    <h3 className="text-xs font-bold uppercase tracking-wider text-black dark:text-white">
+                                    {roleType === 'pic' ? (
+                                        <UserCheck size={16} className="text-primary" />
+                                    ) : (
+                                        <Users size={16} className="text-primary" />
+                                    )}
+                                    <h3 className="text-xs font-bold tracking-wider text-black uppercase dark:text-white">
                                         Tabel Rekapitulasi Anggota {currentOrgGroupName} ({roleLabel}) - {selectedYear}
                                     </h3>
                                 </div>
@@ -316,17 +306,17 @@ export default function TeamReportsPage({ breadcrumbs }: { breadcrumbs?: Breadcr
                                     Total: {data?.summary?.totalSubmissions ?? 0} Kontrak | {activeMatrixList.length} Anggota
                                 </span>
                             </div>
-                            <div className="overflow-x-auto custom-scrollbar">
+                            <div className="custom-scrollbar overflow-x-auto">
                                 <table className="w-full border-collapse text-left text-xs">
                                     <thead>
-                                        <tr className="border-b border-surface-border bg-zinc-50 text-[11px] font-bold uppercase text-black dark:bg-zinc-800 dark:text-white">
-                                            <th className="sticky left-0 z-20 w-10 border-r border-surface-border bg-zinc-50 px-3 py-2.5 text-center dark:bg-zinc-800">
+                                        <tr className="border-surface-border border-b bg-zinc-50 text-[11px] font-bold text-black uppercase dark:bg-zinc-800 dark:text-white">
+                                            <th className="border-surface-border sticky left-0 z-20 w-10 border-r bg-zinc-50 px-3 py-2.5 text-center dark:bg-zinc-800">
                                                 No
                                             </th>
                                             <th
                                                 onClick={() => handleSort('user_name')}
                                                 className={cn(
-                                                    'sticky left-10 z-20 min-w-[220px] border-r border-surface-border bg-zinc-50 px-3 py-2.5 dark:bg-zinc-800 cursor-pointer select-none group transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-700/60',
+                                                    'border-surface-border group sticky left-10 z-20 min-w-[220px] cursor-pointer border-r bg-zinc-50 px-3 py-2.5 transition-colors select-none hover:bg-zinc-100 dark:bg-zinc-800 dark:hover:bg-zinc-700/60',
                                                     sortField === 'user_name' && 'text-primary dark:text-primary',
                                                 )}
                                                 title="Urutkan berdasarkan Nama Anggota"
@@ -339,8 +329,9 @@ export default function TeamReportsPage({ breadcrumbs }: { breadcrumbs?: Breadcr
                                             <th
                                                 onClick={() => handleSort('department_name')}
                                                 className={cn(
-                                                    'min-w-[140px] border-r border-surface-border px-3 py-2.5 cursor-pointer select-none group transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-700/60',
-                                                    sortField === 'department_name' && 'text-primary dark:text-primary bg-zinc-100/80 dark:bg-zinc-700/40',
+                                                    'border-surface-border group min-w-[140px] cursor-pointer border-r px-3 py-2.5 transition-colors select-none hover:bg-zinc-100 dark:hover:bg-zinc-700/60',
+                                                    sortField === 'department_name' &&
+                                                        'text-primary dark:text-primary bg-zinc-100/80 dark:bg-zinc-700/40',
                                                 )}
                                                 title="Urutkan berdasarkan Departemen"
                                             >
@@ -352,8 +343,9 @@ export default function TeamReportsPage({ breadcrumbs }: { breadcrumbs?: Breadcr
                                             <th
                                                 onClick={() => handleSort('org_group_name')}
                                                 className={cn(
-                                                    'min-w-[160px] border-r border-surface-border px-3 py-2.5 cursor-pointer select-none group transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-700/60',
-                                                    sortField === 'org_group_name' && 'text-primary dark:text-primary bg-zinc-100/80 dark:bg-zinc-700/40',
+                                                    'border-surface-border group min-w-[160px] cursor-pointer border-r px-3 py-2.5 transition-colors select-none hover:bg-zinc-100 dark:hover:bg-zinc-700/60',
+                                                    sortField === 'org_group_name' &&
+                                                        'text-primary dark:text-primary bg-zinc-100/80 dark:bg-zinc-700/40',
                                                 )}
                                                 title="Urutkan berdasarkan Organization Group"
                                             >
@@ -367,7 +359,7 @@ export default function TeamReportsPage({ breadcrumbs }: { breadcrumbs?: Breadcr
                                                     key={m.num}
                                                     onClick={() => handleSort(m.num)}
                                                     className={cn(
-                                                        'min-w-[56px] border-r border-surface-border px-2 py-2.5 text-center cursor-pointer select-none group transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-700/60',
+                                                        'border-surface-border group min-w-[56px] cursor-pointer border-r px-2 py-2.5 text-center transition-colors select-none hover:bg-zinc-100 dark:hover:bg-zinc-700/60',
                                                         sortField === m.num && 'text-primary dark:text-primary bg-zinc-100/80 dark:bg-zinc-700/40',
                                                     )}
                                                     title={`Urutkan berdasarkan bulan ${m.full}`}
@@ -381,7 +373,7 @@ export default function TeamReportsPage({ breadcrumbs }: { breadcrumbs?: Breadcr
                                             <th
                                                 onClick={() => handleSort('total')}
                                                 className={cn(
-                                                    'sticky right-0 z-20 min-w-[80px] border-l border-surface-border bg-zinc-100 px-3 py-2.5 text-center font-black dark:bg-zinc-800 cursor-pointer select-none group transition-colors hover:bg-zinc-200/80 dark:hover:bg-zinc-700/80',
+                                                    'border-surface-border group sticky right-0 z-20 min-w-[80px] cursor-pointer border-l bg-zinc-100 px-3 py-2.5 text-center font-black transition-colors select-none hover:bg-zinc-200/80 dark:bg-zinc-800 dark:hover:bg-zinc-700/80',
                                                     sortField === 'total' && 'text-primary dark:text-primary',
                                                 )}
                                                 title="Urutkan berdasarkan Total"
@@ -393,7 +385,7 @@ export default function TeamReportsPage({ breadcrumbs }: { breadcrumbs?: Breadcr
                                             </th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-surface-border">
+                                    <tbody className="divide-surface-border divide-y">
                                         {activeMatrixList.length === 0 ? (
                                             <tr>
                                                 <td colSpan={17} className="py-12 text-center text-xs text-zinc-500">
@@ -407,25 +399,23 @@ export default function TeamReportsPage({ breadcrumbs }: { breadcrumbs?: Breadcr
                                                         key={row.user_id || idx}
                                                         className="transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/60"
                                                     >
-                                                        <td className="sticky left-0 z-10 border-r border-surface-border bg-white px-3 py-2 text-center text-zinc-500 dark:bg-zinc-900">
+                                                        <td className="border-surface-border sticky left-0 z-10 border-r bg-white px-3 py-2 text-center text-zinc-500 dark:bg-zinc-900">
                                                             {idx + 1}
                                                         </td>
-                                                        <td className="sticky left-10 z-10 border-r border-surface-border bg-white px-3 py-2 font-semibold text-black dark:bg-zinc-900 dark:text-white">
+                                                        <td className="border-surface-border sticky left-10 z-10 border-r bg-white px-3 py-2 font-semibold text-black dark:bg-zinc-900 dark:text-white">
                                                             <div className="flex flex-col">
                                                                 <span className="font-bold text-black dark:text-white">{row.user_name}</span>
                                                                 {row.user_email && (
-                                                                    <span className="text-[10px] text-zinc-400">
-                                                                        {row.user_email}
-                                                                    </span>
+                                                                    <span className="text-[10px] text-zinc-400">{row.user_email}</span>
                                                                 )}
                                                             </div>
                                                         </td>
-                                                        <td className="border-r border-surface-border px-3 py-2 text-zinc-700 dark:text-zinc-300">
+                                                        <td className="border-surface-border border-r px-3 py-2 text-zinc-700 dark:text-zinc-300">
                                                             <span className="rounded-[4px] bg-blue-50 px-1.5 py-0.5 text-[11px] font-semibold text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">
                                                                 {row.department_name || '-'}
                                                             </span>
                                                         </td>
-                                                        <td className="border-r border-surface-border px-3 py-2 text-zinc-700 dark:text-zinc-300">
+                                                        <td className="border-surface-border border-r px-3 py-2 text-zinc-700 dark:text-zinc-300">
                                                             <span className="rounded-[4px] bg-zinc-100 px-1.5 py-0.5 text-[11px] text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
                                                                 {row.org_group_name || '-'}
                                                             </span>
@@ -438,14 +428,12 @@ export default function TeamReportsPage({ breadcrumbs }: { breadcrumbs?: Breadcr
                                                                 <td
                                                                     key={m.num}
                                                                     className={cn(
-                                                                        'border-r border-surface-border px-2 py-2 text-center font-medium',
-                                                                        count > 0
-                                                                            ? 'text-black dark:text-white'
-                                                                            : 'text-zinc-300 dark:text-zinc-600',
+                                                                        'border-surface-border border-r px-2 py-2 text-center font-medium',
+                                                                        count > 0 ? 'text-black dark:text-white' : 'text-zinc-300 dark:text-zinc-600',
                                                                     )}
                                                                 >
                                                                     {count > 0 ? (
-                                                                        <span className="inline-flex min-w-[20px] items-center justify-center rounded-[4px] bg-primary/10 px-1.5 py-0.5 text-xs font-bold text-primary dark:bg-primary/20">
+                                                                        <span className="bg-primary/10 text-primary dark:bg-primary/20 inline-flex min-w-[20px] items-center justify-center rounded-[4px] px-1.5 py-0.5 text-xs font-bold">
                                                                             {count}
                                                                         </span>
                                                                     ) : (
@@ -456,11 +444,9 @@ export default function TeamReportsPage({ breadcrumbs }: { breadcrumbs?: Breadcr
                                                         })}
 
                                                         {/* Row Total */}
-                                                        <td className="sticky right-0 z-10 border-l border-surface-border bg-zinc-50 px-3 py-2 text-center font-black text-black dark:bg-zinc-800/80 dark:text-white">
+                                                        <td className="border-surface-border sticky right-0 z-10 border-l bg-zinc-50 px-3 py-2 text-center font-black text-black dark:bg-zinc-800/80 dark:text-white">
                                                             {row.total > 0 ? (
-                                                                <span className="text-xs font-black text-primary">
-                                                                    {row.total}
-                                                                </span>
+                                                                <span className="text-primary text-xs font-black">{row.total}</span>
                                                             ) : (
                                                                 '0'
                                                             )}
@@ -473,25 +459,25 @@ export default function TeamReportsPage({ breadcrumbs }: { breadcrumbs?: Breadcr
                                     {/* Table Footer Totals */}
                                     {activeMatrixList.length > 0 && data?.monthlyTotals && (
                                         <tfoot>
-                                            <tr className="border-t-2 border-surface-border bg-zinc-100 font-black text-black dark:bg-zinc-800 dark:text-white">
-                                                <td colSpan={4} className="sticky left-0 z-20 border-r border-surface-border bg-zinc-100 px-3 py-2.5 text-right uppercase tracking-wider dark:bg-zinc-800">
+                                            <tr className="border-surface-border border-t-2 bg-zinc-100 font-black text-black dark:bg-zinc-800 dark:text-white">
+                                                <td
+                                                    colSpan={4}
+                                                    className="border-surface-border sticky left-0 z-20 border-r bg-zinc-100 px-3 py-2.5 text-right tracking-wider uppercase dark:bg-zinc-800"
+                                                >
                                                     Total Keseluruhan
                                                 </td>
                                                 {MONTH_NAMES.map((m) => {
                                                     const colTotal = data.monthlyTotals[m.num] ?? 0;
                                                     return (
-                                                        <td key={m.num} className="border-r border-surface-border px-2 py-2.5 text-center text-xs font-black">
-                                                            {colTotal > 0 ? (
-                                                                <span className="text-primary font-black">
-                                                                    {colTotal}
-                                                                </span>
-                                                            ) : (
-                                                                '0'
-                                                            )}
+                                                        <td
+                                                            key={m.num}
+                                                            className="border-surface-border border-r px-2 py-2.5 text-center text-xs font-black"
+                                                        >
+                                                            {colTotal > 0 ? <span className="text-primary font-black">{colTotal}</span> : '0'}
                                                         </td>
                                                     );
                                                 })}
-                                                <td className="sticky right-0 z-20 border-l border-surface-border bg-primary/20 px-3 py-2.5 text-center text-sm font-black text-primary dark:bg-primary/30">
+                                                <td className="border-surface-border bg-primary/20 text-primary dark:bg-primary/30 sticky right-0 z-20 border-l px-3 py-2.5 text-center text-sm font-black">
                                                     {data.summary?.totalSubmissions ?? 0}
                                                 </td>
                                             </tr>

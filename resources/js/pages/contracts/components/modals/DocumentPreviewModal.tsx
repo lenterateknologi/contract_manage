@@ -16,17 +16,14 @@ export default function DocumentPreviewModal({ isOpen, onClose, url, fileName }:
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             {/* ponytail: simplified full preview layout, removed unused docx styles/libraries */}
-            <DialogContent className="flex h-[85vh] w-full max-w-4xl flex-col gap-0 overflow-hidden border border-slate-200/80 dark:border-zinc-700/80 bg-slate-100/90 dark:bg-zinc-800/90 text-slate-800 dark:text-zinc-100 p-0 shadow-2xl">
-
+            <DialogContent className="flex h-[85vh] w-full max-w-4xl flex-col gap-0 overflow-hidden border border-slate-200/80 bg-slate-100/90 p-0 text-slate-800 shadow-2xl dark:border-zinc-700/80 dark:bg-zinc-800/90 dark:text-zinc-100">
                 {/* Minimal Header */}
-                <div className="flex h-10 shrink-0 items-center border-b border-primary/20 dark:border-zinc-700/80 bg-primary dark:bg-zinc-800/90 px-4 pr-12">
-                    <DialogTitle className="text-white dark:text-zinc-100 text-xs truncate font-semibold">
-                        {fileName}
-                    </DialogTitle>
+                <div className="border-primary/20 bg-primary flex h-10 shrink-0 items-center border-b px-4 pr-12 dark:border-zinc-700/80 dark:bg-zinc-800/90">
+                    <DialogTitle className="truncate text-xs font-semibold text-white dark:text-zinc-100">{fileName}</DialogTitle>
                 </div>
 
                 {/* Preview Frame */}
-                <div className="flex-1 overflow-hidden bg-surface-muted/30 flex items-center justify-center p-4">
+                <div className="bg-surface-muted/30 flex flex-1 items-center justify-center overflow-hidden p-4">
                     {isImage ? (
                         <img
                             src={url}
@@ -45,11 +42,7 @@ export default function DocumentPreviewModal({ isOpen, onClose, url, fileName }:
                             }}
                         />
                     ) : (
-                        <iframe
-                            src={url}
-                            className="h-full w-full border-none bg-surface-base"
-                            title="PDF Preview"
-                        />
+                        <iframe src={url} className="bg-surface-base h-full w-full border-none" title="PDF Preview" />
                     )}
                 </div>
             </DialogContent>

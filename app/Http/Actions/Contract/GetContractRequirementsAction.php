@@ -2,10 +2,9 @@
 
 namespace App\Http\Actions\Contract;
 
-use App\Models\Contract;
-use App\Models\FormSubmissionHistory;
-use App\Models\WorkflowStep;
-use App\Models\WorkflowStepAction;
+use App\Enums\WorkflowAction;
+use App\Models\Master\WorkflowStep;
+use App\Models\Transaction\Contract;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -209,7 +208,8 @@ class GetContractRequirementsAction
                 $stepAction = $effectiveStep->actions->firstWhere('id', $actionId);
             } elseif ($actionCode) {
                 $stepAction = $effectiveStep->actions->first(function ($act) use ($actionCode) {
-                    $code = $act->action_code instanceof \App\Enums\WorkflowAction ? $act->action_code->value : ($act->action_code ?? '');
+                    $code = $act->action_code instanceof WorkflowAction ? $act->action_code->value : ($act->action_code ?? '');
+
                     return strcasecmp((string) $code, (string) $actionCode) === 0;
                 });
             }
@@ -356,6 +356,7 @@ class GetContractRequirementsAction
             case 'assigned_pic':
                 $hasPic = ! empty($contract->assigned_pic_id) || ! empty($contract->metadata['assigned_pic_id']);
                 $picName = $contract->assignedPic?->name;
+
                 return [
                     'is_fulfilled' => $hasPic,
                     'reason' => $hasPic
@@ -367,6 +368,7 @@ class GetContractRequirementsAction
             case 'f1':
                 $hasDoc = $this->checkDocumentFulfillment($contract, ['f1'], $stepId, $stepNo, $iteration);
                 $version = $contract->versions?->where('document_type', 'f1')->first();
+
                 return [
                     'is_fulfilled' => $hasDoc,
                     'reason' => $hasDoc
@@ -378,6 +380,7 @@ class GetContractRequirementsAction
             case 'f2':
                 $hasDoc = $this->checkDocumentFulfillment($contract, ['f2'], $stepId, $stepNo, $iteration);
                 $version = $contract->versions?->where('document_type', 'f2')->first();
+
                 return [
                     'is_fulfilled' => $hasDoc,
                     'reason' => $hasDoc
@@ -390,6 +393,7 @@ class GetContractRequirementsAction
             case 'contract':
                 $hasDoc = $this->checkDocumentFulfillment($contract, ['agreement', 'contract'], $stepId, $stepNo, $iteration);
                 $version = $contract->versions?->whereIn('document_type', ['agreement', 'contract'])->first();
+
                 return [
                     'is_fulfilled' => $hasDoc,
                     'reason' => $hasDoc
@@ -400,6 +404,7 @@ class GetContractRequirementsAction
 
             case 'title':
                 $hasVal = ! empty(trim((string) $contract->title));
+
                 return [
                     'is_fulfilled' => $hasVal,
                     'reason' => $hasVal ? 'Judul kontrak sudah diisi.' : 'Judul kontrak wajib diisi.',
@@ -414,6 +419,7 @@ class GetContractRequirementsAction
                     || ! empty($contract->metadata['first_party_id'])
                     || ! empty($contract->metadata['meta_p1_entity'])
                     || ! empty($contract->initiator?->company_id);
+
                 return [
                     'is_fulfilled' => $hasVal,
                     'reason' => $hasVal ? 'Data Pihak Pertama sudah diisi.' : 'Pihak Pertama wajib dipilih / diisi.',
@@ -426,6 +432,7 @@ class GetContractRequirementsAction
                     || ! empty($contract->p2_entity)
                     || ! empty($contract->metadata['second_party_id'])
                     || ! empty($contract->metadata['meta_p2_entity']);
+
                 return [
                     'is_fulfilled' => $hasVal,
                     'reason' => $hasVal ? 'Data Pihak Kedua (Vendor) sudah diisi.' : 'Pihak Kedua (Vendor) wajib diisi.',
@@ -434,6 +441,7 @@ class GetContractRequirementsAction
 
             case 'category':
                 $hasVal = ! empty($contract->contract_type_id) || ! empty($contract->contract_type);
+
                 return [
                     'is_fulfilled' => $hasVal,
                     'reason' => $hasVal ? 'Kategori kontrak sudah dipilih.' : 'Kategori kontrak wajib dipilih.',
@@ -443,6 +451,7 @@ class GetContractRequirementsAction
             case 'contract_no':
             case 'f2_contract_no':
                 $hasVal = ! empty(trim((string) $contract->contract_no));
+
                 return [
                     'is_fulfilled' => $hasVal,
                     'reason' => $hasVal ? 'Nomor kontrak sudah diisi.' : 'Nomor kontrak wajib diisi.',
@@ -452,6 +461,7 @@ class GetContractRequirementsAction
             case 'tax_toggle':
             case 'tax':
                 $hasVal = ($contract->tax_required !== null) || isset($contract->metadata['tax_required']);
+
                 return [
                     'is_fulfilled' => $hasVal,
                     'reason' => $hasVal ? 'Penentuan pajak sudah ditentukan.' : 'Penentuan pajak wajib dipilih.',
@@ -460,6 +470,7 @@ class GetContractRequirementsAction
 
             case 'price':
                 $hasVal = $contract->price !== null && $contract->price !== '';
+
                 return [
                     'is_fulfilled' => $hasVal,
                     'reason' => $hasVal ? 'Nilai kontrak sudah diisi.' : 'Nilai / harga kontrak wajib diisi.',
@@ -468,6 +479,7 @@ class GetContractRequirementsAction
 
             case 'period':
                 $hasVal = (! empty($contract->contract_date) || ! empty($contract->start_date)) && ! empty($contract->end_date);
+
                 return [
                     'is_fulfilled' => $hasVal,
                     'reason' => $hasVal ? 'Masa berlaku kontrak sudah lengkap.' : 'Masa berlaku kontrak (tanggal mulai & selesai) wajib diisi.',
@@ -493,13 +505,13 @@ class GetContractRequirementsAction
             ->whereIn('document_type', $types)
             ->where(function ($q) use ($stepId, $stepNo, $iteration) {
                 $q->where('workflow_step_id', $stepId)
-                  ->orWhere('step_number', $stepNo)
-                  ->orWhere(function ($q2) use ($iteration) {
-                      $q2->where('workflow_iteration', $iteration)
-                         ->whereNull('workflow_step_id')
-                         ->whereNull('step_number');
-                  })
-                  ->orWhere('version_no', '>', 0);
+                    ->orWhere('step_number', $stepNo)
+                    ->orWhere(function ($q2) use ($iteration) {
+                        $q2->where('workflow_iteration', $iteration)
+                            ->whereNull('workflow_step_id')
+                            ->whereNull('step_number');
+                    })
+                    ->orWhere('version_no', '>', 0);
             })->exists();
 
         if ($hasVersion) {
@@ -511,13 +523,13 @@ class GetContractRequirementsAction
             ->whereIn('document_type', $types)
             ->where(function ($q) use ($stepId, $stepNo, $iteration) {
                 $q->where('workflow_step_id', $stepId)
-                  ->orWhere('step_number', $stepNo)
-                  ->orWhere(function ($q2) use ($iteration) {
-                      $q2->where('workflow_iteration', $iteration)
-                         ->whereNull('workflow_step_id')
-                         ->whereNull('step_number');
-                  })
-                  ->orWhere('current_version', '>', 0);
+                    ->orWhere('step_number', $stepNo)
+                    ->orWhere(function ($q2) use ($iteration) {
+                        $q2->where('workflow_iteration', $iteration)
+                            ->whereNull('workflow_step_id')
+                            ->whereNull('step_number');
+                    })
+                    ->orWhere('current_version', '>', 0);
             })->exists();
 
         if ($hasSubmission) {

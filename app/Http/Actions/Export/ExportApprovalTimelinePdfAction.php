@@ -2,12 +2,12 @@
 
 namespace App\Http\Actions\Export;
 
-use App\Models\Contract;
+use App\Models\Transaction\Contract;
+use App\Services\Utils\PdfService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Spatie\Browsershot\Browsershot;
 
 class ExportApprovalTimelinePdfAction
 {
@@ -45,30 +45,7 @@ class ExportApprovalTimelinePdfAction
                 'generated_by_id' => $request->generated_by_id ?? ($user ? $user->id : '-'),
             ])->render();
 
-            $chromePaths = [
-                base_path('chrome/mac_arm-151.0.7922.47/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing'),
-                '/Applications/Brave Browser.app/Contents/MacOS/Brave Browser',
-                '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-            ];
-            $chromePath = collect($chromePaths)->first(fn ($path) => file_exists($path)) ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-
-            $pdfContent = Browsershot::html($html)
-                ->setNodeBinary('/opt/homebrew/bin/node')
-                ->setNpmBinary('/opt/homebrew/bin/npm')
-                ->setChromePath($chromePath)
-                ->noSandbox()
-                ->addChromiumArguments([
-                    'disable-gpu',
-                    'disable-dev-shm-usage',
-                    'disable-setuid-sandbox',
-                    'no-first-run',
-                    'disable-extensions',
-                ])
-                ->timeout(180)
-                ->format('A4')
-                ->margins(0, 0, 0, 0)
-                ->showBackground()
-                ->setDelay(500);
+            $pdfContent = PdfService::browsershotHtml($html, 180);
 
             $pdfDir = 'contracts/'.$contract->id.'/pdfs';
             $safeNo = Str::slug($contract->contract_no ?: 'contract');

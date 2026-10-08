@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import { HeaderTaskList } from '@/pages/contracts/components/parts/HeaderTaskList';
 import { Contract } from '@/pages/contracts/types';
 import { Check, GitFork, Loader2 } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface ContractDetailHeaderProps {
     contract: Contract;
@@ -55,10 +55,10 @@ export function ContractDetailHeader({
     const currentStepName = (contract.workflow_step as any)?.name || (contract.workflow_step as any)?.label || contract.workflow_step?.description;
 
     return (
-        <div className="sticky top-0 z-50 flex h-16 min-h-[64px] max-h-[64px] shrink-0 items-center justify-between px-5 bg-background border-b border-border transition-all duration-200 box-border gap-3">
+        <div className="bg-background border-border sticky top-0 z-50 box-border flex h-16 max-h-[64px] min-h-[64px] shrink-0 items-center justify-between gap-3 border-b px-5 transition-all duration-200">
             {/* Left Side: Document Title (Editable) + Section Breadcrumb */}
-            <div className="flex items-center gap-2.5 min-w-0 flex-shrink">
-                <div className="flex flex-col justify-center min-w-0">
+            <div className="flex min-w-0 flex-shrink items-center gap-2.5">
+                <div className="flex min-w-0 flex-col justify-center">
                     {isEditingTitle && canEditTitle ? (
                         <input
                             autoFocus
@@ -68,40 +68,34 @@ export function ContractDetailHeader({
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter') handleTitleBlur();
                             }}
-                            className="text-foreground text-[14px] font-bold bg-muted border-b border-primary focus:outline-none min-w-[280px] md:min-w-[450px] px-2 py-0.5 rounded leading-tight"
+                            className="text-foreground bg-muted border-primary min-w-[280px] rounded border-b px-2 py-0.5 text-[14px] leading-tight font-bold focus:outline-none md:min-w-[450px]"
                             placeholder="Masukkan judul dokumen..."
                         />
                     ) : (
-                        <div className="flex items-center gap-2 min-w-0">
+                        <div className="flex min-w-0 items-center gap-2">
                             <h1
                                 className={cn(
-                                    'text-foreground text-[14px] font-bold tracking-tight truncate max-w-[360px] md:max-w-[550px] leading-tight',
-                                    canEditTitle && 'cursor-pointer hover:text-primary transition-colors',
+                                    'text-foreground max-w-[360px] truncate text-[14px] leading-tight font-bold tracking-tight md:max-w-[550px]',
+                                    canEditTitle && 'hover:text-primary cursor-pointer transition-colors',
                                 )}
                                 onClick={() => {
                                     if (canEditTitle) setIsEditingTitle(true);
                                 }}
                                 title={canEditTitle ? 'Klik untuk mengedit judul' : contract.title}
                             >
-                                {contract.title || <span className="italic text-muted-foreground">Tanpa Judul</span>}
+                                {contract.title || <span className="text-muted-foreground italic">Tanpa Judul</span>}
                             </h1>
-                            {canEditTitle && (
-                                <span className="text-[10px] text-muted-foreground/60 font-normal select-none">(edit)</span>
-                            )}
+                            {canEditTitle && <span className="text-muted-foreground/60 text-[10px] font-normal select-none">(edit)</span>}
                         </div>
                     )}
-                    <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-0.5 leading-tight truncate">
+                    <div className="text-muted-foreground mt-0.5 flex items-center gap-1.5 truncate text-[11px] leading-tight">
                         {contract.workflow_step && (
                             <>
-                                <span className="font-semibold text-foreground/80 flex items-center gap-1">
-                                    <span className="px-1.5 py-0.2 rounded bg-primary/10 text-primary text-[10px] font-bold">
+                                <span className="text-foreground/80 flex items-center gap-1 font-semibold">
+                                    <span className="py-0.2 bg-primary/10 text-primary rounded px-1.5 text-[10px] font-bold">
                                         Tahap {contract.workflow_step.step}
                                     </span>
-                                    {currentStepName && (
-                                        <span className="truncate max-w-[200px] sm:max-w-[320px]">
-                                            {currentStepName}
-                                        </span>
-                                    )}
+                                    {currentStepName && <span className="max-w-[200px] truncate sm:max-w-[320px]">{currentStepName}</span>}
                                 </span>
                                 <span className="opacity-40">•</span>
                             </>
@@ -118,7 +112,7 @@ export function ContractDetailHeader({
             </div>
 
             {/* Right Column: Status & Save Buttons */}
-            <div className="flex items-center gap-3 shrink-0">
+            <div className="flex shrink-0 items-center gap-3">
                 <HeaderTaskList contract={contract} onNavigateTab={onNavigateTab} />
 
                 <StatusBadge status={effectiveStatus} statusInfo={contract.status_info} />
@@ -127,7 +121,7 @@ export function ContractDetailHeader({
                     <button
                         type="button"
                         onClick={onOpenAdminWorkflowModal}
-                        className="h-7 px-2.5 rounded-lg border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                        className="flex h-7 cursor-pointer items-center gap-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 px-2.5 text-xs font-semibold text-rose-600 transition-colors hover:bg-rose-500/20 dark:text-rose-400"
                         title="Admin Override: Ubah alur kerja atau tahapan kontrak ini"
                     >
                         <GitFork size={13} className="shrink-0" />
@@ -137,12 +131,12 @@ export function ContractDetailHeader({
 
                 {/* Save button in navbar when contract info or forms have changes */}
                 {isAnyDirty && (
-                    <div className="flex items-center gap-2 animate-in fade-in slide-in-from-right-3 duration-200">
+                    <div className="animate-in fade-in slide-in-from-right-3 flex items-center gap-2 duration-200">
                         <button
                             type="button"
                             onClick={() => onResetAllChanges?.()}
                             disabled={infoSaving}
-                            className="px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-all cursor-pointer disabled:opacity-50"
+                            className="text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer rounded-lg px-3 py-1.5 text-xs font-semibold transition-all disabled:opacity-50"
                         >
                             Batal
                         </button>
@@ -150,7 +144,7 @@ export function ContractDetailHeader({
                             variant="primary"
                             onClick={() => onSaveAllChanges?.()}
                             disabled={infoSaving}
-                            className="h-8 px-4 text-xs font-bold shadow-xs transition-all flex items-center gap-1.5"
+                            className="flex h-8 items-center gap-1.5 px-4 text-xs font-bold shadow-xs transition-all"
                         >
                             {infoSaving ? (
                                 <>

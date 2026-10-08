@@ -153,10 +153,7 @@ export default function CreateContractModal({
                   }))
             : [];
 
-        return [
-            { value: String(auth?.user?.id), label: `Diri Sendiri (${auth?.user?.name})` },
-            ...otherUsers,
-        ];
+        return [{ value: String(auth?.user?.id), label: `Diri Sendiri (${auth?.user?.name})` }, ...otherUsers];
     }, [auth?.user, users]);
 
     // Reset and initialize state when modal opens
@@ -274,17 +271,15 @@ export default function CreateContractModal({
 
     const isFormValid = Boolean(title && typeId && (!workflows.length || workflowId));
 
-    const modalTitle = activeTab === 'non_kontrak'
-        ? 'Buat Pengajuan Non Kontrak'
-        : activeTab === 'nda'
-          ? 'Buat Pengajuan NDA'
-          : 'Buat Pengajuan Baru';
+    const modalTitle =
+        activeTab === 'non_kontrak' ? 'Buat Pengajuan Non Kontrak' : activeTab === 'nda' ? 'Buat Pengajuan NDA' : 'Buat Pengajuan Baru';
 
-    const modalDesc = activeTab === 'non_kontrak'
-        ? 'Isi formulir berikut untuk memulai pengajuan non-kontrak'
-        : activeTab === 'nda'
-          ? 'Isi formulir berikut untuk memulai pengajuan dokumen kerahasiaan (NDA)'
-          : 'Isi formulir berikut untuk memulai pengajuan kontrak';
+    const modalDesc =
+        activeTab === 'non_kontrak'
+            ? 'Isi formulir berikut untuk memulai pengajuan non-kontrak'
+            : activeTab === 'nda'
+              ? 'Isi formulir berikut untuk memulai pengajuan dokumen kerahasiaan (NDA)'
+              : 'Isi formulir berikut untuk memulai pengajuan kontrak';
 
     return (
         <Modal
@@ -295,7 +290,7 @@ export default function CreateContractModal({
             title={modalTitle}
             description={modalDesc}
             maxWidth="3xl"
-            className="min-h-[620px] max-h-[85vh] flex flex-col"
+            className="flex max-h-[85vh] min-h-[620px] flex-col"
             footer={
                 <div className="flex w-full justify-end gap-2.5">
                     <Button

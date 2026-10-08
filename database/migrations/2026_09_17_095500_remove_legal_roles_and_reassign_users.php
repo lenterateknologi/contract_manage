@@ -1,7 +1,7 @@
 <?php
 
-use App\Models\Division;
-use App\Models\Role;
+use App\Models\Master\Division;
+use App\Models\Master\Role;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
@@ -52,7 +52,7 @@ return new class extends Migration
                         ->where('role_id', $oldRoleId)
                         ->update([
                             'role_id' => $newRoleId,
-                            'division_id' => DB::raw("COALESCE(division_id, " . ($legalDivId ? "'{$legalDivId}'" : "NULL") . ")"),
+                            'division_id' => DB::raw('COALESCE(division_id, '.($legalDivId ? "'{$legalDivId}'" : 'NULL').')'),
                             'updated_at' => now(),
                         ]);
 
@@ -60,7 +60,7 @@ return new class extends Migration
                         ->where('role_id', $oldRoleId)
                         ->update([
                             'role_id' => $newRoleId,
-                            'division_id' => DB::raw("COALESCE(division_id, " . ($legalDivId ? "'{$legalDivId}'" : "NULL") . ")"),
+                            'division_id' => DB::raw('COALESCE(division_id, '.($legalDivId ? "'{$legalDivId}'" : 'NULL').')'),
                             'updated_at' => now(),
                         ]);
                 }

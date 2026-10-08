@@ -3,35 +3,46 @@
  */
 
 const ID_MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'];
-const ID_MONTHS_LONG = [
-    'Januari',
-    'Februari',
-    'Maret',
-    'April',
-    'Mei',
-    'Juni',
-    'Juli',
-    'Agustus',
-    'September',
-    'Oktober',
-    'November',
-    'Desember',
-];
+const ID_MONTHS_LONG = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 const ID_DAYS = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 
 const ID_MONTH_MAP: Record<string, number> = {
-    jan: 0, januari: 0, january: 0,
-    feb: 1, februari: 1, february: 1,
-    mar: 2, maret: 2, march: 2,
-    apr: 3, april: 3,
-    mei: 4, may: 4,
-    jun: 5, juni: 5, june: 5,
-    jul: 6, juli: 6, july: 6,
-    agt: 7, agu: 7, agustus: 7, aug: 7, august: 7,
-    sep: 8, september: 8,
-    okt: 9, oktober: 9, oct: 9, october: 9,
-    nov: 10, november: 10,
-    des: 11, desember: 11, dec: 11, december: 11,
+    jan: 0,
+    januari: 0,
+    january: 0,
+    feb: 1,
+    februari: 1,
+    february: 1,
+    mar: 2,
+    maret: 2,
+    march: 2,
+    apr: 3,
+    april: 3,
+    mei: 4,
+    may: 4,
+    jun: 5,
+    juni: 5,
+    june: 5,
+    jul: 6,
+    juli: 6,
+    july: 6,
+    agt: 7,
+    agu: 7,
+    agustus: 7,
+    aug: 7,
+    august: 7,
+    sep: 8,
+    september: 8,
+    okt: 9,
+    oktober: 9,
+    oct: 9,
+    october: 9,
+    nov: 10,
+    november: 10,
+    des: 11,
+    desember: 11,
+    dec: 11,
+    december: 11,
 };
 
 /**
@@ -150,10 +161,7 @@ export function formatDateTime(date: string | Date | null | undefined, withZone 
  * Splits date and time into two parts for structured multi-line rendering.
  * Example output: { dateStr: '8 Sep 2026', timeStr: '09:41 WIB' }
  */
-export function formatDateAndTimeParts(
-    date: string | Date | null | undefined,
-    fallbackStr?: string,
-): { dateStr: string; timeStr: string } {
+export function formatDateAndTimeParts(date: string | Date | null | undefined, fallbackStr?: string): { dateStr: string; timeStr: string } {
     const d = parseDateInput(date);
     if (!d) {
         if (fallbackStr && fallbackStr.includes(',')) {
@@ -178,11 +186,7 @@ export function formatDateAndTimeParts(
  * Formats a date range filter text.
  * Example: "1 Jan 2026 – 31 Jan 2026", "Dari 1 Jan 2026", "Sampai 31 Jan 2026", or fallback (default: "-")
  */
-export function formatDateRange(
-    dateFrom?: string | Date | null,
-    dateTo?: string | Date | null,
-    fallback: string = '-',
-): string {
+export function formatDateRange(dateFrom?: string | Date | null, dateTo?: string | Date | null, fallback: string = '-'): string {
     const fromStr = dateFrom ? formatDate(dateFrom) : null;
     const toStr = dateTo ? formatDate(dateTo) : null;
 

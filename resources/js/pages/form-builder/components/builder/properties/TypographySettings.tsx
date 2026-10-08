@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/buttons/Button';
-import { Input } from '@/components/ui/inputs/Input';
 import { Label } from '@/components/ui/forms/Label';
+import { Input } from '@/components/ui/inputs/Input';
 import { cn } from '@/lib/utils';
 import { AlignCenter, AlignLeft, AlignRight, List, Type } from 'lucide-react';
 import React from 'react';
@@ -47,7 +47,7 @@ export const TypographySettings: React.FC<TypographySettingsProps> = ({ selected
                                 font_family: e.target.value,
                             })
                         }
-                        className="border-input bg-background focus:ring-1 focus:ring-primary h-7 w-full rounded-md border px-2 py-0.5 text-[10px] font-medium outline-none shadow-xs"
+                        className="border-input bg-background focus:ring-primary h-7 w-full rounded-md border px-2 py-0.5 text-[10px] font-medium shadow-xs outline-none focus:ring-1"
                         style={{ fontFamily: selectedField.options?.font_family || "'Times New Roman', serif" }}
                     >
                         <option value="'Montserrat', sans-serif">Montserrat — Tema Aplikasi</option>
@@ -60,7 +60,7 @@ export const TypographySettings: React.FC<TypographySettingsProps> = ({ selected
                 </div>
 
                 {/* Row 1: Font Size & Weight (Compact) */}
-                <div className="grid grid-cols-2 gap-2 items-end">
+                <div className="grid grid-cols-2 items-end gap-2">
                     <div className="space-y-1">
                         <Label className="text-muted-foreground font-sans text-[7px] font-medium uppercase">Ukuran Font (px)</Label>
                         <Input
@@ -71,7 +71,7 @@ export const TypographySettings: React.FC<TypographySettingsProps> = ({ selected
                                     font_size: parseNumber(e.target.value, 12),
                                 })
                             }
-                            className="h-7 font-sans text-[10px] px-2"
+                            className="h-7 px-2 font-sans text-[10px]"
                             placeholder="12"
                         />
                     </div>
@@ -102,11 +102,11 @@ export const TypographySettings: React.FC<TypographySettingsProps> = ({ selected
                 </div>
 
                 {/* Row 2: Alignment & Formatting Style & Color */}
-                <div className="grid grid-cols-2 gap-2 items-center">
+                <div className="grid grid-cols-2 items-center gap-2">
                     {/* Text Alignment (Boxed / Segmented) */}
                     <div className="space-y-1">
                         <Label className="text-muted-foreground font-sans text-[7px] font-medium uppercase">Rata Teks</Label>
-                        <div className="bg-muted/40 p-0.5 rounded-lg flex items-center border border-slate-200/80 dark:border-zinc-800">
+                        <div className="bg-muted/40 flex items-center rounded-lg border border-slate-200/80 p-0.5 dark:border-zinc-800">
                             {[
                                 { label: 'Left', value: 'left', icon: AlignLeft },
                                 { label: 'Center', value: 'center', icon: AlignCenter },
@@ -125,10 +125,10 @@ export const TypographySettings: React.FC<TypographySettingsProps> = ({ selected
                                             })
                                         }
                                         className={cn(
-                                            'flex-1 flex items-center justify-center h-6 rounded-md transition-all text-muted-foreground',
+                                            'text-muted-foreground flex h-6 flex-1 items-center justify-center rounded-md transition-all',
                                             isActive
-                                                ? 'bg-background text-foreground shadow-xs font-bold border border-slate-200/60 dark:border-zinc-700'
-                                                : 'hover:bg-background/50 hover:text-foreground'
+                                                ? 'bg-background text-foreground border border-slate-200/60 font-bold shadow-xs dark:border-zinc-700'
+                                                : 'hover:bg-background/50 hover:text-foreground',
                                         )}
                                         title={a.label}
                                     >
@@ -142,7 +142,7 @@ export const TypographySettings: React.FC<TypographySettingsProps> = ({ selected
                     {/* Style (Italic/Underline) & Color */}
                     <div className="space-y-1">
                         <Label className="text-muted-foreground font-sans text-[7px] font-medium uppercase">Gaya & Warna</Label>
-                        <div className="flex gap-1 items-center">
+                        <div className="flex items-center gap-1">
                             <Button
                                 type="button"
                                 variant={selectedField.options?.font_style === 'italic' ? 'default' : 'outline'}
@@ -175,7 +175,7 @@ export const TypographySettings: React.FC<TypographySettingsProps> = ({ selected
                                         color: e.target.value,
                                     })
                                 }
-                                className="h-7 w-full p-0.5 cursor-pointer rounded-md border"
+                                className="h-7 w-full cursor-pointer rounded-md border p-0.5"
                                 title="Warna Teks"
                             />
                         </div>

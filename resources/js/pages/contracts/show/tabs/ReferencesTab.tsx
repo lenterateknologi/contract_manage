@@ -14,7 +14,16 @@ interface ReferencesTabProps {
 
 export const ReferencesTab = ({ contract, canUpdate, onUpdate, processing, meId, subTab = 'parent', vendors = [] }: ReferencesTabProps) => {
     if (subTab === 'purchase_orders') {
-        return <ContractPurchaseOrders contract={contract} canUpdate={canUpdate} onUpdate={onUpdate} processing={processing} meId={meId} vendors={vendors} />;
+        return (
+            <ContractPurchaseOrders
+                contract={contract}
+                canUpdate={canUpdate}
+                onUpdate={onUpdate}
+                processing={processing}
+                meId={meId}
+                vendors={vendors}
+            />
+        );
     }
 
     return <ContractReferences contract={contract} canUpdate={canUpdate} onUpdate={onUpdate} processing={processing} meId={meId} />;

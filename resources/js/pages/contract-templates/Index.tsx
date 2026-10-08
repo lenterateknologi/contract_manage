@@ -1,31 +1,19 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Head, router } from '@inertiajs/react';
-import { usePermissions } from '@/hooks/use-permissions';
-import { MasterPageLayout } from '@/components/ui/navigation/MasterPageLayout';
-import { FloatingPanel } from '@/components/ui/navigation/FloatingPanel';
-import { PageTable } from '@/components/ui/navigation/PageTable';
-import { DataTable, Column } from '@/components/ui/tables/DataTable';
-import { TemplateTableSkeleton, TemplateTreeSkeleton, ContractTemplateSkeleton } from '@/components/ui/feedback/TemplateSkeleton';
+import { Icons } from '@/components/ui';
 import { Button } from '@/components/ui/buttons/Button';
-import { Input } from '@/components/ui/inputs/Input';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialogs/Dialog';
+import { TemplateTableSkeleton } from '@/components/ui/feedback/TemplateSkeleton';
 import { Label } from '@/components/ui/forms/Label';
+import { Input } from '@/components/ui/inputs/Input';
+import { FloatingPanel } from '@/components/ui/navigation/FloatingPanel';
+import { MasterPageLayout } from '@/components/ui/navigation/MasterPageLayout';
 import { FilterCategory } from '@/components/ui/navigation/PageFilter';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialogs/Dialog';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from '@/components/ui/selection/DropdownMenu';
+import { PageTable } from '@/components/ui/navigation/PageTable';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/selection/DropdownMenu';
+import { Column, DataTable } from '@/components/ui/tables/DataTable';
+import { usePermissions } from '@/hooks/use-permissions';
 import { cn } from '@/lib/utils';
-import { AppIcon, Icons, type LucideIcon } from '@/components/ui';
+import { Head, router } from '@inertiajs/react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 const {
     AlertTriangle,
@@ -186,10 +174,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
     const [contextMenu, setContextMenu] = useState<{
         x: number;
         y: number;
-        target:
-            | { type: 'folder'; folder: TemplateFolder }
-            | { type: 'template'; template: ContractTemplate }
-            | { type: 'root' };
+        target: { type: 'folder'; folder: TemplateFolder } | { type: 'template'; template: ContractTemplate } | { type: 'root' };
     } | null>(null);
 
     // Close custom context menu on any global click or scroll
@@ -548,13 +533,8 @@ export default function Templates({ folders = [], templates = [], permissions }:
 
         setIsSubmitting(true);
         const url =
-            selectedItem.type === 'folder'
-                ? route('admin.templates.folders.move', selectedItem.id)
-                : route('admin.templates.move', selectedItem.id);
-        const data =
-            selectedItem.type === 'folder'
-                ? { parent_id: targetFolderId }
-                : { template_folder_id: targetFolderId };
+            selectedItem.type === 'folder' ? route('admin.templates.folders.move', selectedItem.id) : route('admin.templates.move', selectedItem.id);
+        const data = selectedItem.type === 'folder' ? { parent_id: targetFolderId } : { template_folder_id: targetFolderId };
 
         router.patch(url, data, {
             onSuccess: () => {
@@ -647,14 +627,12 @@ export default function Templates({ folders = [], templates = [], permissions }:
                 if (row.itemType === 'folder') {
                     return (
                         <div className="flex items-center gap-2.5 py-0.5">
-                            <Folder size={18} className="shrink-0 text-amber-500 fill-amber-500" />
-                            <div className="flex flex-col min-w-0">
-                                <span className="font-semibold text-xs text-text-main group-hover:text-primary transition-colors truncate max-w-md">
+                            <Folder size={18} className="shrink-0 fill-amber-500 text-amber-500" />
+                            <div className="flex min-w-0 flex-col">
+                                <span className="text-text-main group-hover:text-primary max-w-md truncate text-xs font-semibold transition-colors">
                                     {row.name}
                                 </span>
-                                <span className="text-[10.5px] text-text-desc font-medium">
-                                    {row.templates_count || 0} item di dalam folder
-                                </span>
+                                <span className="text-text-desc text-[10.5px] font-medium">{row.templates_count || 0} item di dalam folder</span>
                             </div>
                         </div>
                     );
@@ -670,24 +648,20 @@ export default function Templates({ folders = [], templates = [], permissions }:
                             className={cn(
                                 'shrink-0',
                                 isPdf
-                                    ? 'text-rose-600 fill-rose-600/20'
+                                    ? 'fill-rose-600/20 text-rose-600'
                                     : isExcel
-                                    ? 'text-emerald-600 fill-emerald-600/20'
-                                    : 'text-blue-600 fill-blue-600/20',
+                                      ? 'fill-emerald-600/20 text-emerald-600'
+                                      : 'fill-blue-600/20 text-blue-600',
                             )}
                         />
-                        <div className="flex flex-col min-w-0">
-                            <span className="font-semibold text-xs text-text-main group-hover:text-primary transition-colors truncate max-w-md">
+                        <div className="flex min-w-0 flex-col">
+                            <span className="text-text-main group-hover:text-primary max-w-md truncate text-xs font-semibold transition-colors">
                                 {row.name}
                             </span>
                             {row.description ? (
-                                <span className="text-[10.5px] text-text-desc truncate max-w-md">
-                                    {row.description}
-                                </span>
+                                <span className="text-text-desc max-w-md truncate text-[10.5px]">{row.description}</span>
                             ) : (
-                                <span className="text-[10.5px] text-text-desc font-mono truncate max-w-md">
-                                    {row.file_name}
-                                </span>
+                                <span className="text-text-desc max-w-md truncate font-mono text-[10.5px]">{row.file_name}</span>
                             )}
                         </div>
                     </div>
@@ -699,9 +673,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
             accessorKey: 'folder_name',
             className: 'w-44',
             cell: (row) => (
-                <span className="text-xs text-text-desc font-medium">
-                    {row.itemType === 'folder' ? 'Sub-Folder' : row.folder_name || 'Root'}
-                </span>
+                <span className="text-text-desc text-xs font-medium">{row.itemType === 'folder' ? 'Sub-Folder' : row.folder_name || 'Root'}</span>
             ),
         },
         {
@@ -709,27 +681,21 @@ export default function Templates({ folders = [], templates = [], permissions }:
             accessorKey: 'file_size',
             className: 'w-32',
             cell: (row) => (
-                <span className="text-xs text-text-desc font-medium">
-                    {row.itemType === 'folder' ? '-' : formatSize(row.file_size || 0)}
-                </span>
+                <span className="text-text-desc text-xs font-medium">{row.itemType === 'folder' ? '-' : formatSize(row.file_size || 0)}</span>
             ),
         },
         {
             header: 'Pengunggah',
             accessorKey: 'creator_name',
             className: 'w-36',
-            cell: (row) => (
-                <span className="text-xs text-text-desc font-medium truncate block">
-                    {row.creator_name || '-'}
-                </span>
-            ),
+            cell: (row) => <span className="text-text-desc block truncate text-xs font-medium">{row.creator_name || '-'}</span>,
         },
         {
             header: 'Tanggal Dibuat / Upload',
             accessorKey: 'created_at',
             className: 'w-44',
             cell: (row) => {
-                if (!row.created_at) return <span className="text-xs text-text-desc font-medium">-</span>;
+                if (!row.created_at) return <span className="text-text-desc text-xs font-medium">-</span>;
                 const dateObj = new Date(row.created_at);
                 const formattedDate = dateObj.toLocaleDateString('id-ID', {
                     day: '2-digit',
@@ -742,8 +708,8 @@ export default function Templates({ folders = [], templates = [], permissions }:
                 });
                 return (
                     <div className="flex flex-col">
-                        <span className="text-xs text-text-main font-medium">{formattedDate}</span>
-                        <span className="text-[10px] text-text-desc">{formattedTime} WIB</span>
+                        <span className="text-text-main text-xs font-medium">{formattedDate}</span>
+                        <span className="text-text-desc text-[10px]">{formattedTime} WIB</span>
                     </div>
                 );
             },
@@ -764,10 +730,10 @@ export default function Templates({ folders = [], templates = [], permissions }:
                                     handleToggleVisibility(row);
                                 }}
                                 className={cn(
-                                    'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all cursor-pointer border',
+                                    'inline-flex cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold transition-all',
                                     isVisible
-                                        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20'
-                                        : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 hover:bg-rose-500/20',
+                                        ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 dark:text-emerald-400'
+                                        : 'border-rose-500/20 bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 dark:text-rose-400',
                                 )}
                                 title={`Klik untuk mengubah status menjadi ${isVisible ? 'Tersembunyi' : 'Tampil'}`}
                             >
@@ -786,10 +752,10 @@ export default function Templates({ folders = [], templates = [], permissions }:
                         ) : (
                             <span
                                 className={cn(
-                                    'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border',
+                                    'inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold',
                                     isVisible
-                                        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
-                                        : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20',
+                                        ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                                        : 'border-rose-500/20 bg-rose-500/10 text-rose-600 dark:text-rose-400',
                                 )}
                             >
                                 {isVisible ? 'Tampil' : 'Tersembunyi'}
@@ -818,12 +784,12 @@ export default function Templates({ folders = [], templates = [], permissions }:
                                 onClick={(e) => {
                                     e.stopPropagation();
                                 }}
-                                className="h-8 w-8 rounded-lg text-text-desc hover:text-text-main hover:bg-surface-muted transition-all cursor-pointer"
+                                className="text-text-desc hover:text-text-main hover:bg-surface-muted h-8 w-8 cursor-pointer rounded-lg transition-all"
                             >
                                 <MoreHorizontal size={15} />
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48 p-1.5 shadow-xl border-surface-border z-[9999]">
+                        <DropdownMenuContent align="end" className="border-surface-border z-[9999] w-48 p-1.5 shadow-xl">
                             {row.itemType === 'template' ? (
                                 <>
                                     <DropdownMenuItem
@@ -831,7 +797,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
                                             e.stopPropagation();
                                             setPreviewTemplate(row.raw);
                                         }}
-                                        className="flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted rounded-md transition-colors cursor-pointer"
+                                        className="text-text-main hover:bg-surface-muted flex cursor-pointer items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors"
                                     >
                                         <Eye size={13} className="text-primary" />
                                         <span>Buka / Pratinjau</span>
@@ -842,7 +808,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
                                                 e.stopPropagation();
                                                 window.location.href = route('admin.templates.download', row.id);
                                             }}
-                                            className="flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted rounded-md transition-colors cursor-pointer"
+                                            className="text-text-main hover:bg-surface-muted flex cursor-pointer items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors"
                                         >
                                             <Download size={13} className="text-emerald-500" />
                                             <span>Download</span>
@@ -855,7 +821,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
                                         e.stopPropagation();
                                         setCurrentFolderId(row.id);
                                     }}
-                                    className="flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted rounded-md transition-colors cursor-pointer"
+                                    className="text-text-main hover:bg-surface-muted flex cursor-pointer items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors"
                                 >
                                     <FolderOpen size={13} className="text-amber-500" />
                                     <span>Buka Folder</span>
@@ -867,7 +833,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
                                         e.stopPropagation();
                                         handleToggleVisibility(row);
                                     }}
-                                    className="flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted rounded-md transition-colors cursor-pointer"
+                                    className="text-text-main hover:bg-surface-muted flex cursor-pointer items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors"
                                 >
                                     {row.is_visible !== false ? (
                                         <>
@@ -891,7 +857,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
                                             setNewFolderName(row.name);
                                             setIsRenameModalOpen(true);
                                         }}
-                                        className="flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted rounded-md transition-colors cursor-pointer"
+                                        className="text-text-main hover:bg-surface-muted flex cursor-pointer items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors"
                                     >
                                         <Edit3 size={13} className="text-amber-500" />
                                         <span>Ubah Nama</span>
@@ -903,7 +869,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
                                             setTargetFolderId(row.itemType === 'folder' ? row.raw.parent_id : row.raw.template_folder_id);
                                             setIsMoveModalOpen(true);
                                         }}
-                                        className="flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted rounded-md transition-colors cursor-pointer"
+                                        className="text-text-main hover:bg-surface-muted flex cursor-pointer items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors"
                                     >
                                         <FolderInput size={13} className="text-blue-500" />
                                         <span>Pindahkan</span>
@@ -917,7 +883,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
                                         setSelectedItem({ type: row.itemType, id: row.id, name: row.name });
                                         setIsDeleteModalOpen(true);
                                     }}
-                                    className="flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-md transition-colors cursor-pointer"
+                                    className="flex cursor-pointer items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-rose-600 transition-colors hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/30"
                                 >
                                     <Trash2 size={13} className="text-rose-500" />
                                     <span>Hapus</span>
@@ -949,43 +915,39 @@ export default function Templates({ folders = [], templates = [], permissions }:
                         });
                     }}
                     className={cn(
-                        'group flex items-center justify-between rounded-lg px-2 py-1.5 text-xs font-medium transition-all cursor-pointer border border-transparent',
+                        'group flex cursor-pointer items-center justify-between rounded-lg border border-transparent px-2 py-1.5 text-xs font-medium transition-all',
                         isSelected
-                            ? 'bg-primary/10 text-primary font-bold border-primary/20'
+                            ? 'bg-primary/10 text-primary border-primary/20 font-bold'
                             : 'text-text-main hover:bg-surface-muted/70 hover:text-text-main',
                     )}
                     style={{ paddingLeft: `${Math.max(8, depth * 14 + 8)}px` }}
                 >
-                    <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                    <div className="flex min-w-0 flex-1 items-center gap-1.5">
                         {hasChildren ? (
                             <button
                                 type="button"
                                 onClick={(e) => toggleFolderExpand(node.id, e)}
-                                className="h-4 w-4 shrink-0 flex items-center justify-center rounded text-text-desc hover:text-text-main hover:bg-surface-border/50 transition-colors"
+                                className="text-text-desc hover:text-text-main hover:bg-surface-border/50 flex h-4 w-4 shrink-0 items-center justify-center rounded transition-colors"
                             >
-                                {isExpanded ? (
-                                    <ChevronDown size={13} />
-                                ) : (
-                                    <ChevronRight size={13} />
-                                )}
+                                {isExpanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
                             </button>
                         ) : (
                             <span className="w-4 shrink-0" />
                         )}
 
                         {isSelected || isExpanded ? (
-                            <FolderOpen size={14} className="shrink-0 text-amber-500 fill-amber-500" />
+                            <FolderOpen size={14} className="shrink-0 fill-amber-500 text-amber-500" />
                         ) : (
-                            <Folder size={14} className="shrink-0 text-amber-500 fill-amber-500" />
+                            <Folder size={14} className="shrink-0 fill-amber-500 text-amber-500" />
                         )}
 
                         <span className="truncate text-[11.5px]">{node.name}</span>
                     </div>
 
-                    <div className="flex items-center gap-1 shrink-0 ml-1">
+                    <div className="ml-1 flex shrink-0 items-center gap-1">
                         <span
                             className={cn(
-                                'text-[10px] px-1.5 py-0.2 rounded-full font-semibold',
+                                'py-0.2 rounded-full px-1.5 text-[10px] font-semibold',
                                 isSelected
                                     ? 'bg-primary text-primary-foreground'
                                     : 'bg-surface-muted text-text-desc group-hover:bg-surface-border/80',
@@ -998,12 +960,12 @@ export default function Templates({ folders = [], templates = [], permissions }:
                             <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                                 <button
                                     type="button"
-                                    className="opacity-0 group-hover:opacity-100 h-5 w-5 flex items-center justify-center rounded text-text-desc hover:text-text-main hover:bg-surface-border/60 transition-opacity"
+                                    className="text-text-desc hover:text-text-main hover:bg-surface-border/60 flex h-5 w-5 items-center justify-center rounded opacity-0 transition-opacity group-hover:opacity-100"
                                 >
                                     <MoreHorizontal size={12} />
                                 </button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="start" className="w-40 p-1 border-surface-border">
+                            <DropdownMenuContent align="start" className="border-surface-border w-40 p-1">
                                 {canCreate && (
                                     <>
                                         <DropdownMenuItem
@@ -1015,7 +977,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
                                                 });
                                                 setIsUploadModalOpen(true);
                                             }}
-                                            className="flex items-center gap-2 px-2 py-1.5 text-xs text-primary cursor-pointer font-semibold"
+                                            className="text-primary flex cursor-pointer items-center gap-2 px-2 py-1.5 text-xs font-semibold"
                                         >
                                             <Upload size={13} className="text-primary" />
                                             <span>Upload Dokumen</span>
@@ -1027,7 +989,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
                                                 setNewFolderName('');
                                                 setIsFolderModalOpen(true);
                                             }}
-                                            className="flex items-center gap-2 px-2 py-1.5 text-xs text-text-main cursor-pointer"
+                                            className="text-text-main flex cursor-pointer items-center gap-2 px-2 py-1.5 text-xs"
                                         >
                                             <FolderPlus size={13} className="text-amber-500" />
                                             <span>Buat Sub-Folder</span>
@@ -1042,7 +1004,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
                                             setNewFolderName(node.name);
                                             setIsRenameModalOpen(true);
                                         }}
-                                        className="flex items-center gap-2 px-2 py-1.5 text-xs text-text-main cursor-pointer"
+                                        className="text-text-main flex cursor-pointer items-center gap-2 px-2 py-1.5 text-xs"
                                     >
                                         <Edit3 size={13} className="text-amber-500" />
                                         <span>Ubah Nama</span>
@@ -1055,7 +1017,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
                                             setSelectedItem({ type: 'folder', id: node.id, name: node.name });
                                             setIsDeleteModalOpen(true);
                                         }}
-                                        className="flex items-center gap-2 px-2 py-1.5 text-xs text-rose-600 hover:bg-rose-50 cursor-pointer"
+                                        className="flex cursor-pointer items-center gap-2 px-2 py-1.5 text-xs text-rose-600 hover:bg-rose-50"
                                     >
                                         <Trash2 size={13} className="text-rose-500" />
                                         <span>Hapus Folder</span>
@@ -1068,7 +1030,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
 
                 {/* Render children recursively if expanded */}
                 {hasChildren && isExpanded && (
-                    <div className="space-y-0.5 mt-0.5 border-l border-surface-border/40 ml-4 pl-1">
+                    <div className="border-surface-border/40 mt-0.5 ml-4 space-y-0.5 border-l pl-1">
                         {node.children.map((child) => renderFolderTreeNode(child, depth + 1))}
                     </div>
                 )}
@@ -1081,14 +1043,14 @@ export default function Templates({ folders = [], templates = [], permissions }:
             <Head title="Template Kontrak" />
             <MasterPageLayout>
                 {/* ── LEFT SIDEBAR: FOLDER TREE MAP NAVIGATION ── */}
-                <FloatingPanel className="w-72 shrink-0 border-r border-surface-border bg-surface-card/50 flex flex-col h-full overflow-hidden">
+                <FloatingPanel className="border-surface-border bg-surface-card/50 flex h-full w-72 shrink-0 flex-col overflow-hidden border-r">
                     {/* Header Sidebar - Height h-16 (64px) perfectly balanced with sub side nav header */}
-                    <div className="flex h-16 min-h-[64px] max-h-[64px] items-center justify-between border-b border-surface-border px-4 bg-surface-muted/20 shrink-0">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                            <FolderTree size={18} className="text-amber-500 shrink-0" />
-                            <div className="flex flex-col justify-center min-w-0">
-                                <h3 className="text-xs font-bold text-text-main leading-tight truncate">Direktori Folder</h3>
-                                <p className="text-[10px] text-text-desc font-medium leading-tight truncate mt-0.5">Pohon struktur templat</p>
+                    <div className="border-surface-border bg-surface-muted/20 flex h-16 max-h-[64px] min-h-[64px] shrink-0 items-center justify-between border-b px-4">
+                        <div className="flex min-w-0 items-center gap-2.5">
+                            <FolderTree size={18} className="shrink-0 text-amber-500" />
+                            <div className="flex min-w-0 flex-col justify-center">
+                                <h3 className="text-text-main truncate text-xs leading-tight font-bold">Direktori Folder</h3>
+                                <p className="text-text-desc mt-0.5 truncate text-[10px] leading-tight font-medium">Pohon struktur templat</p>
                             </div>
                         </div>
 
@@ -1102,7 +1064,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
                                     setNewFolderName('');
                                     setIsFolderModalOpen(true);
                                 }}
-                                className="h-8 w-8 rounded-lg text-text-desc hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40 cursor-pointer"
+                                className="text-text-desc h-8 w-8 cursor-pointer rounded-lg hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-950/40"
                                 title="Buat Sub-Folder Baru"
                             >
                                 <FolderPlus size={16} />
@@ -1111,20 +1073,20 @@ export default function Templates({ folders = [], templates = [], permissions }:
                     </div>
 
                     {/* Filter / Search Tree - Height h-11 (44px) perfectly matching sub sidebar module title & breadcrumb banner */}
-                    <div className="flex h-11 min-h-[44px] max-h-[44px] items-center border-b border-surface-border/60 px-3 shrink-0">
+                    <div className="border-surface-border/60 flex h-11 max-h-[44px] min-h-[44px] shrink-0 items-center border-b px-3">
                         <div className="relative w-full">
-                            <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-desc" />
+                            <Search size={12} className="text-text-desc absolute top-1/2 left-2.5 -translate-y-1/2" />
                             <Input
                                 value={treeSearch}
                                 onChange={(e) => setTreeSearch(e.target.value)}
                                 placeholder="Cari folder..."
-                                className="h-7.5 w-full pl-7.5 pr-2.5 text-[11px] rounded-md bg-surface-base"
+                                className="bg-surface-base h-7.5 w-full rounded-md pr-2.5 pl-7.5 text-[11px]"
                             />
                         </div>
                     </div>
 
                     {/* Tree Content List */}
-                    <div className="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
+                    <div className="custom-scrollbar flex-1 space-y-1 overflow-y-auto p-2">
                         {/* Root Repository Item */}
                         <div
                             onClick={() => setCurrentFolderId(null)}
@@ -1138,19 +1100,19 @@ export default function Templates({ folders = [], templates = [], permissions }:
                                 });
                             }}
                             className={cn(
-                                'group flex items-center justify-between rounded-lg px-2 py-1.5 text-xs font-medium transition-all cursor-pointer border border-transparent select-none',
+                                'group flex cursor-pointer items-center justify-between rounded-lg border border-transparent px-2 py-1.5 text-xs font-medium transition-all select-none',
                                 currentFolderId === null
-                                    ? 'bg-primary/10 text-primary font-bold border-primary/20'
+                                    ? 'bg-primary/10 text-primary border-primary/20 font-bold'
                                     : 'text-text-main hover:bg-surface-muted/70',
                             )}
                         >
-                            <div className="flex items-center gap-2 min-w-0">
+                            <div className="flex min-w-0 items-center gap-2">
                                 <Layers size={14} className={cn('shrink-0', currentFolderId === null ? 'text-primary' : 'text-text-desc')} />
                                 <span className="truncate text-[11.5px]">Semua / Repository Root</span>
                             </div>
                             <span
                                 className={cn(
-                                    'text-[10px] px-1.5 py-0.2 rounded-full font-semibold',
+                                    'py-0.2 rounded-full px-1.5 text-[10px] font-semibold',
                                     currentFolderId === null
                                         ? 'bg-primary text-primary-foreground'
                                         : 'bg-surface-muted text-text-desc group-hover:bg-surface-border/80',
@@ -1161,22 +1123,25 @@ export default function Templates({ folders = [], templates = [], permissions }:
                         </div>
 
                         {/* Divider */}
-                        <div className="my-1 border-t border-surface-border/50" />
+                        <div className="border-surface-border/50 my-1 border-t" />
 
                         {/* Folders Tree Nodes */}
                         {folderTree.length === 0 ? (
-                            <div className="py-6 text-center text-[11px] text-text-desc">
-                                Belum ada folder.
-                            </div>
+                            <div className="text-text-desc py-6 text-center text-[11px]">Belum ada folder.</div>
                         ) : (
                             folderTree
-                                .filter((node) => !treeSearch || node.name.toLowerCase().includes(treeSearch.toLowerCase()) || node.children.some(c => c.name.toLowerCase().includes(treeSearch.toLowerCase())))
+                                .filter(
+                                    (node) =>
+                                        !treeSearch ||
+                                        node.name.toLowerCase().includes(treeSearch.toLowerCase()) ||
+                                        node.children.some((c) => c.name.toLowerCase().includes(treeSearch.toLowerCase())),
+                                )
                                 .map((node) => renderFolderTreeNode(node))
                         )}
                     </div>
 
                     {/* Footer Stats Sidebar */}
-                    <div className="p-2.5 border-t border-surface-border bg-surface-muted/30 text-[10.5px] text-text-desc flex items-center justify-between shrink-0">
+                    <div className="border-surface-border bg-surface-muted/30 text-text-desc flex shrink-0 items-center justify-between border-t p-2.5 text-[10.5px]">
                         <span>{folders.length} Folder</span>
                         <span>{totalAllTemplates} Total Dokumen</span>
                     </div>
@@ -1215,19 +1180,18 @@ export default function Templates({ folders = [], templates = [], permissions }:
                             handleFilesDropped(e.dataTransfer.files);
                         }
                     }}
-                    className="flex-1 min-w-0 flex flex-col h-full overflow-hidden relative"
+                    className="relative flex h-full min-w-0 flex-1 flex-col overflow-hidden"
                 >
                     {/* Drag and Drop Active Overlay */}
                     {isDragging && (
-                        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-primary/10 backdrop-blur-sm border-2 border-dashed border-primary rounded-xl m-2 animate-in fade-in duration-150 pointer-events-none">
-                            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-xl mb-3 animate-bounce">
+                        <div className="bg-primary/10 border-primary animate-in fade-in pointer-events-none absolute inset-0 z-50 m-2 flex flex-col items-center justify-center rounded-xl border-2 border-dashed backdrop-blur-sm duration-150">
+                            <div className="bg-primary text-primary-foreground mb-3 flex h-16 w-16 animate-bounce items-center justify-center rounded-2xl shadow-xl">
                                 <Upload size={32} />
                             </div>
-                            <h3 className="text-sm font-bold text-text-main">
-                                Lepaskan file di sini untuk upload
-                            </h3>
-                            <p className="text-xs text-text-desc mt-1">
-                                Dokumen akan di-upload ke: <strong className="text-primary">{currentFolder ? `Folder "${currentFolder.name}"` : 'Repository Root'}</strong>
+                            <h3 className="text-text-main text-sm font-bold">Lepaskan file di sini untuk upload</h3>
+                            <p className="text-text-desc mt-1 text-xs">
+                                Dokumen akan di-upload ke:{' '}
+                                <strong className="text-primary">{currentFolder ? `Folder "${currentFolder.name}"` : 'Repository Root'}</strong>
                             </p>
                         </div>
                     )}
@@ -1268,7 +1232,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
                         }}
                         totalResults={processedRows.length}
                         actions={
-                            (canCreateFolder || canUpload) ? (
+                            canCreateFolder || canUpload ? (
                                 <div className="flex items-center gap-2">
                                     {canCreateFolder && (
                                         <Button
@@ -1280,7 +1244,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
                                                 setNewFolderName('');
                                                 setIsFolderModalOpen(true);
                                             }}
-                                            className="h-9 gap-1.5 px-3 rounded-lg text-xs font-semibold cursor-pointer"
+                                            className="h-9 cursor-pointer gap-1.5 rounded-lg px-3 text-xs font-semibold"
                                         >
                                             <FolderPlus size={15} className="text-amber-500" />
                                             <span>{currentFolderId ? 'Buat Sub-Folder' : 'Buat Folder'}</span>
@@ -1298,7 +1262,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
                                                 });
                                                 setIsUploadModalOpen(true);
                                             }}
-                                            className="h-9 gap-1.5 px-3 rounded-lg text-xs font-semibold cursor-pointer"
+                                            className="h-9 cursor-pointer gap-1.5 rounded-lg px-3 text-xs font-semibold"
                                         >
                                             <Upload size={15} />
                                             <span>Upload Dokumen</span>
@@ -1309,13 +1273,13 @@ export default function Templates({ folders = [], templates = [], permissions }:
                         }
                     >
                         {/* Folder Breadcrumbs Navigation Trail */}
-                        <div className="flex items-center justify-between border-b border-surface-border bg-surface-card/40 px-5 py-2.5 text-xs text-text-desc shrink-0">
-                            <div className="flex items-center gap-2 min-w-0 overflow-x-auto custom-scrollbar">
+                        <div className="border-surface-border bg-surface-card/40 text-text-desc flex shrink-0 items-center justify-between border-b px-5 py-2.5 text-xs">
+                            <div className="custom-scrollbar flex min-w-0 items-center gap-2 overflow-x-auto">
                                 {currentFolderId !== null && (
                                     <button
                                         type="button"
                                         onClick={() => setCurrentFolderId(currentFolder?.parent_id || null)}
-                                        className="inline-flex items-center gap-1 rounded-md bg-surface-muted hover:bg-surface-border px-2 py-1 text-[11px] font-semibold text-text-main transition-colors cursor-pointer mr-1 shrink-0"
+                                        className="bg-surface-muted hover:bg-surface-border text-text-main mr-1 inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-md px-2 py-1 text-[11px] font-semibold transition-colors"
                                         title="Kembali ke Folder Sebelumnya"
                                     >
                                         <ArrowLeft size={12} />
@@ -1323,12 +1287,12 @@ export default function Templates({ folders = [], templates = [], permissions }:
                                     </button>
                                 )}
 
-                                <div className="flex items-center gap-1.5 font-medium shrink-0">
+                                <div className="flex shrink-0 items-center gap-1.5 font-medium">
                                     <button
                                         type="button"
                                         onClick={() => setCurrentFolderId(null)}
                                         className={cn(
-                                            'hover:text-primary transition-colors flex items-center gap-1 cursor-pointer',
+                                            'hover:text-primary flex cursor-pointer items-center gap-1 transition-colors',
                                             currentFolderId === null ? 'text-primary font-bold' : 'text-text-desc',
                                         )}
                                     >
@@ -1343,7 +1307,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
                                                 type="button"
                                                 onClick={() => setCurrentFolderId(folder.id)}
                                                 className={cn(
-                                                    'hover:text-primary truncate max-w-[140px] transition-colors cursor-pointer',
+                                                    'hover:text-primary max-w-[140px] cursor-pointer truncate transition-colors',
                                                     idx === folderPath.length - 1 ? 'text-primary font-bold' : 'text-text-desc',
                                                 )}
                                             >
@@ -1354,13 +1318,11 @@ export default function Templates({ folders = [], templates = [], permissions }:
                                 </div>
                             </div>
 
-                            <span className="text-[11px] font-semibold text-text-desc shrink-0 pl-2">
-                                {processedRows.length} item ditampilkan
-                            </span>
+                            <span className="text-text-desc shrink-0 pl-2 text-[11px] font-semibold">{processedRows.length} item ditampilkan</span>
                         </div>
 
                         {/* Standard Master Data Table */}
-                        <div className="flex-1 min-h-0 overflow-auto">
+                        <div className="min-h-0 flex-1 overflow-auto">
                             <DataTable
                                 columns={columns}
                                 data={processedRows}
@@ -1370,7 +1332,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
                                 selectedRows={selectedRows}
                                 onSelectionChange={setSelectedRows}
                                 bulkActions={
-                                    (canUpdate || canBulkDelete) ? (
+                                    canUpdate || canBulkDelete ? (
                                         <div className="flex items-center gap-2">
                                             {canUpdate && (
                                                 <Button
@@ -1381,7 +1343,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
                                                         setBulkTargetFolderId(null);
                                                         setIsBulkMoveModalOpen(true);
                                                     }}
-                                                    className="h-7.5 gap-1 px-2.5 text-[11px] font-semibold bg-surface-card hover:bg-surface-muted"
+                                                    className="bg-surface-card hover:bg-surface-muted h-7.5 gap-1 px-2.5 text-[11px] font-semibold"
                                                 >
                                                     <FolderInput size={13} className="text-blue-500" />
                                                     <span>Pindahkan ({selectedRows.length})</span>
@@ -1435,7 +1397,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
                 <DialogContent className="border-surface-border bg-surface-base overflow-hidden border p-0 shadow-2xl sm:max-w-[440px]">
                     <form onSubmit={handleCreateFolder}>
                         <DialogHeader className="bg-surface-muted/40 border-surface-border border-b p-5">
-                            <DialogTitle className="text-sm font-bold text-text-main flex items-center gap-2">
+                            <DialogTitle className="text-text-main flex items-center gap-2 text-sm font-bold">
                                 <FolderPlus size={16} className="text-amber-500" />
                                 <span>{folderFormParentId ? 'Buat Sub-Folder Baru' : 'Buat Folder Baru'}</span>
                             </DialogTitle>
@@ -1452,7 +1414,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
                                     id="folder-parent"
                                     value={folderFormParentId || ''}
                                     onChange={(e) => setFolderFormParentId(e.target.value || null)}
-                                    className="h-9 w-full rounded-lg border border-surface-border bg-surface-card px-3 text-xs text-text-main outline-none focus:border-primary"
+                                    className="border-surface-border bg-surface-card text-text-main focus:border-primary h-9 w-full rounded-lg border px-3 text-xs outline-none"
                                 >
                                     <option value="">Repository Root (Folder Utama)</option>
                                     {folders
@@ -1480,7 +1442,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
                                 />
                             </div>
                         </div>
-                        <DialogFooter className="border-surface-border/60 gap-2 border-t px-5 py-3.5 bg-surface-card/30">
+                        <DialogFooter className="border-surface-border/60 bg-surface-card/30 gap-2 border-t px-5 py-3.5">
                             <Button
                                 type="button"
                                 variant="ghost"
@@ -1500,7 +1462,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
                             >
                                 {isSubmitting ? (
                                     <>
-                                        <Loader2 size={14} className="animate-spin mr-1.5" />
+                                        <Loader2 size={14} className="mr-1.5 animate-spin" />
                                         <span>Menyimpan...</span>
                                     </>
                                 ) : (
@@ -1516,7 +1478,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
             <Dialog open={isUploadModalOpen} onOpenChange={setIsUploadModalOpen}>
                 <DialogContent className="border-surface-border bg-surface-base overflow-hidden border p-0 shadow-2xl sm:max-w-[500px]">
                     <DialogHeader className="bg-surface-muted/40 border-surface-border border-b p-5">
-                        <DialogTitle className="text-sm font-bold text-text-main flex items-center gap-2">
+                        <DialogTitle className="text-text-main flex items-center gap-2 text-sm font-bold">
                             <Upload size={16} className="text-primary" />
                             <span>Upload Dokumen Template</span>
                         </DialogTitle>
@@ -1525,11 +1487,9 @@ export default function Templates({ folders = [], templates = [], permissions }:
                         </DialogDescription>
                     </DialogHeader>
 
-                    <div className="p-5 space-y-4">
+                    <div className="space-y-4 p-5">
                         <div className="grid gap-1.5">
-                            <Label className="text-text-main text-xs font-semibold">
-                                Folder Tujuan Upload
-                            </Label>
+                            <Label className="text-text-main text-xs font-semibold">Folder Tujuan Upload</Label>
                             <select
                                 value={dragDropTargetFolder.id || ''}
                                 onChange={(e) => {
@@ -1540,7 +1500,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
                                         name: found ? found.name : 'Repository Root',
                                     });
                                 }}
-                                className="h-9 w-full rounded-lg border border-surface-border bg-surface-card px-3 text-xs text-text-main outline-none focus:border-primary"
+                                className="border-surface-border bg-surface-card text-text-main focus:border-primary h-9 w-full rounded-lg border px-3 text-xs outline-none"
                             >
                                 <option value="">Repository Root (Tanpa Folder)</option>
                                 {folders
@@ -1586,13 +1546,13 @@ export default function Templates({ folders = [], templates = [], permissions }:
                                     });
                                 }
                             }}
-                            className="group border-2 border-dashed border-primary/40 hover:border-primary bg-primary/5 hover:bg-primary/10 rounded-2xl p-8 text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-3 relative"
+                            className="group border-primary/40 hover:border-primary bg-primary/5 hover:bg-primary/10 relative flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed p-8 text-center transition-all"
                         >
                             <input
                                 type="file"
                                 multiple
                                 accept=".docx,.doc,.pdf,.xls,.xlsx,.txt,.rtf,.odt,.ods,.csv"
-                                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
                                 onChange={(e) => {
                                     if (e.target.files && e.target.files.length > 0) {
                                         const filesArray = Array.from(e.target.files);
@@ -1618,24 +1578,20 @@ export default function Templates({ folders = [], templates = [], permissions }:
                                     }
                                 }}
                             />
-                            <div className="h-14 w-14 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
+                            <div className="bg-primary text-primary-foreground flex h-14 w-14 items-center justify-center rounded-2xl shadow-lg transition-transform group-hover:scale-105">
                                 <Upload size={24} />
                             </div>
                             <div>
-                                <h4 className="text-sm font-bold text-text-main">
-                                    Seret & Jatuhkan File di Sini
-                                </h4>
-                                <p className="text-xs text-text-desc mt-1">
+                                <h4 className="text-text-main text-sm font-bold">Seret & Jatuhkan File di Sini</h4>
+                                <p className="text-text-desc mt-1 text-xs">
                                     atau <span className="text-primary font-semibold underline">klik untuk memilih dari komputer</span>
                                 </p>
                             </div>
-                            <p className="text-[11px] text-text-desc/70">
-                                Mendukung multi-file: .docx, .doc, .pdf, .xls, .xlsx (maks 20MB per file)
-                            </p>
+                            <p className="text-text-desc/70 text-[11px]">Mendukung multi-file: .docx, .doc, .pdf, .xls, .xlsx (maks 20MB per file)</p>
                         </div>
                     </div>
 
-                    <DialogFooter className="border-surface-border/60 gap-2 border-t px-5 py-3.5 bg-surface-card/30">
+                    <DialogFooter className="border-surface-border/60 bg-surface-card/30 gap-2 border-t px-5 py-3.5">
                         <Button
                             type="button"
                             variant="ghost"
@@ -1655,12 +1611,10 @@ export default function Templates({ folders = [], templates = [], permissions }:
                 <DialogContent className="border-surface-border bg-surface-base overflow-hidden border p-0 shadow-2xl sm:max-w-[420px]">
                     <form onSubmit={handleRename}>
                         <DialogHeader className="bg-surface-muted/40 border-surface-border border-b p-5">
-                            <DialogTitle className="text-sm font-bold text-text-main flex items-center gap-2">
+                            <DialogTitle className="text-text-main flex items-center gap-2 text-sm font-bold">
                                 <Edit3 size={16} className="text-amber-500" /> Ubah Nama
                             </DialogTitle>
-                            <DialogDescription className="text-text-desc mt-0.5 text-xs">
-                                Ubah nama untuk "{selectedItem?.name}".
-                            </DialogDescription>
+                            <DialogDescription className="text-text-desc mt-0.5 text-xs">Ubah nama untuk "{selectedItem?.name}".</DialogDescription>
                         </DialogHeader>
                         <div className="p-5">
                             <Label htmlFor="rename-input" className="text-text-main mb-2 block text-xs font-semibold">
@@ -1675,7 +1629,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
                                 required
                             />
                         </div>
-                        <DialogFooter className="border-surface-border/60 gap-2 border-t px-5 py-3.5 bg-surface-card/30">
+                        <DialogFooter className="border-surface-border/60 bg-surface-card/30 gap-2 border-t px-5 py-3.5">
                             <Button
                                 type="button"
                                 variant="ghost"
@@ -1695,7 +1649,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
                             >
                                 {isSubmitting ? (
                                     <>
-                                        <Loader2 size={14} className="animate-spin mr-1.5" />
+                                        <Loader2 size={14} className="mr-1.5 animate-spin" />
                                         <span>Menyimpan...</span>
                                     </>
                                 ) : (
@@ -1711,7 +1665,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
             <Dialog open={isMoveModalOpen} onOpenChange={setIsMoveModalOpen}>
                 <DialogContent className="border-surface-border bg-surface-base overflow-hidden border p-0 shadow-2xl sm:max-w-[450px]">
                     <DialogHeader className="bg-surface-muted/40 border-surface-border border-b p-5">
-                        <DialogTitle className="text-sm font-bold text-text-main flex items-center gap-2">
+                        <DialogTitle className="text-text-main flex items-center gap-2 text-sm font-bold">
                             <FolderInput size={16} className="text-blue-500" /> Pindahkan Dokumen / Folder
                         </DialogTitle>
                         <DialogDescription className="text-text-desc mt-0.5 text-xs">
@@ -1719,18 +1673,14 @@ export default function Templates({ folders = [], templates = [], permissions }:
                         </DialogDescription>
                     </DialogHeader>
                     <div className="p-5">
-                        <Label className="text-text-main mb-2 block text-xs font-semibold">
-                            Folder Tujuan
-                        </Label>
+                        <Label className="text-text-main mb-2 block text-xs font-semibold">Folder Tujuan</Label>
                         <div className="border-surface-border bg-surface-card/50 overflow-hidden rounded-xl border">
-                            <div className="custom-scrollbar max-h-56 overflow-y-auto p-1.5 space-y-1">
+                            <div className="custom-scrollbar max-h-56 space-y-1 overflow-y-auto p-1.5">
                                 <button
                                     type="button"
                                     className={cn(
-                                        'w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold transition-all cursor-pointer text-left',
-                                        targetFolderId === null
-                                            ? 'bg-primary text-primary-foreground'
-                                            : 'text-text-main hover:bg-surface-muted',
+                                        'flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-left text-xs font-semibold transition-all',
+                                        targetFolderId === null ? 'bg-primary text-primary-foreground' : 'text-text-main hover:bg-surface-muted',
                                     )}
                                     onClick={() => setTargetFolderId(null)}
                                 >
@@ -1745,7 +1695,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
                                             key={folder.id}
                                             type="button"
                                             className={cn(
-                                                'w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold transition-all cursor-pointer text-left',
+                                                'flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-left text-xs font-semibold transition-all',
                                                 targetFolderId === folder.id
                                                     ? 'bg-primary text-primary-foreground'
                                                     : 'text-text-main hover:bg-surface-muted',
@@ -1759,7 +1709,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
                             </div>
                         </div>
                     </div>
-                    <DialogFooter className="border-surface-border/60 gap-2 border-t px-5 py-3.5 bg-surface-card/30">
+                    <DialogFooter className="border-surface-border/60 bg-surface-card/30 gap-2 border-t px-5 py-3.5">
                         <Button
                             variant="ghost"
                             size="sm"
@@ -1769,16 +1719,10 @@ export default function Templates({ folders = [], templates = [], permissions }:
                         >
                             Batal
                         </Button>
-                        <Button
-                            variant="primary"
-                            size="sm"
-                            className="h-9 px-5 text-xs font-semibold"
-                            onClick={handleMove}
-                            disabled={isSubmitting}
-                        >
+                        <Button variant="primary" size="sm" className="h-9 px-5 text-xs font-semibold" onClick={handleMove} disabled={isSubmitting}>
                             {isSubmitting ? (
                                 <>
-                                    <Loader2 size={14} className="animate-spin mr-1.5" />
+                                    <Loader2 size={14} className="mr-1.5 animate-spin" />
                                     <span>Memindahkan...</span>
                                 </>
                             ) : (
@@ -1793,7 +1737,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
             <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
                 <DialogContent className="border-surface-border bg-surface-base overflow-hidden rounded-2xl border p-6 shadow-2xl sm:max-w-[400px]">
                     <div className="flex flex-col items-center text-center">
-                        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50">
+                        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-rose-200 bg-rose-50 text-rose-600 dark:border-rose-900/50 dark:bg-rose-950/40">
                             <AlertTriangle size={24} />
                         </div>
                         <DialogHeader className="p-0 text-center">
@@ -1832,15 +1776,15 @@ export default function Templates({ folders = [], templates = [], permissions }:
             <Dialog open={isBulkDeleteModalOpen} onOpenChange={setIsBulkDeleteModalOpen}>
                 <DialogContent className="border-surface-border bg-surface-base overflow-hidden rounded-2xl border p-6 shadow-2xl sm:max-w-[420px]">
                     <div className="flex flex-col items-center text-center">
-                        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50">
+                        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-rose-200 bg-rose-50 text-rose-600 dark:border-rose-900/50 dark:bg-rose-950/40">
                             <AlertTriangle size={24} />
                         </div>
                         <DialogHeader className="p-0 text-center">
-                            <DialogTitle className="text-text-main text-base font-bold">
-                                Hapus {selectedRows.length} Item Terpilih?
-                            </DialogTitle>
+                            <DialogTitle className="text-text-main text-base font-bold">Hapus {selectedRows.length} Item Terpilih?</DialogTitle>
                             <DialogDescription className="text-text-desc mt-1 text-xs">
-                                Anda akan menghapus <strong>{selectedRows.filter(r => r.itemType === 'folder').length} folder</strong> dan <strong>{selectedRows.filter(r => r.itemType === 'template').length} dokumen template</strong>. Tindakan ini tidak dapat dibatalkan.
+                                Anda akan menghapus <strong>{selectedRows.filter((r) => r.itemType === 'folder').length} folder</strong> dan{' '}
+                                <strong>{selectedRows.filter((r) => r.itemType === 'template').length} dokumen template</strong>. Tindakan ini tidak
+                                dapat dibatalkan.
                             </DialogDescription>
                         </DialogHeader>
                         <div className="mt-6 grid w-full grid-cols-2 gap-2.5">
@@ -1862,7 +1806,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
                             >
                                 {isSubmitting ? (
                                     <>
-                                        <Loader2 size={14} className="animate-spin mr-1.5" />
+                                        <Loader2 size={14} className="mr-1.5 animate-spin" />
                                         <span>Menghapus...</span>
                                     </>
                                 ) : (
@@ -1878,7 +1822,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
             <Dialog open={isBulkMoveModalOpen} onOpenChange={setIsBulkMoveModalOpen}>
                 <DialogContent className="border-surface-border bg-surface-base overflow-hidden border p-0 shadow-2xl sm:max-w-[450px]">
                     <DialogHeader className="bg-surface-muted/40 border-surface-border border-b p-5">
-                        <DialogTitle className="text-sm font-bold text-text-main flex items-center gap-2">
+                        <DialogTitle className="text-text-main flex items-center gap-2 text-sm font-bold">
                             <FolderInput size={16} className="text-blue-500" /> Pindahkan {selectedRows.length} Item Terpilih
                         </DialogTitle>
                         <DialogDescription className="text-text-desc mt-0.5 text-xs">
@@ -1886,18 +1830,14 @@ export default function Templates({ folders = [], templates = [], permissions }:
                         </DialogDescription>
                     </DialogHeader>
                     <div className="p-5">
-                        <Label className="text-text-main mb-2 block text-xs font-semibold">
-                            Folder Tujuan
-                        </Label>
+                        <Label className="text-text-main mb-2 block text-xs font-semibold">Folder Tujuan</Label>
                         <div className="border-surface-border bg-surface-card/50 overflow-hidden rounded-xl border">
-                            <div className="custom-scrollbar max-h-56 overflow-y-auto p-1.5 space-y-1">
+                            <div className="custom-scrollbar max-h-56 space-y-1 overflow-y-auto p-1.5">
                                 <button
                                     type="button"
                                     className={cn(
-                                        'w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold transition-all cursor-pointer text-left',
-                                        bulkTargetFolderId === null
-                                            ? 'bg-primary text-primary-foreground'
-                                            : 'text-text-main hover:bg-surface-muted',
+                                        'flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-left text-xs font-semibold transition-all',
+                                        bulkTargetFolderId === null ? 'bg-primary text-primary-foreground' : 'text-text-main hover:bg-surface-muted',
                                     )}
                                     onClick={() => setBulkTargetFolderId(null)}
                                 >
@@ -1912,7 +1852,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
                                             key={folder.id}
                                             type="button"
                                             className={cn(
-                                                'w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold transition-all cursor-pointer text-left',
+                                                'flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-left text-xs font-semibold transition-all',
                                                 bulkTargetFolderId === folder.id
                                                     ? 'bg-primary text-primary-foreground'
                                                     : 'text-text-main hover:bg-surface-muted',
@@ -1926,7 +1866,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
                             </div>
                         </div>
                     </div>
-                    <DialogFooter className="border-surface-border/60 gap-2 border-t px-5 py-3.5 bg-surface-card/30">
+                    <DialogFooter className="border-surface-border/60 bg-surface-card/30 gap-2 border-t px-5 py-3.5">
                         <Button
                             variant="ghost"
                             size="sm"
@@ -1945,7 +1885,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
                         >
                             {isSubmitting ? (
                                 <>
-                                    <Loader2 size={14} className="animate-spin mr-1.5" />
+                                    <Loader2 size={14} className="mr-1.5 animate-spin" />
                                     <span>Memindahkan...</span>
                                 </>
                             ) : (
@@ -1964,11 +1904,11 @@ export default function Templates({ folders = [], templates = [], permissions }:
                         left: `${Math.min(contextMenu.x, window.innerWidth - 200)}px`,
                     }}
                     onClick={(e) => e.stopPropagation()}
-                    className="fixed z-50 min-w-[200px] overflow-hidden rounded-xl border border-surface-border bg-surface-base/95 backdrop-blur-md p-1.5 shadow-2xl animate-in fade-in zoom-in-95 duration-100 select-none"
+                    className="border-surface-border bg-surface-base/95 animate-in fade-in zoom-in-95 fixed z-50 min-w-[200px] overflow-hidden rounded-xl border p-1.5 shadow-2xl backdrop-blur-md duration-100 select-none"
                 >
                     {contextMenu.target.type === 'root' ? (
                         <>
-                            <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-text-desc border-b border-surface-border/50 mb-1">
+                            <div className="text-text-desc border-surface-border/50 mb-1 border-b px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase">
                                 Repository Root
                             </div>
                             {canCreateFolder && (
@@ -1980,7 +1920,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
                                         setNewFolderName('');
                                         setIsFolderModalOpen(true);
                                     }}
-                                    className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted transition-colors cursor-pointer text-left"
+                                    className="text-text-main hover:bg-surface-muted flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium transition-colors"
                                 >
                                     <FolderPlus size={14} className="text-amber-500" />
                                     <span>Buat Folder Baru</span>
@@ -1997,19 +1937,17 @@ export default function Templates({ folders = [], templates = [], permissions }:
                                         });
                                         setIsUploadModalOpen(true);
                                     }}
-                                    className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10 transition-colors cursor-pointer text-left"
+                                    className="text-primary hover:bg-primary/10 flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-semibold transition-colors"
                                 >
                                     <Upload size={14} className="text-primary" />
                                     <span>Upload Dokumen di Sini</span>
                                 </button>
                             )}
-                            {!canCreateFolder && !canUpload && (
-                                <div className="px-2.5 py-1 text-xs text-text-desc italic">Hanya mode baca</div>
-                            )}
+                            {!canCreateFolder && !canUpload && <div className="text-text-desc px-2.5 py-1 text-xs italic">Hanya mode baca</div>}
                         </>
                     ) : contextMenu.target.type === 'folder' ? (
                         <>
-                            <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-text-desc border-b border-surface-border/50 mb-1 truncate max-w-[170px]">
+                            <div className="text-text-desc border-surface-border/50 mb-1 max-w-[170px] truncate border-b px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase">
                                 📁 {contextMenu.target.folder.name}
                             </div>
                             <button
@@ -2019,7 +1957,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
                                     setContextMenu(null);
                                     setCurrentFolderId(folderId);
                                 }}
-                                className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted transition-colors cursor-pointer text-left"
+                                className="text-text-main hover:bg-surface-muted flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium transition-colors"
                             >
                                 <FolderOpen size={14} className="text-amber-500" />
                                 <span>Buka Folder</span>
@@ -2034,7 +1972,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
                                         setNewFolderName('');
                                         setIsFolderModalOpen(true);
                                     }}
-                                    className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted transition-colors cursor-pointer text-left"
+                                    className="text-text-main hover:bg-surface-muted flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium transition-colors"
                                 >
                                     <FolderPlus size={14} className="text-amber-500" />
                                     <span>Buat Sub-Folder</span>
@@ -2052,7 +1990,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
                                         });
                                         setIsUploadModalOpen(true);
                                     }}
-                                    className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10 transition-colors cursor-pointer text-left"
+                                    className="text-primary hover:bg-primary/10 flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-semibold transition-colors"
                                 >
                                     <Upload size={14} className="text-primary" />
                                     <span>Upload Dokumen ke Folder Ini</span>
@@ -2073,7 +2011,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
                                             raw: folder,
                                         });
                                     }}
-                                    className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted transition-colors cursor-pointer text-left"
+                                    className="text-text-main hover:bg-surface-muted flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium transition-colors"
                                 >
                                     {(contextMenu.target as any).folder.is_visible !== false ? (
                                         <>
@@ -2090,7 +2028,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
                             )}
                             {canEdit && (
                                 <>
-                                    <div className="my-1 border-t border-surface-border/50" />
+                                    <div className="border-surface-border/50 my-1 border-t" />
                                     <button
                                         type="button"
                                         onClick={() => {
@@ -2100,7 +2038,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
                                             setNewFolderName(folder.name);
                                             setIsRenameModalOpen(true);
                                         }}
-                                        className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted transition-colors cursor-pointer text-left"
+                                        className="text-text-main hover:bg-surface-muted flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium transition-colors"
                                     >
                                         <Edit3 size={14} className="text-amber-500" />
                                         <span>Ubah Nama</span>
@@ -2114,7 +2052,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
                                             setTargetFolderId(folder.parent_id || null);
                                             setIsMoveModalOpen(true);
                                         }}
-                                        className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted transition-colors cursor-pointer text-left"
+                                        className="text-text-main hover:bg-surface-muted flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium transition-colors"
                                     >
                                         <FolderInput size={14} className="text-blue-500" />
                                         <span>Pindahkan</span>
@@ -2130,7 +2068,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
                                         setSelectedItem({ type: 'folder', id: folder.id, name: folder.name });
                                         setIsDeleteModalOpen(true);
                                     }}
-                                    className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer text-left"
+                                    className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium text-rose-600 transition-colors hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40"
                                 >
                                     <Trash2 size={14} className="text-rose-500" />
                                     <span>Hapus Folder</span>
@@ -2139,7 +2077,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
                         </>
                     ) : (
                         <>
-                            <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-text-desc border-b border-surface-border/50 mb-1 truncate max-w-[170px]">
+                            <div className="text-text-desc border-surface-border/50 mb-1 max-w-[170px] truncate border-b px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase">
                                 📄 {contextMenu.target.template.name}
                             </div>
                             <button
@@ -2149,7 +2087,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
                                     setContextMenu(null);
                                     setPreviewTemplate(tpl);
                                 }}
-                                className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted transition-colors cursor-pointer text-left"
+                                className="text-text-main hover:bg-surface-muted flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium transition-colors"
                             >
                                 <Eye size={14} className="text-primary" />
                                 <span>Buka / Pratinjau</span>
@@ -2158,7 +2096,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
                                 <a
                                     href={route('admin.templates.download', (contextMenu.target as any).template.id)}
                                     onClick={() => setContextMenu(null)}
-                                    className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted transition-colors cursor-pointer text-left"
+                                    className="text-text-main hover:bg-surface-muted flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium transition-colors"
                                 >
                                     <Download size={14} className="text-emerald-500" />
                                     <span>Download Dokumen</span>
@@ -2179,7 +2117,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
                                             raw: tpl,
                                         });
                                     }}
-                                    className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted transition-colors cursor-pointer text-left"
+                                    className="text-text-main hover:bg-surface-muted flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium transition-colors"
                                 >
                                     {(contextMenu.target as any).template.is_visible !== false ? (
                                         <>
@@ -2196,7 +2134,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
                             )}
                             {canEdit && (
                                 <>
-                                    <div className="my-1 border-t border-surface-border/50" />
+                                    <div className="border-surface-border/50 my-1 border-t" />
                                     <button
                                         type="button"
                                         onClick={() => {
@@ -2206,7 +2144,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
                                             setNewFolderName(tpl.name);
                                             setIsRenameModalOpen(true);
                                         }}
-                                        className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted transition-colors cursor-pointer text-left"
+                                        className="text-text-main hover:bg-surface-muted flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium transition-colors"
                                     >
                                         <Edit3 size={14} className="text-amber-500" />
                                         <span>Ubah Nama</span>
@@ -2220,7 +2158,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
                                             setTargetFolderId(tpl.template_folder_id || null);
                                             setIsMoveModalOpen(true);
                                         }}
-                                        className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted transition-colors cursor-pointer text-left"
+                                        className="text-text-main hover:bg-surface-muted flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium transition-colors"
                                     >
                                         <FolderInput size={14} className="text-blue-500" />
                                         <span>Pindahkan</span>
@@ -2229,7 +2167,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
                             )}
                             {canDelete && (
                                 <>
-                                    <div className="my-1 border-t border-surface-border/50" />
+                                    <div className="border-surface-border/50 my-1 border-t" />
                                     <button
                                         type="button"
                                         onClick={() => {
@@ -2238,7 +2176,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
                                             setSelectedItem({ type: 'template', id: tpl.id, name: tpl.name });
                                             setIsDeleteModalOpen(true);
                                         }}
-                                        className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer text-left"
+                                        className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium text-rose-600 transition-colors hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40"
                                     >
                                         <Trash2 size={14} className="text-rose-500" />
                                         <span>Hapus Dokumen</span>
@@ -2252,30 +2190,30 @@ export default function Templates({ folders = [], templates = [], permissions }:
 
             {/* ── MODAL: PRATINJAU / DETAIL DOKUMEN TEMPLATE ── */}
             <Dialog open={!!previewTemplate} onOpenChange={(open) => !open && setPreviewTemplate(null)}>
-                <DialogContent className="border-surface-border bg-surface-base overflow-hidden border p-0 shadow-2xl sm:max-w-[700px] max-h-[88vh] flex flex-col">
-                    <DialogHeader className="bg-surface-muted/40 border-surface-border border-b px-5 py-4 shrink-0">
+                <DialogContent className="border-surface-border bg-surface-base flex max-h-[88vh] flex-col overflow-hidden border p-0 shadow-2xl sm:max-w-[700px]">
+                    <DialogHeader className="bg-surface-muted/40 border-surface-border shrink-0 border-b px-5 py-4">
                         <div className="flex items-center justify-between">
-                            <DialogTitle className="text-sm font-bold text-text-main flex items-center gap-2 truncate max-w-lg">
+                            <DialogTitle className="text-text-main flex max-w-lg items-center gap-2 truncate text-sm font-bold">
                                 <FileText size={16} className="text-primary shrink-0" />
                                 <span className="truncate">{previewTemplate?.name}</span>
                             </DialogTitle>
                         </div>
-                        <DialogDescription className="text-text-desc mt-0.5 text-xs truncate">
+                        <DialogDescription className="text-text-desc mt-0.5 truncate text-xs">
                             {previewTemplate?.file_name} • {formatSize(previewTemplate?.file_size || 0)}
                         </DialogDescription>
                     </DialogHeader>
 
-                    <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-4">
+                    <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5">
                         {previewTemplate?.file_type?.toLowerCase() === 'pdf' ? (
-                            <div className="w-full h-[450px] rounded-xl border border-surface-border overflow-hidden bg-surface-muted/30">
+                            <div className="border-surface-border bg-surface-muted/30 h-[450px] w-full overflow-hidden rounded-xl border">
                                 <iframe
                                     src={`/storage/${previewTemplate.file_path}`}
-                                    className="w-full h-full border-none"
+                                    className="h-full w-full border-none"
                                     title={previewTemplate.name}
                                 />
                             </div>
                         ) : ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(previewTemplate?.file_type?.toLowerCase() || '') ? (
-                            <div className="w-full flex items-center justify-center p-4 rounded-xl border border-surface-border bg-surface-muted/20">
+                            <div className="border-surface-border bg-surface-muted/20 flex w-full items-center justify-center rounded-xl border p-4">
                                 <img
                                     src={`/storage/${previewTemplate?.file_path}`}
                                     alt={previewTemplate?.name}
@@ -2283,19 +2221,21 @@ export default function Templates({ folders = [], templates = [], permissions }:
                                 />
                             </div>
                         ) : (
-                            <div className="flex flex-col items-center justify-center py-10 px-4 rounded-xl border border-dashed border-surface-border bg-surface-muted/10 text-center gap-3">
-                                <div className="h-14 w-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center border border-primary/20">
+                            <div className="border-surface-border bg-surface-muted/10 flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed px-4 py-10 text-center">
+                                <div className="bg-primary/10 text-primary border-primary/20 flex h-14 w-14 items-center justify-center rounded-2xl border">
                                     <FileSpreadsheet size={28} />
                                 </div>
                                 <div>
-                                    <h4 className="text-sm font-bold text-text-main">{previewTemplate?.name}</h4>
-                                    <p className="text-xs text-text-desc mt-1 max-w-sm">
-                                        Berkas bertipe <span className="font-mono font-bold uppercase text-text-main">.{previewTemplate?.file_type}</span> tidak mendukung pratinjau inline langsung di browser. Silakan unduh untuk melihat isinya.
+                                    <h4 className="text-text-main text-sm font-bold">{previewTemplate?.name}</h4>
+                                    <p className="text-text-desc mt-1 max-w-sm text-xs">
+                                        Berkas bertipe{' '}
+                                        <span className="text-text-main font-mono font-bold uppercase">.{previewTemplate?.file_type}</span> tidak
+                                        mendukung pratinjau inline langsung di browser. Silakan unduh untuk melihat isinya.
                                     </p>
                                 </div>
                                 <a
                                     href={previewTemplate ? route('admin.templates.download', previewTemplate.id) : '#'}
-                                    className="inline-flex items-center gap-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 text-xs font-semibold shadow-xs transition-colors mt-2"
+                                    className="bg-primary hover:bg-primary/90 text-primary-foreground mt-2 inline-flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-semibold shadow-xs transition-colors"
                                 >
                                     <Download size={14} />
                                     <span>Download File ({formatSize(previewTemplate?.file_size || 0)})</span>
@@ -2304,22 +2244,22 @@ export default function Templates({ folders = [], templates = [], permissions }:
                         )}
 
                         {/* Document Details Metadata Card */}
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 rounded-xl border border-surface-border/70 bg-surface-card/60 p-3.5 text-xs">
+                        <div className="border-surface-border/70 bg-surface-card/60 grid grid-cols-2 gap-2.5 rounded-xl border p-3.5 text-xs sm:grid-cols-4">
                             <div>
-                                <span className="text-[10px] font-bold uppercase text-text-desc tracking-wider block mb-0.5">Ukuran File</span>
-                                <span className="font-semibold text-text-main">{formatSize(previewTemplate?.file_size || 0)}</span>
+                                <span className="text-text-desc mb-0.5 block text-[10px] font-bold tracking-wider uppercase">Ukuran File</span>
+                                <span className="text-text-main font-semibold">{formatSize(previewTemplate?.file_size || 0)}</span>
                             </div>
                             <div>
-                                <span className="text-[10px] font-bold uppercase text-text-desc tracking-wider block mb-0.5">Pengunggah</span>
-                                <span className="font-semibold text-text-main truncate block">{previewTemplate?.creator?.name || '-'}</span>
+                                <span className="text-text-desc mb-0.5 block text-[10px] font-bold tracking-wider uppercase">Pengunggah</span>
+                                <span className="text-text-main block truncate font-semibold">{previewTemplate?.creator?.name || '-'}</span>
                             </div>
                             <div>
-                                <span className="text-[10px] font-bold uppercase text-text-desc tracking-wider block mb-0.5">Lokasi Folder</span>
-                                <span className="font-semibold text-text-main truncate block">{previewTemplate?.folder?.name || 'Root'}</span>
+                                <span className="text-text-desc mb-0.5 block text-[10px] font-bold tracking-wider uppercase">Lokasi Folder</span>
+                                <span className="text-text-main block truncate font-semibold">{previewTemplate?.folder?.name || 'Root'}</span>
                             </div>
                             <div>
-                                <span className="text-[10px] font-bold uppercase text-text-desc tracking-wider block mb-0.5">Tanggal Unggah</span>
-                                <span className="font-semibold text-text-main truncate block">
+                                <span className="text-text-desc mb-0.5 block text-[10px] font-bold tracking-wider uppercase">Tanggal Unggah</span>
+                                <span className="text-text-main block truncate font-semibold">
                                     {previewTemplate?.created_at
                                         ? new Date(previewTemplate.created_at).toLocaleDateString('id-ID', {
                                               day: '2-digit',
@@ -2332,26 +2272,21 @@ export default function Templates({ folders = [], templates = [], permissions }:
                         </div>
 
                         {previewTemplate?.description && (
-                            <div className="rounded-xl border border-surface-border/70 bg-surface-card/60 p-3.5 space-y-1">
-                                <span className="text-[11px] font-bold uppercase text-text-desc tracking-wider">Keterangan Dokumen</span>
-                                <p className="text-xs text-text-main leading-relaxed">{previewTemplate.description}</p>
+                            <div className="border-surface-border/70 bg-surface-card/60 space-y-1 rounded-xl border p-3.5">
+                                <span className="text-text-desc text-[11px] font-bold tracking-wider uppercase">Keterangan Dokumen</span>
+                                <p className="text-text-main text-xs leading-relaxed">{previewTemplate.description}</p>
                             </div>
                         )}
                     </div>
 
-                    <DialogFooter className="border-surface-border/60 gap-2 border-t px-5 py-3.5 bg-surface-card/30 shrink-0">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-9 px-4 text-xs font-semibold"
-                            onClick={() => setPreviewTemplate(null)}
-                        >
+                    <DialogFooter className="border-surface-border/60 bg-surface-card/30 shrink-0 gap-2 border-t px-5 py-3.5">
+                        <Button variant="outline" size="sm" className="h-9 px-4 text-xs font-semibold" onClick={() => setPreviewTemplate(null)}>
                             Tutup
                         </Button>
                         {previewTemplate && (
                             <a
                                 href={route('admin.templates.download', previewTemplate.id)}
-                                className="inline-flex items-center gap-1.5 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 text-xs font-semibold shadow-xs transition-colors"
+                                className="bg-primary hover:bg-primary/90 text-primary-foreground inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold shadow-xs transition-colors"
                             >
                                 <Download size={14} />
                                 <span>Download File</span>

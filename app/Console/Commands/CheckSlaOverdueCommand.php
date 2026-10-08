@@ -3,9 +3,10 @@
 namespace App\Console\Commands;
 
 use App\Mail\ContractSlaOverdueMail;
-use App\Models\Approval;
-use App\Models\Contract;
+use App\Models\Transaction\Approval;
+use App\Models\Transaction\Contract;
 use App\Services\Workflow\SlaNotificationRecipientResolver;
+use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -53,7 +54,7 @@ class CheckSlaOverdueCommand extends Command
         $warningCount = 0;
 
         foreach ($activeContracts as $contract) {
-            $stageDueAt = $contract->current_stage_due_at ? \Carbon\Carbon::parse($contract->current_stage_due_at) : null;
+            $stageDueAt = $contract->current_stage_due_at ? Carbon::parse($contract->current_stage_due_at) : null;
             if (! $stageDueAt) {
                 continue;
             }
@@ -71,7 +72,7 @@ class CheckSlaOverdueCommand extends Command
                     ->update(['is_overdue' => true]);
 
                 // Cek apakah sudah pernah dinotifikasi dalam 24 jam terakhir untuk menghindari spam
-                $lastNotified = $contract->overdue_notified_at ? \Carbon\Carbon::parse($contract->overdue_notified_at) : null;
+                $lastNotified = $contract->overdue_notified_at ? Carbon::parse($contract->overdue_notified_at) : null;
                 $shouldNotify = ! $lastNotified || $now->diffInHours($lastNotified) >= 24;
 
                 if ($shouldNotify) {

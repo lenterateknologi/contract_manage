@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -18,9 +19,9 @@ return new class extends Migration
         });
 
         // Migrate existing single columns data to array
-        $records = \Illuminate\Support\Facades\DB::table('m_dashboard_types')->get();
+        $records = DB::table('m_dashboard_types')->get();
         foreach ($records as $r) {
-            \Illuminate\Support\Facades\DB::table('m_dashboard_types')->where('id', $r->id)->update([
+            DB::table('m_dashboard_types')->where('id', $r->id)->update([
                 'role_ids' => $r->role_id ? json_encode([$r->role_id]) : '[]',
                 'division_ids' => $r->division_id ? json_encode([$r->division_id]) : '[]',
                 'department_ids' => $r->department_id ? json_encode([$r->department_id]) : '[]',

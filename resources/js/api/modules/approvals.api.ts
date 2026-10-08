@@ -1,6 +1,6 @@
+import { Contract } from '@/pages/contracts/types';
 import { apiClient, unwrapResponse } from '../client';
 import { API_ENDPOINTS } from '../endpoints';
-import { Contract } from '@/pages/contracts/types';
 
 export const approvalsApi = {
     /**
@@ -87,8 +87,7 @@ export const approvalsApi = {
     /**
      * Bulk approve multiple contracts
      */
-    bulkApprove: (ids: string[], note?: string): Promise<any> =>
-        unwrapResponse(apiClient.post(API_ENDPOINTS.APPROVALS.BULK_APPROVE, { ids, note })),
+    bulkApprove: (ids: string[], note?: string): Promise<any> => unwrapResponse(apiClient.post(API_ENDPOINTS.APPROVALS.BULK_APPROVE, { ids, note })),
 
     /**
      * Add adhoc approver participants
@@ -136,8 +135,7 @@ export const approvalsApi = {
     /**
      * Submit staged adhoc approvers
      */
-    submitAdhocApprovers: (id: string): Promise<Contract> =>
-        unwrapResponse(apiClient.post(API_ENDPOINTS.APPROVALS.SUBMIT_ADHOC(id))),
+    submitAdhocApprovers: (id: string): Promise<Contract> => unwrapResponse(apiClient.post(API_ENDPOINTS.APPROVALS.SUBMIT_ADHOC(id))),
 
     /**
      * Get contract approval timeline
@@ -148,12 +146,10 @@ export const approvalsApi = {
     /**
      * Get contract workflow details
      */
-    getWorkflow: (id: string): Promise<any> =>
-        unwrapResponse(apiClient.get(API_ENDPOINTS.APPROVALS.WORKFLOW(id))),
+    getWorkflow: (id: string): Promise<any> => unwrapResponse(apiClient.get(API_ENDPOINTS.APPROVALS.WORKFLOW(id))),
 
     /**
      * Get current workflow step details
      */
-    getCurrentStep: (id: string): Promise<any> =>
-        unwrapResponse(apiClient.get(API_ENDPOINTS.APPROVALS.CURRENT_STEP(id))),
+    getCurrentStep: (id: string): Promise<any> => unwrapResponse(apiClient.get(API_ENDPOINTS.APPROVALS.CURRENT_STEP(id))),
 };

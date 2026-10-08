@@ -6,14 +6,14 @@ use App\Core\Crud\Columns\BooleanColumn;
 use App\Core\Crud\Columns\TextColumn;
 use App\Core\Crud\Fields\TextInput;
 use App\Core\Crud\Fields\ToggleInput;
-use App\Core\Crud\Filters\Filter;
+use App\Core\Crud\Filter;
 use App\Core\Crud\Resource;
-use App\Exports\BusinessUnitsExport;
+use App\Exports\Master\BusinessUnitsExport;
 use App\Imports\BusinessUnitsImport;
-use App\Models\BusinessUnit;
-use App\Models\Company;
-use App\Models\CompanyGroup;
-use App\Models\Region;
+use App\Models\Master\BusinessUnit;
+use App\Models\Master\Company;
+use App\Models\Master\CompanyGroup;
+use App\Models\Master\Region;
 
 class BusinessUnitResource extends Resource
 {

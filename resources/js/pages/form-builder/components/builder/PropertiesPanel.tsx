@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/buttons/Button';
 import { cn } from '@/lib/utils';
-import { Edit3, Layout, Settings, Sliders, Trash2 } from 'lucide-react';
+import { Settings, Sliders, Trash2 } from 'lucide-react';
 import React, { useState } from 'react';
 import { GeneralSettings } from './properties/GeneralSettings';
 import { LayoutSettings } from './properties/LayoutSettings';
@@ -44,14 +44,14 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     return (
         <div className="animate-in fade-in slide-in-from-right-4 space-y-3">
             {/* Header Tabs: Element vs Template */}
-            <div className="flex bg-slate-200/60 dark:bg-zinc-800 p-1 rounded-xl border border-slate-200/80 dark:border-zinc-700/60">
+            <div className="flex rounded-xl border border-slate-200/80 bg-slate-200/60 p-1 dark:border-zinc-700/60 dark:bg-zinc-800">
                 <button
                     type="button"
                     onClick={() => setActiveTab('element')}
                     className={cn(
-                        'flex flex-1 items-center justify-center gap-1 rounded-lg py-1 text-[10px] font-semibold transition-all uppercase',
+                        'flex flex-1 items-center justify-center gap-1 rounded-lg py-1 text-[10px] font-semibold uppercase transition-all',
                         activeTab === 'element'
-                            ? 'bg-white dark:bg-zinc-900 text-slate-900 dark:text-white shadow-xs'
+                            ? 'bg-white text-slate-900 shadow-xs dark:bg-zinc-900 dark:text-white'
                             : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200',
                     )}
                 >
@@ -62,9 +62,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     type="button"
                     onClick={() => setActiveTab('template')}
                     className={cn(
-                        'flex flex-1 items-center justify-center gap-1 rounded-lg py-1 text-[10px] font-semibold transition-all uppercase',
+                        'flex flex-1 items-center justify-center gap-1 rounded-lg py-1 text-[10px] font-semibold uppercase transition-all',
                         activeTab === 'template'
-                            ? 'bg-white dark:bg-zinc-900 text-slate-900 dark:text-white shadow-xs'
+                            ? 'bg-white text-slate-900 shadow-xs dark:bg-zinc-900 dark:text-white'
                             : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200',
                     )}
                 >
@@ -74,18 +74,18 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
             </div>
 
             {/* TAB CONTENT: ELEMENT */}
-            {activeTab === 'element' && (
-                selectedFields.length === 0 ? (
-                    <div className="text-slate-400 py-10 text-center font-sans text-[10px] font-medium">
+            {activeTab === 'element' &&
+                (selectedFields.length === 0 ? (
+                    <div className="py-10 text-center font-sans text-[10px] font-medium text-slate-400">
                         Pilih elemen di canvas untuk melihat propertinya.
                     </div>
                 ) : (
                     <div className="space-y-3">
                         {/* Header / ID Info */}
-                        <div className="flex flex-col gap-1.5 border-b border-border/50 pb-2.5">
+                        <div className="border-border/50 flex flex-col gap-1.5 border-b pb-2.5">
                             <div className="flex items-center justify-between gap-2">
                                 <div className="flex items-center gap-1.5 overflow-hidden">
-                                    <span className="text-slate-400 dark:text-zinc-500 font-sans text-[8px] font-bold uppercase tracking-wider shrink-0">
+                                    <span className="shrink-0 font-sans text-[8px] font-bold tracking-wider text-slate-400 uppercase dark:text-zinc-500">
                                         {isBulk ? 'Bulk' : 'ID:'}
                                     </span>
                                     {isBulk ? (
@@ -98,13 +98,13 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                                         </span>
                                     )}
                                 </div>
-                                <div className="flex items-center gap-1 shrink-0">
+                                <div className="flex shrink-0 items-center gap-1">
                                     {!isBulk && selectedField && onSaveAsCustomPreset && (
                                         <Button
                                             type="button"
                                             variant="secondary"
                                             onClick={() => onSaveAsCustomPreset(selectedField.id)}
-                                            className="flex h-5 items-center gap-1 px-1.5 text-[8px] font-bold uppercase rounded shadow-none transition-all"
+                                            className="flex h-5 items-center gap-1 rounded px-1.5 text-[8px] font-bold uppercase shadow-none transition-all"
                                             title="Simpan sebagai Custom Preset Kustom"
                                         >
                                             + Preset
@@ -115,7 +115,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                                             type="button"
                                             variant="outline"
                                             onClick={() => onDuplicateField(selectedIds)}
-                                            className="flex h-5 items-center gap-1 px-1.5 text-[8px] font-bold uppercase rounded shadow-none transition-all"
+                                            className="flex h-5 items-center gap-1 rounded px-1.5 text-[8px] font-bold uppercase shadow-none transition-all"
                                         >
                                             Duplikat
                                         </Button>
@@ -125,7 +125,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                                             type="button"
                                             variant="destructive"
                                             onClick={() => onRemoveField(selectedIds)}
-                                            className="flex h-5 items-center gap-1 px-1.5 text-[8px] font-bold uppercase rounded shadow-none transition-all"
+                                            className="flex h-5 items-center gap-1 rounded px-1.5 text-[8px] font-bold uppercase shadow-none transition-all"
                                         >
                                             <Trash2 size={9} /> Hapus
                                         </Button>
@@ -133,7 +133,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                                 </div>
                             </div>
                             {!isBulk && selectedField && (
-                                <div className="flex items-center gap-3 font-sans text-[9px] text-muted-foreground pt-0.5">
+                                <div className="text-muted-foreground flex items-center gap-3 pt-0.5 font-sans text-[9px]">
                                     <div>
                                         Tipe: <span className="text-foreground font-bold uppercase">{selectedField.type}</span>
                                     </div>
@@ -180,13 +180,10 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                             </div>
                         )}
                     </div>
-                )
-            )}
+                ))}
 
             {/* TAB CONTENT: TEMPLATE SETTINGS */}
-            {activeTab === 'template' && (
-                <PageSettings templateData={templateData} setTemplateData={setTemplateData} />
-            )}
+            {activeTab === 'template' && <PageSettings templateData={templateData} setTemplateData={setTemplateData} />}
         </div>
     );
 };

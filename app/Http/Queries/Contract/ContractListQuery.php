@@ -2,7 +2,9 @@
 
 namespace App\Http\Queries\Contract;
 
-use App\Models\Contract;
+use App\Models\Master\User;
+use App\Models\Master\Vendor;
+use App\Models\Transaction\Contract;
 use App\Services\ContractFilterScopeService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -16,7 +18,7 @@ class ContractListQuery
      */
     private const WITH = [
         'creator:id,name,role_id,department_id,division_id,company_id,email,nik,jobtitle_name,phone_number,mobile_no',
-        'creator.department:id,name',
+        'creator.department:id,name,code,idorg_group,org_group_name',
         'contractType:id,name,parent_id,ancestry_id,f1_input_mechanism,f1_form_template_id,f2_input_mechanism,f2_form_template_id,contract_input_mechanism,contract_form_template_id',
         'submissionType:id,name',
         'statusDetail:code,label,color,bg_color,icon',
@@ -25,10 +27,10 @@ class ContractListQuery
         'workflowStep.actions',
         'vendor:id,vendor_code,vendor_name,vendor_detail',
         'initiator:id,name,role_id,department_id,division_id,company_id,email,nik,jobtitle_name,phone_number,mobile_no',
-        'initiator.department:id,name',
+        'initiator.department:id,name,code,idorg_group,org_group_name',
         'parent:id,form_no,contract_no,title',
         'assignedPic:id,name,role_id,department_id,division_id,company_id,email,nik,jobtitle_name,phone_number,mobile_no',
-        'assignedPic.department:id,name',
+        'assignedPic.department:id,name,code,idorg_group,org_group_name',
         'approvals:id,contract_id,user_id,workflow_step_id,status,sub_step',
     ];
 
@@ -301,6 +303,7 @@ class ContractListQuery
             if ($view !== 'mine') {
                 $query->whereRaw('1 = 0');
             }
+
             return;
         }
 
@@ -671,11 +674,11 @@ class ContractListQuery
      */
     private function getCustomSortExpressions(string $sortDir): array
     {
-        $userSubquery = fn (string $columnExpr) => \App\Models\User::select('name')
+        $userSubquery = fn (string $columnExpr) => User::select('name')
             ->whereColumn('m_users.id', DB::raw($columnExpr))
             ->limit(1);
 
-        $vendorSubquery = \App\Models\Vendor::select('vendor_name')
+        $vendorSubquery = Vendor::select('vendor_name')
             ->whereColumn('m_vendors.id', 't_contracts.vendor_id')
             ->limit(1);
 

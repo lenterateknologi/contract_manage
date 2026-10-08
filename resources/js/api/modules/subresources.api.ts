@@ -1,6 +1,6 @@
+import { Contract } from '@/pages/contracts/types';
 import { apiClient, unwrapResponse } from '../client';
 import { API_ENDPOINTS } from '../endpoints';
-import { Contract } from '@/pages/contracts/types';
 
 export const subresourcesApi = {
     // 1. Requirements & Available Actions
@@ -10,20 +10,17 @@ export const subresourcesApi = {
     },
 
     actions: {
-        get: (contractId: string): Promise<any> =>
-            unwrapResponse(apiClient.get(API_ENDPOINTS.SUBRESOURCES.ACTIONS(contractId))),
+        get: (contractId: string): Promise<any> => unwrapResponse(apiClient.get(API_ENDPOINTS.SUBRESOURCES.ACTIONS(contractId))),
     },
 
     // 2. Members & Personnel
     members: {
-        list: (contractId: string): Promise<any[]> =>
-            unwrapResponse(apiClient.get(API_ENDPOINTS.SUBRESOURCES.MEMBERS(contractId))),
+        list: (contractId: string): Promise<any[]> => unwrapResponse(apiClient.get(API_ENDPOINTS.SUBRESOURCES.MEMBERS(contractId))),
     },
 
     // 3. Parent Contract References
     references: {
-        get: (contractId: string): Promise<any> =>
-            unwrapResponse(apiClient.get(API_ENDPOINTS.SUBRESOURCES.REFERENCES.BASE(contractId))),
+        get: (contractId: string): Promise<any> => unwrapResponse(apiClient.get(API_ENDPOINTS.SUBRESOURCES.REFERENCES.BASE(contractId))),
         search: (contractId: string, query: string, limit: number = 10): Promise<any[]> =>
             unwrapResponse(apiClient.get(API_ENDPOINTS.SUBRESOURCES.REFERENCES.SEARCH(contractId), { params: { query, limit } })),
         update: (contractId: string, parentId: string | null): Promise<Contract> =>
@@ -32,8 +29,7 @@ export const subresourcesApi = {
 
     // 4. Purchase Orders
     purchaseOrders: {
-        list: (contractId: string): Promise<any[]> =>
-            unwrapResponse(apiClient.get(API_ENDPOINTS.SUBRESOURCES.PURCHASE_ORDERS.BASE(contractId))),
+        list: (contractId: string): Promise<any[]> => unwrapResponse(apiClient.get(API_ENDPOINTS.SUBRESOURCES.PURCHASE_ORDERS.BASE(contractId))),
         create: (contractId: string, data: any): Promise<any> =>
             unwrapResponse(apiClient.post(API_ENDPOINTS.SUBRESOURCES.PURCHASE_ORDERS.CREATE(contractId), data)),
         update: (contractId: string, poId: string, data: any): Promise<any> =>
@@ -55,16 +51,13 @@ export const subresourcesApi = {
                 is_new_version?: boolean;
                 change_summary?: string;
             },
-        ): Promise<Contract> =>
-            unwrapResponse(apiClient.post(API_ENDPOINTS.SUBRESOURCES.FORM_SUBMISSIONS.SAVE(contractId), data)),
-        pdfUrl: (contractId: string, type: string) =>
-            API_ENDPOINTS.SUBRESOURCES.FORM_SUBMISSIONS.PDF(contractId, type),
+        ): Promise<Contract> => unwrapResponse(apiClient.post(API_ENDPOINTS.SUBRESOURCES.FORM_SUBMISSIONS.SAVE(contractId), data)),
+        pdfUrl: (contractId: string, type: string) => API_ENDPOINTS.SUBRESOURCES.FORM_SUBMISSIONS.PDF(contractId, type),
         queuePdf: (contractId: string, type: string, data: { data: string; form_template_id: string }): Promise<{ job_id: string }> =>
             unwrapResponse(apiClient.post(API_ENDPOINTS.SUBRESOURCES.FORM_SUBMISSIONS.PDF_QUEUE(contractId, type), data)),
         exportQueue: (data: any): Promise<{ job_id: string }> =>
             unwrapResponse(apiClient.post(API_ENDPOINTS.SUBRESOURCES.FORM_SUBMISSIONS.EXPORT_QUEUE, data)),
-        pdfStatus: (jobId: string): Promise<any> =>
-            unwrapResponse(apiClient.get(API_ENDPOINTS.SUBRESOURCES.FORM_SUBMISSIONS.PDF_STATUS(jobId))),
+        pdfStatus: (jobId: string): Promise<any> => unwrapResponse(apiClient.get(API_ENDPOINTS.SUBRESOURCES.FORM_SUBMISSIONS.PDF_STATUS(jobId))),
     },
 
     // 6. File & Version Management
@@ -85,12 +78,10 @@ export const subresourcesApi = {
             unwrapResponse(apiClient.delete(API_ENDPOINTS.SUBRESOURCES.FILES.ATTACHMENT_DETAIL(contractId, atId))),
         downloadUrl: (contractId: string, type: string = 'contract', versionNo?: number) =>
             API_ENDPOINTS.SUBRESOURCES.FILES.DOWNLOAD(contractId, versionNo, type),
-        attachmentDownloadUrl: (contractId: string, atId: string) =>
-            API_ENDPOINTS.SUBRESOURCES.FILES.ATTACHMENT_DOWNLOAD(contractId, atId),
+        attachmentDownloadUrl: (contractId: string, atId: string) => API_ENDPOINTS.SUBRESOURCES.FILES.ATTACHMENT_DOWNLOAD(contractId, atId),
         pdfPreviewUrl: (contractId: string, versionNo: number, type: string = 'contract') =>
             API_ENDPOINTS.SUBRESOURCES.FILES.PDF_PREVIEW(contractId, versionNo, type),
-        attachmentPdfPreviewUrl: (contractId: string, atId: string) =>
-            API_ENDPOINTS.SUBRESOURCES.FILES.ATTACHMENT_PDF_PREVIEW(contractId, atId),
+        attachmentPdfPreviewUrl: (contractId: string, atId: string) => API_ENDPOINTS.SUBRESOURCES.FILES.ATTACHMENT_PDF_PREVIEW(contractId, atId),
         vendorDocumentDownloadUrl: (contractId: string, docId: string, fileName?: string) =>
             API_ENDPOINTS.SUBRESOURCES.FILES.VENDOR_DOCUMENT(contractId, docId, fileName),
         vendorDocumentPdfPreviewUrl: (contractId: string, docId: string, fileName?: string) =>

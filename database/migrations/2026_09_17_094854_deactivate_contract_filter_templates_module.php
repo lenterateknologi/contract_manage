@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         if (Schema::hasTable('m_modules')) {
-            \Illuminate\Support\Facades\DB::table('m_modules')
+            DB::table('m_modules')
                 ->where('identifier', 'contract_filter_templates')
                 ->orWhere('route', '/admin/core/contract-filter-templates')
                 ->update([
@@ -29,7 +29,7 @@ return new class extends Migration
     public function down(): void
     {
         if (Schema::hasTable('m_modules')) {
-            \Illuminate\Support\Facades\DB::table('m_modules')
+            DB::table('m_modules')
                 ->where('identifier', 'contract_filter_templates')
                 ->update([
                     'showed_as_menu' => true,

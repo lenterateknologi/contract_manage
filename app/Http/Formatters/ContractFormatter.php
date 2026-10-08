@@ -3,17 +3,16 @@
 namespace App\Http\Formatters;
 
 use App\Enums\WorkflowAction;
-use App\Models\Contract;
-use App\Models\ContractStatus;
-use App\Models\Role;
-use App\Models\Workflow;
-use App\Models\WorkflowStep;
-use App\Services\Chat\ChatService;
+use App\Models\Master\Role;
+use App\Models\Master\Workflow;
+use App\Models\Master\WorkflowStep;
+use App\Models\Transaction\Contract;
+use App\Services\Utils\CurrencyUtil;
+use App\Services\Utils\DateUtil;
+use App\Services\Utils\FileUtil;
 use App\Services\Utils\ShortIdService;
 use App\Services\Workflow\ContractWorkflowService;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 
 class ContractFormatter
 {
@@ -80,9 +79,9 @@ class ContractFormatter
                     'bg_color' => data_get($c->statusDetail, 'bg_color'),
                     'icon' => data_get($c->statusDetail, 'icon'),
                 ] : null,
-                'creator' => self::formatUser($c->creator),
-                'initiator' => self::formatUser($c->initiator),
-                'assigned_pic' => self::formatUser($c->assignedPic),
+                'creator' => UserFormatter::format($c->creator),
+                'initiator' => UserFormatter::format($c->initiator),
+                'assigned_pic' => UserFormatter::format($c->assignedPic),
                 'progress' => $progress,
                 'created_at' => $c->created_at->translatedFormat('j M Y, H:i'),
                 'created_at_formatted' => $c->created_at->translatedFormat('j M Y, H:i'),
@@ -96,6 +95,7 @@ class ContractFormatter
                     if ($c->relationLoaded('approvals')) {
                         return $c->approvals->where('workflow_step_id', $c->workflow_step_id)->where('status', 'pending')->where('user_id', $userId)->isNotEmpty();
                     }
+
                     return false;
                 })(),
                 'is_current_actor' => (function () use ($c) {
@@ -106,6 +106,7 @@ class ContractFormatter
                     if ($c->relationLoaded('approvals')) {
                         return $c->approvals->where('workflow_step_id', $c->workflow_step_id)->where('status', 'pending')->where('user_id', $userId)->isNotEmpty();
                     }
+
                     return false;
                 })(),
                 'pending_approval_id' => $c->relationLoaded('approvals')
@@ -165,12 +166,15 @@ class ContractFormatter
                         $c->update(['status' => $targetStatus]);
                         $c->status = $targetStatus;
                     }
+
                     return $targetStatus;
                 }
+
                 return $c->status;
             })(),
-            'status_info' => (function () use ($c, $effectiveStep) {
+            'status_info' => (function () use ($c) {
                 $statusDetail = $c->relationLoaded('statusDetail') ? $c->statusDetail : null;
+
                 return $statusDetail ? [
                     'code' => data_get($statusDetail, 'code'),
                     'label' => data_get($statusDetail, 'label'),
@@ -258,53 +262,53 @@ class ContractFormatter
             'agreement_file' => $c->relationLoaded('versions') ? ($c->versions->where('document_type', 'agreement')->first()?->file_name ?: ($c->versions->where('document_type', 'contract')->first()?->file_name)) : null,
 
             'current_version' => $c->current_version,
-            'created_at' => $c->created_at->translatedFormat('j M Y, H:i'),
+            'created_at' => DateUtil::format($c->created_at),
             'created_at_raw' => $c->created_at->toIso8601String(),
-            'created_at_formatted' => $c->created_at->translatedFormat('j M Y, H:i'),
+            'created_at_formatted' => DateUtil::format($c->created_at),
             'updated_at' => $c->updated_at->toIso8601String(),
-            'updated_at_formatted' => $c->updated_at->translatedFormat('j M Y, H:i'),
-            'submitted_at' => $c->submitted_at ? $c->submitted_at->translatedFormat('j M Y, H:i') : ($c->created_at ? $c->created_at->translatedFormat('j M Y, H:i') : null),
-            'submitted_at_formatted' => $c->submitted_at ? $c->submitted_at->translatedFormat('j M Y, H:i') : ($c->created_at ? $c->created_at->translatedFormat('j M Y, H:i') : null),
-            'creator' => self::formatUser($c->creator),
-            'initiator' => self::formatUser($c->initiator),
-            'assigned_pic' => self::formatUser($c->assignedPic),
+            'updated_at_formatted' => DateUtil::format($c->updated_at),
+            'submitted_at' => DateUtil::format($c->submitted_at ?? $c->created_at),
+            'submitted_at_formatted' => DateUtil::format($c->submitted_at ?? $c->created_at),
+            'creator' => UserFormatter::format($c->creator),
+            'initiator' => UserFormatter::format($c->initiator),
+            'assigned_pic' => UserFormatter::format($c->assignedPic),
             'assigned_at' => $c->assigned_at ? $c->assigned_at->toIso8601String() : ($c->metadata['assigned_at'] ?? null),
-            'assigned_at_formatted' => $c->assigned_at ? $c->assigned_at->translatedFormat('j M Y, H:i') : (! empty($c->metadata['assigned_at']) ? Carbon::parse($c->metadata['assigned_at'])->translatedFormat('j M Y, H:i') : null),
+            'assigned_at_formatted' => DateUtil::format($c->assigned_at ?? ($c->metadata['assigned_at'] ?? null)),
             'pic_assigned_at' => (function () use ($c, $isDetail) {
                 if ($c->assigned_at) {
-                    return $c->assigned_at->translatedFormat('j M Y, H:i');
+                    return DateUtil::format($c->assigned_at);
                 }
                 if (! empty($c->metadata['pic_assigned_at'])) {
-                    return Carbon::parse($c->metadata['pic_assigned_at'])->translatedFormat('j M Y, H:i');
+                    return DateUtil::format($c->metadata['pic_assigned_at']);
                 }
                 if (! empty($c->metadata['assigned_at'])) {
-                    return Carbon::parse($c->metadata['assigned_at'])->translatedFormat('j M Y, H:i');
+                    return DateUtil::format($c->metadata['assigned_at']);
                 }
                 if ($c->relationLoaded('histories')) {
                     $hist = $c->histories->where('action', 'WORKFLOW_ASSIGNED')->sortByDesc('created_at')->first();
                     if ($hist && $hist->created_at) {
-                        return $hist->created_at->translatedFormat('j M Y, H:i');
+                        return DateUtil::format($hist->created_at);
                     }
                 }
                 if ($isDetail && ($c->assigned_pic_id || ! empty($c->metadata['assigned_pic_id']))) {
                     $hist = $c->histories()->where('action', 'WORKFLOW_ASSIGNED')->latest()->first();
                     if ($hist && $hist->created_at) {
-                        return $hist->created_at->translatedFormat('j M Y, H:i');
+                        return DateUtil::format($hist->created_at);
                     }
                 }
 
                 return null;
             })(),
             'finished_at' => $c->finished_at ? $c->finished_at->toIso8601String() : ($c->metadata['finished_at'] ?? ($c->metadata['finish_at'] ?? null)),
-            'finished_at_formatted' => $c->finished_at ? $c->finished_at->translatedFormat('j M Y, H:i') : (! empty($c->metadata['finished_at']) ? Carbon::parse($c->metadata['finished_at'])->translatedFormat('j M Y, H:i') : (! empty($c->metadata['finish_at']) ? Carbon::parse($c->metadata['finish_at'])->translatedFormat('j M Y, H:i') : null)),
+            'finished_at_formatted' => DateUtil::format($c->finished_at ?? ($c->metadata['finished_at'] ?? ($c->metadata['finish_at'] ?? null))),
             'closed_at' => $c->closed_at ? $c->closed_at->toIso8601String() : ($c->metadata['closed_at'] ?? null),
-            'closed_at_formatted' => $c->closed_at ? $c->closed_at->translatedFormat('j M Y, H:i') : (! empty($c->metadata['closed_at']) ? Carbon::parse($c->metadata['closed_at'])->translatedFormat('j M Y, H:i') : null),
-            'submission_age' => $c->created_at ? ($c->closed_at ? $c->created_at->locale('id')->diffForHumans($c->closed_at, ['syntax' => \Carbon\CarbonInterface::DIFF_ABSOLUTE, 'parts' => 2]) : $c->created_at->locale('id')->diffForHumans(now(), ['syntax' => \Carbon\CarbonInterface::DIFF_ABSOLUTE, 'parts' => 2])) : null,
-            'pic_age' => $c->assigned_at ? ($c->finished_at ? $c->assigned_at->locale('id')->diffForHumans($c->finished_at, ['syntax' => \Carbon\CarbonInterface::DIFF_ABSOLUTE, 'parts' => 2]) : $c->assigned_at->locale('id')->diffForHumans(now(), ['syntax' => \Carbon\CarbonInterface::DIFF_ABSOLUTE, 'parts' => 2])) : null,
+            'closed_at_formatted' => DateUtil::format($c->closed_at ?? ($c->metadata['closed_at'] ?? null)),
+            'submission_age' => DateUtil::duration($c->created_at, $c->closed_at),
+            'pic_age' => DateUtil::duration($c->assigned_at, $c->finished_at),
             'assigned_by' => ($c->relationLoaded('assignedBy') && $c->assignedBy)
-                ? self::formatUser($c->assignedBy)
+                ? UserFormatter::format($c->assignedBy)
                 : (($c->relationLoaded('approvals') && $c->approvals->where('sequence', 3)->where('status', 'approved')->first())
-                    ? self::formatUser($c->approvals->where('sequence', 3)->where('status', 'approved')->first()->approver)
+                    ? UserFormatter::format($c->approvals->where('sequence', 3)->where('status', 'approved')->first()->approver)
                     : null),
             'initiated_by_id' => $c->initiated_by_id,
             'kop_sub_topik' => $c->meta?->kop_sub_topik,
@@ -327,7 +331,7 @@ class ContractFormatter
                 'description' => $po->description,
                 'file_path' => $po->file_path,
                 'created_at' => $po->created_at?->toIso8601String(),
-                'creator' => self::formatUser($po->creator),
+                'creator' => UserFormatter::format($po->creator),
             ])->toArray() : [],
             'progress' => $progress,
             'workflow_id' => $c->workflow_id,
@@ -413,15 +417,15 @@ class ContractFormatter
                 'has_file' => (bool) $v->file_path,
                 'created_at' => $v->created_at->toDateString(),
                 'created_at_raw' => $v->created_at->toIso8601String(),
-                'uploader' => self::formatUser($v->uploader),
+                'uploader' => UserFormatter::format($v->uploader),
             ])->sortByDesc('version_no')->values() : [],
-            'approvals' => $isDetail ? self::mapApprovalTimeline($c, $isDetail) : [],
+            'approvals' => $isDetail ? ApprovalTimelineFormatter::map($c, $isDetail) : [],
             'histories' => $isDetail ? $c->histories->map(fn ($h) => [
                 'action' => $h->action,
                 'description' => $h->description,
                 'actor_id' => $h->actor_id,
                 'created_at' => $h->created_at->format('Y-m-d H:i'),
-                'actor' => self::formatUser($h->actor),
+                'actor' => UserFormatter::format($h->actor),
             ])->sortByDesc('created_at')->values() : [],
             'attachments' => $isDetail ? $c->attachments->map(fn ($at) => [
                 'id' => $at->id,
@@ -429,11 +433,9 @@ class ContractFormatter
                 'category' => $at->category,
                 'file_name' => $at->file_name,
                 'file_type' => $at->file_type,
-                'file_size' => $at->file_path && Storage::disk('local')->exists($at->file_path)
-                    ? Storage::disk('local')->size($at->file_path)
-                    : null,
+                'file_size' => FileUtil::size($at->file_path),
                 'created_at' => $at->created_at->toDateString(),
-                'uploader' => self::formatUser($at->uploader),
+                'uploader' => UserFormatter::format($at->uploader),
             ]) : [],
             'form_submissions' => $isDetail ? $c->formSubmissions->map(fn ($fs) => [
                 'id' => $fs->id,
@@ -446,7 +448,7 @@ class ContractFormatter
                 'submitted_by' => $fs->submitted_by,
                 'updated_at' => $fs->updated_at->format('Y-m-d H:i'),
             ]) : [],
-            'can_approve' => (function () use ($c, $isDetail) {
+            'can_approve' => (function () use ($c) {
                 if (! Auth::check()) {
                     return false;
                 }
@@ -460,11 +462,13 @@ class ContractFormatter
                 $isActiveWorkflow = $c->workflow_step_id && $c->workflowStep && ! in_array($c->status, ['approved', 'rejected', 'finished', 'cancelled', 'draft']);
                 if ($isActiveWorkflow) {
                     $resolved = app(ContractWorkflowService::class)->resolveApproversForStep($c, $c->workflowStep);
+
                     return collect($resolved['approvers'] ?? [])->pluck('id')->contains($userId);
                 }
+
                 return false;
             })(),
-            'is_current_actor' => (function () use ($c, $isDetail) {
+            'is_current_actor' => (function () use ($c) {
                 if (! Auth::check()) {
                     return false;
                 }
@@ -478,8 +482,10 @@ class ContractFormatter
                 $isActiveWorkflow = $c->workflow_step_id && $c->workflowStep && ! in_array($c->status, ['approved', 'rejected', 'finished', 'cancelled', 'draft']);
                 if ($isActiveWorkflow) {
                     $resolved = app(ContractWorkflowService::class)->resolveApproversForStep($c, $c->workflowStep);
+
                     return collect($resolved['approvers'] ?? [])->pluck('id')->contains($userId);
                 }
+
                 return false;
             })(),
             'pending_approval_id' => $c->relationLoaded('approvals')
@@ -524,6 +530,7 @@ class ContractFormatter
                         }
                     }
                 }
+
                 return $reviewsMap;
             })() : [],
         ];
@@ -531,37 +538,7 @@ class ContractFormatter
 
     public static function parsePrice(?string $price): float
     {
-        if (empty($price)) {
-            return 0.0;
-        }
-        $clean = preg_replace('/[^\d.,]/', '', $price);
-        $hasDot = str_contains($clean, '.');
-        $hasComma = str_contains($clean, ',');
-
-        if ($hasDot && $hasComma) {
-            if (strpos($clean, '.') < strpos($clean, ',')) {
-                $clean = str_replace('.', '', $clean);
-                $clean = str_replace(',', '.', $clean);
-            } else {
-                $clean = str_replace(',', '', $clean);
-            }
-        } elseif ($hasComma) {
-            if (preg_match('/,\d{2}$/', $clean)) {
-                $clean = str_replace(',', '.', $clean);
-            } else {
-                $clean = str_replace(',', '', $clean);
-            }
-        } elseif ($hasDot) {
-            if (substr_count($clean, '.') > 1) {
-                $clean = str_replace('.', '', $clean);
-            } else {
-                if (preg_match('/\.\d{3}$/', $clean)) {
-                    $clean = str_replace('.', '', $clean);
-                }
-            }
-        }
-
-        return (float) $clean;
+        return CurrencyUtil::parse($price);
     }
 
     public static function getNextStep(Contract $contract): ?WorkflowStep
@@ -571,22 +548,6 @@ class ContractFormatter
         }
 
         return app(ContractWorkflowService::class)->findNextValidStep($contract, $contract->workflowStep);
-    }
-
-    /**
-     * Delegate user formatting to UserFormatter.
-     */
-    public static function formatUser($user): ?array
-    {
-        return UserFormatter::format($user);
-    }
-
-    /**
-     * Delegate approval timeline mapping to ApprovalTimelineFormatter.
-     */
-    public static function mapApprovalTimeline(Contract $c, bool $isDetail = true): array
-    {
-        return ApprovalTimelineFormatter::map($c, $isDetail);
     }
 
     private static function getEffectiveMode(Contract $c, string $type, string $default): string

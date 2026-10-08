@@ -3,15 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/feedback/Badge';
 import { Label } from '@/components/ui/forms/Label';
 import { cn } from '@/lib/utils';
-import {
-    AlertCircle,
-    Calculator,
-    CheckCircle2,
-    Clock,
-    Info,
-    RotateCcw,
-    Sliders,
-} from 'lucide-react';
+import { AlertCircle, Calculator, CheckCircle2, Clock, Info, RotateCcw, Sliders } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 
 interface SlaSimulationModalProps {
@@ -42,10 +34,7 @@ const ID_DAYS = [
     { id: '7', label: 'Minggu', short: 'Min', isWeekend: true },
 ];
 
-const MONTH_NAMES = [
-    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-];
+const MONTH_NAMES = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
 function formatDateTimeID(date: Date): string {
     const day = date.getDate();
@@ -64,12 +53,7 @@ function formatDateShort(date: Date): string {
     return `${dayName}, ${day} ${month}`;
 }
 
-export function SlaSimulationModal({
-    open,
-    onOpenChange,
-    slaConfigs = [],
-    currentConfig,
-}: SlaSimulationModalProps) {
+export function SlaSimulationModal({ open, onOpenChange, slaConfigs = [], currentConfig }: SlaSimulationModalProps) {
     // Current date formatted for datetime-local (YYYY-MM-DDTHH:mm)
     const getDefaultDateTime = () => {
         const now = new Date();
@@ -94,7 +78,11 @@ export function SlaSimulationModal({
                 sla_total_hours: Number(currentConfig.sla_total_hours) || 120,
                 sla_start_hour: Number(currentConfig.sla_start_hour) ?? 8,
                 sla_cutoff_hour: Number(currentConfig.sla_cutoff_hour) ?? 16,
-                working_days: currentConfig.working_days ? (Array.isArray(currentConfig.working_days) ? currentConfig.working_days.map(String) : ['1', '2', '3', '4', '5']) : ['1', '2', '3', '4', '5'],
+                working_days: currentConfig.working_days
+                    ? Array.isArray(currentConfig.working_days)
+                        ? currentConfig.working_days.map(String)
+                        : ['1', '2', '3', '4', '5']
+                    : ['1', '2', '3', '4', '5'],
                 warning_threshold_percent: Number(currentConfig.warning_threshold_percent) || 80,
             };
         }
@@ -107,7 +95,11 @@ export function SlaSimulationModal({
                 sla_total_hours: Number(found.sla_total_hours) || 120,
                 sla_start_hour: Number(found.sla_start_hour) ?? 8,
                 sla_cutoff_hour: Number(found.sla_cutoff_hour) ?? 16,
-                working_days: found.working_days ? (Array.isArray(found.working_days) ? found.working_days.map(String) : ['1', '2', '3', '4', '5']) : ['1', '2', '3', '4', '5'],
+                working_days: found.working_days
+                    ? Array.isArray(found.working_days)
+                        ? found.working_days.map(String)
+                        : ['1', '2', '3', '4', '5']
+                    : ['1', '2', '3', '4', '5'],
                 warning_threshold_percent: Number(found.warning_threshold_percent) || 80,
             };
         }
@@ -143,12 +135,12 @@ export function SlaSimulationModal({
 
         const workingDaysSet = new Set(customWorkingDays.map(String));
         const isNonWorkingDay = (d: Date): boolean => {
-            const iso = String((d.getDay() + 6) % 7 + 1); // 1 = Mon, 7 = Sun
+            const iso = String(((d.getDay() + 6) % 7) + 1); // 1 = Mon, 7 = Sun
             return !workingDaysSet.has(iso);
         };
 
         const calculateDeadline = (start: Date, durationHours: number, cutoffHour: number, startHour: number) => {
-            let cursor = new Date(start.getTime());
+            const cursor = new Date(start.getTime());
             let isCutoffApplied = false;
             let isBeforeStartApplied = false;
 
@@ -172,14 +164,14 @@ export function SlaSimulationModal({
             }
 
             const effectiveStart = new Date(cursor.getTime());
-            let businessDaysNeeded = Math.ceil(durationHours / 24);
-            let calendarSteps: { date: Date; type: 'active' | 'skipped' | 'deadline' | 'start'; note?: string }[] = [];
+            const businessDaysNeeded = Math.ceil(durationHours / 24);
+            const calendarSteps: { date: Date; type: 'active' | 'skipped' | 'deadline' | 'start'; note?: string }[] = [];
 
-            let stepCursor = new Date(effectiveStart.getTime());
+            const stepCursor = new Date(effectiveStart.getTime());
             calendarSteps.push({
                 date: new Date(stepCursor.getTime()),
                 type: 'start',
-                note: `Mulai Dihitung (${String(startHour).padStart(2, '0')}:00 WIB)`
+                note: `Mulai Dihitung (${String(startHour).padStart(2, '0')}:00 WIB)`,
             });
 
             let addedDays = 0;
@@ -189,14 +181,17 @@ export function SlaSimulationModal({
                     calendarSteps.push({
                         date: new Date(stepCursor.getTime()),
                         type: 'skipped',
-                        note: 'Hari Libur / Non-Kerja'
+                        note: 'Hari Libur / Non-Kerja',
                     });
                 } else {
                     addedDays++;
                     calendarSteps.push({
                         date: new Date(stepCursor.getTime()),
                         type: addedDays === businessDaysNeeded ? 'deadline' : 'active',
-                        note: addedDays === businessDaysNeeded ? `Target Deadline (${String(cutoffHour).padStart(2, '0')}:00 WIB)` : `Hari Kerja ke-${addedDays}`
+                        note:
+                            addedDays === businessDaysNeeded
+                                ? `Target Deadline (${String(cutoffHour).padStart(2, '0')}:00 WIB)`
+                                : `Hari Kerja ke-${addedDays}`,
                     });
                 }
             }
@@ -234,18 +229,16 @@ export function SlaSimulationModal({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-4xl p-0 overflow-hidden bg-background border border-border shadow-2xl rounded-2xl flex flex-col max-h-[92vh]">
+            <DialogContent className="bg-background border-border flex max-h-[92vh] max-w-4xl flex-col overflow-hidden rounded-2xl border p-0 shadow-2xl">
                 {/* Header */}
-                <DialogHeader className="px-6 py-4 border-b border-border bg-surface-muted/30 shrink-0 flex flex-row items-center justify-between">
+                <DialogHeader className="border-border bg-surface-muted/30 flex shrink-0 flex-row items-center justify-between border-b px-6 py-4">
                     <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center border border-primary/20">
-                            <Calculator className="w-5 h-5" />
+                        <div className="bg-primary/10 text-primary border-primary/20 flex h-9 w-9 items-center justify-center rounded-xl border">
+                            <Calculator className="h-5 w-5" />
                         </div>
                         <div>
-                            <DialogTitle className="text-sm font-bold text-foreground">
-                                Simulator & Kalkulator SLA Kontrak
-                            </DialogTitle>
-                            <p className="text-[11px] text-muted-foreground mt-0.5">
+                            <DialogTitle className="text-foreground text-sm font-bold">Simulator & Kalkulator SLA Kontrak</DialogTitle>
+                            <p className="text-muted-foreground mt-0.5 text-[11px]">
                                 Uji perhitungan target tenggat waktu (deadline) secara real-time berdasarkan jam cut-off & hari kerja.
                             </p>
                         </div>
@@ -253,19 +246,17 @@ export function SlaSimulationModal({
                 </DialogHeader>
 
                 {/* Content */}
-                <div className="flex-1 overflow-y-auto p-6 space-y-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <div className="flex-1 [scrollbar-width:none] space-y-6 overflow-y-auto p-6 [&::-webkit-scrollbar]:hidden">
                     {/* Top Row: Preset Selection & Input Date */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                         {/* 1. Pilih Preset */}
                         {slaConfigs.length > 0 && (
                             <div>
-                                <Label className="text-[11px] font-bold uppercase text-muted-foreground mb-1.5 block">
-                                    Preset Konfigurasi SLA
-                                </Label>
+                                <Label className="text-muted-foreground mb-1.5 block text-[11px] font-bold uppercase">Preset Konfigurasi SLA</Label>
                                 <select
                                     value={selectedConfigId}
                                     onChange={(e) => setSelectedConfigId(e.target.value)}
-                                    className="w-full h-9 rounded-lg border border-border bg-background px-3 text-xs font-medium focus:ring-1 focus:ring-primary focus:outline-none"
+                                    className="border-border bg-background focus:ring-primary h-9 w-full rounded-lg border px-3 text-xs font-medium focus:ring-1 focus:outline-none"
                                 >
                                     {currentConfig && <option value="current">Konfigurasi Form Saat Ini</option>}
                                     {slaConfigs.map((c) => (
@@ -279,43 +270,43 @@ export function SlaSimulationModal({
 
                         {/* 2. Waktu Masuk / Pengajuan */}
                         <div className={slaConfigs.length > 0 ? 'md:col-span-2' : 'col-span-full'}>
-                            <Label className="text-[11px] font-bold uppercase text-muted-foreground mb-1.5 flex items-center justify-between">
+                            <Label className="text-muted-foreground mb-1.5 flex items-center justify-between text-[11px] font-bold uppercase">
                                 <span>Waktu Pengajuan / Masuk Kontrak</span>
                                 <button
                                     type="button"
                                     onClick={() => setStartDateTime(getDefaultDateTime())}
-                                    className="text-[10px] text-primary hover:underline flex items-center gap-1 font-semibold cursor-pointer"
+                                    className="text-primary flex cursor-pointer items-center gap-1 text-[10px] font-semibold hover:underline"
                                 >
-                                    <RotateCcw className="w-3 h-3" /> Set Waktu Sekarang
+                                    <RotateCcw className="h-3 w-3" /> Set Waktu Sekarang
                                 </button>
                             </Label>
                             <input
                                 type="datetime-local"
                                 value={startDateTime}
                                 onChange={(e) => setStartDateTime(e.target.value)}
-                                className="w-full h-9 rounded-lg border border-border bg-background px-3 text-xs font-semibold focus:ring-1 focus:ring-primary focus:outline-none"
+                                className="border-border bg-background focus:ring-primary h-9 w-full rounded-lg border px-3 text-xs font-semibold focus:ring-1 focus:outline-none"
                             />
                         </div>
                     </div>
 
                     {/* Interactive Parameters Bar */}
-                    <div className="p-4 rounded-xl border border-border/80 bg-surface-muted/20 space-y-4">
+                    <div className="border-border/80 bg-surface-muted/20 space-y-4 rounded-xl border p-4">
                         <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold text-foreground flex items-center gap-1.5 uppercase tracking-wide">
-                                <Sliders className="w-3.5 h-3.5 text-primary" /> Parameter Perhitungan
+                            <span className="text-foreground flex items-center gap-1.5 text-xs font-bold tracking-wide uppercase">
+                                <Sliders className="text-primary h-3.5 w-3.5" /> Parameter Perhitungan
                             </span>
                             <div className="flex items-center gap-1.5">
                                 <button
                                     type="button"
                                     onClick={() => setCustomWorkingDays(['1', '2', '3', '4', '5'])}
-                                    className="text-[9px] font-bold uppercase px-2 py-0.5 rounded bg-surface-muted hover:bg-surface-border text-foreground border border-border/60 transition-all cursor-pointer"
+                                    className="bg-surface-muted hover:bg-surface-border text-foreground border-border/60 cursor-pointer rounded border px-2 py-0.5 text-[9px] font-bold uppercase transition-all"
                                 >
                                     5 Hari (Sen-Jum)
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => setCustomWorkingDays(['1', '2', '3', '4', '5', '6', '7'])}
-                                    className="text-[9px] font-bold uppercase px-2 py-0.5 rounded bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 transition-all cursor-pointer"
+                                    className="bg-primary/10 hover:bg-primary/20 text-primary border-primary/20 cursor-pointer rounded border px-2 py-0.5 text-[9px] font-bold uppercase transition-all"
                                 >
                                     7 Hari (Semua)
                                 </button>
@@ -332,19 +323,25 @@ export function SlaSimulationModal({
                                         type="button"
                                         onClick={() => toggleWorkingDay(d.id)}
                                         className={cn(
-                                            "flex flex-col items-center justify-center py-1.5 px-1 rounded-lg border transition-all cursor-pointer text-center select-none",
+                                            'flex cursor-pointer flex-col items-center justify-center rounded-lg border px-1 py-1.5 text-center transition-all select-none',
                                             isSelected
                                                 ? d.isWeekend
-                                                    ? "bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400 font-bold"
-                                                    : "bg-primary text-white border-primary font-bold shadow-xs"
-                                                : "bg-surface-base border-surface-border text-muted-foreground hover:bg-surface-muted hover:text-foreground font-medium"
+                                                    ? 'border-amber-500/30 bg-amber-500/10 font-bold text-amber-600 dark:text-amber-400'
+                                                    : 'bg-primary border-primary font-bold text-white shadow-xs'
+                                                : 'bg-surface-base border-surface-border text-muted-foreground hover:bg-surface-muted hover:text-foreground font-medium',
                                         )}
                                     >
-                                        <span className="text-xs font-bold leading-none">{d.short}</span>
-                                        <span className={cn(
-                                            "text-[8px] mt-0.5",
-                                            isSelected ? (d.isWeekend ? "text-amber-600/80 dark:text-amber-400/80" : "text-white/80") : "text-text-desc"
-                                        )}>
+                                        <span className="text-xs leading-none font-bold">{d.short}</span>
+                                        <span
+                                            className={cn(
+                                                'mt-0.5 text-[8px]',
+                                                isSelected
+                                                    ? d.isWeekend
+                                                        ? 'text-amber-600/80 dark:text-amber-400/80'
+                                                        : 'text-white/80'
+                                                    : 'text-text-desc',
+                                            )}
+                                        >
                                             {d.label}
                                         </span>
                                     </button>
@@ -353,12 +350,10 @@ export function SlaSimulationModal({
                         </div>
 
                         {/* Numeric Sliders / Inputs */}
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                        <div className="grid grid-cols-1 gap-3 pt-1 sm:grid-cols-3">
                             <div>
-                                <Label className="text-[10px] font-bold uppercase text-muted-foreground">
-                                    Durasi Target SLA (Hari / Jam)
-                                </Label>
-                                <div className="flex items-center gap-1.5 mt-1">
+                                <Label className="text-muted-foreground text-[10px] font-bold uppercase">Durasi Target SLA (Hari / Jam)</Label>
+                                <div className="mt-1 flex items-center gap-1.5">
                                     <input
                                         type="number"
                                         value={customTotalHours > 0 ? (customTotalHours / 24).toFixed(1).replace(/\.0$/, '') : ''}
@@ -366,45 +361,41 @@ export function SlaSimulationModal({
                                             const days = parseFloat(e.target.value);
                                             setCustomTotalHours(isNaN(days) ? 0 : Math.round(days * 24));
                                         }}
-                                        className="h-8 w-16 rounded-md border border-border bg-background px-2 text-xs font-bold text-center"
+                                        className="border-border bg-background h-8 w-16 rounded-md border px-2 text-center text-xs font-bold"
                                         placeholder="Hari"
                                     />
-                                    <span className="text-[11px] text-muted-foreground font-medium">Hari</span>
-                                    <span className="text-[11px] text-muted-foreground/60">({customTotalHours}j)</span>
+                                    <span className="text-muted-foreground text-[11px] font-medium">Hari</span>
+                                    <span className="text-muted-foreground/60 text-[11px]">({customTotalHours}j)</span>
                                 </div>
                             </div>
 
                             <div>
-                                <Label className="text-[10px] font-bold uppercase text-muted-foreground">
-                                    Jam Mulai Kerja
-                                </Label>
-                                <div className="flex items-center gap-1.5 mt-1">
+                                <Label className="text-muted-foreground text-[10px] font-bold uppercase">Jam Mulai Kerja</Label>
+                                <div className="mt-1 flex items-center gap-1.5">
                                     <input
                                         type="number"
                                         min="0"
                                         max="23"
                                         value={customStartHour}
                                         onChange={(e) => setCustomStartHour(parseInt(e.target.value, 10) || 0)}
-                                        className="h-8 w-16 rounded-md border border-border bg-background px-2 text-xs font-bold text-center font-mono"
+                                        className="border-border bg-background h-8 w-16 rounded-md border px-2 text-center font-mono text-xs font-bold"
                                     />
-                                    <span className="text-[11px] text-muted-foreground font-medium font-mono">:00 WIB</span>
+                                    <span className="text-muted-foreground font-mono text-[11px] font-medium">:00 WIB</span>
                                 </div>
                             </div>
 
                             <div>
-                                <Label className="text-[10px] font-bold uppercase text-muted-foreground">
-                                    Jam Cut-Off Masuk
-                                </Label>
-                                <div className="flex items-center gap-1.5 mt-1">
+                                <Label className="text-muted-foreground text-[10px] font-bold uppercase">Jam Cut-Off Masuk</Label>
+                                <div className="mt-1 flex items-center gap-1.5">
                                     <input
                                         type="number"
                                         min="0"
                                         max="23"
                                         value={customCutoffHour}
                                         onChange={(e) => setCustomCutoffHour(parseInt(e.target.value, 10) || 0)}
-                                        className="h-8 w-16 rounded-md border border-border bg-background px-2 text-xs font-bold text-center font-mono"
+                                        className="border-border bg-background h-8 w-16 rounded-md border px-2 text-center font-mono text-xs font-bold"
                                     />
-                                    <span className="text-[11px] text-muted-foreground font-medium font-mono">:00 WIB</span>
+                                    <span className="text-muted-foreground font-mono text-[11px] font-medium">:00 WIB</span>
                                 </div>
                             </div>
                         </div>
@@ -413,39 +404,48 @@ export function SlaSimulationModal({
                     {/* Result Card */}
                     {simulationResult && (
                         <div className="w-full">
-                            <div className="p-4 rounded-xl border border-primary/30 bg-primary/[0.03] dark:bg-primary/[0.05] space-y-3 relative overflow-hidden shadow-xs">
+                            <div className="border-primary/30 bg-primary/[0.03] dark:bg-primary/[0.05] relative space-y-3 overflow-hidden rounded-xl border p-4 shadow-xs">
                                 <div className="flex items-center justify-between">
-                                    <span className="text-xs font-bold text-primary uppercase tracking-wider flex items-center gap-1.5">
-                                        <Clock className="w-4 h-4" /> Hasil Simulasi Target Batas Waktu (SLA)
+                                    <span className="text-primary flex items-center gap-1.5 text-xs font-bold tracking-wider uppercase">
+                                        <Clock className="h-4 w-4" /> Hasil Simulasi Target Batas Waktu (SLA)
                                     </span>
-                                    <Badge variant="outline" className="text-[11px] font-bold bg-primary/10 text-primary border-primary/30 px-2.5 py-0.5">
+                                    <Badge
+                                        variant="outline"
+                                        className="bg-primary/10 text-primary border-primary/30 px-2.5 py-0.5 text-[11px] font-bold"
+                                    >
                                         {simulationResult.total.businessDays} Hari Kerja ({customTotalHours} Jam)
                                     </Badge>
                                 </div>
 
-                                <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-3">
-                                    <p className="text-xs text-muted-foreground font-medium">Perkiraan Target Deadline:</p>
-                                    <h4 className="text-base font-extrabold text-foreground tracking-tight">
+                                <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-3">
+                                    <p className="text-muted-foreground text-xs font-medium">Perkiraan Target Deadline:</p>
+                                    <h4 className="text-foreground text-base font-extrabold tracking-tight">
                                         {formatDateTimeID(simulationResult.total.deadline)}
                                     </h4>
                                 </div>
 
                                 {simulationResult.total.isCutoffApplied && (
-                                    <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 text-xs leading-relaxed flex items-start gap-2">
-                                        <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                                    <div className="flex items-start gap-2 rounded-lg border border-amber-500/20 bg-amber-500/10 p-2.5 text-xs leading-relaxed text-amber-700 dark:text-amber-400">
+                                        <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                                         <span>
-                                            Pengajuan masuk melewati jam cut-off <strong>{String(customCutoffHour).padStart(2, '0')}:00 WIB</strong>, perhitungan efektif dimulai pada <strong>{formatDateShort(simulationResult.total.effectiveStart)} pukul {String(customStartHour).padStart(2, '0')}:00 WIB</strong>.
+                                            Pengajuan masuk melewati jam cut-off <strong>{String(customCutoffHour).padStart(2, '0')}:00 WIB</strong>,
+                                            perhitungan efektif dimulai pada{' '}
+                                            <strong>
+                                                {formatDateShort(simulationResult.total.effectiveStart)} pukul{' '}
+                                                {String(customStartHour).padStart(2, '0')}:00 WIB
+                                            </strong>
+                                            .
                                         </span>
                                     </div>
                                 )}
 
                                 {/* Stages Breakdown if available */}
                                 {activeConfig.sla_stages && activeConfig.sla_stages.length > 0 && (
-                                    <div className="space-y-1.5 pt-2 border-t border-border/60">
-                                        <span className="text-[10px] font-bold uppercase text-muted-foreground block">
+                                    <div className="border-border/60 space-y-1.5 border-t pt-2">
+                                        <span className="text-muted-foreground block text-[10px] font-bold uppercase">
                                             Rincian Durasi Status Kontrak:
                                         </span>
-                                        <div className="flex items-center gap-2 flex-wrap">
+                                        <div className="flex flex-wrap items-center gap-2">
                                             {activeConfig.sla_stages.map((st: any, idx: number) => {
                                                 const h = Number(st.duration_hours) || 0;
                                                 const d = (h / 24).toFixed(1).replace(/\.0$/, '');
@@ -456,20 +456,22 @@ export function SlaSimulationModal({
                                                     <span
                                                         key={idx}
                                                         className={cn(
-                                                            "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all",
+                                                            'inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] font-bold transition-all',
                                                             isInactive
-                                                                ? "bg-surface-muted/30 border-border/50 text-muted-foreground opacity-60"
-                                                                : "bg-surface-muted/60 border-border/80 text-foreground"
+                                                                ? 'bg-surface-muted/30 border-border/50 text-muted-foreground opacity-60'
+                                                                : 'bg-surface-muted/60 border-border/80 text-foreground',
                                                         )}
                                                     >
-                                                        <span className={cn(
-                                                            "w-1.5 h-1.5 rounded-full",
-                                                            isInactive ? "bg-muted-foreground" : "bg-primary"
-                                                        )} />
-                                                        <span className="uppercase tracking-wide text-muted-foreground">
-                                                            {statusLabel}
-                                                        </span>:
-                                                        <span className="text-primary font-mono">{d} Hari ({h}j)</span>
+                                                        <span
+                                                            className={cn(
+                                                                'h-1.5 w-1.5 rounded-full',
+                                                                isInactive ? 'bg-muted-foreground' : 'bg-primary',
+                                                            )}
+                                                        />
+                                                        <span className="text-muted-foreground tracking-wide uppercase">{statusLabel}</span>:
+                                                        <span className="text-primary font-mono">
+                                                            {d} Hari ({h}j)
+                                                        </span>
                                                     </span>
                                                 );
                                             })}
@@ -478,25 +480,28 @@ export function SlaSimulationModal({
                                 )}
 
                                 {/* Step Timeline */}
-                                <div className="space-y-2 pt-2 border-t border-border/60">
-                                    <span className="text-[10px] font-bold uppercase text-muted-foreground block">
+                                <div className="border-border/60 space-y-2 border-t pt-2">
+                                    <span className="text-muted-foreground block text-[10px] font-bold uppercase">
                                         Rincian Perjalanan Hari Kerja:
                                     </span>
-                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                    <div className="flex flex-wrap items-center gap-1.5">
                                         {simulationResult.total.calendarSteps.map((step, idx) => (
                                             <div
                                                 key={idx}
                                                 className={cn(
-                                                    "px-2.5 py-1 rounded-md text-xs font-semibold flex items-center gap-1 border transition-all",
-                                                    step.type === 'start' && "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-700",
-                                                    step.type === 'active' && "bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-900",
-                                                    step.type === 'skipped' && "bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-900 line-through opacity-70",
-                                                    step.type === 'deadline' && "bg-emerald-500 text-white border-emerald-600 font-bold shadow-xs"
+                                                    'flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-semibold transition-all',
+                                                    step.type === 'start' &&
+                                                        'border-slate-300 bg-slate-100 text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200',
+                                                    step.type === 'active' &&
+                                                        'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-300',
+                                                    step.type === 'skipped' &&
+                                                        'border-rose-200 bg-rose-50 text-rose-600 line-through opacity-70 dark:border-rose-900 dark:bg-rose-950/30 dark:text-rose-400',
+                                                    step.type === 'deadline' && 'border-emerald-600 bg-emerald-500 font-bold text-white shadow-xs',
                                                 )}
                                                 title={step.note}
                                             >
                                                 <span>{formatDateShort(step.date)}</span>
-                                                {step.type === 'deadline' && <CheckCircle2 className="w-3.5 h-3.5" />}
+                                                {step.type === 'deadline' && <CheckCircle2 className="h-3.5 w-3.5" />}
                                             </div>
                                         ))}
                                     </div>
@@ -507,17 +512,12 @@ export function SlaSimulationModal({
                 </div>
 
                 {/* Footer */}
-                <div className="px-6 py-3 border-t border-border bg-surface-muted/30 shrink-0 flex items-center justify-between">
-                    <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
-                        <Info className="w-3.5 h-3.5 text-primary" />
+                <div className="border-border bg-surface-muted/30 flex shrink-0 items-center justify-between border-t px-6 py-3">
+                    <p className="text-muted-foreground flex items-center gap-1.5 text-[11px]">
+                        <Info className="text-primary h-3.5 w-3.5" />
                         Formula simulasi sesuai dengan logic engine <code>SlaService.php</code> sistem produksi.
                     </p>
-                    <Button
-                        type="button"
-                        variant="primary"
-                        className="h-8 text-xs font-semibold px-4 rounded-lg"
-                        onClick={() => onOpenChange(false)}
-                    >
+                    <Button type="button" variant="primary" className="h-8 rounded-lg px-4 text-xs font-semibold" onClick={() => onOpenChange(false)}>
                         Tutup Simulator
                     </Button>
                 </div>

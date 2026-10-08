@@ -1,11 +1,11 @@
+import { reportsApi } from '@/api';
 import { Button } from '@/components/ui/buttons/Button';
-import { FilterCategory, FilterPopover } from '@/components/ui/selection/FilterPopover';
 import { StatusBadge } from '@/components/ui/feedback/StatusBadge';
+import { FilterCategory, FilterPopover } from '@/components/ui/selection/FilterPopover';
 import { cn, formatDate, formatDateTime, formatRelativeTime } from '@/lib/utils';
 import { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
-import { reportsApi } from '@/api';
-import { BarChart3, Download, FileSpreadsheet, FileText, History, ListFilter } from 'lucide-react';
+import { BarChart3, FileSpreadsheet, FileText, History, ListFilter } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -43,7 +43,8 @@ export default function ReportsPage() {
 
     const fetchData = (currentFilters = activeFilters) => {
         setLoading(true);
-        reportsApi.getData(currentFilters)
+        reportsApi
+            .getData(currentFilters)
             .then((res: any) => {
                 setData(res);
                 setLoading(false);
@@ -80,9 +81,7 @@ export default function ReportsPage() {
     };
 
     const exportCsv = () => {
-        const url = activeTab === 'contracts'
-            ? reportsApi.getExportAnalyticsUrl(activeFilters)
-            : reportsApi.getExportAuditUrl(activeFilters);
+        const url = activeTab === 'contracts' ? reportsApi.getExportAnalyticsUrl(activeFilters) : reportsApi.getExportAuditUrl(activeFilters);
         window.location.href = url;
     };
 
@@ -134,18 +133,18 @@ export default function ReportsPage() {
         <div className="flex h-full flex-1 flex-col overflow-hidden bg-transparent">
             <Head title="Audit & Pelaporan" />
             {/* Unified Industrial Header */}
-            <div className="space-y-5 border-b border-surface-border pb-5 mb-5 px-5 pt-5">
+            <div className="border-surface-border mb-5 space-y-5 border-b px-5 pt-5 pb-5">
                 <div className="flex items-center justify-between">
                     <div className="flex flex-col gap-0.5">
-                        <h1 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-text-main">
+                        <h1 className="text-text-main flex items-center gap-2 text-sm font-bold tracking-wider uppercase">
                             <BarChart3 size={16} />
                             Laporan & Statistik
                         </h1>
-                        <p className="pl-6 text-[10px] font-bold text-text-soft uppercase tracking-wider">Data operasional dan jejak audit sistem</p>
+                        <p className="text-text-soft pl-6 text-[10px] font-bold tracking-wider uppercase">Data operasional dan jejak audit sistem</p>
                     </div>
                 </div>
 
-                <div className="flex items-center justify-between border-t border-surface-border pt-4">
+                <div className="border-surface-border flex items-center justify-between border-t pt-4">
                     <div className="flex items-center gap-4">
                         <FilterPopover
                             categories={filterCategories}
@@ -183,7 +182,7 @@ export default function ReportsPage() {
                         {activeFilterCount > 0 && (
                             <button
                                 onClick={resetFilters}
-                                className="flex items-center gap-1.5 text-xs font-bold text-text-soft hover:text-rose-500 transition-colors"
+                                className="text-text-soft flex items-center gap-1.5 text-xs font-bold transition-colors hover:text-rose-500"
                             >
                                 <History size={12} />
                                 Reset Filter
@@ -196,21 +195,21 @@ export default function ReportsPage() {
                             variant="outline"
                             size="sm"
                             onClick={exportCsv}
-                            className="h-8 gap-1.5 rounded-[4px] px-3 text-xs font-semibold border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-700 dark:text-zinc-200 hover:bg-emerald-50/60 hover:border-emerald-300 hover:text-emerald-700 dark:hover:bg-emerald-950/30 dark:hover:border-emerald-800 dark:hover:text-emerald-400 shadow-none transition-all cursor-pointer"
+                            className="h-8 cursor-pointer gap-1.5 rounded-[4px] border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-none transition-all hover:border-emerald-300 hover:bg-emerald-50/60 hover:text-emerald-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:border-emerald-800 dark:hover:bg-emerald-950/30 dark:hover:text-emerald-400"
                             title="Export laporan ke format Excel"
                         >
-                            <FileSpreadsheet size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                            <FileSpreadsheet size={13} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
                             <span>Export Excel</span>
                         </Button>
                     </div>
                 </div>
 
                 {/* Tabs Switcher */}
-                <div className="flex items-center gap-4 border-b border-surface-border pb-px">
+                <div className="border-surface-border flex items-center gap-4 border-b pb-px">
                     <button
                         className={cn(
-                            'px-4 pb-2.5 text-xs font-bold transition-all relative border-b-2 -mb-[2px]',
-                            activeTab === 'contracts' ? 'border-primary text-primary' : 'border-transparent text-text-soft hover:text-text-main',
+                            'relative -mb-[2px] border-b-2 px-4 pb-2.5 text-xs font-bold transition-all',
+                            activeTab === 'contracts' ? 'border-primary text-primary' : 'text-text-soft hover:text-text-main border-transparent',
                         )}
                         onClick={() => setActiveTab('contracts')}
                     >
@@ -218,8 +217,8 @@ export default function ReportsPage() {
                     </button>
                     <button
                         className={cn(
-                            'px-4 pb-2.5 text-xs font-bold transition-all relative border-b-2 -mb-[2px]',
-                            activeTab === 'audit' ? 'border-primary text-primary' : 'border-transparent text-text-soft hover:text-text-main',
+                            'relative -mb-[2px] border-b-2 px-4 pb-2.5 text-xs font-bold transition-all',
+                            activeTab === 'audit' ? 'border-primary text-primary' : 'text-text-soft hover:text-text-main border-transparent',
                         )}
                         onClick={() => setActiveTab('audit')}
                     >
@@ -252,47 +251,45 @@ export default function ReportsPage() {
 function ContractRegistryTable({ contracts }: { contracts: any[] }) {
     if (contracts.length === 0) return <EmptyState label="kontrak" />;
     return (
-        <div className="border border-surface-border rounded-2xl overflow-hidden bg-card mx-5">
+        <div className="border-surface-border bg-card mx-5 overflow-hidden rounded-2xl border">
             <div className="scrollbar-hide overflow-x-auto">
-                <table className="w-full border-collapse text-left text-xs bg-card">
+                <table className="bg-card w-full border-collapse text-left text-xs">
                     <thead>
-                        <tr className="border-b border-surface-border bg-surface-muted select-none">
-                            <th className="px-4 py-3 text-xs font-bold text-text-soft uppercase tracking-wider">Parameter</th>
-                            <th className="px-4 py-3 text-xs font-bold text-text-soft uppercase tracking-wider">Judul Rekap</th>
-                            <th className="px-4 py-3 text-xs font-bold text-text-soft uppercase tracking-wider">Tipe</th>
-                            <th className="px-4 py-3 text-xs font-bold text-text-soft uppercase tracking-wider">Alur Kerja</th>
-                            <th className="px-4 py-3 text-xs font-bold text-text-soft uppercase tracking-wider">Tahap Saat Ini</th>
-                            <th className="px-4 py-3 text-xs font-bold text-text-soft uppercase tracking-wider">Pemilik</th>
-                            <th className="px-4 py-3 text-xs font-bold text-text-soft uppercase tracking-wider">Registrasi</th>
-                            <th className="px-4 py-3 text-xs font-bold text-text-soft uppercase tracking-wider text-center">Status</th>
-                            <th className="px-4 py-3 text-xs font-bold text-text-soft uppercase tracking-wider text-right">Aging</th>
+                        <tr className="border-surface-border bg-surface-muted border-b select-none">
+                            <th className="text-text-soft px-4 py-3 text-xs font-bold tracking-wider uppercase">Parameter</th>
+                            <th className="text-text-soft px-4 py-3 text-xs font-bold tracking-wider uppercase">Judul Rekap</th>
+                            <th className="text-text-soft px-4 py-3 text-xs font-bold tracking-wider uppercase">Tipe</th>
+                            <th className="text-text-soft px-4 py-3 text-xs font-bold tracking-wider uppercase">Alur Kerja</th>
+                            <th className="text-text-soft px-4 py-3 text-xs font-bold tracking-wider uppercase">Tahap Saat Ini</th>
+                            <th className="text-text-soft px-4 py-3 text-xs font-bold tracking-wider uppercase">Pemilik</th>
+                            <th className="text-text-soft px-4 py-3 text-xs font-bold tracking-wider uppercase">Registrasi</th>
+                            <th className="text-text-soft px-4 py-3 text-center text-xs font-bold tracking-wider uppercase">Status</th>
+                            <th className="text-text-soft px-4 py-3 text-right text-xs font-bold tracking-wider uppercase">Aging</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-surface-border">
+                    <tbody className="divide-surface-border divide-y">
                         {contracts.map((c) => (
                             <tr key={c.id} className="hover:bg-surface-muted/50 transition-colors">
-                                <td className="px-4 py-3 font-mono font-semibold text-text-soft">{c.form_no || c.contract_no || '—'}</td>
-                                <td className="px-4 py-3 font-bold text-text-main uppercase truncate max-w-[200px]">{c.title}</td>
-                                <td className="px-4 py-3 text-text-soft uppercase font-bold">{c.type || 'N/A'}</td>
-                                <td className="px-4 py-3 text-text-main font-normal">{c.current_workflow || '—'}</td>
-                                <td className="px-4 py-3 text-text-main font-normal">
+                                <td className="text-text-soft px-4 py-3 font-mono font-semibold">{c.form_no || c.contract_no || '—'}</td>
+                                <td className="text-text-main max-w-[200px] truncate px-4 py-3 font-bold uppercase">{c.title}</td>
+                                <td className="text-text-soft px-4 py-3 font-bold uppercase">{c.type || 'N/A'}</td>
+                                <td className="text-text-main px-4 py-3 font-normal">{c.current_workflow || '—'}</td>
+                                <td className="text-text-main px-4 py-3 font-normal">
                                     <div className="flex items-center gap-1.5">
                                         {c.current_step_number && (
-                                            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold shrink-0">
+                                            <span className="bg-primary/10 text-primary inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold">
                                                 {c.current_step_number}
                                             </span>
                                         )}
-                                        <span className="truncate max-w-[140px]">{c.current_step || '—'}</span>
+                                        <span className="max-w-[140px] truncate">{c.current_step || '—'}</span>
                                     </div>
                                 </td>
-                                <td className="px-4 py-3 text-text-soft uppercase font-semibold">{c.creator}</td>
-                                <td className="px-4 py-3 text-text-soft font-semibold">
-                                    {formatDate(c.created_at)}
-                                </td>
+                                <td className="text-text-soft px-4 py-3 font-semibold uppercase">{c.creator}</td>
+                                <td className="text-text-soft px-4 py-3 font-semibold">{formatDate(c.created_at)}</td>
                                 <td className="px-4 py-3 text-center">
                                     <StatusBadge status={c.status} />
                                 </td>
-                                <td className="px-4 py-3 text-right font-mono font-semibold text-text-soft">{formatRelativeTime(c.created_at)}</td>
+                                <td className="text-text-soft px-4 py-3 text-right font-mono font-semibold">{formatRelativeTime(c.created_at)}</td>
                             </tr>
                         ))}
                     </tbody>
@@ -305,19 +302,19 @@ function ContractRegistryTable({ contracts }: { contracts: any[] }) {
 function AuditTrailTable({ histories }: { histories: any[] }) {
     if (histories.length === 0) return <EmptyState label="riwayat audit" />;
     return (
-        <div className="border border-surface-border rounded-2xl overflow-hidden bg-card mx-5">
+        <div className="border-surface-border bg-card mx-5 overflow-hidden rounded-2xl border">
             <div className="scrollbar-hide overflow-x-auto">
-                <table className="w-full border-collapse text-left text-xs bg-card">
+                <table className="bg-card w-full border-collapse text-left text-xs">
                     <thead>
-                        <tr className="border-b border-surface-border bg-surface-muted select-none">
-                            <th className="px-4 py-3 text-xs font-bold text-text-soft uppercase tracking-wider">Timestamp</th>
-                            <th className="px-4 py-3 text-xs font-bold text-text-soft uppercase tracking-wider">Ref ID</th>
-                            <th className="px-4 py-3 text-xs font-bold text-text-soft uppercase tracking-wider">Action Event</th>
-                            <th className="px-4 py-3 text-xs font-bold text-text-soft uppercase tracking-wider">Transaction Log Data</th>
-                            <th className="px-4 py-3 text-xs font-bold text-text-soft uppercase tracking-wider">Author Entity</th>
+                        <tr className="border-surface-border bg-surface-muted border-b select-none">
+                            <th className="text-text-soft px-4 py-3 text-xs font-bold tracking-wider uppercase">Timestamp</th>
+                            <th className="text-text-soft px-4 py-3 text-xs font-bold tracking-wider uppercase">Ref ID</th>
+                            <th className="text-text-soft px-4 py-3 text-xs font-bold tracking-wider uppercase">Action Event</th>
+                            <th className="text-text-soft px-4 py-3 text-xs font-bold tracking-wider uppercase">Transaction Log Data</th>
+                            <th className="text-text-soft px-4 py-3 text-xs font-bold tracking-wider uppercase">Author Entity</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-surface-border">
+                    <tbody className="divide-surface-border divide-y">
                         {histories.map((h) => {
                             const actionType = h.action.toLowerCase();
                             const isAlert = actionType.includes('reject') || actionType.includes('delete') || actionType.includes('cancel');
@@ -326,25 +323,28 @@ function AuditTrailTable({ histories }: { histories: any[] }) {
 
                             return (
                                 <tr key={h.id} className="hover:bg-surface-muted/50 transition-colors">
-                                    <td className="px-4 py-3 text-text-desc text-sm whitespace-nowrap">
-                                        {formatDateTime(h.created_at)}
-                                    </td>
-                                    <td className="px-4 py-3 font-mono text-sm text-text-main">
+                                    <td className="text-text-desc px-4 py-3 text-sm whitespace-nowrap">{formatDateTime(h.created_at)}</td>
+                                    <td className="text-text-main px-4 py-3 font-mono text-sm">
                                         #{(h.form_no || h.contract_no || '').split('/').pop()}
                                     </td>
                                     <td className="px-4 py-3">
-                                        <span className={cn(
-                                            "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium tracking-wide",
-                                            isAlert ? "bg-rose-50 text-rose-700 border border-rose-200" :
-                                            isSuccess ? "bg-emerald-50 text-emerald-700 border border-emerald-200" :
-                                            isSystem ? "bg-blue-50 text-blue-700 border border-blue-200" :
-                                            "bg-slate-50 text-slate-700 border border-slate-200"
-                                        )}>
+                                        <span
+                                            className={cn(
+                                                'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium tracking-wide',
+                                                isAlert
+                                                    ? 'border border-rose-200 bg-rose-50 text-rose-700'
+                                                    : isSuccess
+                                                      ? 'border border-emerald-200 bg-emerald-50 text-emerald-700'
+                                                      : isSystem
+                                                        ? 'border border-blue-200 bg-blue-50 text-blue-700'
+                                                        : 'border border-slate-200 bg-slate-50 text-slate-700',
+                                            )}
+                                        >
                                             {h.action}
                                         </span>
                                     </td>
-                                    <td className="px-4 py-3 text-text-main text-sm">{h.description}</td>
-                                    <td className="px-4 py-3 text-text-desc text-sm">@{h.actor.split(' ')[0]}</td>
+                                    <td className="text-text-main px-4 py-3 text-sm">{h.description}</td>
+                                    <td className="text-text-desc px-4 py-3 text-sm">@{h.actor.split(' ')[0]}</td>
                                 </tr>
                             );
                         })}
@@ -363,4 +363,3 @@ function EmptyState({ label }: { label: string }) {
         </div>
     );
 }
-

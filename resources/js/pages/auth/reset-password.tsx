@@ -51,12 +51,10 @@ export default function ResetPassword({ token, email, error }: Readonly<ResetPas
                 <div className="flex flex-col gap-6">
                     <div className="rounded-2xl border border-rose-200 bg-rose-50/80 p-5 dark:border-rose-900/50 dark:bg-rose-950/40">
                         <div className="flex items-start gap-3">
-                            <AlertCircle className="size-5 shrink-0 text-rose-600 dark:text-rose-400 mt-0.5" />
+                            <AlertCircle className="mt-0.5 size-5 shrink-0 text-rose-600 dark:text-rose-400" />
                             <div className="space-y-1">
-                                <h3 className="text-sm font-bold text-rose-900 dark:text-rose-200">
-                                    Tautan Tidak Valid atau Kedaluwarsa
-                                </h3>
-                                <p className="text-xs text-rose-700 dark:text-rose-300 leading-relaxed">
+                                <h3 className="text-sm font-bold text-rose-900 dark:text-rose-200">Tautan Tidak Valid atau Kedaluwarsa</h3>
+                                <p className="text-xs leading-relaxed text-rose-700 dark:text-rose-300">
                                     {error === 'This password reset link is invalid or has expired.'
                                         ? 'Tautan atur ulang kata sandi ini sudah tidak berlaku atau telah kedaluwarsa. Silakan ajukan permintaan tautan baru.'
                                         : error}
@@ -75,10 +73,10 @@ export default function ResetPassword({ token, email, error }: Readonly<ResetPas
                             Minta Tautan Baru
                         </Button>
 
-                        <div className="text-center text-sm font-medium pt-2">
+                        <div className="pt-2 text-center text-sm font-medium">
                             <TextLink
                                 href={route('login')}
-                                className="inline-flex items-center gap-1.5 font-bold text-primary hover:text-primary/80 hover:underline"
+                                className="text-primary hover:text-primary/80 inline-flex items-center gap-1.5 font-bold hover:underline"
                             >
                                 <ArrowLeft className="size-4" />
                                 Kembali ke Halaman Masuk
@@ -102,7 +100,7 @@ export default function ResetPassword({ token, email, error }: Readonly<ResetPas
                             disabled
                             onChange={(e) => setData('email', e.target.value)}
                             error={errors.email}
-                            className="rounded-xl bg-slate-50 dark:bg-zinc-800/50 cursor-not-allowed opacity-80"
+                            className="cursor-not-allowed rounded-xl bg-slate-50 opacity-80 dark:bg-zinc-800/50"
                         />
 
                         <PasswordField
@@ -140,10 +138,7 @@ export default function ResetPassword({ token, email, error }: Readonly<ResetPas
 
                     <div className="text-center text-sm font-medium">
                         Atau, kembali ke{' '}
-                        <TextLink
-                            href={route('login')}
-                            className="font-bold text-primary hover:text-primary/80 hover:underline"
-                        >
+                        <TextLink href={route('login')} className="text-primary hover:text-primary/80 font-bold hover:underline">
                             Halaman Masuk
                         </TextLink>
                     </div>

@@ -2,15 +2,65 @@
 
 namespace App\Http\Actions\Export;
 
-use App\Models\Contract;
+use App\Jobs\GeneratePdfJob;
+use App\Models\Transaction\Contract;
+use App\Services\Utils\PdfService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
-use Spatie\Browsershot\Browsershot;
 
 class ExportAuditPdfAction
 {
+    public function queue(Contract $contract, Request $request)
+    {
+        Log::info("Audit PDF Queue Request: id={$contract->id}");
+
+        try {
+            $jobId = (string) Str::uuid();
+            $user = Auth::user();
+
+            $printUrl = URL::temporarySignedRoute(
+                'contracts.audit.document.print',
+                now()->addMinutes(30),
+                [
+                    'id' => $contract->id,
+                    'search' => $request->search,
+                    'actor_id' => $request->actor_id,
+                    'date_from' => $request->date_from,
+                    'date_to' => $request->date_to,
+                    'user_id' => $user?->id,
+                    'user_name' => $user?->name,
+                ],
+            );
+
+            if (app()->environment('local')) {
+                $printUrl = str_replace('localhost', '127.0.0.1', $printUrl);
+            }
+
+            $safeNo = Str::slug($contract->contract_no ?: 'contract');
+            $fileName = 'Audit_Trail_'.$safeNo.'_'.time().'.pdf';
+
+            Log::info("Dispatching Audit PDF Job: {$jobId}");
+
+            GeneratePdfJob::dispatch($jobId, $printUrl, $fileName);
+
+            Cache::put('pdf_status_'.$jobId, ['status' => 'pending', 'progress' => 10], 1800);
+
+            return response()->json([
+                'success' => true,
+                'job_id' => $jobId,
+            ]);
+        } catch (\Exception $e) {
+            Log::critical('Audit PDF Queue Failure: '.$e->getMessage());
+
+            return response()->json(['message' => 'Gagal antrikan PDF: '.$e->getMessage()], 500);
+        }
+    }
+
     public function execute(Contract $contract, Request $request)
     {
         set_time_limit(180);
@@ -45,27 +95,7 @@ class ExportAuditPdfAction
                 'generated_by_id' => $request->generated_by_id ?? ($user ? $user->id : '-'),
             ])->render();
 
-            $chromePath = file_exists('/Applications/Brave Browser.app/Contents/MacOS/Brave Browser')
-                ? '/Applications/Brave Browser.app/Contents/MacOS/Brave Browser'
-                : '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-
-            $pdfContent = Browsershot::html($html)
-                ->setNodeBinary('/opt/homebrew/bin/node')
-                ->setNpmBinary('/opt/homebrew/bin/npm')
-                ->setChromePath($chromePath)
-                ->noSandbox()
-                ->addChromiumArguments([
-                    'disable-gpu',
-                    'disable-dev-shm-usage',
-                    'disable-setuid-sandbox',
-                    'no-first-run',
-                    'disable-extensions',
-                ])
-                ->timeout(180)
-                ->format('A4')
-                ->margins(0, 0, 0, 0)
-                ->showBackground()
-                ->setDelay(500);
+            $pdfContent = PdfService::browsershotHtml($html, 180);
 
             $pdfDir = 'contracts/'.$contract->id.'/pdfs';
             $pdfFileName = 'Audit_Trail_'.Str::slug($contract->contract_no ?: 'contract').'_'.time().'.pdf';

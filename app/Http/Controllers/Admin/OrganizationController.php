@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Exports\CompaniesExport;
-use App\Exports\CompanyGroupsExport;
-use App\Exports\RegionsExport;
+use App\Exports\Master\CompaniesExport;
+use App\Exports\Master\CompanyGroupsExport;
+use App\Exports\Master\RegionsExport;
 use App\Http\Controllers\Controller;
 use App\Http\Queries\Master\OrganizationQuery;
 use App\Http\Requests\Common\BulkDeleteRequest;
@@ -18,9 +18,9 @@ use App\Http\Requests\Region\UpdateRegionRequest;
 use App\Imports\CompaniesImport;
 use App\Imports\CompanyGroupsImport;
 use App\Imports\RegionsImport;
-use App\Models\Company;
-use App\Models\CompanyGroup;
-use App\Models\Region;
+use App\Models\Master\Company;
+use App\Models\Master\CompanyGroup;
+use App\Models\Master\Region;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;

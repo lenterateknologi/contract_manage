@@ -1,15 +1,15 @@
-import { DataTable } from '@/components/ui/tables/DataTable';
-import { PageTable } from '@/components/ui/navigation/PageTable';
+import { reportsApi } from '@/api';
 import { Button } from '@/components/ui/buttons/Button';
-import { DateRangePicker } from '@/components/ui/inputs/DateRangePicker';
-import { useToast } from '@/components/ui/feedback/Toast';
 import { StatusBadge } from '@/components/ui/feedback/StatusBadge';
-import { cn, formatDate, formatDateTime, formatDateRange } from '@/lib/utils';
+import { useToast } from '@/components/ui/feedback/Toast';
+import { DateRangePicker } from '@/components/ui/inputs/DateRangePicker';
+import { PageTable } from '@/components/ui/navigation/PageTable';
+import { DataTable } from '@/components/ui/tables/DataTable';
+import { formatDate, formatDateRange } from '@/lib/utils';
 import { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
-import { reportsApi } from '@/api';
-import { Loader2, BarChart3, Calendar as CalendarIcon, X, ChevronDown, RotateCcw, FileSpreadsheet } from 'lucide-react';
-import React, { useEffect, useMemo, useState } from 'react';
+import { BarChart3, FileSpreadsheet, Loader2 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 
 interface AnalyticsData {
     recentContracts: any[];
@@ -54,7 +54,8 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
 
     const fetchData = (currentFilters = filters) => {
         setLoading(true);
-        reportsApi.getAnalytics(currentFilters)
+        reportsApi
+            .getAnalytics(currentFilters)
             .then((raw: any) => {
                 setData({
                     recentContracts: raw.contracts?.data || [],
@@ -171,49 +172,43 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
             header: 'No. Form / Kontrak',
             accessorKey: 'form_no',
             cell: (row: any) => (
-                <span className="text-xs font-mono font-bold text-primary whitespace-nowrap">
-                    {row.form_no || row.contract_no || '—'}
-                </span>
-            )
+                <span className="text-primary font-mono text-xs font-bold whitespace-nowrap">{row.form_no || row.contract_no || '—'}</span>
+            ),
         },
         {
             header: 'Judul Pengajuan / Kontrak',
             accessorKey: 'title',
             cell: (row: any) => (
-                <span className="text-text-main font-medium text-xs truncate max-w-[280px] block" title={row.title}>
+                <span className="text-text-main block max-w-[280px] truncate text-xs font-medium" title={row.title}>
                     {row.title}
                 </span>
-            )
+            ),
         },
         {
             header: 'Tipe Kontrak',
             accessorKey: 'type',
-            cell: (row: any) => <span className="text-text-main text-xs whitespace-nowrap">{row.type || '—'}</span>
+            cell: (row: any) => <span className="text-text-main text-xs whitespace-nowrap">{row.type || '—'}</span>,
         },
         {
             header: 'Tipe Pengajuan',
             accessorKey: 'submission_type',
-            cell: (row: any) => <span className="text-text-main text-xs whitespace-nowrap">{row.submission_type || '—'}</span>
+            cell: (row: any) => <span className="text-text-main text-xs whitespace-nowrap">{row.submission_type || '—'}</span>,
         },
         {
             header: 'Pembuat (Pengaju)',
             accessorKey: 'creator',
-            cell: (row: any) => <span className="text-text-main font-medium text-xs whitespace-nowrap">{row.creator || '—'}</span>
+            cell: (row: any) => <span className="text-text-main text-xs font-medium whitespace-nowrap">{row.creator || '—'}</span>,
         },
         {
             header: 'Status',
             accessorKey: 'status',
-            cell: (row: any) => <StatusBadge status={row.status} />
+            cell: (row: any) => <StatusBadge status={row.status} />,
         },
         {
             header: 'Tanggal Dibuat',
             accessorKey: 'created_at',
-            cell: (row: any) => (
-                <span className="text-text-main text-xs whitespace-nowrap">
-                    {formatDate(row.created_at)}
-                </span>
-            )
-        }
+            cell: (row: any) => <span className="text-text-main text-xs whitespace-nowrap">{formatDate(row.created_at)}</span>,
+        },
     ];
 
     return (
@@ -245,13 +240,13 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
                             size="sm"
                             onClick={handleExport}
                             disabled={exportLoading}
-                            className="h-8 gap-1.5 rounded-[4px] px-3 text-xs font-semibold border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-700 dark:text-zinc-200 hover:bg-emerald-50/60 hover:border-emerald-300 hover:text-emerald-700 dark:hover:bg-emerald-950/30 dark:hover:border-emerald-800 dark:hover:text-emerald-400 shadow-none transition-all cursor-pointer"
+                            className="h-8 cursor-pointer gap-1.5 rounded-[4px] border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-none transition-all hover:border-emerald-300 hover:bg-emerald-50/60 hover:text-emerald-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:border-emerald-800 dark:hover:bg-emerald-950/30 dark:hover:text-emerald-400"
                             title="Export laporan analitik ke format Excel (.xlsx)"
                         >
                             {exportLoading ? (
                                 <Loader2 size={13} className="animate-spin text-emerald-600" />
                             ) : (
-                                <FileSpreadsheet size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                <FileSpreadsheet size={13} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
                             )}
                             <span>{exportLoading ? 'Mengunduh...' : 'Export Excel'}</span>
                         </Button>
@@ -273,15 +268,10 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
                         const nextFilters = { ...filters, contracts_page: 1, per_page: perPage };
                         setFilters(nextFilters);
                         fetchData(nextFilters);
-                    }
+                    },
                 }}
             >
-                <DataTable
-                    columns={columns}
-                    data={data?.recentContracts || []}
-                    loading={loading}
-                    borderless={true}
-                />
+                <DataTable columns={columns} data={data?.recentContracts || []} loading={loading} borderless={true} />
             </PageTable>
         </>
     );

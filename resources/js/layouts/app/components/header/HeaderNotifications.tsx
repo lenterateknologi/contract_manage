@@ -1,8 +1,8 @@
+import { discussionsApi, notificationsApi } from '@/api';
 import { Button } from '@/components/ui/buttons/Button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/selection/DropdownMenu';
-import { Link, usePage } from '@inertiajs/react';
-import { notificationsApi, discussionsApi } from '@/api';
 import { cn } from '@/lib/utils';
+import { Link, usePage } from '@inertiajs/react';
 import {
     AtSign,
     Bell,
@@ -11,7 +11,6 @@ import {
     CheckCircle2,
     Clock,
     FileCheck,
-    FileText,
     Inbox,
     MessageSquare,
     RefreshCw,
@@ -40,10 +39,7 @@ interface HeaderNotificationsProps {
     className?: string;
 }
 
-export const HeaderNotifications = memo(function HeaderNotifications({
-    variant = 'header',
-    className,
-}: HeaderNotificationsProps) {
+export const HeaderNotifications = memo(function HeaderNotifications({ variant = 'header', className }: HeaderNotificationsProps) {
     const pageProps = usePage().props;
     const currentUserId = (pageProps.auth as any)?.user?.id || 'guest';
     const storageKey = `read_notifications_${currentUserId}`;
@@ -229,12 +225,8 @@ export const HeaderNotifications = memo(function HeaderNotifications({
                 ) : (
                     <MessageSquare className="size-3.5 text-blue-600 dark:text-blue-400" />
                 ),
-                bg: isMention
-                    ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400'
-                    : 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
-                badgeBg: isMention
-                    ? 'text-purple-700 dark:text-purple-300 bg-purple-500/10'
-                    : 'text-blue-700 dark:text-blue-300 bg-blue-500/10',
+                bg: isMention ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400' : 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
+                badgeBg: isMention ? 'text-purple-700 dark:text-purple-300 bg-purple-500/10' : 'text-blue-700 dark:text-blue-300 bg-blue-500/10',
                 label: item.badge || (isMention ? 'Mention' : 'Diskusi'),
             };
         }
@@ -264,7 +256,7 @@ export const HeaderNotifications = memo(function HeaderNotifications({
                 };
             default:
                 return {
-                    icon: <RefreshCw className="size-3.5 text-primary" />,
+                    icon: <RefreshCw className="text-primary size-3.5" />,
                     bg: 'bg-primary/10 text-primary',
                     badgeBg: 'text-primary bg-primary/10',
                     label: item.badge || 'Update',
@@ -298,36 +290,36 @@ export const HeaderNotifications = memo(function HeaderNotifications({
                         'group relative flex cursor-pointer transition-all active:scale-95',
                         variant === 'sidebar'
                             ? 'size-9 rounded-xl text-white/75 hover:bg-white/15 hover:text-white'
-                            : 'ml-2 size-8 rounded-lg text-foreground/75 hover:bg-muted hover:text-foreground',
+                            : 'text-foreground/75 hover:bg-muted hover:text-foreground ml-2 size-8 rounded-lg',
                         className,
                     )}
                     aria-label="Buka Notifikasi"
                 >
                     <Bell className={cn('transition-transform group-hover:rotate-12', variant === 'sidebar' ? 'size-4.5' : 'size-4')} />
                     {unreadNotifications.length > 0 && (
-                        <span className="ring-background absolute -top-0.5 -right-0.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-rose-500 px-1 text-[8.5px] font-bold leading-none text-white ring-1.5">
+                        <span className="ring-background ring-1.5 absolute -top-0.5 -right-0.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-rose-500 px-1 text-[8.5px] leading-none font-bold text-white">
                             {unreadNotifications.length > 99 ? '99+' : unreadNotifications.length}
                         </span>
                     )}
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
-                className="bg-popover/95 text-popover-foreground backdrop-blur-md z-[99999] w-[340px] sm:w-[380px] max-w-[calc(100vw-1.5rem)] rounded-2xl p-0 border border-border/70 shadow-xl dark:shadow-2xl dark:shadow-black/60 animate-in fade-in-50 zoom-in-95 duration-100"
+                className="bg-popover/95 text-popover-foreground border-border/70 animate-in fade-in-50 zoom-in-95 z-[99999] w-[340px] max-w-[calc(100vw-1.5rem)] rounded-2xl border p-0 shadow-xl backdrop-blur-md duration-100 sm:w-[380px] dark:shadow-2xl dark:shadow-black/60"
                 side={variant === 'sidebar' ? 'right' : 'bottom'}
                 align="end"
                 sideOffset={variant === 'sidebar' ? 14 : 8}
             >
                 {/* Header with quick stats and filter tabs */}
-                <div className="p-2.5 pb-2 space-y-2">
+                <div className="space-y-2 p-2.5 pb-2">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1.5">
-                            <h3 className="text-foreground text-[11px] font-bold uppercase tracking-wide">Notifikasi</h3>
+                            <h3 className="text-foreground text-[11px] font-bold tracking-wide uppercase">Notifikasi</h3>
                             {unreadNotifications.length > 0 ? (
-                                <span className="rounded bg-rose-500/10 px-1.5 py-0.2 text-[9.5px] font-bold text-rose-600 dark:text-rose-400">
+                                <span className="py-0.2 rounded bg-rose-500/10 px-1.5 text-[9.5px] font-bold text-rose-600 dark:text-rose-400">
                                     {unreadNotifications.length} Baru
                                 </span>
                             ) : (
-                                <span className="bg-muted text-muted-foreground rounded px-1.5 py-0.2 text-[9.5px] font-medium">
+                                <span className="bg-muted text-muted-foreground py-0.2 rounded px-1.5 text-[9.5px] font-medium">
                                     {notifications.length} Total
                                 </span>
                             )}
@@ -336,7 +328,7 @@ export const HeaderNotifications = memo(function HeaderNotifications({
                             <button
                                 type="button"
                                 onClick={markAllRead}
-                                className="text-primary hover:text-primary/80 inline-flex items-center gap-1 cursor-pointer text-[10.5px] font-medium transition-colors"
+                                className="text-primary hover:text-primary/80 inline-flex cursor-pointer items-center gap-1 text-[10.5px] font-medium transition-colors"
                             >
                                 <CheckCheck className="size-3" />
                                 <span>Tandai dibaca</span>
@@ -350,9 +342,7 @@ export const HeaderNotifications = memo(function HeaderNotifications({
                             type="button"
                             onClick={() => setFilter('all')}
                             className={`cursor-pointer rounded-md px-2 py-0.5 text-center transition-all ${
-                                filter === 'all'
-                                    ? 'bg-muted text-foreground font-semibold'
-                                    : 'text-muted-foreground hover:text-foreground'
+                                filter === 'all' ? 'bg-muted text-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'
                             }`}
                         >
                             Semua ({notifications.length})
@@ -361,9 +351,7 @@ export const HeaderNotifications = memo(function HeaderNotifications({
                             type="button"
                             onClick={() => setFilter('unread')}
                             className={`cursor-pointer rounded-md px-2 py-0.5 text-center transition-all ${
-                                filter === 'unread'
-                                    ? 'bg-muted text-foreground font-semibold'
-                                    : 'text-muted-foreground hover:text-foreground'
+                                filter === 'unread' ? 'bg-muted text-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'
                             }`}
                         >
                             Belum Dibaca ({unreadNotifications.length})
@@ -374,14 +362,12 @@ export const HeaderNotifications = memo(function HeaderNotifications({
                                 onClick={() => setFilter('approvals')}
                                 className={`flex cursor-pointer items-center gap-1 rounded-md px-2 py-0.5 transition-all ${
                                     filter === 'approvals'
-                                        ? 'bg-amber-500 text-white font-semibold'
-                                        : 'text-amber-700 dark:text-amber-400 hover:bg-amber-500/10'
+                                        ? 'bg-amber-500 font-semibold text-white'
+                                        : 'text-amber-700 hover:bg-amber-500/10 dark:text-amber-400'
                                 }`}
                             >
                                 <span>Persetujuan</span>
-                                <span className="rounded bg-black/10 dark:bg-white/20 px-1 text-[8.5px] font-bold">
-                                    {pendingApprovalCount}
-                                </span>
+                                <span className="rounded bg-black/10 px-1 text-[8.5px] font-bold dark:bg-white/20">{pendingApprovalCount}</span>
                             </button>
                         )}
                     </div>
@@ -397,7 +383,7 @@ export const HeaderNotifications = memo(function HeaderNotifications({
                                 size="sm"
                                 variant="ghost"
                                 onClick={requestPushPermission}
-                                className="h-5 cursor-pointer bg-indigo-600 px-2 text-[9.5px] font-semibold text-white hover:bg-indigo-700 rounded"
+                                className="h-5 cursor-pointer rounded bg-indigo-600 px-2 text-[9.5px] font-semibold text-white hover:bg-indigo-700"
                             >
                                 Izinkan
                             </Button>
@@ -406,7 +392,7 @@ export const HeaderNotifications = memo(function HeaderNotifications({
                 </div>
 
                 {/* Notifications List */}
-                <div className="max-h-[320px] overflow-y-auto scrollbar-thin">
+                <div className="max-h-[320px] scrollbar-thin overflow-y-auto">
                     {loading ? (
                         <div className="text-muted-foreground flex flex-col items-center justify-center gap-2 px-4 py-8 text-center text-[11px]">
                             <RefreshCw className="text-primary size-4 animate-spin" />
@@ -414,7 +400,7 @@ export const HeaderNotifications = memo(function HeaderNotifications({
                         </div>
                     ) : filteredNotifications.length === 0 ? (
                         <div className="flex flex-col items-center justify-center px-4 py-8 text-center">
-                            <div className="flex size-8 items-center justify-center rounded-lg bg-muted text-muted-foreground/50 mb-2">
+                            <div className="bg-muted text-muted-foreground/50 mb-2 flex size-8 items-center justify-center rounded-lg">
                                 <Inbox className="size-4" />
                             </div>
                             <p className="text-foreground text-[11px] font-medium">Tidak ada notifikasi</p>
@@ -443,14 +429,10 @@ export const HeaderNotifications = memo(function HeaderNotifications({
                                     }`}
                                 >
                                     {/* Unread Left Border Indicator */}
-                                    {isUnread && (
-                                        <div className="bg-primary absolute top-1.5 bottom-1.5 left-0.5 w-0.5 rounded-full" />
-                                    )}
+                                    {isUnread && <div className="bg-primary absolute top-1.5 bottom-1.5 left-0.5 w-0.5 rounded-full" />}
 
                                     {/* Icon Avatar */}
-                                    <div
-                                        className={`mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg ${config.bg}`}
-                                    >
+                                    <div className={`mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg ${config.bg}`}>
                                         {config.icon}
                                     </div>
 
@@ -458,9 +440,7 @@ export const HeaderNotifications = memo(function HeaderNotifications({
                                     <div className="min-w-0 flex-1">
                                         {/* Top row: Badge & Time */}
                                         <div className="mb-0.5 flex items-center justify-between gap-1.5">
-                                            <span
-                                                className={`rounded px-1 py-0.2 text-[8.5px] font-bold uppercase ${config.badgeBg}`}
-                                            >
+                                            <span className={`py-0.2 rounded px-1 text-[8.5px] font-bold uppercase ${config.badgeBg}`}>
                                                 {config.label}
                                             </span>
                                             <span
@@ -478,9 +458,7 @@ export const HeaderNotifications = memo(function HeaderNotifications({
                                         </h4>
 
                                         {/* Action Summary / Message Description */}
-                                        <p className="text-muted-foreground mt-0.5 line-clamp-2 text-[10.5px] leading-tight">
-                                            {item.description}
-                                        </p>
+                                        <p className="text-muted-foreground mt-0.5 line-clamp-2 text-[10.5px] leading-tight">{item.description}</p>
 
                                         {/* Footer Actor / Sub-info */}
                                         {item.actor_name && (
@@ -517,4 +495,3 @@ export const HeaderNotifications = memo(function HeaderNotifications({
         </DropdownMenu>
     );
 });
-

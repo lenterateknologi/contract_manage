@@ -2,7 +2,7 @@
 
 namespace App\Traits;
 
-use App\Models\ContractMeta;
+use App\Models\Transaction\ContractMeta;
 
 trait HasContractMeta
 {

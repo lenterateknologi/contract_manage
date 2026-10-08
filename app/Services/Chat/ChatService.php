@@ -2,12 +2,16 @@
 
 namespace App\Services\Chat;
 
-use App\Models\Contract;
-use App\Models\ContractMessage;
-use App\Models\User;
+use App\Mail\NewMessageNotificationMail;
+use App\Models\Master\ContractType;
+use App\Models\Master\User;
+use App\Models\Transaction\Contract;
+use App\Models\Transaction\ContractMessage;
 use Carbon\Carbon;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Mail;
 
 class ChatService
 {
@@ -82,7 +86,7 @@ class ChatService
             ->latest('created_at')
             ->limit(1);
 
-        $allTypes = \App\Models\ContractType::whereNull('deleted_at')->get();
+        $allTypes = ContractType::whereNull('deleted_at')->get();
         $typeToRootMap = [];
         foreach ($allTypes as $t) {
             $curr = $t;
@@ -157,7 +161,7 @@ class ChatService
      */
     public function getDiscussions(User $user, array $filters = [], int $perPage = 15): array
     {
-        $allTypes = \App\Models\ContractType::whereNull('deleted_at')->get();
+        $allTypes = ContractType::whereNull('deleted_at')->get();
         $typeToRootMap = [];
         $typeToRootNameMap = [];
         foreach ($allTypes as $t) {
@@ -193,9 +197,9 @@ class ChatService
         $this->applyInvolvedScope($query, $user);
 
         $query->with([
-                'creator:id,name,role_id',
-                'contractType:id,name',
-            ])
+            'creator:id,name,role_id',
+            'contractType:id,name',
+        ])
             ->withCount(['messages as unread_count' => function ($q) use ($user) {
                 $q->whereJsonDoesntContain('read_by', $user->id);
             }]);
@@ -204,8 +208,8 @@ class ChatService
         if (! empty($filters['category']) && $filters['category'] !== 'all') {
             $categoryTarget = strtolower($filters['category']);
             $matchingTypeIds = array_keys(array_filter($typeToRootMap, function ($cat, $typeId) use ($categoryTarget, $typeToRootNameMap) {
-                return $cat === $categoryTarget 
-                    || (string) $typeId === $categoryTarget 
+                return $cat === $categoryTarget
+                    || (string) $typeId === $categoryTarget
                     || strtolower($typeToRootNameMap[$typeId] ?? '') === $categoryTarget;
             }, ARRAY_FILTER_USE_BOTH));
             if (! empty($matchingTypeIds)) {
@@ -479,20 +483,20 @@ class ChatService
                 foreach ($rawNames as $name) {
                     $lower = strtolower($name);
                     $query->orWhereRaw('LOWER(name) LIKE ?', ['%'.$lower.'%'])
-                          ->orWhereRaw('LOWER(username) LIKE ?', ['%'.$lower.'%']);
+                        ->orWhereRaw('LOWER(username) LIKE ?', ['%'.$lower.'%']);
                 }
             })
             ->get();
 
         foreach ($mentionedUsers as $targetUser) {
             // Invalidate notification cache so notification center immediately shows new message
-            \Illuminate\Support\Facades\Cache::forget("notifications_payload_user_{$targetUser->id}");
-            \Illuminate\Support\Facades\Cache::forget("user_involved_contracts_{$targetUser->id}");
+            Cache::forget("notifications_payload_user_{$targetUser->id}");
+            Cache::forget("user_involved_contracts_{$targetUser->id}");
 
             // Send email notification if user has email configured
             if (! empty($targetUser->email)) {
                 try {
-                    \Illuminate\Support\Facades\Mail::to($targetUser->email)->queue(new \App\Mail\NewMessageNotificationMail($msg, $targetUser));
+                    Mail::to($targetUser->email)->queue(new NewMessageNotificationMail($msg, $targetUser));
                 } catch (\Throwable $e) {
                     report($e);
                 }
@@ -559,6 +563,7 @@ class ChatService
                 if (! is_array($readBy)) {
                     $readBy = [];
                 }
+
                 return ! in_array($userId, $readBy, true) && ! in_array((string) $userId, $readBy, true);
             });
 
@@ -578,8 +583,8 @@ class ChatService
             }
         }
 
-        \Illuminate\Support\Facades\Cache::forget("notifications_payload_user_{$userId}");
-        \Illuminate\Support\Facades\Cache::forget("user_involved_contracts_{$userId}");
+        Cache::forget("notifications_payload_user_{$userId}");
+        Cache::forget("user_involved_contracts_{$userId}");
 
         return $count;
     }

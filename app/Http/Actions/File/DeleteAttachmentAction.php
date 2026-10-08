@@ -3,9 +3,9 @@
 namespace App\Http\Actions\File;
 
 use App\Http\Formatters\ContractFormatter;
-use App\Models\Contract;
-use App\Models\ContractAttachment;
-use App\Models\ContractHistory;
+use App\Models\Transaction\Contract;
+use App\Models\Transaction\ContractAttachment;
+use App\Models\Transaction\ContractHistory;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;

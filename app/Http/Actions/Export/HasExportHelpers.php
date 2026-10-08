@@ -2,7 +2,7 @@
 
 namespace App\Http\Actions\Export;
 
-use App\Models\Contract;
+use App\Models\Transaction\Contract;
 
 trait HasExportHelpers
 {

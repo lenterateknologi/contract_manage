@@ -3,10 +3,10 @@
 namespace App\Services\Workflow\Actions;
 
 use App\Enums\WorkflowAction;
-use App\Models\Contract;
-use App\Models\FormSubmissionHistory;
-use App\Models\WorkflowStep;
-use App\Models\WorkflowStepAction;
+use App\Models\Master\WorkflowStep;
+use App\Models\Master\WorkflowStepAction;
+use App\Models\Transaction\Contract;
+use App\Models\Transaction\FormSubmissionHistory;
 
 class ActionFieldValidator
 {
@@ -60,12 +60,12 @@ class ActionFieldValidator
                 ->whereIn('document_type', $typeArr)
                 ->where(function ($q) use ($currentStepId, $currentStepNo, $iteration) {
                     $q->where('workflow_step_id', $currentStepId)
-                      ->orWhere('step_number', $currentStepNo)
-                      ->orWhere(function ($q2) use ($iteration) {
-                          $q2->where('workflow_iteration', $iteration)
-                             ->whereNull('workflow_step_id')
-                             ->whereNull('step_number');
-                      });
+                        ->orWhere('step_number', $currentStepNo)
+                        ->orWhere(function ($q2) use ($iteration) {
+                            $q2->where('workflow_iteration', $iteration)
+                                ->whereNull('workflow_step_id')
+                                ->whereNull('step_number');
+                        });
                 })->exists();
 
             if ($hasMatchingVersion) {
@@ -77,12 +77,12 @@ class ActionFieldValidator
                 ->whereIn('document_type', $typeArr)
                 ->where(function ($q) use ($currentStepId, $currentStepNo, $iteration) {
                     $q->where('workflow_step_id', $currentStepId)
-                      ->orWhere('step_number', $currentStepNo)
-                      ->orWhere(function ($q2) use ($iteration) {
-                          $q2->where('workflow_iteration', $iteration)
-                             ->whereNull('workflow_step_id')
-                             ->whereNull('step_number');
-                      });
+                        ->orWhere('step_number', $currentStepNo)
+                        ->orWhere(function ($q2) use ($iteration) {
+                            $q2->where('workflow_iteration', $iteration)
+                                ->whereNull('workflow_step_id')
+                                ->whereNull('step_number');
+                        });
                 })->exists();
 
             if ($hasMatchingSubmission) {
@@ -94,8 +94,8 @@ class ActionFieldValidator
                 $q->where('contract_id', $contract->id)->whereIn('document_type', $typeArr);
             })->where(function ($q) use ($currentStepId, $currentStepNo, $iteration) {
                 $q->where('workflow_step_id', $currentStepId)
-                  ->orWhere('step_number', $currentStepNo)
-                  ->orWhere('workflow_iteration', $iteration);
+                    ->orWhere('step_number', $currentStepNo)
+                    ->orWhere('workflow_iteration', $iteration);
             })->exists();
 
             if ($hasMatchingHistory) {
@@ -149,10 +149,10 @@ class ActionFieldValidator
                 || ! empty($contract->metadata['agreement_content'])
                 || $contract->attachments()->where(function ($q) {
                     $q->whereIn('category', ['Perjanjian', 'agreement', 'draft', 'kontrak', 'Draft Kontrak'])
-                      ->orWhere('file_type', 'like', '%word%')
-                      ->orWhere('file_type', 'like', '%pdf%')
-                      ->orWhere('label', 'like', '%Draft%')
-                      ->orWhere('label', 'like', '%Perjanjian%');
+                        ->orWhere('file_type', 'like', '%word%')
+                        ->orWhere('file_type', 'like', '%pdf%')
+                        ->orWhere('label', 'like', '%Draft%')
+                        ->orWhere('label', 'like', '%Perjanjian%');
                 })->exists();
             if (! $hasAgreement) {
                 throw new \Exception('Tidak dapat melanjutkan persetujuan. Sub-dokumen Perjanjian / Draft wajib diisi/diunggah pada tahap ini terlebih dahulu.');

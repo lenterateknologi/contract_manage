@@ -3,9 +3,9 @@
 namespace App\Http\Actions\Contract;
 
 use App\Enums\WorkflowAction;
-use App\Models\Contract;
-use App\Models\ContractStatus;
-use App\Models\WorkflowStep;
+use App\Models\Master\ContractStatus;
+use App\Models\Master\WorkflowStep;
+use App\Models\Transaction\Contract;
 use App\Services\Workflow\ContractWorkflowService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -70,32 +70,60 @@ class GetContractAvailableActionsAction
         $availableCustomActions = [];
         if (! $isSubStepReviewer && is_array($customActionsPool)) {
             foreach ($customActionsPool as $act) {
-                if (isset($act['is_active']) && $act['is_active'] === false) continue;
-                if (($act['action_code'] ?? '') === 'add_adhoc' && ($effectiveStep?->step_category === 'adhoc_review' || data_get($effectiveStep?->meta, 'is_adhoc_step'))) continue;
+                if (isset($act['is_active']) && $act['is_active'] === false) {
+                    continue;
+                }
+                if (($act['action_code'] ?? '') === 'add_adhoc' && ($effectiveStep?->step_category === 'adhoc_review' || data_get($effectiveStep?->meta, 'is_adhoc_step'))) {
+                    continue;
+                }
 
                 if (($act['scope'] ?? 'all_steps') === 'specific_steps' && ! empty($act['step_ids'])) {
                     $match = in_array((string) $contract->workflow_step_id, array_map('strval', $act['step_ids']))
                         || in_array((string) ($effectiveStep?->step ?? ''), array_map('strval', $act['step_ids']));
-                    if (! $match) continue;
+                    if (! $match) {
+                        continue;
+                    }
                 }
 
                 $visCond = $act['visibility_condition'] ?? 'always';
-                if ($visCond === 'no_pic' && $hasAssignedPic) continue;
-                if ($visCond === 'require_pic' && ! $hasAssignedPic) continue;
-                if ($visCond === 'no_signers' && $hasSigners) continue;
-                if ($visCond === 'has_signers' && ! $hasSigners) continue;
+                if ($visCond === 'no_pic' && $hasAssignedPic) {
+                    continue;
+                }
+                if ($visCond === 'require_pic' && ! $hasAssignedPic) {
+                    continue;
+                }
+                if ($visCond === 'no_signers' && $hasSigners) {
+                    continue;
+                }
+                if ($visCond === 'has_signers' && ! $hasSigners) {
+                    continue;
+                }
 
                 $authorities = $act['authorities'] ?? [];
                 if (! empty($authorities) && ! $user->isAdmin()) {
                     $userMatches = false;
                     foreach ($authorities as $authItem) {
                         $authType = $authItem['type'] ?? ($authItem['approver_type'] ?? 'role');
-                        if ($authType === 'creator' && ($contract->created_by === $user->id || $contract->initiated_by_id === $user->id)) { $userMatches = true; break; }
-                        if ($authType === 'assigned_pic' && $contract->assigned_pic_id === $user->id) { $userMatches = true; break; }
-                        if ($authType === 'role' && strcasecmp((string) $user->role, (string) ($authItem['role_name'] ?? $authItem['role'] ?? '')) === 0) { $userMatches = true; break; }
-                        if ($authType === 'user' && ! empty($authItem['user_id']) && $authItem['user_id'] === $user->id) { $userMatches = true; break; }
+                        if ($authType === 'creator' && ($contract->created_by === $user->id || $contract->initiated_by_id === $user->id)) {
+                            $userMatches = true;
+                            break;
+                        }
+                        if ($authType === 'assigned_pic' && $contract->assigned_pic_id === $user->id) {
+                            $userMatches = true;
+                            break;
+                        }
+                        if ($authType === 'role' && strcasecmp((string) $user->role, (string) ($authItem['role_name'] ?? $authItem['role'] ?? '')) === 0) {
+                            $userMatches = true;
+                            break;
+                        }
+                        if ($authType === 'user' && ! empty($authItem['user_id']) && $authItem['user_id'] === $user->id) {
+                            $userMatches = true;
+                            break;
+                        }
                     }
-                    if (! $userMatches) continue;
+                    if (! $userMatches) {
+                        continue;
+                    }
                 }
 
                 $availableCustomActions[] = [

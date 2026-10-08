@@ -2,7 +2,8 @@
 
 namespace App\Services;
 
-use App\Models\User;
+use App\Models\Master\Company;
+use App\Models\Master\User;
 use Illuminate\Http\Request;
 
 /**
@@ -37,7 +38,7 @@ class ContractFilterScopeService
             if ($user->relationLoaded('company') && $user->company) {
                 $userRegionId = $user->company->region_id;
             } elseif (! empty($user->company_id)) {
-                $userRegionId = \App\Models\Company::where('id', $user->company_id)->value('region_id');
+                $userRegionId = Company::where('id', $user->company_id)->value('region_id');
             }
         }
 

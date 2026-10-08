@@ -2,7 +2,7 @@
 
 namespace Database\Seeders\System;
 
-use App\Models\SubmissionType;
+use App\Models\Master\SubmissionType;
 use Illuminate\Database\Seeder;
 
 class SubmissionTypeSeeder extends Seeder

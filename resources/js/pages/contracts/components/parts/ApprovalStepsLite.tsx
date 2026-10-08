@@ -1,11 +1,11 @@
-import React, { useMemo } from 'react';
-import { cn, formatDateTime } from '@/lib/utils';
+import { formatDateTime } from '@/lib/utils';
 import { Contract, ContractApproval, UserProfile } from '@/pages/contracts/types';
-import { Check, X, Clock, Hourglass, Workflow, Users, ArrowDownRight, LogIn } from 'lucide-react';
+import { ArrowDownRight, Check, Clock, Hourglass, LogIn, Users, Workflow, X } from 'lucide-react';
+import React, { useMemo } from 'react';
+import { Timeline, TimelineContent, TimelineIcon, TimelineItem } from '../ui/timeline';
 import { ApprovalCard } from './ApprovalCard';
 import { InitiatorStepCard } from './InitiatorStepCard';
 import { ProjectedStepCard } from './ProjectedStepCard';
-import { Timeline, TimelineItem, TimelineIcon, TimelineContent } from '../ui/timeline';
 
 interface ApprovalStepsLiteProps {
     contract: Contract;
@@ -35,9 +35,7 @@ export function ApprovalStepsLite({
 
     // Filter approvals for Lite mode (only executed steps or current pending step)
     const filteredSteps = useMemo(() => {
-        let result = safeApprovals.filter(
-            (a) => a.workflow_step?.is_visible !== false && (a.workflow_step?.meta as any)?.is_visible !== false,
-        );
+        let result = safeApprovals.filter((a) => a.workflow_step?.is_visible !== false && (a.workflow_step?.meta as any)?.is_visible !== false);
         const currentStepId = contract.workflow_step_id;
         const currentWorkflowId = contract.workflow_id;
         const pendingSeq = activePendingApproval?.sequence;
@@ -52,7 +50,7 @@ export function ApprovalStepsLite({
                 (pendingStepId && a.workflow_step_id === pendingStepId) ||
                 (pendingSeq != null &&
                     a.sequence === pendingSeq &&
-                    ((a.workflow_step?.workflow_id || (a as any).workflow_id) === (pendingWfId || currentWorkflowId))) ||
+                    (a.workflow_step?.workflow_id || (a as any).workflow_id) === (pendingWfId || currentWorkflowId)) ||
                 a.id === activePendingApproval?.id,
         );
 
@@ -119,12 +117,7 @@ export function ApprovalStepsLite({
 
             // Only merge into previous group if adjacent item in the sorted stream belongs to the same step
             const lastGroup = groups[groups.length - 1];
-            if (
-                lastGroup &&
-                lastGroup.workflowId === wfId &&
-                lastGroup.batchNo === batchNo &&
-                lastGroup.sequence === a.sequence
-            ) {
+            if (lastGroup && lastGroup.workflowId === wfId && lastGroup.batchNo === batchNo && lastGroup.sequence === a.sequence) {
                 lastGroup.items.push(a);
             } else {
                 groups.push({
@@ -162,7 +155,7 @@ export function ApprovalStepsLite({
                                 submittedAt={submittedAt || contract.submitted_at || contract.created_at || (creator as any)?.created_at}
                                 isLite={true}
                             />
-                            <div className="mt-2 w-full border-b border-border/40" />
+                            <div className="border-border/40 mt-2 w-full border-b" />
                         </TimelineContent>
                     </TimelineItem>
                 )}
@@ -175,7 +168,7 @@ export function ApprovalStepsLite({
                         </TimelineIcon>
                         <TimelineContent>
                             <ProjectedStepCard creator={creator} />
-                            <div className="mt-2 w-full border-b border-border/40" />
+                            <div className="border-border/40 mt-2 w-full border-b" />
                         </TimelineContent>
                     </TimelineItem>
                 )}
@@ -190,27 +183,24 @@ export function ApprovalStepsLite({
 
                     const pendingWfId = activePendingApproval?.workflow_step?.workflow_id || (activePendingApproval as any)?.workflow_id;
                     const isSameWorkflow = group.workflowId === (pendingWfId || currentWfId);
-                    const isPendingStep = activePendingApproval && isSameWorkflow && (
-                        group.sequence === activePendingApproval.sequence ||
-                        group.items.some((a) => a.id === activePendingApproval.id || a.workflow_step_id === activePendingApproval.workflow_step_id)
-                    );
+                    const isPendingStep =
+                        activePendingApproval &&
+                        isSameWorkflow &&
+                        (group.sequence === activePendingApproval.sequence ||
+                            group.items.some(
+                                (a) => a.id === activePendingApproval.id || a.workflow_step_id === activePendingApproval.workflow_step_id,
+                            ));
                     const isActive = contract.status !== 'approved' && !isCompleted && (isGroupCurrentStep || Boolean(isPendingStep));
                     const isRejectedState = group.items.some((a) => a.status === 'rejected');
 
-                    const itemStatus = isCompleted
-                        ? 'completed'
-                        : isRejectedState
-                            ? 'rejected'
-                            : isActive
-                                ? 'active'
-                                : 'waiting';
+                    const itemStatus = isCompleted ? 'completed' : isRejectedState ? 'rejected' : isActive ? 'active' : 'waiting';
 
                     const mainItem = group.items[0];
-                    const matchedStep = contract?.workflow?.steps?.find((s: any) => s.step === group.sequence || s.id === mainItem?.workflow_step_id) || mainItem?.workflow_step;
+                    const matchedStep =
+                        contract?.workflow?.steps?.find((s: any) => s.step === group.sequence || s.id === mainItem?.workflow_step_id) ||
+                        mainItem?.workflow_step;
                     const stepMeta = (matchedStep as any)?.meta || {};
-                    const statusColor = (isActive && contract.status_info?.color)
-                        ? contract.status_info.color
-                        : stepMeta.status_color || null;
+                    const statusColor = isActive && contract.status_info?.color ? contract.status_info.color : stepMeta.status_color || null;
 
                     // Render dynamic icon based on step status instead of step numbers (counting)
                     const renderStatusIcon = () => {
@@ -221,7 +211,7 @@ export function ApprovalStepsLite({
                             return <X size={11} strokeWidth={3} className="text-white" />;
                         }
                         if (itemStatus === 'active') {
-                            return <Clock size={11} strokeWidth={2.5} className="text-white animate-pulse" />;
+                            return <Clock size={11} strokeWidth={2.5} className="animate-pulse text-white" />;
                         }
                         return <Hourglass size={10} className="text-muted-foreground" />;
                     };
@@ -241,15 +231,13 @@ export function ApprovalStepsLite({
                             </TimelineIcon>
 
                             <TimelineContent>
-                                <div className="flex items-center justify-between gap-1.5 flex-wrap">
-                                    <div className="flex items-center gap-1.5 flex-wrap min-w-0">
-                                        <h4 className="font-bold text-text-main text-[11px] truncate">
-                                            {group.stepName}
-                                        </h4>
+                                <div className="flex flex-wrap items-center justify-between gap-1.5">
+                                    <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                                        <h4 className="text-text-main truncate text-[11px] font-bold">{group.stepName}</h4>
 
                                         {/* Sub-workflow indicator badge (Unified visual presentation) */}
                                         {group.isSubWorkflow && (
-                                            <span className="inline-flex items-center gap-1 rounded bg-indigo-500/10 border border-indigo-500/25 px-1.5 py-0.2 text-[8.5px] font-bold tracking-wider uppercase text-indigo-700 dark:text-indigo-300">
+                                            <span className="py-0.2 inline-flex items-center gap-1 rounded border border-indigo-500/25 bg-indigo-500/10 px-1.5 text-[8.5px] font-bold tracking-wider text-indigo-700 uppercase dark:text-indigo-300">
                                                 <Workflow size={9} className="shrink-0" />
                                                 <span>{group.workflowName}</span>
                                             </span>
@@ -257,7 +245,7 @@ export function ApprovalStepsLite({
 
                                         {/* Batch tag if batch > 1 */}
                                         {group.batchNo && group.batchNo > 1 && (
-                                            <span className="inline-flex items-center gap-1 rounded bg-amber-500/10 border border-amber-500/25 px-1.5 py-0.2 text-[8.5px] font-bold tracking-wider uppercase text-amber-700 dark:text-amber-300">
+                                            <span className="py-0.2 inline-flex items-center gap-1 rounded border border-amber-500/25 bg-amber-500/10 px-1.5 text-[8.5px] font-bold tracking-wider text-amber-700 uppercase dark:text-amber-300">
                                                 <span>Batch #{group.batchNo}</span>
                                             </span>
                                         )}
@@ -266,19 +254,21 @@ export function ApprovalStepsLite({
                                         {(() => {
                                             if (group.items.length <= 1) return null;
                                             const adhocMeta = contract?.metadata?.adhoc_steps?.[mainItem?.workflow_step_id || ''];
-                                            const isSigningGroup = group.items.some(it => it.role === 'Pihak 1' || it.role === 'Pihak 2' || it.role === 'Penandatangan');
-                                            const isAdhocGroup = group.items.some(it => it.role === 'Persetujuan Tambahan' || it.is_adhoc);
+                                            const isSigningGroup = group.items.some(
+                                                (it) => it.role === 'Pihak 1' || it.role === 'Pihak 2' || it.role === 'Penandatangan',
+                                            );
+                                            const isAdhocGroup = group.items.some((it) => it.role === 'Persetujuan Tambahan' || it.is_adhoc);
 
                                             let isSequential = false;
                                             if (adhocMeta && typeof adhocMeta.is_sequential === 'boolean') {
                                                 isSequential = adhocMeta.is_sequential;
                                             } else if (isSigningGroup) {
-                                                isSequential = group.items.some(it => it.sub_step != null);
+                                                isSequential = group.items.some((it) => it.sub_step != null);
                                             }
 
                                             if (isSequential) {
                                                 return (
-                                                    <span className="inline-flex items-center gap-0.5 rounded bg-indigo-500/10 border border-indigo-500/20 px-1 py-0.2 text-[8px] font-bold uppercase text-indigo-600 dark:text-indigo-400">
+                                                    <span className="py-0.2 inline-flex items-center gap-0.5 rounded border border-indigo-500/20 bg-indigo-500/10 px-1 text-[8px] font-bold text-indigo-600 uppercase dark:text-indigo-400">
                                                         <ArrowDownRight size={9} />
                                                         <span>Berurutan</span>
                                                     </span>
@@ -287,7 +277,7 @@ export function ApprovalStepsLite({
 
                                             if (isAdhocGroup) {
                                                 return (
-                                                    <span className="inline-flex items-center gap-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 px-1 py-0.2 text-[8px] font-bold uppercase text-emerald-600 dark:text-emerald-400">
+                                                    <span className="py-0.2 inline-flex items-center gap-0.5 rounded border border-emerald-500/20 bg-emerald-500/10 px-1 text-[8px] font-bold text-emerald-600 uppercase dark:text-emerald-400">
                                                         <Users size={9} />
                                                         <span>Serentak</span>
                                                     </span>
@@ -300,10 +290,15 @@ export function ApprovalStepsLite({
 
                                     {/* Waktu Masuk Step setara Label Step */}
                                     {(() => {
-                                        const stepEntryAt = group.items.find(it => it.step_entry_at || it.created_at)?.step_entry_at || group.items.find(it => it.created_at)?.created_at;
+                                        const stepEntryAt =
+                                            group.items.find((it) => it.step_entry_at || it.created_at)?.step_entry_at ||
+                                            group.items.find((it) => it.created_at)?.created_at;
                                         if (!stepEntryAt) return null;
                                         return (
-                                            <span className="text-text-soft flex items-center gap-1 font-mono text-[9px] tabular-nums uppercase shrink-0" title="Waktu Masuk Tahap">
+                                            <span
+                                                className="text-text-soft flex shrink-0 items-center gap-1 font-mono text-[9px] uppercase tabular-nums"
+                                                title="Waktu Masuk Tahap"
+                                            >
                                                 <LogIn size={9.5} className="text-muted-foreground shrink-0" />
                                                 <span className="text-text-soft font-normal">Masuk:</span> {formatDateTime(stepEntryAt)}
                                             </span>
@@ -314,12 +309,17 @@ export function ApprovalStepsLite({
                                 {/* Approver items */}
                                 <div className="mt-1 space-y-1">
                                     {visibleItems.map((a: ContractApproval) => {
-                                        const hasSub = a.sub_step !== null && a.sub_step !== undefined && String(a.sub_step).trim() !== '' && String(a.sub_step) !== 'null' && String(a.sub_step) !== 'undefined';
+                                        const hasSub =
+                                            a.sub_step !== null &&
+                                            a.sub_step !== undefined &&
+                                            String(a.sub_step).trim() !== '' &&
+                                            String(a.sub_step) !== 'null' &&
+                                            String(a.sub_step) !== 'undefined';
                                         const isItemPending = Boolean(
                                             activePendingApproval &&
                                             !isCompleted &&
                                             a.status !== 'waiting' &&
-                                            (a.id === activePendingApproval.id || a.status === 'pending')
+                                            (a.id === activePendingApproval.id || a.status === 'pending'),
                                         );
 
                                         return (
@@ -340,15 +340,15 @@ export function ApprovalStepsLite({
                                     {allItems.length > 10 && (
                                         <button
                                             type="button"
-                                            onClick={() => setExpandedGroups(prev => ({ ...prev, [groupKey]: !prev[groupKey] }))}
-                                            className="text-primary hover:underline mt-0.5 flex items-center gap-1 text-[9px] font-extrabold tracking-wider uppercase cursor-pointer"
+                                            onClick={() => setExpandedGroups((prev) => ({ ...prev, [groupKey]: !prev[groupKey] }))}
+                                            className="text-primary mt-0.5 flex cursor-pointer items-center gap-1 text-[9px] font-extrabold tracking-wider uppercase hover:underline"
                                         >
                                             {isExpanded ? 'Sembunyikan' : `+ Tampilkan ${allItems.length - 10} Penerima Persetujuan Lainnya`}
                                         </button>
                                     )}
                                 </div>
 
-                                <div className="mt-2 w-full border-b border-border/40" />
+                                <div className="border-border/40 mt-2 w-full border-b" />
                             </TimelineContent>
                         </TimelineItem>
                     );

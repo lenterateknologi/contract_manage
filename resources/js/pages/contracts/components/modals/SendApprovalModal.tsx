@@ -1,8 +1,8 @@
-import { Modal } from '@/components/ui/dialogs/Modal';
 import { Button } from '@/components/ui/buttons/Button';
-import { contractApi } from '@/pages/contracts/utils';
+import { Modal } from '@/components/ui/dialogs/Modal';
 import { cn } from '@/lib/utils';
-import { Activity, CheckCircle2, ChevronDown, GitBranch, Loader2, MessageSquare, Send, User } from 'lucide-react';
+import { contractApi } from '@/pages/contracts/utils';
+import { Activity, CheckCircle2, ChevronDown, GitBranch, Loader2, Send } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface SendApprovalModalProps {
@@ -125,14 +125,14 @@ export default function SendApprovalModal({ open, onClose, onSubmit, contractTyp
                         variant="ghost"
                         onClick={onClose}
                         disabled={loading}
-                        className="h-9 text-xs bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-700 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-900/50 border border-rose-200 dark:border-rose-800/50 font-semibold"
+                        className="h-9 border border-rose-200 bg-rose-50 text-xs font-semibold text-rose-600 hover:bg-rose-100 hover:text-rose-700 dark:border-rose-800/50 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-900/50"
                     >
                         Batal
                     </Button>
                     <Button
                         onClick={handleSubmit}
                         disabled={loading || initLoading || workflows.length === 0 || !selectedWorkflowId}
-                        className="min-w-[140px] h-9 text-xs"
+                        className="h-9 min-w-[140px] text-xs"
                     >
                         {loading ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <GitBranch size={15} className="mr-1.5" />}
                         Inisialisasi Approval
@@ -143,17 +143,17 @@ export default function SendApprovalModal({ open, onClose, onSubmit, contractTyp
             <div className="space-y-4 pt-1">
                 <div className="space-y-1">
                     <div className="flex items-center justify-between">
-                        <label className="text-slate-700 dark:text-zinc-200 text-[10.5px] font-extrabold uppercase">
+                        <label className="text-[10.5px] font-extrabold text-slate-700 uppercase dark:text-zinc-200">
                             Pilih Alur Kerja <span className="text-rose-500">*</span>
                         </label>
-                        {initLoading && <Activity className="h-3.5 w-3.5 animate-pulse text-primary" />}
+                        {initLoading && <Activity className="text-primary h-3.5 w-3.5 animate-pulse" />}
                     </div>
                     <div className="group relative">
                         <select
                             value={selectedWorkflowId}
                             onChange={(e) => handleWorkflowChange(e.target.value)}
                             disabled={initLoading || workflows.length === 0}
-                            className="h-10 w-full appearance-none rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 transition-all outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 dark:border-slate-800 dark:bg-slate-950 dark:text-white"
+                            className="focus:ring-primary h-10 w-full appearance-none rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 transition-all outline-none focus:ring-2 disabled:opacity-50 dark:border-slate-800 dark:bg-slate-950 dark:text-white"
                         >
                             {workflows.length === 0 && <option>Memuat alur...</option>}
                             {workflows.map((w) => (
@@ -164,7 +164,7 @@ export default function SendApprovalModal({ open, onClose, onSubmit, contractTyp
                         </select>
                         <ChevronDown className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-slate-400" size={16} />
                     </div>
-                    <p className="text-text-soft text-[11px] leading-relaxed font-normal mt-1">
+                    <p className="text-text-soft mt-1 text-[11px] leading-relaxed font-normal">
                         Alur kerja persetujuan sesuai tipe kontrak yang dipilih.
                     </p>
                 </div>
@@ -173,9 +173,7 @@ export default function SendApprovalModal({ open, onClose, onSubmit, contractTyp
                     <div className="space-y-3">
                         {selectedWorkflow.steps?.some((s: any) => s.is_optional) && (
                             <div className="space-y-1.5">
-                                <label className="text-slate-700 dark:text-zinc-200 text-[10.5px] font-extrabold uppercase">
-                                    Step Opsional
-                                </label>
+                                <label className="text-[10.5px] font-extrabold text-slate-700 uppercase dark:text-zinc-200">Step Opsional</label>
                                 <div className="grid grid-cols-1 gap-2">
                                     {selectedWorkflow.steps
                                         .filter((s: any) => s.is_optional)
@@ -193,10 +191,7 @@ export default function SendApprovalModal({ open, onClose, onSubmit, contractTyp
                                                     )}
                                                 >
                                                     <div className="flex items-center gap-2.5">
-                                                        <CheckCircle2
-                                                            size={16}
-                                                            className={isChecked ? 'text-primary' : 'text-slate-300'}
-                                                        />
+                                                        <CheckCircle2 size={16} className={isChecked ? 'text-primary' : 'text-slate-300'} />
                                                         <div>
                                                             <span className="text-xs font-bold uppercase">{step.name}</span>
                                                             <p className="text-[10px] text-slate-500 dark:text-slate-400">
@@ -213,7 +208,7 @@ export default function SendApprovalModal({ open, onClose, onSubmit, contractTyp
 
                         {selectedWorkflow.steps?.some((s: any) => s.step_type === 'selection') && (
                             <div className="space-y-1.5">
-                                <label className="text-slate-700 dark:text-zinc-200 text-[10.5px] font-extrabold uppercase">
+                                <label className="text-[10.5px] font-extrabold text-slate-700 uppercase dark:text-zinc-200">
                                     Pilih Personel Manual <span className="text-rose-500">*</span>
                                 </label>
                                 <div className="space-y-2">
@@ -221,14 +216,12 @@ export default function SendApprovalModal({ open, onClose, onSubmit, contractTyp
                                         .filter((s: any) => s.step_type === 'selection')
                                         .map((step: any) => (
                                             <div key={step.id} className="space-y-1">
-                                                <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                                                    {step.name}
-                                                </span>
+                                                <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">{step.name}</span>
                                                 <div className="relative">
                                                     <select
                                                         value={metadata.selections[step.id.toString()] || ''}
                                                         onChange={(e) => handleSelectionChange(step.id, e.target.value)}
-                                                        className="h-9 w-full appearance-none rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-primary dark:border-slate-800 dark:bg-slate-950 dark:text-white"
+                                                        className="focus:ring-primary h-9 w-full appearance-none rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-800 outline-none focus:ring-2 dark:border-slate-800 dark:bg-slate-950 dark:text-white"
                                                     >
                                                         <option value="">Pilih approver untuk {step.name}...</option>
                                                         {users
@@ -243,7 +236,10 @@ export default function SendApprovalModal({ open, onClose, onSubmit, contractTyp
                                                                 </option>
                                                             ))}
                                                     </select>
-                                                    <ChevronDown className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-slate-400" size={14} />
+                                                    <ChevronDown
+                                                        className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-slate-400"
+                                                        size={14}
+                                                    />
                                                 </div>
                                             </div>
                                         ))}
@@ -254,12 +250,12 @@ export default function SendApprovalModal({ open, onClose, onSubmit, contractTyp
                 )}
 
                 <div className="space-y-1">
-                    <label className="text-slate-700 dark:text-zinc-200 text-[10.5px] font-extrabold uppercase">
+                    <label className="text-[10.5px] font-extrabold text-slate-700 uppercase dark:text-zinc-200">
                         Catatan untuk Approver (Optional)
                     </label>
                     <textarea
                         placeholder="Berikan instruksi atau konteks tambahan..."
-                        className="min-h-[80px] w-full resize-none rounded-lg border border-slate-200 bg-white p-3 text-xs font-medium text-slate-800 transition-all outline-none focus:ring-2 focus:ring-primary dark:border-slate-800 dark:bg-slate-950 dark:text-white"
+                        className="focus:ring-primary min-h-[80px] w-full resize-none rounded-lg border border-slate-200 bg-white p-3 text-xs font-medium text-slate-800 transition-all outline-none focus:ring-2 dark:border-slate-800 dark:bg-slate-950 dark:text-white"
                         value={note}
                         onChange={(e) => setNote(e.target.value)}
                         rows={3}

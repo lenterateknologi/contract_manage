@@ -1,32 +1,19 @@
-import { ConfirmationModal } from '@/components/ui/dialogs/ConfirmationModal';
-import { Card, CardContent } from '@/components/ui/cards/Card';
-import { Badge } from '@/components/ui/feedback/Badge';
-import { Button } from '@/components/ui/buttons/Button';
-import { SearchInput } from '@/components/ui/inputs/SearchInput';
-import LoadingLottie from '@/components/ui/feedback/LoadingLottie';
-import { contractApi } from '@/pages/contracts/utils';
-import { cn, parseApiErrorMessage } from '@/lib/utils';
-import { formatFileSize } from '@/lib/formatters';
-import { renderAsync } from 'docx-preview';
-import { ChipIcon, AppIcon, Icons, FileChipIcon, getAttachmentBadge } from '@/components/ui';
-
-const {
-    ArrowLeft,
-    Download,
-    FileCheck,
-    FileIcon,
-    FolderOpen,
-    Loader2,
-    Paperclip,
-    Plus,
-    Trash2,
-    Search,
-    ExternalLink,
-    Eye,
-} = Icons;
-import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { apiClient } from '@/api/client';
+import { ChipIcon, FileChipIcon, getAttachmentBadge, Icons } from '@/components/ui';
+import { Button } from '@/components/ui/buttons/Button';
+import { Card } from '@/components/ui/cards/Card';
+import { ConfirmationModal } from '@/components/ui/dialogs/ConfirmationModal';
+import { Badge } from '@/components/ui/feedback/Badge';
+import LoadingLottie from '@/components/ui/feedback/LoadingLottie';
+import { SearchInput } from '@/components/ui/inputs/SearchInput';
+import { formatFileSize } from '@/lib/formatters';
+import { cn, parseApiErrorMessage } from '@/lib/utils';
 import type { Contract, ContractAttachment } from '@/pages/contracts/types';
+import { contractApi } from '@/pages/contracts/utils';
+import { renderAsync } from 'docx-preview';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+
+const { ArrowLeft, Download, FileCheck, FileIcon, FolderOpen, Loader2, Paperclip, Plus, Trash2, Search, ExternalLink, Eye } = Icons;
 
 interface Props {
     contract: Contract;
@@ -57,9 +44,7 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
     // ponytail: workflow configuration is the strict source of truth for attachments
     const isActor = (contract as any).can_approve || contract.created_by === meId || (contract as any).initiated_by_id === meId;
     const allowAttachment =
-        contract.allow?.attachment_edit ??
-        (contract as any).allow_attachment_edit ??
-        (contract.workflow_step as any)?.meta?.allow_attachment_edit;
+        contract.allow?.attachment_edit ?? (contract as any).allow_attachment_edit ?? (contract.workflow_step as any)?.meta?.allow_attachment_edit;
     const canEdit = allowAttachment === true && (isActor || canUpdate);
 
     // Reactive Preview Logic
@@ -146,7 +131,14 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
                     file_name: fileName || 'Belum diunggah',
                     has_file: Boolean(fileName),
                 });
-            } else if (typeof val === 'object' && val !== null && !Array.isArray(val) && key !== 'businessFields' && key !== 'bank' && key !== 'paymentMethod') {
+            } else if (
+                typeof val === 'object' &&
+                val !== null &&
+                !Array.isArray(val) &&
+                key !== 'businessFields' &&
+                key !== 'bank' &&
+                key !== 'paymentMethod'
+            ) {
                 results = results.concat(extractAttachmentsRecursively(val, key.toUpperCase()));
             } else if (Array.isArray(val) && (lowerKey === 'documents' || lowerKey === 'berkas' || lowerKey === 'files')) {
                 results = results.concat(extractAttachmentsRecursively(val, key.toUpperCase()));
@@ -160,7 +152,9 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
 
     const vendorDocuments = rawVendorDocs.map((d: any, idx: number) => {
         const fileName = d.file_name || '';
-        const hasFile = d.has_file ?? (Boolean(fileName) && String(fileName).trim() !== '' && String(fileName).trim() !== 'Belum diunggah' && String(fileName).trim() !== '-');
+        const hasFile =
+            d.has_file ??
+            (Boolean(fileName) && String(fileName).trim() !== '' && String(fileName).trim() !== 'Belum diunggah' && String(fileName).trim() !== '-');
         return {
             id: d.id || `vdoc-${idx}`,
             label: d.label || 'DOKUMEN VENDOR',
@@ -174,7 +168,15 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
 
     const contractAttachments = (contract.attachments || []).map((a: any) => {
         const cat = a.category || 'Lampiran';
-        const isAction = ['Approval Action', 'Persetujuan', 'Penolakan Kontrak', 'Penolakan', 'Penugasan PIC', 'Persetujuan Tambahan', 'Tanda Tangan'].includes(cat);
+        const isAction = [
+            'Approval Action',
+            'Persetujuan',
+            'Penolakan Kontrak',
+            'Penolakan',
+            'Penugasan PIC',
+            'Persetujuan Tambahan',
+            'Tanda Tangan',
+        ].includes(cat);
         return {
             ...a,
             is_vendor_doc: false,
@@ -268,12 +270,7 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
         try {
             const updated = await contractApi.uploadAttachment(contract.id, fd);
             onUpdated(updated);
-            showToast(
-                files.length > 1
-                    ? `Berhasil mengunggah ${files.length} berkas lampiran.`
-                    : `Berhasil mengunggah ${files[0].name}.`,
-                'success',
-            );
+            showToast(files.length > 1 ? `Berhasil mengunggah ${files.length} berkas lampiran.` : `Berhasil mengunggah ${files[0].name}.`, 'success');
         } catch (err: any) {
             const msg = parseApiErrorMessage(err, 'Gagal mengunggah lampiran.');
             showToast(msg, 'danger');
@@ -300,7 +297,6 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
         }
     };
 
-
     if (previewAt) {
         const fileName = (previewAt.file_name || '').toLowerCase();
         const isPdf = fileName.endsWith('.pdf');
@@ -314,28 +310,23 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
         const previewUrl = (previewAt as any).is_vendor_doc
             ? contractApi.vendorDocumentPdfPreviewUrl(contract.id, previewAt.id, previewAt.file_name)
             : isPdf
-                ? contractApi.attachmentPdfPreviewUrl(contract.id, previewAt.id)
-                : contractApi.attachmentDownloadUrl(contract.id, previewAt.id);
+              ? contractApi.attachmentPdfPreviewUrl(contract.id, previewAt.id)
+              : contractApi.attachmentDownloadUrl(contract.id, previewAt.id);
 
         return (
-            <div className="bg-card animate-in fade-in flex flex-1 flex-col w-full h-full min-h-0 overflow-hidden duration-300 p-3 lg:p-4 gap-3">
+            <div className="bg-card animate-in fade-in flex h-full min-h-0 w-full flex-1 flex-col gap-3 overflow-hidden p-3 duration-300 lg:p-4">
                 <style>{DOCX_STYLES}</style>
-                <div className="bg-primary text-primary-foreground shrink-0 flex h-9.5 min-h-[38px] max-h-[38px] items-center justify-between px-4 rounded-xl shadow-xs">
+                <div className="bg-primary text-primary-foreground flex h-9.5 max-h-[38px] min-h-[38px] shrink-0 items-center justify-between rounded-xl px-4 shadow-xs">
                     <div className="flex items-center gap-3">
                         <Paperclip size={15} className="text-primary-foreground/90 shrink-0" />
                         <div className="flex items-center gap-2">
-                            <h4 className="text-xs font-semibold uppercase tracking-tight text-primary-foreground">{previewAt.label || previewAt.file_name}</h4>
-                            <Badge
-                                variant="outline"
-                                className="bg-white/15 border-white/25 text-white px-1.5 py-0 text-[8.5px] font-bold uppercase"
-                            >
-                                {(previewAt as any).is_vendor_doc
-                                    ? 'Dokumen Catalog'
-                                    : previewAt.category || 'Lampiran'}
+                            <h4 className="text-primary-foreground text-xs font-semibold tracking-tight uppercase">
+                                {previewAt.label || previewAt.file_name}
+                            </h4>
+                            <Badge variant="outline" className="border-white/25 bg-white/15 px-1.5 py-0 text-[8.5px] font-bold text-white uppercase">
+                                {(previewAt as any).is_vendor_doc ? 'Dokumen Catalog' : previewAt.category || 'Lampiran'}
                             </Badge>
-                            <span className="hidden sm:inline text-white/80 text-[10px] truncate max-w-[200px]">
-                                ({previewAt.file_name})
-                            </span>
+                            <span className="hidden max-w-[200px] truncate text-[10px] text-white/80 sm:inline">({previewAt.file_name})</span>
                         </div>
                     </div>
 
@@ -344,7 +335,7 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
                             variant="white"
                             size="sm"
                             onClick={() => setPreviewAt(null)}
-                            className="h-7 px-2.5 text-[10px] font-semibold uppercase gap-1"
+                            className="h-7 gap-1 px-2.5 text-[10px] font-semibold uppercase"
                         >
                             <ArrowLeft size={12} /> KEMBALI
                         </Button>
@@ -352,18 +343,20 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
                         <a
                             href={downloadUrl}
                             download
-                            className="bg-white/20 hover:bg-white/30 text-white border border-white/30 shadow-xs flex h-7 items-center gap-1.5 rounded-lg px-2.5 text-[10px] font-bold uppercase transition-all active:scale-95 cursor-pointer"
+                            className="flex h-7 cursor-pointer items-center gap-1.5 rounded-lg border border-white/30 bg-white/20 px-2.5 text-[10px] font-bold text-white uppercase shadow-xs transition-all hover:bg-white/30 active:scale-95"
                         >
                             <Download size={12} /> UNDUH
                         </a>
                     </div>
                 </div>
 
-                <div className="relative flex flex-1 flex-col w-full h-full min-h-0 overflow-hidden bg-white dark:bg-zinc-900 rounded-xl border border-surface-border p-0 m-0">
+                <div className="border-surface-border relative m-0 flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden rounded-xl border bg-white p-0 dark:bg-zinc-900">
                     {previewLoading && (
-                        <div className="absolute inset-0 z-20 flex h-full w-full flex-col items-center justify-center gap-4 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xs py-20 animate-in fade-in duration-200">
+                        <div className="animate-in fade-in absolute inset-0 z-20 flex h-full w-full flex-col items-center justify-center gap-4 bg-white/95 py-20 backdrop-blur-xs duration-200 dark:bg-zinc-900/95">
                             <LoadingLottie width={120} height={120} />
-                            <span className="text-[10px] font-semibold tracking-[0.2em] text-[#172554] uppercase dark:text-white">Memuat Dokumen...</span>
+                            <span className="text-[10px] font-semibold tracking-[0.2em] text-[#172554] uppercase dark:text-white">
+                                Memuat Dokumen...
+                            </span>
                         </div>
                     )}
 
@@ -384,10 +377,10 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
                             />
                         </div>
                     ) : (
-                        <div className="w-full h-full min-h-0 flex-1 p-0 m-0 border-none overflow-hidden">
+                        <div className="m-0 h-full min-h-0 w-full flex-1 overflow-hidden border-none p-0">
                             <iframe
                                 src={isPdf ? `${previewUrl}#view=FitH` : previewUrl}
-                                className="w-full h-full min-h-0 flex-1 border-none p-0 m-0"
+                                className="m-0 h-full min-h-0 w-full flex-1 border-none p-0"
                                 title="Attachment Preview"
                                 onLoad={() => setPreviewLoading(false)}
                             />
@@ -399,18 +392,16 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
     }
 
     return (
-        <div className="animate-in fade-in flex flex-1 flex-col overflow-hidden duration-300 p-3 lg:p-4 gap-3">
+        <div className="animate-in fade-in flex flex-1 flex-col gap-3 overflow-hidden p-3 duration-300 lg:p-4">
             <input type="file" ref={fileRef} multiple className="hidden" onChange={handleFileChange} />
 
             {/* Compact Primary Header */}
-            <div className="bg-primary text-primary-foreground shrink-0 flex h-9.5 min-h-[38px] max-h-[38px] items-center justify-between px-4 rounded-xl shadow-xs">
+            <div className="bg-primary text-primary-foreground flex h-9.5 max-h-[38px] min-h-[38px] shrink-0 items-center justify-between rounded-xl px-4 shadow-xs">
                 <div className="flex items-center gap-3">
                     <div className="flex items-center gap-2">
                         <Paperclip size={15} className="text-primary-foreground/90" />
-                        <h4 className="text-xs font-semibold tracking-tight text-primary-foreground uppercase">
-                            Dokumen & Lampiran
-                        </h4>
-                        <span className="rounded bg-white/20 border border-white/30 px-1.5 py-0.5 text-[9px] font-bold text-white">
+                        <h4 className="text-primary-foreground text-xs font-semibold tracking-tight uppercase">Dokumen & Lampiran</h4>
+                        <span className="rounded border border-white/30 bg-white/20 px-1.5 py-0.5 text-[9px] font-bold text-white">
                             {allItems.length} Berkas
                         </span>
                     </div>
@@ -423,24 +414,20 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
                             size="sm"
                             disabled={Boolean(uploading)}
                             onClick={() => fileRef.current?.click()}
-                            className="h-7 px-2.5 text-[10px] font-bold uppercase gap-1 text-primary shadow-xs"
+                            className="text-primary h-7 gap-1 px-2.5 text-[10px] font-bold uppercase shadow-xs"
                         >
-                            {uploading ? (
-                                <Loader2 size={13} className="animate-spin" />
-                            ) : (
-                                <Plus size={13} strokeWidth={2.5} />
-                            )}
+                            {uploading ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} strokeWidth={2.5} />}
                             <span>{uploading ? 'Mengunggah...' : 'Tambah Lampiran'}</span>
                         </Button>
                     )}
                 </div>
             </div>
 
-            <Card className="flex-1 flex flex-col min-h-0 overflow-hidden border-border/80 shadow-xs">
+            <Card className="border-border/80 flex min-h-0 flex-1 flex-col overflow-hidden shadow-xs">
                 {/* Toolbar Filter & Search */}
-                <div className="p-3 border-b border-border/60 bg-muted/20 flex flex-wrap items-center justify-between gap-2.5">
+                <div className="border-border/60 bg-muted/20 flex flex-wrap items-center justify-between gap-2.5 border-b p-3">
                     {/* Filter Tabs */}
-                    <div className="flex items-center gap-0 rounded-lg border border-border bg-muted/60 p-0.5">
+                    <div className="border-border bg-muted/60 flex items-center gap-0 rounded-lg border p-0.5">
                         {[
                             { key: 'available', label: 'Tersedia', count: allItems.filter((i) => i.has_file).length },
                             { key: 'uploaded', label: 'Diunggah', count: allItems.filter((i) => (i as any).is_uploaded || !i.is_vendor_doc).length },
@@ -451,14 +438,17 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
                                 type="button"
                                 onClick={() => setActiveTab(tab.key as any)}
                                 className={cn(
-                                    'flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide transition-all duration-150 cursor-pointer',
-                                    activeTab === tab.key
-                                        ? 'bg-primary text-white shadow-xs'
-                                        : 'text-muted-foreground hover:text-foreground',
+                                    'flex cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1 text-[10px] font-semibold tracking-wide uppercase transition-all duration-150',
+                                    activeTab === tab.key ? 'bg-primary text-white shadow-xs' : 'text-muted-foreground hover:text-foreground',
                                 )}
                             >
                                 <span>{tab.label}</span>
-                                <span className={cn('rounded-full px-1.5 py-0.2 text-[8.5px] font-bold', activeTab === tab.key ? 'bg-white/20 text-white' : 'bg-muted text-muted-foreground')}>
+                                <span
+                                    className={cn(
+                                        'py-0.2 rounded-full px-1.5 text-[8.5px] font-bold',
+                                        activeTab === tab.key ? 'bg-white/20 text-white' : 'bg-muted text-muted-foreground',
+                                    )}
+                                >
                                     {tab.count}
                                 </span>
                             </button>
@@ -476,7 +466,7 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
                 </div>
 
                 {/* File list */}
-                <div className="flex-1 overflow-y-auto custom-scrollbar p-3 divide-y divide-border/50">
+                <div className="custom-scrollbar divide-border/50 flex-1 divide-y overflow-y-auto p-3">
                     {filteredItems.map((at) => {
                         const isUp = uploading === at.label;
                         const hasFile = (at as any).has_file ?? (Boolean(at.file_name) && at.file_name !== 'Belum diunggah');
@@ -487,32 +477,35 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
                                 key={at.id + at.label}
                                 onClick={() => isPreviewable && setPreviewAt(at)}
                                 className={cn(
-                                    'flex items-center justify-between gap-3 px-3 py-3 transition-colors rounded-lg group',
+                                    'group flex items-center justify-between gap-3 rounded-lg px-3 py-3 transition-colors',
                                     isPreviewable
                                         ? 'hover:bg-muted/40 cursor-pointer'
                                         : hasFile
-                                            ? 'hover:bg-muted/20'
-                                            : 'bg-muted/10 opacity-50 cursor-not-allowed',
+                                          ? 'hover:bg-muted/20'
+                                          : 'bg-muted/10 cursor-not-allowed opacity-50',
                                 )}
                             >
-                                <div className="flex items-center gap-3 min-w-0 flex-1">
+                                <div className="flex min-w-0 flex-1 items-center gap-3">
                                     {hasFile ? (
                                         <FileChipIcon fileName={at.file_name} size="lg" />
                                     ) : (
                                         <ChipIcon size="lg" bg="bg-slate-400 dark:bg-slate-600" icon={FileCheck} />
                                     )}
 
-                                    <div className="flex flex-col min-w-0 flex-1">
-                                        <div className="flex items-center gap-2 flex-wrap">
-                                            <span className="text-foreground truncate text-xs font-bold leading-tight" title={at.label || at.file_name}>
+                                    <div className="flex min-w-0 flex-1 flex-col">
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <span
+                                                className="text-foreground truncate text-xs leading-tight font-bold"
+                                                title={at.label || at.file_name}
+                                            >
                                                 {at.label || at.file_name}
                                             </span>
                                             {getAttachmentBadge(at)}
                                         </div>
-                                        <div className="text-muted-foreground truncate text-[11px] font-medium mt-0.5 flex items-center gap-1.5">
+                                        <div className="text-muted-foreground mt-0.5 flex items-center gap-1.5 truncate text-[11px] font-medium">
                                             <span className="truncate">{at.file_name}</span>
                                             {hasFile && at.file_size ? (
-                                                <span className="text-[10px] text-muted-foreground/80 font-semibold shrink-0">
+                                                <span className="text-muted-foreground/80 shrink-0 text-[10px] font-semibold">
                                                     ({formatFileSize(at.file_size)})
                                                 </span>
                                             ) : null}
@@ -520,7 +513,7 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
                                     </div>
                                 </div>
 
-                                <div className="flex items-center gap-1.5 shrink-0">
+                                <div className="flex shrink-0 items-center gap-1.5">
                                     {hasFile && (
                                         <>
                                             {isPreviewable && (
@@ -531,7 +524,7 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
                                                         e.stopPropagation();
                                                         setPreviewAt(at);
                                                     }}
-                                                    className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md"
+                                                    className="text-muted-foreground hover:text-foreground hover:bg-muted h-7 w-7 rounded-md p-0"
                                                     title="Lihat Pratinjau"
                                                 >
                                                     <Eye size={14} />
@@ -546,7 +539,7 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
                                                 }
                                                 download
                                                 onClick={(e) => e.stopPropagation()}
-                                                className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                                                className="text-muted-foreground hover:text-foreground hover:bg-muted flex h-7 w-7 items-center justify-center rounded-md transition-colors"
                                                 title="Unduh Berkas"
                                             >
                                                 <Download size={14} />
@@ -562,7 +555,7 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
                                                 e.stopPropagation();
                                                 handleDelete(at.id, at.label);
                                             }}
-                                            className="h-7 w-7 p-0 text-muted-foreground hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-md"
+                                            className="text-muted-foreground h-7 w-7 rounded-md p-0 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40"
                                             title="Hapus Berkas"
                                         >
                                             <Trash2 size={14} />
@@ -575,18 +568,16 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
 
                     {filteredItems.length === 0 && (
                         <div className="flex flex-col items-center justify-center py-16 text-center">
-                            <FolderOpen className="h-8 w-8 text-muted-foreground/40 mb-3" />
-                            <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">
-                                Tidak ada lampiran ditemukan
-                            </h4>
-                            <p className="text-[11px] text-muted-foreground mt-1">
+                            <FolderOpen className="text-muted-foreground/40 mb-3 h-8 w-8" />
+                            <h4 className="text-foreground text-xs font-bold tracking-wider uppercase">Tidak ada lampiran ditemukan</h4>
+                            <p className="text-muted-foreground mt-1 text-[11px]">
                                 {search ? 'Coba kata kunci pencarian yang lain.' : 'Belum ada berkas yang diunggah untuk kategori ini.'}
                             </p>
                         </div>
                     )}
                 </div>
 
-                <div className="border-t border-border/60 bg-muted/20 px-4 py-2.5 text-muted-foreground text-[10px] leading-relaxed font-medium">
+                <div className="border-border/60 bg-muted/20 text-muted-foreground border-t px-4 py-2.5 text-[10px] leading-relaxed font-medium">
                     Catatan: Klik pada baris berkas yang tersedia untuk membuka pratinjau dokumen langsung di layar.
                 </div>
             </Card>

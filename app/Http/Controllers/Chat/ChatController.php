@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Chat;
 
 use App\Http\Controllers\Controller;
-use App\Models\Contract;
-use App\Models\ContractMessage;
+use App\Models\Transaction\Contract;
+use App\Models\Transaction\ContractMessage;
 use App\Services\Chat\ChatService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;

@@ -5,24 +5,28 @@ Mini-Filament adalah mesin CRUD berbasis skema (schema-driven) modular yang dina
 ---
 
 ## 1. Struktur Folder
+
 Sistem Mini-Filament terbagi dalam folder berikut:
+
 - **`app/Core/Crud/`**:
-  - `Resource.php`: Base class untuk setiap schema resource.
-  - `Columns/`: Class kolom tabel (seperti `TextColumn`, `BooleanColumn`).
-  - `Fields/`: Class input form (seperti `TextInput`, `SelectInput`, `TextareaInput`, `ToggleInput`).
-  - `Filters/`: Class penyaringan data (`Filter`).
-  - `Resources/`: Kumpulan file schema resource (seperti `UserResource.php`, `VendorResource.php`).
+    - `Resource.php`: Base class untuk setiap schema resource.
+    - `Columns/`: Class kolom tabel (seperti `TextColumn`, `BooleanColumn`).
+    - `Fields/`: Class input form (seperti `TextInput`, `SelectInput`, `TextareaInput`, `ToggleInput`).
+    - `Filters/`: Class penyaringan data (`Filter`).
+    - `Resources/`: Kumpulan file schema resource (seperti `UserResource.php`, `VendorResource.php`).
 - **`app/Http/Controllers/Core/ResourceController.php`**: Orchestrator backend yang memproses query database, validasi, penyimpanan, dan rendering halaman Inertia.
 - **`resources/js/pages/Core/`**:
-  - `ResourceIndex.tsx`: Komponen halaman tabel indeks dinamis.
-  - `ResourceForm.tsx`: Komponen form edit dan tambah dinamis.
+    - `ResourceIndex.tsx`: Komponen halaman tabel indeks dinamis.
+    - `ResourceForm.tsx`: Komponen form edit dan tambah dinamis.
 
 ---
 
 ## 2. Cara Membuat Resource Baru
+
 Untuk mendaftarkan model master baru ke dalam Mini-Filament, ikuti langkah-langkah di bawah ini:
 
 ### Langkah A: Buat File Resource
+
 Buat file resource baru di dalam folder `app/Core/Crud/Resources/`, misalnya `ProductResource.php`:
 
 ```php
@@ -124,6 +128,7 @@ class ProductResource extends Resource
 ```
 
 ### Langkah B: Daftarkan di ResourceController
+
 Buka file `app/Http/Controllers/Core/ResourceController.php` dan daftarkan resource baru Anda ke dalam properti `$resources`:
 
 ```php
@@ -134,12 +139,14 @@ Buka file `app/Http/Controllers/Core/ResourceController.php` dan daftarkan resou
 ```
 
 ### Langkah C: Perbarui Menu Navigasi
+
 Perbarui path/route di menu sidebar (tabel `m_modules` di database) untuk menu terkait agar mengarah ke:
 `admin/core/products` (sebagai contoh).
 
 ---
 
 ## 3. Komponen Form yang Didukung
+
 - **`TextInput::make('name', 'Label')`**: Input teks standar. Dapat ditambahkan validasi regex/rules Laravel lainnya menggunakan `->rules([...])`.
 - **`SelectInput::make('name', 'Label')->options($options)`**: Input dropdown. Opsi select dapat dioperasikan menggunakan static array biasa `['key' => 'value']` or berupa Closure/Fn `fn() => Model::pluck(...)` untuk query dinamis.
 - **`TextareaInput::make('name', 'Label')`**: Input teks multibaris untuk deskripsi atau alamat panjang.
@@ -148,6 +155,7 @@ Perbarui path/route di menu sidebar (tabel `m_modules` di database) untuk menu t
 ---
 
 ## 4. Keunggulan Fitur
+
 1. **Grid Form yang Fleksibel**: Anda cukup merubah properti `public static int $formColumns = X` untuk mengganti layout kolom form (1, 2, atau 3 kolom), dan mengatur lebar individual field dengan `->columnSpan(Y)`.
 2. **Dynamic Eager Loading**: Relasi yang didaftarkan di static `$with` otomatis dipanggil di query dan dapat di-render langsung di kolom tabel menggunakan dot notation (contoh: `category.name` atau `creator.profile.name`).
 3. **Pencarian & Penyaringan Otomatis**: Kolom tabel yang dipasangi `->searchable()` otomatis terintegrasi ke kolom pencarian atas. Begitu pula item di `filters()` otomatis memunculkan tombol panel filter di samping pencarian.

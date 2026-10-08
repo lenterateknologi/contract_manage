@@ -55,7 +55,10 @@ interface AuthorityTableManagerProps {
 
 const isCustomAuth = (auth?: AuthorityItem | null): boolean => {
     if (!auth) return false;
-    return auth.authority_type === 'custom' || ['initiator', 'assigned_pic', 'creator', 'atasan', 'adhoc_approvers', 'adhoc'].includes(auth.authority_type);
+    return (
+        auth.authority_type === 'custom' ||
+        ['initiator', 'assigned_pic', 'creator', 'atasan', 'adhoc_approvers', 'adhoc'].includes(auth.authority_type)
+    );
 };
 
 const getCustomType = (auth?: AuthorityItem | null): string => {
@@ -138,14 +141,38 @@ export default function AuthorityTableManager({
     }, [isSimOpen]);
 
     // Filter only items where is_used is true (hardcode filter)
-    const activeUsers = React.useMemo(() => (users || []).filter(u => u.is_used !== false && u.is_used !== 0 && String(u.is_used) !== '0'), [users]);
-    const activeDepartments = React.useMemo(() => (departments || []).filter(d => d.is_used !== false && d.is_used !== 0 && String(d.is_used) !== '0'), [departments]);
-    const activeDivisions = React.useMemo(() => (divisions || []).filter(d => d.is_used !== false && d.is_used !== 0 && String(d.is_used) !== '0'), [divisions]);
-    const activeLocations = React.useMemo(() => (locations || []).filter(l => l.is_used !== false && l.is_used !== 0 && String(l.is_used) !== '0'), [locations]);
-    const activeCompanyGroups = React.useMemo(() => (companyGroups || []).filter(cg => cg.is_used !== false && cg.is_used !== 0 && String(cg.is_used) !== '0'), [companyGroups]);
-    const activeOrganizationGroups = React.useMemo(() => (organizationGroups || []).filter(og => og.is_used !== false && og.is_used !== 0 && String(og.is_used) !== '0'), [organizationGroups]);
-    const activeCompanies = React.useMemo(() => (companies || []).filter(c => c.is_used !== false && c.is_used !== 0 && String(c.is_used) !== '0'), [companies]);
-    const activeRegions = React.useMemo(() => (regions || []).filter(r => r.is_used !== false && r.is_used !== 0 && String(r.is_used) !== '0'), [regions]);
+    const activeUsers = React.useMemo(
+        () => (users || []).filter((u) => u.is_used !== false && u.is_used !== 0 && String(u.is_used) !== '0'),
+        [users],
+    );
+    const activeDepartments = React.useMemo(
+        () => (departments || []).filter((d) => d.is_used !== false && d.is_used !== 0 && String(d.is_used) !== '0'),
+        [departments],
+    );
+    const activeDivisions = React.useMemo(
+        () => (divisions || []).filter((d) => d.is_used !== false && d.is_used !== 0 && String(d.is_used) !== '0'),
+        [divisions],
+    );
+    const activeLocations = React.useMemo(
+        () => (locations || []).filter((l) => l.is_used !== false && l.is_used !== 0 && String(l.is_used) !== '0'),
+        [locations],
+    );
+    const activeCompanyGroups = React.useMemo(
+        () => (companyGroups || []).filter((cg) => cg.is_used !== false && cg.is_used !== 0 && String(cg.is_used) !== '0'),
+        [companyGroups],
+    );
+    const activeOrganizationGroups = React.useMemo(
+        () => (organizationGroups || []).filter((og) => og.is_used !== false && og.is_used !== 0 && String(og.is_used) !== '0'),
+        [organizationGroups],
+    );
+    const activeCompanies = React.useMemo(
+        () => (companies || []).filter((c) => c.is_used !== false && c.is_used !== 0 && String(c.is_used) !== '0'),
+        [companies],
+    );
+    const activeRegions = React.useMemo(
+        () => (regions || []).filter((r) => r.is_used !== false && r.is_used !== 0 && String(r.is_used) !== '0'),
+        [regions],
+    );
 
     const handleIndividualChange = (type: 'user' | 'custom', val: string[]) => {
         if (type === 'custom') setModalCustomIds(val);
@@ -326,11 +353,11 @@ export default function AuthorityTableManager({
     };
 
     const saveAuthority = () => {
-        let newItems: AuthorityItem[] = [];
+        const newItems: AuthorityItem[] = [];
 
         // 1. Custom actors
         if (modalCustomIds.length > 0) {
-            modalCustomIds.forEach(cId => {
+            modalCustomIds.forEach((cId) => {
                 newItems.push({
                     authority_type: 'custom',
                     role_id: cId,
@@ -340,7 +367,7 @@ export default function AuthorityTableManager({
         }
         // 2. Individual users
         else if (modalUserIds.length > 0) {
-            modalUserIds.forEach(uId => {
+            modalUserIds.forEach((uId) => {
                 newItems.push({
                     authority_type: 'user',
                     user_id: uId,
@@ -349,34 +376,46 @@ export default function AuthorityTableManager({
         }
         // 3. Multi-dimensional combinations
         else {
-            const roleList = roleUseInitiator ? ['__initiator__'] : (modalRoleIds.length > 0 ? modalRoleIds : [null]);
-            const deptList = departmentUseInitiator ? ['__initiator__'] : (modalDepartmentIds.length > 0 ? modalDepartmentIds : [null]);
-            const divList = divisionUseInitiator ? ['__initiator__'] : (modalDivisionIds.length > 0 ? modalDivisionIds : [null]);
-            const locList = locationUseInitiator ? ['__initiator__'] : (modalLocationIds.length > 0 ? modalLocationIds : [null]);
-            const cgList = companyGroupUseInitiator ? ['__initiator__'] : (modalCompanyGroupIds.length > 0 ? modalCompanyGroupIds : [null]);
-            const compList = companyUseInitiator ? ['__initiator__'] : (modalCompanyIds.length > 0 ? modalCompanyIds : [null]);
-            const regList = regionUseInitiator ? ['__initiator__'] : (modalRegionIds.length > 0 ? modalRegionIds : [null]);
-            const ogList = organizationGroupUseInitiator ? ['__initiator__'] : (modalOrganizationGroupIds.length > 0 ? modalOrganizationGroupIds : [null]);
+            const roleList = roleUseInitiator ? ['__initiator__'] : modalRoleIds.length > 0 ? modalRoleIds : [null];
+            const deptList = departmentUseInitiator ? ['__initiator__'] : modalDepartmentIds.length > 0 ? modalDepartmentIds : [null];
+            const divList = divisionUseInitiator ? ['__initiator__'] : modalDivisionIds.length > 0 ? modalDivisionIds : [null];
+            const locList = locationUseInitiator ? ['__initiator__'] : modalLocationIds.length > 0 ? modalLocationIds : [null];
+            const cgList = companyGroupUseInitiator ? ['__initiator__'] : modalCompanyGroupIds.length > 0 ? modalCompanyGroupIds : [null];
+            const compList = companyUseInitiator ? ['__initiator__'] : modalCompanyIds.length > 0 ? modalCompanyIds : [null];
+            const regList = regionUseInitiator ? ['__initiator__'] : modalRegionIds.length > 0 ? modalRegionIds : [null];
+            const ogList = organizationGroupUseInitiator
+                ? ['__initiator__']
+                : modalOrganizationGroupIds.length > 0
+                  ? modalOrganizationGroupIds
+                  : [null];
 
             const hasAnyDimension =
-                roleUseInitiator || modalRoleIds.length > 0 ||
-                departmentUseInitiator || modalDepartmentIds.length > 0 ||
-                divisionUseInitiator || modalDivisionIds.length > 0 ||
-                locationUseInitiator || modalLocationIds.length > 0 ||
-                companyGroupUseInitiator || modalCompanyGroupIds.length > 0 ||
-                companyUseInitiator || modalCompanyIds.length > 0 ||
-                regionUseInitiator || modalRegionIds.length > 0 ||
-                organizationGroupUseInitiator || modalOrganizationGroupIds.length > 0;
+                roleUseInitiator ||
+                modalRoleIds.length > 0 ||
+                departmentUseInitiator ||
+                modalDepartmentIds.length > 0 ||
+                divisionUseInitiator ||
+                modalDivisionIds.length > 0 ||
+                locationUseInitiator ||
+                modalLocationIds.length > 0 ||
+                companyGroupUseInitiator ||
+                modalCompanyGroupIds.length > 0 ||
+                companyUseInitiator ||
+                modalCompanyIds.length > 0 ||
+                regionUseInitiator ||
+                modalRegionIds.length > 0 ||
+                organizationGroupUseInitiator ||
+                modalOrganizationGroupIds.length > 0;
 
             if (hasAnyDimension) {
-                roleList.forEach(r => {
-                    deptList.forEach(d => {
-                        divList.forEach(dv => {
-                            locList.forEach(loc => {
-                                cgList.forEach(cg => {
-                                    compList.forEach(cp => {
-                                        regList.forEach(rg => {
-                                            ogList.forEach(og => {
+                roleList.forEach((r) => {
+                    deptList.forEach((d) => {
+                        divList.forEach((dv) => {
+                            locList.forEach((loc) => {
+                                cgList.forEach((cg) => {
+                                    compList.forEach((cp) => {
+                                        regList.forEach((rg) => {
+                                            ogList.forEach((og) => {
                                                 newItems.push({
                                                     authority_type: 'group',
                                                     role_id: r === '__initiator__' ? null : r,
@@ -426,47 +465,56 @@ export default function AuthorityTableManager({
             });
             onChange(updated);
         } else {
-            const existingKeys = new Set(authorities.map(a => JSON.stringify({
-                type: a.authority_type,
-                r: a.role_id,
-                d: a.department_id,
-                dv: a.division_id,
-                loc: a.location_id,
-                u: a.user_id,
-                cg: a.company_group_id,
-                c: a.company_id,
-                rg: a.region_id,
-                og: a.organization_group_id,
-                ru: a.role_use_initiator,
-                du: a.department_use_initiator,
-                dvu: a.division_use_initiator,
-                locu: a.location_use_initiator,
-                cgu: a.company_group_use_initiator,
-                cu: a.company_use_initiator,
-                rgu: a.region_use_initiator,
-                ogu: a.organization_group_use_initiator,
-            })));
+            const existingKeys = new Set(
+                authorities.map((a) =>
+                    JSON.stringify({
+                        type: a.authority_type,
+                        r: a.role_id,
+                        d: a.department_id,
+                        dv: a.division_id,
+                        loc: a.location_id,
+                        u: a.user_id,
+                        cg: a.company_group_id,
+                        c: a.company_id,
+                        rg: a.region_id,
+                        og: a.organization_group_id,
+                        ru: a.role_use_initiator,
+                        du: a.department_use_initiator,
+                        dvu: a.division_use_initiator,
+                        locu: a.location_use_initiator,
+                        cgu: a.company_group_use_initiator,
+                        cu: a.company_use_initiator,
+                        rgu: a.region_use_initiator,
+                        ogu: a.organization_group_use_initiator,
+                    }),
+                ),
+            );
 
-            const uniqueNew = newItems.filter(a => !existingKeys.has(JSON.stringify({
-                type: a.authority_type,
-                r: a.role_id,
-                d: a.department_id,
-                dv: a.division_id,
-                loc: a.location_id,
-                u: a.user_id,
-                cg: a.company_group_id,
-                c: a.company_id,
-                rg: a.region_id,
-                og: a.organization_group_id,
-                ru: a.role_use_initiator,
-                du: a.department_use_initiator,
-                dvu: a.division_use_initiator,
-                locu: a.location_use_initiator,
-                cgu: a.company_group_use_initiator,
-                cu: a.company_use_initiator,
-                rgu: a.region_use_initiator,
-                ogu: a.organization_group_use_initiator,
-            })));
+            const uniqueNew = newItems.filter(
+                (a) =>
+                    !existingKeys.has(
+                        JSON.stringify({
+                            type: a.authority_type,
+                            r: a.role_id,
+                            d: a.department_id,
+                            dv: a.division_id,
+                            loc: a.location_id,
+                            u: a.user_id,
+                            cg: a.company_group_id,
+                            c: a.company_id,
+                            rg: a.region_id,
+                            og: a.organization_group_id,
+                            ru: a.role_use_initiator,
+                            du: a.department_use_initiator,
+                            dvu: a.division_use_initiator,
+                            locu: a.location_use_initiator,
+                            cgu: a.company_group_use_initiator,
+                            cu: a.company_use_initiator,
+                            rgu: a.region_use_initiator,
+                            ogu: a.organization_group_use_initiator,
+                        }),
+                    ),
+            );
 
             onChange([...authorities, ...uniqueNew]);
         }
@@ -476,7 +524,7 @@ export default function AuthorityTableManager({
 
     const removeAuthority = (indexToRemove: number) => {
         onChange(authorities.filter((_, idx) => idx !== indexToRemove));
-        setSelectedIndices(prev => prev.filter(idx => idx !== indexToRemove).map(idx => idx > indexToRemove ? idx - 1 : idx));
+        setSelectedIndices((prev) => prev.filter((idx) => idx !== indexToRemove).map((idx) => (idx > indexToRemove ? idx - 1 : idx)));
     };
 
     const formatUserDetail = (u: any) => {
@@ -489,106 +537,112 @@ export default function AuthorityTableManager({
 
     const getUserLabel = (id?: string | null) => {
         if (!id) return '-';
-        const u = users.find(user => String(user.id) === id);
+        const u = users.find((user) => String(user.id) === id);
         return u ? formatUserDetail(u) : id;
     };
     const getRoleLabel = (id?: string | null) => {
         if (!id) return '-';
-        return roles.find(r => String(r.id) === id || r.name === id)?.name || id;
+        return roles.find((r) => String(r.id) === id || r.name === id)?.name || id;
     };
     const getDeptLabel = (id?: string | null) => {
         if (!id) return '-';
-        return departments.find(d => String(d.id) === id)?.name || id;
+        return departments.find((d) => String(d.id) === id)?.name || id;
     };
     const getDivLabel = (id?: string | null) => {
         if (!id) return '-';
-        return divisions.find(d => String(d.id) === id)?.name || id;
+        return divisions.find((d) => String(d.id) === id)?.name || id;
     };
     const getLocationLabel = (id?: string | null) => {
         if (!id) return '-';
-        return locations.find(l => String(l.id) === id || l.code === id)?.name || id;
+        return locations.find((l) => String(l.id) === id || l.code === id)?.name || id;
     };
     const getCompanyGroupLabel = (id?: string | null) => {
         if (!id) return '-';
-        return companyGroups.find(cg => String(cg.id) === id)?.name || id;
+        return companyGroups.find((cg) => String(cg.id) === id)?.name || id;
     };
     const getCompanyLabel = (id?: string | null) => {
         if (!id) return '-';
-        return companies.find(c => String(c.id) === id)?.name || id;
+        return companies.find((c) => String(c.id) === id)?.name || id;
     };
     const getRegionLabel = (id?: string | null) => {
         if (!id) return '-';
-        return regions.find(r => String(r.id) === id)?.name || id;
+        return regions.find((r) => String(r.id) === id)?.name || id;
     };
     const getOrganizationGroupLabel = (id?: string | null) => {
         if (!id) return '-';
-        return organizationGroups.find(og => String(og.id) === id || String(og.idorg_group) === id || og.code === id || og.name === id)?.name || id;
+        return organizationGroups.find((og) => String(og.id) === id || String(og.idorg_group) === id || og.code === id || og.name === id)?.name || id;
     };
 
     const isUserOrgGroupMatched = (authOrgGroupId: string | null | undefined, useInitiator: boolean | undefined, targetUser: any) => {
         if (!authOrgGroupId && !useInitiator) return true;
 
         const userOrgId = String(targetUser.department?.organization_group_id || targetUser.organization_group_id || '');
-        const userIdOrgGroup = targetUser.department?.idorg_group !== undefined && targetUser.department?.idorg_group !== null
-            ? String(targetUser.department.idorg_group)
-            : (targetUser.idorg_group !== undefined && targetUser.idorg_group !== null ? String(targetUser.idorg_group) : '');
+        const userIdOrgGroup =
+            targetUser.department?.idorg_group !== undefined && targetUser.department?.idorg_group !== null
+                ? String(targetUser.department.idorg_group)
+                : targetUser.idorg_group !== undefined && targetUser.idorg_group !== null
+                  ? String(targetUser.idorg_group)
+                  : '';
         const userOrgGroupName = (targetUser.org_group_name || targetUser.department?.org_group_name || '').toLowerCase().trim();
 
-        const userOgObj = organizationGroups.find(og => 
-            (userOrgId && String(og.id) === userOrgId) ||
-            (userIdOrgGroup && String(og.idorg_group) === userIdOrgGroup) ||
-            (userOrgGroupName && og.name?.toLowerCase().trim() === userOrgGroupName)
+        const userOgObj = organizationGroups.find(
+            (og) =>
+                (userOrgId && String(og.id) === userOrgId) ||
+                (userIdOrgGroup && String(og.idorg_group) === userIdOrgGroup) ||
+                (userOrgGroupName && og.name?.toLowerCase().trim() === userOrgGroupName),
         );
         const resolvedUserOgId = userOgObj ? String(userOgObj.id) : userOrgId;
-        const resolvedUserIdOrgGroup = userOgObj && userOgObj.idorg_group !== undefined && userOgObj.idorg_group !== null
-            ? String(userOgObj.idorg_group)
-            : userIdOrgGroup;
+        const resolvedUserIdOrgGroup =
+            userOgObj && userOgObj.idorg_group !== undefined && userOgObj.idorg_group !== null ? String(userOgObj.idorg_group) : userIdOrgGroup;
         const resolvedUserOgName = (userOgObj?.name || userOrgGroupName).toLowerCase().trim();
 
         if (useInitiator) {
             if (!simInitiatorUser) return false;
             const initOrgId = String(simInitiatorUser.department?.organization_group_id || simInitiatorUser.organization_group_id || '');
-            const initIdOrgGroup = simInitiatorUser.department?.idorg_group !== undefined && simInitiatorUser.department?.idorg_group !== null
-                ? String(simInitiatorUser.department.idorg_group)
-                : (simInitiatorUser.idorg_group !== undefined && simInitiatorUser.idorg_group !== null ? String(simInitiatorUser.idorg_group) : '');
+            const initIdOrgGroup =
+                simInitiatorUser.department?.idorg_group !== undefined && simInitiatorUser.department?.idorg_group !== null
+                    ? String(simInitiatorUser.department.idorg_group)
+                    : simInitiatorUser.idorg_group !== undefined && simInitiatorUser.idorg_group !== null
+                      ? String(simInitiatorUser.idorg_group)
+                      : '';
             const initOrgGroupName = (simInitiatorUser.org_group_name || simInitiatorUser.department?.org_group_name || '').toLowerCase().trim();
 
-            const initOgObj = organizationGroups.find(og => 
-                (initOrgId && String(og.id) === initOrgId) ||
-                (initIdOrgGroup && String(og.idorg_group) === initIdOrgGroup) ||
-                (initOrgGroupName && og.name?.toLowerCase().trim() === initOrgGroupName)
+            const initOgObj = organizationGroups.find(
+                (og) =>
+                    (initOrgId && String(og.id) === initOrgId) ||
+                    (initIdOrgGroup && String(og.idorg_group) === initIdOrgGroup) ||
+                    (initOrgGroupName && og.name?.toLowerCase().trim() === initOrgGroupName),
             );
             const resolvedInitOgId = initOgObj ? String(initOgObj.id) : initOrgId;
-            const resolvedInitIdOrgGroup = initOgObj && initOgObj.idorg_group !== undefined && initOgObj.idorg_group !== null
-                ? String(initOgObj.idorg_group)
-                : initIdOrgGroup;
+            const resolvedInitIdOrgGroup =
+                initOgObj && initOgObj.idorg_group !== undefined && initOgObj.idorg_group !== null ? String(initOgObj.idorg_group) : initIdOrgGroup;
             const resolvedInitOgName = (initOgObj?.name || initOrgGroupName).toLowerCase().trim();
 
             return Boolean(
                 (resolvedInitOgId && resolvedUserOgId && resolvedInitOgId === resolvedUserOgId) ||
                 (resolvedInitIdOrgGroup && resolvedUserIdOrgGroup && resolvedInitIdOrgGroup === resolvedUserIdOrgGroup) ||
-                (resolvedInitOgName && resolvedUserOgName && resolvedInitOgName === resolvedUserOgName)
+                (resolvedInitOgName && resolvedUserOgName && resolvedInitOgName === resolvedUserOgName),
             );
         }
 
         if (authOrgGroupId) {
-            const targetOg = organizationGroups.find(og => 
-                String(og.id) === String(authOrgGroupId) ||
-                String(og.idorg_group) === String(authOrgGroupId) ||
-                og.code === authOrgGroupId ||
-                og.name === authOrgGroupId
+            const targetOg = organizationGroups.find(
+                (og) =>
+                    String(og.id) === String(authOrgGroupId) ||
+                    String(og.idorg_group) === String(authOrgGroupId) ||
+                    og.code === authOrgGroupId ||
+                    og.name === authOrgGroupId,
             );
             const targetOgId = targetOg ? String(targetOg.id) : String(authOrgGroupId);
-            const targetIdOrgGroup = targetOg && targetOg.idorg_group !== undefined && targetOg.idorg_group !== null
-                ? String(targetOg.idorg_group)
-                : null;
+            const targetIdOrgGroup =
+                targetOg && targetOg.idorg_group !== undefined && targetOg.idorg_group !== null ? String(targetOg.idorg_group) : null;
             const targetOgName = (targetOg?.name || String(authOrgGroupId)).toLowerCase().trim();
 
             return Boolean(
                 (targetOgId && resolvedUserOgId && targetOgId === resolvedUserOgId) ||
                 (targetIdOrgGroup !== null && resolvedUserIdOrgGroup && targetIdOrgGroup === resolvedUserIdOrgGroup) ||
                 (targetOgName && resolvedUserOgName && targetOgName === resolvedUserOgName) ||
-                (targetOgId && resolvedUserIdOrgGroup && targetOgId === resolvedUserIdOrgGroup)
+                (targetOgId && resolvedUserIdOrgGroup && targetOgId === resolvedUserIdOrgGroup),
             );
         }
 
@@ -607,23 +661,23 @@ export default function AuthorityTableManager({
     // Pengguna simulasi untuk Inisiator, PIC, dan Creator jika disediakan
     const simInitiatorUser = useMemo(() => {
         if (!simulationContext?.initiatorId) return null;
-        return activeUsers.find(u => String(u.id) === String(simulationContext.initiatorId)) || null;
+        return activeUsers.find((u) => String(u.id) === String(simulationContext.initiatorId)) || null;
     }, [simulationContext?.initiatorId, activeUsers]);
 
     const simPicUser = useMemo(() => {
         if (!simulationContext?.picId) return null;
-        return activeUsers.find(u => String(u.id) === String(simulationContext.picId)) || null;
+        return activeUsers.find((u) => String(u.id) === String(simulationContext.picId)) || null;
     }, [simulationContext?.picId, activeUsers]);
 
     const simCreatorUser = useMemo(() => {
         if (!simulationContext?.creatorId) return null;
-        return activeUsers.find(u => String(u.id) === String(simulationContext.creatorId)) || null;
+        return activeUsers.find((u) => String(u.id) === String(simulationContext.creatorId)) || null;
     }, [simulationContext?.creatorId, activeUsers]);
 
     const simAdhocUsers = useMemo(() => {
         const ids = simulationContext?.adhocIds || (simulationContext?.adhocId ? [simulationContext.adhocId] : []);
         if (ids.length === 0) return [];
-        return activeUsers.filter(u => ids.includes(String(u.id)));
+        return activeUsers.filter((u) => ids.includes(String(u.id)));
     }, [simulationContext?.adhocIds, simulationContext?.adhocId, activeUsers]);
 
     // Helper untuk menghitung jumlah orang per baris aturan otoritas
@@ -638,10 +692,10 @@ export default function AuthorityTableManager({
             return 0;
         }
         if (auth.authority_type === 'user' && auth.user_id) {
-            return activeUsers.some(u => String(u.id) === String(auth.user_id)) ? 1 : 0;
+            return activeUsers.some((u) => String(u.id) === String(auth.user_id)) ? 1 : 0;
         }
         if (auth.authority_type === 'group' || !auth.authority_type) {
-            return activeUsers.filter(user => {
+            return activeUsers.filter((user) => {
                 const userRoleId = String(user.role_id || user.role || '');
                 const userDeptId = String(user.department_id || user.department?.id || '');
                 const userDivId = String(user.division_id || user.division?.id || user.department?.division_id || '');
@@ -649,7 +703,9 @@ export default function AuthorityTableManager({
                 const userCompId = String(user.company_id || user.company?.id || '');
                 const userCgId = String(user.company_group_id || user.company?.company_group_id || '');
                 const userRegionId = String(user.region_id || user.company?.region_id || '');
-                const userOrgGroupId = String(user.department?.organization_group_id || user.department?.idorg_group || user.organization_group_id || '');
+                const userOrgGroupId = String(
+                    user.department?.organization_group_id || user.department?.idorg_group || user.organization_group_id || '',
+                );
 
                 if (auth.role_use_initiator) {
                     if (simInitiatorUser) {
@@ -657,7 +713,7 @@ export default function AuthorityTableManager({
                         if (userRoleId !== initRoleId) return false;
                     }
                 } else if (auth.role_id) {
-                    const targetRole = roles.find(r => String(r.id) === String(auth.role_id) || r.name === auth.role_id);
+                    const targetRole = roles.find((r) => String(r.id) === String(auth.role_id) || r.name === auth.role_id);
                     const matchRoleId = targetRole ? String(targetRole.id) : String(auth.role_id);
                     const matchRoleName = targetRole ? targetRole.name.toLowerCase() : String(auth.role_id).toLowerCase();
                     const isRoleMatch = userRoleId === matchRoleId || userRoleId.toLowerCase() === matchRoleName;
@@ -675,7 +731,9 @@ export default function AuthorityTableManager({
 
                 if (auth.division_use_initiator) {
                     if (simInitiatorUser) {
-                        const initDivId = String(simInitiatorUser.division_id || simInitiatorUser.division?.id || simInitiatorUser.department?.division_id || '');
+                        const initDivId = String(
+                            simInitiatorUser.division_id || simInitiatorUser.division?.id || simInitiatorUser.department?.division_id || '',
+                        );
                         if (userDivId !== initDivId) return false;
                     }
                 } else if (auth.division_id) {
@@ -687,13 +745,13 @@ export default function AuthorityTableManager({
                         const initLocId = String(simInitiatorUser.location_id || simInitiatorUser.idlocation || simInitiatorUser.location?.id || '');
                         const initLocName = (simInitiatorUser.location_name || simInitiatorUser.location?.name || '').toLowerCase().trim();
                         const userLocName = (user.location_name || user.location?.name || '').toLowerCase().trim();
-                        const isLocMatch = (initLocId && userLocId && initLocId === userLocId) ||
-                                           (initLocName && userLocName && initLocName === userLocName);
+                        const isLocMatch =
+                            (initLocId && userLocId && initLocId === userLocId) || (initLocName && userLocName && initLocName === userLocName);
                         if (!isLocMatch) return false;
                     }
                 } else if (auth.location_id) {
                     const targetLocId = String(auth.location_id);
-                    const targetLoc = activeLocations.find(l => String(l.id) === targetLocId || l.code === targetLocId || l.name === targetLocId);
+                    const targetLoc = activeLocations.find((l) => String(l.id) === targetLocId || l.code === targetLocId || l.name === targetLocId);
                     const matchLocId = targetLoc ? String(targetLoc.id) : targetLocId;
                     const matchLocName = targetLoc ? targetLoc.name.toLowerCase() : targetLocId.toLowerCase();
                     const userLocName = (user.location_name || user.location?.name || '').toLowerCase().trim();
@@ -762,7 +820,7 @@ export default function AuthorityTableManager({
 
         if (searchQuery.trim()) {
             const q = searchQuery.toLowerCase().trim();
-            result = result.filter(item => {
+            result = result.filter((item) => {
                 const auth = item.auth || item;
                 if (!auth) return false;
                 if (isCustomAuth(auth)) {
@@ -770,7 +828,7 @@ export default function AuthorityTableManager({
                     return label.includes(q);
                 }
                 if (auth.authority_type === 'user') {
-                    const u = users.find(x => String(x.id) === String(auth.user_id));
+                    const u = users.find((x) => String(x.id) === String(auth.user_id));
                     const name = (u?.name || auth.user_id || '').toLowerCase();
                     const email = (u?.email || '').toLowerCase();
                     const role = (u?.role || '').toLowerCase();
@@ -778,16 +836,38 @@ export default function AuthorityTableManager({
                 }
                 if (auth.authority_type === 'group' || !auth.authority_type) {
                     const roleName = auth.role_use_initiator ? 'sesuai inisiator' : (getRoleLabel(auth.role_id || undefined) || '').toLowerCase();
-                    const deptName = auth.department_use_initiator ? 'sesuai inisiator' : (getDeptLabel(auth.department_id || undefined) || '').toLowerCase();
-                    const divName = auth.division_use_initiator ? 'sesuai inisiator' : (getDivLabel(auth.division_id || undefined) || '').toLowerCase();
-                    const locName = auth.location_use_initiator ? 'sesuai inisiator' : (getLocationLabel(auth.location_id || undefined) || '').toLowerCase();
-                    const cgName = auth.company_group_use_initiator ? 'sesuai inisiator' : (getCompanyGroupLabel(auth.company_group_id || undefined) || '').toLowerCase();
-                    const compName = auth.company_use_initiator ? 'sesuai inisiator' : (getCompanyLabel(auth.company_id || undefined) || '').toLowerCase();
-                    const regName = auth.region_use_initiator ? 'sesuai inisiator' : (getRegionLabel(auth.region_id || undefined) || '').toLowerCase();
-                    const ogName = auth.organization_group_use_initiator ? 'sesuai inisiator' : (getOrganizationGroupLabel(auth.organization_group_id || undefined) || '').toLowerCase();
+                    const deptName = auth.department_use_initiator
+                        ? 'sesuai inisiator'
+                        : (getDeptLabel(auth.department_id || undefined) || '').toLowerCase();
+                    const divName = auth.division_use_initiator
+                        ? 'sesuai inisiator'
+                        : (getDivLabel(auth.division_id || undefined) || '').toLowerCase();
+                    const locName = auth.location_use_initiator
+                        ? 'sesuai inisiator'
+                        : (getLocationLabel(auth.location_id || undefined) || '').toLowerCase();
+                    const cgName = auth.company_group_use_initiator
+                        ? 'sesuai inisiator'
+                        : (getCompanyGroupLabel(auth.company_group_id || undefined) || '').toLowerCase();
+                    const compName = auth.company_use_initiator
+                        ? 'sesuai inisiator'
+                        : (getCompanyLabel(auth.company_id || undefined) || '').toLowerCase();
+                    const regName = auth.region_use_initiator
+                        ? 'sesuai inisiator'
+                        : (getRegionLabel(auth.region_id || undefined) || '').toLowerCase();
+                    const ogName = auth.organization_group_use_initiator
+                        ? 'sesuai inisiator'
+                        : (getOrganizationGroupLabel(auth.organization_group_id || undefined) || '').toLowerCase();
 
-                    return roleName.includes(q) || deptName.includes(q) || divName.includes(q) || locName.includes(q) ||
-                        cgName.includes(q) || compName.includes(q) || regName.includes(q) || ogName.includes(q);
+                    return (
+                        roleName.includes(q) ||
+                        deptName.includes(q) ||
+                        divName.includes(q) ||
+                        locName.includes(q) ||
+                        cgName.includes(q) ||
+                        compName.includes(q) ||
+                        regName.includes(q) ||
+                        ogName.includes(q)
+                    );
                 }
                 return false;
             });
@@ -802,32 +882,36 @@ export default function AuthorityTableManager({
                     valA = a.authority_type || 'group';
                     valB = b.authority_type || 'group';
                 } else if (sortField === 'role') {
-                    valA = a.role_use_initiator ? 'Sesuai Inisiator' : (getRoleLabel(a.role_id || undefined) || '');
-                    valB = b.role_use_initiator ? 'Sesuai Inisiator' : (getRoleLabel(b.role_id || undefined) || '');
+                    valA = a.role_use_initiator ? 'Sesuai Inisiator' : getRoleLabel(a.role_id || undefined) || '';
+                    valB = b.role_use_initiator ? 'Sesuai Inisiator' : getRoleLabel(b.role_id || undefined) || '';
                 } else if (sortField === 'department') {
-                    valA = a.department_use_initiator ? 'Sesuai Inisiator' : (getDeptLabel(a.department_id || undefined) || '');
-                    valB = b.department_use_initiator ? 'Sesuai Inisiator' : (getDeptLabel(b.department_id || undefined) || '');
+                    valA = a.department_use_initiator ? 'Sesuai Inisiator' : getDeptLabel(a.department_id || undefined) || '';
+                    valB = b.department_use_initiator ? 'Sesuai Inisiator' : getDeptLabel(b.department_id || undefined) || '';
                 } else if (sortField === 'division') {
-                    valA = a.division_use_initiator ? 'Sesuai Inisiator' : (getDivLabel(a.division_id || undefined) || '');
-                    valB = b.division_use_initiator ? 'Sesuai Inisiator' : (getDivLabel(b.division_id || undefined) || '');
+                    valA = a.division_use_initiator ? 'Sesuai Inisiator' : getDivLabel(a.division_id || undefined) || '';
+                    valB = b.division_use_initiator ? 'Sesuai Inisiator' : getDivLabel(b.division_id || undefined) || '';
                 } else if (sortField === 'location') {
-                    valA = a.location_use_initiator ? 'Sesuai Inisiator' : (getLocationLabel(a.location_id || undefined) || '');
-                    valB = b.location_use_initiator ? 'Sesuai Inisiator' : (getLocationLabel(b.location_id || undefined) || '');
+                    valA = a.location_use_initiator ? 'Sesuai Inisiator' : getLocationLabel(a.location_id || undefined) || '';
+                    valB = b.location_use_initiator ? 'Sesuai Inisiator' : getLocationLabel(b.location_id || undefined) || '';
                 } else if (sortField === 'companyGroup') {
-                    valA = a.company_group_use_initiator ? 'Sesuai Inisiator' : (getCompanyGroupLabel(a.company_group_id || undefined) || '');
-                    valB = b.company_group_use_initiator ? 'Sesuai Inisiator' : (getCompanyGroupLabel(b.company_group_id || undefined) || '');
+                    valA = a.company_group_use_initiator ? 'Sesuai Inisiator' : getCompanyGroupLabel(a.company_group_id || undefined) || '';
+                    valB = b.company_group_use_initiator ? 'Sesuai Inisiator' : getCompanyGroupLabel(b.company_group_id || undefined) || '';
                 } else if (sortField === 'organizationGroup') {
-                    valA = a.organization_group_use_initiator ? 'Sesuai Inisiator' : (getOrganizationGroupLabel(a.organization_group_id || undefined) || '');
-                    valB = b.organization_group_use_initiator ? 'Sesuai Inisiator' : (getOrganizationGroupLabel(b.organization_group_id || undefined) || '');
+                    valA = a.organization_group_use_initiator
+                        ? 'Sesuai Inisiator'
+                        : getOrganizationGroupLabel(a.organization_group_id || undefined) || '';
+                    valB = b.organization_group_use_initiator
+                        ? 'Sesuai Inisiator'
+                        : getOrganizationGroupLabel(b.organization_group_id || undefined) || '';
                 } else if (sortField === 'company') {
-                    valA = a.company_use_initiator ? 'Sesuai Inisiator' : (getCompanyLabel(a.company_id || undefined) || '');
-                    valB = b.company_use_initiator ? 'Sesuai Inisiator' : (getCompanyLabel(b.company_id || undefined) || '');
+                    valA = a.company_use_initiator ? 'Sesuai Inisiator' : getCompanyLabel(a.company_id || undefined) || '';
+                    valB = b.company_use_initiator ? 'Sesuai Inisiator' : getCompanyLabel(b.company_id || undefined) || '';
                 } else if (sortField === 'region') {
-                    valA = a.region_use_initiator ? 'Sesuai Inisiator' : (getRegionLabel(a.region_id || undefined) || '');
-                    valB = b.region_use_initiator ? 'Sesuai Inisiator' : (getRegionLabel(b.region_id || undefined) || '');
+                    valA = a.region_use_initiator ? 'Sesuai Inisiator' : getRegionLabel(a.region_id || undefined) || '';
+                    valB = b.region_use_initiator ? 'Sesuai Inisiator' : getRegionLabel(b.region_id || undefined) || '';
                 } else if (sortField === 'user') {
-                    const uA = users.find(x => String(x.id) === String(a.user_id));
-                    const uB = users.find(x => String(x.id) === String(b.user_id));
+                    const uA = users.find((x) => String(x.id) === String(a.user_id));
+                    const uB = users.find((x) => String(x.id) === String(b.user_id));
                     valA = uA?.name || '';
                     valB = uB?.name || '';
                 } else if (sortField === 'userCount') {
@@ -842,25 +926,40 @@ export default function AuthorityTableManager({
         }
 
         return result;
-    }, [authorities, searchQuery, sortField, sortDirection, users, roles, departments, divisions, locations, companyGroups, organizationGroups, companies, regions, getAuthorityUserCount]);
+    }, [
+        authorities,
+        searchQuery,
+        sortField,
+        sortDirection,
+        users,
+        roles,
+        departments,
+        divisions,
+        locations,
+        companyGroups,
+        organizationGroups,
+        companies,
+        regions,
+        getAuthorityUserCount,
+    ]);
 
-    const isAllFilteredSelected = filteredAuthorities.length > 0 && filteredAuthorities.every(f => selectedIndices.includes(f.originalIndex));
+    const isAllFilteredSelected = filteredAuthorities.length > 0 && filteredAuthorities.every((f) => selectedIndices.includes(f.originalIndex));
 
     const toggleSelectAll = () => {
         if (isAllFilteredSelected) {
-            const currentFilteredSet = new Set(filteredAuthorities.map(f => f.originalIndex));
-            setSelectedIndices(prev => prev.filter(idx => !currentFilteredSet.has(idx)));
+            const currentFilteredSet = new Set(filteredAuthorities.map((f) => f.originalIndex));
+            setSelectedIndices((prev) => prev.filter((idx) => !currentFilteredSet.has(idx)));
         } else {
-            const newIndices = Array.from(new Set([...selectedIndices, ...filteredAuthorities.map(f => f.originalIndex)]));
+            const newIndices = Array.from(new Set([...selectedIndices, ...filteredAuthorities.map((f) => f.originalIndex)]));
             setSelectedIndices(newIndices);
         }
     };
 
     const toggleSelectRow = (originalIndex: number) => {
         if (selectedIndices.includes(originalIndex)) {
-            setSelectedIndices(prev => prev.filter(idx => idx !== originalIndex));
+            setSelectedIndices((prev) => prev.filter((idx) => idx !== originalIndex));
         } else {
-            setSelectedIndices(prev => [...prev, originalIndex]);
+            setSelectedIndices((prev) => [...prev, originalIndex]);
         }
     };
 
@@ -900,7 +999,7 @@ export default function AuthorityTableManager({
                         return String(simCreatorUser.id) === userId;
                     }
                     if ((customType === 'adhoc_approvers' || customType === 'adhoc') && simAdhocUsers.length > 0) {
-                        return simAdhocUsers.some(u => String(u.id) === userId);
+                        return simAdhocUsers.some((u) => String(u.id) === userId);
                     }
                     return false;
                 }
@@ -919,7 +1018,7 @@ export default function AuthorityTableManager({
                             if (userRoleId !== initRoleId) return false;
                         }
                     } else if (auth.role_id) {
-                        const targetRole = roles.find(r => String(r.id) === String(auth.role_id) || r.name === auth.role_id);
+                        const targetRole = roles.find((r) => String(r.id) === String(auth.role_id) || r.name === auth.role_id);
                         const matchRoleId = targetRole ? String(targetRole.id) : String(auth.role_id);
                         const matchRoleName = targetRole ? targetRole.name.toLowerCase() : String(auth.role_id).toLowerCase();
                         const isRoleMatch = userRoleId === matchRoleId || userRoleId.toLowerCase() === matchRoleName;
@@ -939,7 +1038,9 @@ export default function AuthorityTableManager({
                     // Cek Divisi
                     if (auth.division_use_initiator) {
                         if (simInitiatorUser) {
-                            const initDivId = String(simInitiatorUser.division_id || simInitiatorUser.division?.id || simInitiatorUser.department?.division_id || '');
+                            const initDivId = String(
+                                simInitiatorUser.division_id || simInitiatorUser.division?.id || simInitiatorUser.department?.division_id || '',
+                            );
                             if (userDivId !== initDivId) return false;
                         }
                     } else if (auth.division_id) {
@@ -949,16 +1050,20 @@ export default function AuthorityTableManager({
                     // Cek Lokasi Kerja
                     if (auth.location_use_initiator) {
                         if (simInitiatorUser) {
-                            const initLocId = String(simInitiatorUser.location_id || simInitiatorUser.idlocation || simInitiatorUser.location?.id || '');
+                            const initLocId = String(
+                                simInitiatorUser.location_id || simInitiatorUser.idlocation || simInitiatorUser.location?.id || '',
+                            );
                             const initLocName = (simInitiatorUser.location_name || simInitiatorUser.location?.name || '').toLowerCase().trim();
                             const userLocName = (user.location_name || user.location?.name || '').toLowerCase().trim();
-                            const isLocMatch = (initLocId && userLocId && initLocId === userLocId) ||
-                                               (initLocName && userLocName && initLocName === userLocName);
+                            const isLocMatch =
+                                (initLocId && userLocId && initLocId === userLocId) || (initLocName && userLocName && initLocName === userLocName);
                             if (!isLocMatch) return false;
                         }
                     } else if (auth.location_id) {
                         const targetLocId = String(auth.location_id);
-                        const targetLoc = activeLocations.find(l => String(l.id) === targetLocId || l.code === targetLocId || l.name === targetLocId);
+                        const targetLoc = activeLocations.find(
+                            (l) => String(l.id) === targetLocId || l.code === targetLocId || l.name === targetLocId,
+                        );
                         const matchLocId = targetLoc ? String(targetLoc.id) : targetLocId;
                         const matchLocName = targetLoc ? targetLoc.name.toLowerCase() : targetLocId.toLowerCase();
                         const userLocName = (user.location_name || user.location?.name || '').toLowerCase().trim();
@@ -1011,7 +1116,7 @@ export default function AuthorityTableManager({
     const filteredSimUsers = useMemo(() => {
         if (!simSearch.trim()) return matchedUsers;
         const q = simSearch.toLowerCase();
-        return matchedUsers.filter(u => {
+        return matchedUsers.filter((u) => {
             const name = (u.name || '').toLowerCase();
             const email = (u.email || '').toLowerCase();
             const role = (u.role || '').toLowerCase();
@@ -1023,37 +1128,37 @@ export default function AuthorityTableManager({
 
     const renderSortIcon = (field: string) => {
         if (sortField !== field) {
-            return <ArrowUpDown size={11} className="opacity-40 hover:opacity-100 transition-opacity ml-1" />;
+            return <ArrowUpDown size={11} className="ml-1 opacity-40 transition-opacity hover:opacity-100" />;
         }
         return sortDirection === 'asc' ? (
-            <ArrowUp size={11} className="text-white font-bold ml-1" />
+            <ArrowUp size={11} className="ml-1 font-bold text-white" />
         ) : (
-            <ArrowDown size={11} className="text-white font-bold ml-1" />
+            <ArrowDown size={11} className="ml-1 font-bold text-white" />
         );
     };
 
     return (
-        <div className="space-y-4 w-full min-w-0">
+        <div className="w-full min-w-0 space-y-4">
             {/* Banner Status Simulasi Aktor Terpilih */}
             {(simInitiatorUser || simPicUser || simCreatorUser) && (
-                <div className="flex items-center gap-2 px-3.5 py-2 bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200/80 dark:border-indigo-800/60 rounded-xl text-xs flex-wrap justify-between">
-                    <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-bold text-indigo-900 dark:text-indigo-200 flex items-center gap-1">
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-indigo-200/80 bg-indigo-50/70 px-3.5 py-2 text-xs dark:border-indigo-800/60 dark:bg-indigo-950/40">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <span className="flex items-center gap-1 font-bold text-indigo-900 dark:text-indigo-200">
                             <Info size={13} className="text-indigo-600 dark:text-indigo-400" />
                             Simulasi Aktif:
                         </span>
                         {simInitiatorUser && (
-                            <span className="inline-flex items-center gap-1 bg-white dark:bg-zinc-800 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-md border border-indigo-200 dark:border-indigo-800 text-[11px]">
+                            <span className="inline-flex items-center gap-1 rounded-md border border-indigo-200 bg-white px-2 py-0.5 text-[11px] text-indigo-700 dark:border-indigo-800 dark:bg-zinc-800 dark:text-indigo-300">
                                 <span className="font-bold text-slate-500 dark:text-slate-400">Inisiator:</span> {simInitiatorUser.name}
                             </span>
                         )}
                         {simPicUser && (
-                            <span className="inline-flex items-center gap-1 bg-white dark:bg-zinc-800 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800 text-[11px]">
+                            <span className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-white px-2 py-0.5 text-[11px] text-emerald-700 dark:border-emerald-800 dark:bg-zinc-800 dark:text-emerald-300">
                                 <span className="font-bold text-slate-500 dark:text-slate-400">PIC:</span> {simPicUser.name}
                             </span>
                         )}
                         {simCreatorUser && (
-                            <span className="inline-flex items-center gap-1 bg-white dark:bg-zinc-800 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-800 text-[11px]">
+                            <span className="inline-flex items-center gap-1 rounded-md border border-amber-200 bg-white px-2 py-0.5 text-[11px] text-amber-700 dark:border-amber-800 dark:bg-zinc-800 dark:text-amber-300">
                                 <span className="font-bold text-slate-500 dark:text-slate-400">Pembuat:</span> {simCreatorUser.name}
                             </span>
                         )}
@@ -1062,7 +1167,7 @@ export default function AuthorityTableManager({
                         <button
                             type="button"
                             onClick={onOpenSimulationModal}
-                            className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+                            className="cursor-pointer text-[11px] font-semibold text-indigo-600 hover:underline dark:text-indigo-400"
                         >
                             Ubah Simulasi
                         </button>
@@ -1070,88 +1175,93 @@ export default function AuthorityTableManager({
                 </div>
             )}
 
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-200/80 dark:border-zinc-700/80 bg-slate-100/90 dark:bg-zinc-800/90 p-3 rounded-xl gap-3">
+            <div className="flex flex-col justify-between gap-3 rounded-xl border-b border-slate-200/80 bg-slate-100/90 p-3 sm:flex-row sm:items-center dark:border-zinc-700/80 dark:bg-zinc-800/90">
                 <div className="flex items-center gap-2">
                     <Shield size={14} className="text-primary shrink-0" />
                     <div>
-                        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-zinc-100">
-                            {title}
-                        </h3>
+                        <h3 className="text-xs font-bold tracking-wider text-slate-800 uppercase dark:text-zinc-100">{title}</h3>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
                     {/* Simulasi Akses Dropdown */}
                     <div className="relative" ref={simRef}>
                         <button
                             type="button"
                             onClick={() => setIsSimOpen(!isSimOpen)}
                             className={cn(
-                                "h-8 px-2.5 text-xs font-semibold rounded-lg border transition-all flex items-center gap-1.5 shadow-none shrink-0",
+                                'flex h-8 shrink-0 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-semibold shadow-none transition-all',
                                 matchedUsers.length > 0
-                                    ? "bg-white dark:bg-zinc-900 border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50/50"
-                                    : "bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50"
+                                    ? 'border-emerald-300 bg-white text-emerald-700 hover:bg-emerald-50/50 dark:border-emerald-800 dark:bg-zinc-900 dark:text-emerald-400'
+                                    : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-slate-400',
                             )}
                             title="Klik untuk melihat simulasi pengguna yang memiliki akses"
                         >
-                            <Users size={13} className={matchedUsers.length > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"} />
+                            <Users size={13} className={matchedUsers.length > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'} />
                             <span>Simulasi Akses:</span>
-                            <span className={cn(
-                                "px-1.5 py-0.2 rounded-full font-bold text-[11px]",
-                                matchedUsers.length > 0 ? "bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300" : "bg-slate-200 dark:bg-zinc-800 text-slate-600"
-                            )}>
+                            <span
+                                className={cn(
+                                    'py-0.2 rounded-full px-1.5 text-[11px] font-bold',
+                                    matchedUsers.length > 0
+                                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
+                                        : 'bg-slate-200 text-slate-600 dark:bg-zinc-800',
+                                )}
+                            >
                                 {matchedUsers.length}
                             </span>
-                            <ChevronDown size={13} className={cn("transition-transform duration-200 text-slate-400", isSimOpen && "rotate-180")} />
+                            <ChevronDown size={13} className={cn('text-slate-400 transition-transform duration-200', isSimOpen && 'rotate-180')} />
                         </button>
 
                         {isSimOpen && (
-                            <div className="absolute left-0 sm:right-0 sm:left-auto top-full mt-1.5 w-80 max-w-[90vw] bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in-0 zoom-in-95 duration-150">
-                                <div className="p-2.5 border-b border-slate-100 dark:border-zinc-800 bg-slate-50/70 dark:bg-zinc-800/50">
+                            <div className="animate-in fade-in-0 zoom-in-95 absolute top-full left-0 z-50 mt-1.5 w-80 max-w-[90vw] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl duration-150 sm:right-0 sm:left-auto dark:border-zinc-700 dark:bg-zinc-900">
+                                <div className="border-b border-slate-100 bg-slate-50/70 p-2.5 dark:border-zinc-800 dark:bg-zinc-800/50">
                                     <div className="flex items-center justify-between pb-1.5">
                                         <div className="flex items-center gap-1.5">
                                             <CheckCircle2 size={13} className="text-emerald-600 dark:text-emerald-400" />
-                                            <span className="text-xs font-bold text-slate-800 dark:text-zinc-200">
-                                                Simulasi Pengguna Berhak
-                                            </span>
+                                            <span className="text-xs font-bold text-slate-800 dark:text-zinc-200">Simulasi Pengguna Berhak</span>
                                         </div>
-                                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                                        <span className="rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-600 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-400">
                                             {matchedUsers.length} Total
                                         </span>
                                     </div>
                                     <div className="relative mt-1">
-                                        <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                        <Search size={12} className="absolute top-1/2 left-2.5 -translate-y-1/2 text-slate-400" />
                                         <input
                                             type="text"
                                             value={simSearch}
                                             onChange={(e) => setSimSearch(e.target.value)}
                                             placeholder="Cari nama, role, PT..."
-                                            className="w-full h-7 pl-7 pr-2 text-xs bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-md outline-none focus:border-primary transition-all text-slate-800 dark:text-zinc-200"
+                                            className="focus:border-primary h-7 w-full rounded-md border border-slate-200 bg-white pr-2 pl-7 text-xs text-slate-800 transition-all outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
                                             autoFocus
                                         />
                                     </div>
                                 </div>
 
-                                <div className="max-h-60 overflow-y-auto p-1.5 divide-y divide-slate-100 dark:divide-zinc-800/50 text-xs">
+                                <div className="max-h-60 divide-y divide-slate-100 overflow-y-auto p-1.5 text-xs dark:divide-zinc-800/50">
                                     {filteredSimUsers.length === 0 ? (
                                         <div className="py-6 text-center text-slate-400 dark:text-zinc-500">
                                             <Users size={20} className="mx-auto mb-1 opacity-40" />
                                             <p className="text-[11px]">
-                                                {matchedUsers.length === 0 ? 'Belum ada pengguna yang cocok dengan aturan otoritas ini.' : 'Tidak ditemukan pengguna yang cocok dengan pencarian.'}
+                                                {matchedUsers.length === 0
+                                                    ? 'Belum ada pengguna yang cocok dengan aturan otoritas ini.'
+                                                    : 'Tidak ditemukan pengguna yang cocok dengan pencarian.'}
                                             </p>
                                         </div>
                                     ) : (
                                         filteredSimUsers.map((u: any) => (
-                                            <div key={u.id} className="py-2 px-2 hover:bg-slate-50 dark:hover:bg-zinc-800/60 rounded-md transition-colors">
-                                                <div className="font-semibold text-slate-800 dark:text-zinc-100 flex items-center justify-between">
+                                            <div
+                                                key={u.id}
+                                                className="rounded-md px-2 py-2 transition-colors hover:bg-slate-50 dark:hover:bg-zinc-800/60"
+                                            >
+                                                <div className="flex items-center justify-between font-semibold text-slate-800 dark:text-zinc-100">
                                                     <span>{u.name}</span>
                                                     {u.role && (
-                                                        <span className="text-[10px] font-medium text-slate-500 bg-slate-100 dark:bg-zinc-800 px-1.5 py-0.2 rounded">
+                                                        <span className="py-0.2 rounded bg-slate-100 px-1.5 text-[10px] font-medium text-slate-500 dark:bg-zinc-800">
                                                             {u.role}
                                                         </span>
                                                     )}
                                                 </div>
-                                                <div className="text-[10px] text-slate-500 dark:text-zinc-400 mt-0.5 flex items-center gap-1.5 flex-wrap">
+                                                <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px] text-slate-500 dark:text-zinc-400">
                                                     {u.email && <span>{u.email}</span>}
                                                     {(u.company?.name || u.company_name) && (
                                                         <>
@@ -1175,16 +1285,14 @@ export default function AuthorityTableManager({
                     </div>
 
                     {selectedIndices.length > 0 && (
-                        <div className="flex items-center gap-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 px-3 py-1 rounded-lg animate-in fade-in-0 shadow-sm shrink-0">
-                            <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                                {selectedIndices.length} dipilih
-                            </span>
+                        <div className="animate-in fade-in-0 flex shrink-0 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+                            <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{selectedIndices.length} dipilih</span>
                             <Button
                                 type="button"
                                 variant="outline"
                                 size="sm"
                                 onClick={openBulkEditModal}
-                                className="h-7 text-xs px-2.5 bg-white dark:bg-zinc-800 hover:bg-slate-100 text-primary border-primary/30 rounded-md flex items-center gap-1 shadow-none"
+                                className="text-primary border-primary/30 flex h-7 items-center gap-1 rounded-md bg-white px-2.5 text-xs shadow-none hover:bg-slate-100 dark:bg-zinc-800"
                             >
                                 <Pencil size={12} /> Ubah
                             </Button>
@@ -1193,52 +1301,56 @@ export default function AuthorityTableManager({
                                 variant="destructive"
                                 size="sm"
                                 onClick={handleBulkDelete}
-                                className="h-7 text-xs px-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-md flex items-center gap-1 shadow-none"
+                                className="flex h-7 items-center gap-1 rounded-md bg-rose-600 px-2.5 text-xs text-white shadow-none hover:bg-rose-700"
                             >
                                 <Trash2 size={12} /> Hapus
                             </Button>
                         </div>
                     )}
 
-                    <div className="relative flex items-center flex-1 sm:flex-initial min-w-[120px]">
-                        <Search size={14} className="absolute left-2.5 text-slate-400 pointer-events-none" />
+                    <div className="relative flex min-w-[120px] flex-1 items-center sm:flex-initial">
+                        <Search size={14} className="pointer-events-none absolute left-2.5 text-slate-400" />
                         <input
                             type="text"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             placeholder="Cari otoritas..."
-                            className="h-8 pl-8 pr-3 text-xs bg-white dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-700/80 text-slate-800 dark:text-zinc-100 rounded-lg outline-none focus:border-primary transition-all w-full sm:w-44 focus:sm:w-52"
+                            className="focus:border-primary h-8 w-full rounded-lg border border-slate-200/80 bg-white pr-3 pl-8 text-xs text-slate-800 transition-all outline-none sm:w-44 focus:sm:w-52 dark:border-zinc-700/80 dark:bg-zinc-900 dark:text-zinc-100"
                         />
                     </div>
-                    <Button type="button" variant="primary" size="sm" onClick={openModal} className="h-8 text-xs rounded-lg px-3 shadow-none shrink-0">
+                    <Button
+                        type="button"
+                        variant="primary"
+                        size="sm"
+                        onClick={openModal}
+                        className="h-8 shrink-0 rounded-lg px-3 text-xs shadow-none"
+                    >
                         <Plus size={14} className="mr-1" /> Tambah
                     </Button>
                 </div>
             </div>
 
-            <div className="rounded-[8px] border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900/90 overflow-x-auto w-full max-w-full custom-scrollbar">
+            <div className="custom-scrollbar w-full max-w-full overflow-x-auto rounded-[8px] border border-slate-200/80 bg-white dark:border-zinc-800 dark:bg-zinc-900/90">
                 {authorities.length === 0 ? (
-                    <div className="p-8 text-center text-slate-400 dark:text-zinc-400 text-sm">
-                        Belum ada otoritas yang ditambahkan.
-                    </div>
+                    <div className="p-8 text-center text-sm text-slate-400 dark:text-zinc-400">Belum ada otoritas yang ditambahkan.</div>
                 ) : filteredAuthorities.length === 0 ? (
-                    <div className="p-8 text-center text-slate-400 dark:text-zinc-400 text-sm">
+                    <div className="p-8 text-center text-sm text-slate-400 dark:text-zinc-400">
                         Tidak ada otoritas yang sesuai dengan pencarian "{searchQuery}".
                     </div>
                 ) : (
                     <table className="w-full border-collapse text-left text-xs whitespace-nowrap">
-                        <thead className="bg-primary text-white border-b border-primary/20 dark:bg-zinc-800/90 dark:border-zinc-700/80 dark:text-zinc-200 select-none">
+                        <thead className="bg-primary border-primary/20 border-b text-white select-none dark:border-zinc-700/80 dark:bg-zinc-800/90 dark:text-zinc-200">
                             <tr>
-                                <th className="px-3 py-3 w-8 text-center">
+                                <th className="w-8 px-3 py-3 text-center">
                                     <Checkbox
                                         checked={isAllFilteredSelected}
                                         onCheckedChange={toggleSelectAll}
-                                        className="h-4 w-4 border-white/60 data-[state=checked]:bg-white data-[state=checked]:text-primary"
+                                        className="data-[state=checked]:text-primary h-4 w-4 border-white/60 data-[state=checked]:bg-white"
                                     />
                                 </th>
                                 <th
                                     onClick={() => toggleSort('authority_type')}
-                                    className="px-3.5 py-3 font-bold uppercase tracking-wider text-white dark:text-zinc-200 cursor-pointer hover:bg-white/10 transition-colors"
+                                    className="cursor-pointer px-3.5 py-3 font-bold tracking-wider text-white uppercase transition-colors hover:bg-white/10 dark:text-zinc-200"
                                 >
                                     <div className="flex items-center">
                                         <span>Tipe</span>
@@ -1248,7 +1360,7 @@ export default function AuthorityTableManager({
                                 {showCustom && (
                                     <th
                                         onClick={() => toggleSort('custom')}
-                                        className="px-3.5 py-3 font-bold uppercase tracking-wider text-white dark:text-zinc-200 cursor-pointer hover:bg-white/10 transition-colors"
+                                        className="cursor-pointer px-3.5 py-3 font-bold tracking-wider text-white uppercase transition-colors hover:bg-white/10 dark:text-zinc-200"
                                     >
                                         <div className="flex items-center">
                                             <span>Aktor Kustom</span>
@@ -1258,7 +1370,7 @@ export default function AuthorityTableManager({
                                 )}
                                 <th
                                     onClick={() => toggleSort('user')}
-                                    className="px-3.5 py-3 font-bold uppercase tracking-wider text-white dark:text-zinc-200 cursor-pointer hover:bg-white/10 transition-colors"
+                                    className="cursor-pointer px-3.5 py-3 font-bold tracking-wider text-white uppercase transition-colors hover:bg-white/10 dark:text-zinc-200"
                                 >
                                     <div className="flex items-center">
                                         <span>Pengguna</span>
@@ -1267,7 +1379,7 @@ export default function AuthorityTableManager({
                                 </th>
                                 <th
                                     onClick={() => toggleSort('role')}
-                                    className="px-3.5 py-3 font-bold uppercase tracking-wider text-white dark:text-zinc-200 cursor-pointer hover:bg-white/10 transition-colors"
+                                    className="cursor-pointer px-3.5 py-3 font-bold tracking-wider text-white uppercase transition-colors hover:bg-white/10 dark:text-zinc-200"
                                 >
                                     <div className="flex items-center">
                                         <span>Role</span>
@@ -1276,7 +1388,7 @@ export default function AuthorityTableManager({
                                 </th>
                                 <th
                                     onClick={() => toggleSort('department')}
-                                    className="px-3.5 py-3 font-bold uppercase tracking-wider text-white dark:text-zinc-200 cursor-pointer hover:bg-white/10 transition-colors"
+                                    className="cursor-pointer px-3.5 py-3 font-bold tracking-wider text-white uppercase transition-colors hover:bg-white/10 dark:text-zinc-200"
                                 >
                                     <div className="flex items-center">
                                         <span>Departemen</span>
@@ -1285,7 +1397,7 @@ export default function AuthorityTableManager({
                                 </th>
                                 <th
                                     onClick={() => toggleSort('division')}
-                                    className="px-3.5 py-3 font-bold uppercase tracking-wider text-white dark:text-zinc-200 cursor-pointer hover:bg-white/10 transition-colors"
+                                    className="cursor-pointer px-3.5 py-3 font-bold tracking-wider text-white uppercase transition-colors hover:bg-white/10 dark:text-zinc-200"
                                 >
                                     <div className="flex items-center">
                                         <span>Divisi</span>
@@ -1294,7 +1406,7 @@ export default function AuthorityTableManager({
                                 </th>
                                 <th
                                     onClick={() => toggleSort('location')}
-                                    className="px-3.5 py-3 font-bold uppercase tracking-wider text-white dark:text-zinc-200 cursor-pointer hover:bg-white/10 transition-colors"
+                                    className="cursor-pointer px-3.5 py-3 font-bold tracking-wider text-white uppercase transition-colors hover:bg-white/10 dark:text-zinc-200"
                                 >
                                     <div className="flex items-center">
                                         <span>Lokasi Kerja</span>
@@ -1303,7 +1415,7 @@ export default function AuthorityTableManager({
                                 </th>
                                 <th
                                     onClick={() => toggleSort('company_group')}
-                                    className="px-3.5 py-3 font-bold uppercase tracking-wider text-white dark:text-zinc-200 cursor-pointer hover:bg-white/10 transition-colors"
+                                    className="cursor-pointer px-3.5 py-3 font-bold tracking-wider text-white uppercase transition-colors hover:bg-white/10 dark:text-zinc-200"
                                 >
                                     <div className="flex items-center">
                                         <span>Company Group</span>
@@ -1312,7 +1424,7 @@ export default function AuthorityTableManager({
                                 </th>
                                 <th
                                     onClick={() => toggleSort('organizationGroup')}
-                                    className="px-3.5 py-3 font-bold uppercase tracking-wider text-white dark:text-zinc-200 cursor-pointer hover:bg-white/10 transition-colors"
+                                    className="cursor-pointer px-3.5 py-3 font-bold tracking-wider text-white uppercase transition-colors hover:bg-white/10 dark:text-zinc-200"
                                 >
                                     <div className="flex items-center">
                                         <span>Organization Group</span>
@@ -1321,7 +1433,7 @@ export default function AuthorityTableManager({
                                 </th>
                                 <th
                                     onClick={() => toggleSort('company')}
-                                    className="px-3.5 py-3 font-bold uppercase tracking-wider text-white dark:text-zinc-200 cursor-pointer hover:bg-white/10 transition-colors"
+                                    className="cursor-pointer px-3.5 py-3 font-bold tracking-wider text-white uppercase transition-colors hover:bg-white/10 dark:text-zinc-200"
                                 >
                                     <div className="flex items-center">
                                         <span>Perusahaan PT</span>
@@ -1330,7 +1442,7 @@ export default function AuthorityTableManager({
                                 </th>
                                 <th
                                     onClick={() => toggleSort('region')}
-                                    className="px-3.5 py-3 font-bold uppercase tracking-wider text-white dark:text-zinc-200 cursor-pointer hover:bg-white/10 transition-colors"
+                                    className="cursor-pointer px-3.5 py-3 font-bold tracking-wider text-white uppercase transition-colors hover:bg-white/10 dark:text-zinc-200"
                                 >
                                     <div className="flex items-center">
                                         <span>Wilayah</span>
@@ -1339,14 +1451,14 @@ export default function AuthorityTableManager({
                                 </th>
                                 <th
                                     onClick={() => toggleSort('userCount')}
-                                    className="px-3.5 py-3 font-bold uppercase tracking-wider text-center text-white dark:text-zinc-200 cursor-pointer hover:bg-white/10 transition-colors"
+                                    className="cursor-pointer px-3.5 py-3 text-center font-bold tracking-wider text-white uppercase transition-colors hover:bg-white/10 dark:text-zinc-200"
                                 >
                                     <div className="flex items-center justify-center">
                                         <span>Pengguna</span>
                                         {renderSortIcon('userCount')}
                                     </div>
                                 </th>
-                                <th className="px-3.5 py-3 font-bold uppercase tracking-wider text-center text-white dark:text-zinc-200">Aksi</th>
+                                <th className="px-3.5 py-3 text-center font-bold tracking-wider text-white uppercase dark:text-zinc-200">Aksi</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -1359,27 +1471,29 @@ export default function AuthorityTableManager({
                                     <tr
                                         key={originalIndex}
                                         className={cn(
-                                            "transition-colors",
-                                            isSelected ? "bg-primary/5 dark:bg-primary/10" : "hover:bg-slate-50/50 dark:hover:bg-slate-900/10"
+                                            'transition-colors',
+                                            isSelected ? 'bg-primary/5 dark:bg-primary/10' : 'hover:bg-slate-50/50 dark:hover:bg-slate-900/10',
                                         )}
                                     >
                                         <td className="px-3 py-2.5 text-center">
-                                             <Checkbox
+                                            <Checkbox
                                                 checked={isSelected}
                                                 onCheckedChange={() => toggleSelectRow(originalIndex)}
                                                 className="h-4 w-4"
                                             />
                                         </td>
                                         <td className="px-3 py-2.5 font-semibold text-slate-700 dark:text-slate-300">
-                                            <div className="flex flex-col gap-1 items-start">
-                                                <span className={cn(
-                                                    "inline-flex items-center rounded-md px-2 py-1 text-[10px] uppercase font-bold",
-                                                    isCustomAuth(auth)
-                                                        ? "bg-violet-100 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300 border border-violet-200/60"
-                                                        : auth.authority_type === 'user'
-                                                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/60"
-                                                            : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
-                                                )}>
+                                            <div className="flex flex-col items-start gap-1">
+                                                <span
+                                                    className={cn(
+                                                        'inline-flex items-center rounded-md px-2 py-1 text-[10px] font-bold uppercase',
+                                                        isCustomAuth(auth)
+                                                            ? 'border border-violet-200/60 bg-violet-100 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300'
+                                                            : auth.authority_type === 'user'
+                                                              ? 'border border-emerald-200/60 bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300'
+                                                              : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
+                                                    )}
+                                                >
                                                     {isCustomAuth(auth) ? 'Custom' : auth.authority_type || 'Group'}
                                                 </span>
                                             </div>
@@ -1387,42 +1501,46 @@ export default function AuthorityTableManager({
                                         {showCustom && (
                                             <td className="px-3 py-2.5 text-slate-600 dark:text-slate-400">
                                                 {isCustomAuth(auth) ? (
-                                                    <div className="flex flex-col gap-1 items-start">
-                                                        <span className="font-semibold text-xs text-slate-800 dark:text-zinc-200">
+                                                    <div className="flex flex-col items-start gap-1">
+                                                        <span className="text-xs font-semibold text-slate-800 dark:text-zinc-200">
                                                             {getCustomLabel(getCustomType(auth))}
                                                         </span>
                                                         {getCustomType(auth) === 'initiator' && simInitiatorUser && (
-                                                            <span className="inline-flex items-center gap-1 text-[10px] text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 px-1.5 py-0.5 rounded border border-indigo-200/60">
+                                                            <span className="inline-flex items-center gap-1 rounded border border-indigo-200/60 bg-indigo-50 px-1.5 py-0.5 text-[10px] text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300">
                                                                 <span className="font-bold">Sim:</span> {simInitiatorUser.name}
                                                             </span>
                                                         )}
                                                         {getCustomType(auth) === 'assigned_pic' && simPicUser && (
-                                                            <span className="inline-flex items-center gap-1 text-[10px] text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-200/60">
+                                                            <span className="inline-flex items-center gap-1 rounded border border-emerald-200/60 bg-emerald-50 px-1.5 py-0.5 text-[10px] text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
                                                                 <span className="font-bold">Sim:</span> {simPicUser.name}
                                                             </span>
                                                         )}
                                                         {getCustomType(auth) === 'creator' && simCreatorUser && (
-                                                            <span className="inline-flex items-center gap-1 text-[10px] text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 px-1.5 py-0.5 rounded border border-amber-200/60">
+                                                            <span className="inline-flex items-center gap-1 rounded border border-amber-200/60 bg-amber-50 px-1.5 py-0.5 text-[10px] text-amber-700 dark:bg-amber-950/60 dark:text-amber-300">
                                                                 <span className="font-bold">Sim:</span> {simCreatorUser.name}
                                                             </span>
                                                         )}
-                                                        {(getCustomType(auth) === 'adhoc_approvers' || getCustomType(auth) === 'adhoc') && (
-                                                            simAdhocUsers.length > 0 ? (
+                                                        {(getCustomType(auth) === 'adhoc_approvers' || getCustomType(auth) === 'adhoc') &&
+                                                            (simAdhocUsers.length > 0 ? (
                                                                 <div className="flex flex-wrap gap-1">
-                                                                    {simAdhocUsers.map(u => (
-                                                                        <span key={u.id} className="inline-flex items-center gap-1 text-[10px] text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-950/60 px-1.5 py-0.5 rounded border border-violet-200/60">
+                                                                    {simAdhocUsers.map((u) => (
+                                                                        <span
+                                                                            key={u.id}
+                                                                            className="inline-flex items-center gap-1 rounded border border-violet-200/60 bg-violet-50 px-1.5 py-0.5 text-[10px] text-violet-700 dark:bg-violet-950/60 dark:text-violet-300"
+                                                                        >
                                                                             <span className="font-bold">Sim:</span> {u.name}
                                                                         </span>
                                                                     ))}
                                                                 </div>
                                                             ) : (
-                                                                <span className="text-[10px] text-muted-foreground italic">
+                                                                <span className="text-muted-foreground text-[10px] italic">
                                                                     (Belum ada simulasi approver)
                                                                 </span>
-                                                            )
-                                                        )}
+                                                            ))}
                                                     </div>
-                                                ) : '-'}
+                                                ) : (
+                                                    '-'
+                                                )}
                                             </td>
                                         )}
                                         <td className="px-3 py-2.5 text-slate-600 dark:text-slate-400">
@@ -1430,51 +1548,85 @@ export default function AuthorityTableManager({
                                         </td>
                                         <td className="px-3 py-2.5 text-slate-600 dark:text-slate-400">
                                             {auth.role_use_initiator ? (
-                                                <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-[10px] uppercase font-bold text-primary">Sesuai Inisiator</span>
-                                            ) : getRoleLabel(auth.role_id)}
+                                                <span className="bg-primary/10 text-primary inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-bold uppercase">
+                                                    Sesuai Inisiator
+                                                </span>
+                                            ) : (
+                                                getRoleLabel(auth.role_id)
+                                            )}
                                         </td>
                                         <td className="px-3 py-2.5 text-slate-600 dark:text-slate-400">
                                             {auth.department_use_initiator ? (
-                                                <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-[10px] uppercase font-bold text-primary">Sesuai Inisiator</span>
-                                            ) : getDeptLabel(auth.department_id)}
+                                                <span className="bg-primary/10 text-primary inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-bold uppercase">
+                                                    Sesuai Inisiator
+                                                </span>
+                                            ) : (
+                                                getDeptLabel(auth.department_id)
+                                            )}
                                         </td>
                                         <td className="px-3 py-2.5 text-slate-600 dark:text-slate-400">
                                             {auth.division_use_initiator ? (
-                                                <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-[10px] uppercase font-bold text-primary">Sesuai Inisiator</span>
-                                            ) : getDivLabel(auth.division_id)}
+                                                <span className="bg-primary/10 text-primary inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-bold uppercase">
+                                                    Sesuai Inisiator
+                                                </span>
+                                            ) : (
+                                                getDivLabel(auth.division_id)
+                                            )}
                                         </td>
                                         <td className="px-3 py-2.5 text-slate-600 dark:text-slate-400">
                                             {auth.location_use_initiator ? (
-                                                <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-[10px] uppercase font-bold text-primary">Sesuai Inisiator</span>
-                                            ) : getLocationLabel(auth.location_id)}
+                                                <span className="bg-primary/10 text-primary inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-bold uppercase">
+                                                    Sesuai Inisiator
+                                                </span>
+                                            ) : (
+                                                getLocationLabel(auth.location_id)
+                                            )}
                                         </td>
                                         <td className="px-3 py-2.5 text-slate-600 dark:text-slate-400">
                                             {auth.company_group_use_initiator ? (
-                                                <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-[10px] uppercase font-bold text-primary">Sesuai Inisiator</span>
-                                            ) : getCompanyGroupLabel(auth.company_group_id)}
+                                                <span className="bg-primary/10 text-primary inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-bold uppercase">
+                                                    Sesuai Inisiator
+                                                </span>
+                                            ) : (
+                                                getCompanyGroupLabel(auth.company_group_id)
+                                            )}
                                         </td>
                                         <td className="px-3 py-2.5 text-slate-600 dark:text-slate-400">
                                             {auth.organization_group_use_initiator ? (
-                                                <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-[10px] uppercase font-bold text-primary">Sesuai Inisiator</span>
-                                            ) : getOrganizationGroupLabel(auth.organization_group_id)}
+                                                <span className="bg-primary/10 text-primary inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-bold uppercase">
+                                                    Sesuai Inisiator
+                                                </span>
+                                            ) : (
+                                                getOrganizationGroupLabel(auth.organization_group_id)
+                                            )}
                                         </td>
                                         <td className="px-3 py-2.5 text-slate-600 dark:text-slate-400">
                                             {auth.company_use_initiator ? (
-                                                <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-[10px] uppercase font-bold text-primary">Sesuai Inisiator</span>
-                                            ) : getCompanyLabel(auth.company_id)}
+                                                <span className="bg-primary/10 text-primary inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-bold uppercase">
+                                                    Sesuai Inisiator
+                                                </span>
+                                            ) : (
+                                                getCompanyLabel(auth.company_id)
+                                            )}
                                         </td>
                                         <td className="px-3 py-2.5 text-slate-600 dark:text-slate-400">
                                             {auth.region_use_initiator ? (
-                                                <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-[10px] uppercase font-bold text-primary">Sesuai Inisiator</span>
-                                            ) : getRegionLabel(auth.region_id)}
+                                                <span className="bg-primary/10 text-primary inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-bold uppercase">
+                                                    Sesuai Inisiator
+                                                </span>
+                                            ) : (
+                                                getRegionLabel(auth.region_id)
+                                            )}
                                         </td>
                                         <td className="px-3 py-2.5 text-center">
-                                            <span className={cn(
-                                                "inline-flex items-center justify-center font-bold px-2 py-0.5 rounded-full text-[11px] min-w-6",
-                                                userCount > 0
-                                                    ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/60"
-                                                    : "bg-slate-100 dark:bg-zinc-800 text-slate-400"
-                                            )}>
+                                            <span
+                                                className={cn(
+                                                    'inline-flex min-w-6 items-center justify-center rounded-full px-2 py-0.5 text-[11px] font-bold',
+                                                    userCount > 0
+                                                        ? 'border border-emerald-200/80 bg-emerald-50 text-emerald-700 dark:border-emerald-800/60 dark:bg-emerald-950/60 dark:text-emerald-300'
+                                                        : 'bg-slate-100 text-slate-400 dark:bg-zinc-800',
+                                                )}
+                                            >
                                                 {userCount}
                                             </span>
                                         </td>
@@ -1483,7 +1635,7 @@ export default function AuthorityTableManager({
                                                 <button
                                                     type="button"
                                                     onClick={() => editAuthority(originalIndex)}
-                                                    className="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/10 dark:hover:bg-primary/20 rounded-lg transition-colors inline-flex"
+                                                    className="hover:text-primary hover:bg-primary/10 dark:hover:bg-primary/20 inline-flex rounded-lg p-1.5 text-slate-400 transition-colors"
                                                     title="Ubah"
                                                 >
                                                     <Pencil size={14} />
@@ -1491,7 +1643,7 @@ export default function AuthorityTableManager({
                                                 <button
                                                     type="button"
                                                     onClick={() => removeAuthority(originalIndex)}
-                                                    className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-colors inline-flex"
+                                                    className="inline-flex rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-500 dark:hover:bg-rose-900/20"
                                                     title="Hapus"
                                                 >
                                                     <Trash2 size={14} />
@@ -1507,29 +1659,39 @@ export default function AuthorityTableManager({
             </div>
 
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                <DialogContent className="sm:max-w-3xl w-[90vw] max-w-3xl h-[85vh] max-h-[85vh] border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 overflow-hidden rounded-[12px] border p-0 shadow-2xl flex flex-col">
-                    <div className="px-6 py-4 border-b border-primary/20 dark:border-zinc-700/80 bg-primary dark:bg-zinc-800/90 text-white dark:text-zinc-200 flex items-center justify-between rounded-t-[12px] shrink-0">
-                        <div className="flex items-center gap-3 z-10 pr-10">
-                            <div className="bg-white/20 text-white border border-white/20 dark:bg-primary/20 dark:text-primary dark:border-primary/30 flex h-9 w-9 items-center justify-center rounded-lg">
+                <DialogContent className="flex h-[85vh] max-h-[85vh] w-[90vw] max-w-3xl flex-col overflow-hidden rounded-[12px] border border-slate-200/80 bg-white p-0 text-slate-800 shadow-2xl sm:max-w-3xl dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100">
+                    <div className="border-primary/20 bg-primary flex shrink-0 items-center justify-between rounded-t-[12px] border-b px-6 py-4 text-white dark:border-zinc-700/80 dark:bg-zinc-800/90 dark:text-zinc-200">
+                        <div className="z-10 flex items-center gap-3 pr-10">
+                            <div className="dark:bg-primary/20 dark:text-primary dark:border-primary/30 flex h-9 w-9 items-center justify-center rounded-lg border border-white/20 bg-white/20 text-white">
                                 <Shield size={18} />
                             </div>
                             <div>
                                 <DialogTitle className="text-sm font-bold tracking-tight text-white dark:text-zinc-100">
-                                    {isBulkEdit ? `Ubah (${selectedIndices.length}) Otoritas` : editIndex !== null ? 'Ubah Otoritas Akses' : 'Tambah Otoritas Akses'}
+                                    {isBulkEdit
+                                        ? `Ubah (${selectedIndices.length}) Otoritas`
+                                        : editIndex !== null
+                                          ? 'Ubah Otoritas Akses'
+                                          : 'Tambah Otoritas Akses'}
                                 </DialogTitle>
-                                <DialogDescription className="text-white/80 dark:text-zinc-400 text-xs font-medium mt-0.5">
-                                    {isBulkEdit ? `Terapkan perubahan nilai ke ${selectedIndices.length} otoritas yang dipilih` : editIndex !== null ? 'Perbarui kriteria atau kombinasi akses otoritas' : 'Atur hak akses berdasarkan pengguna atau kombinasi organisasi'}
+                                <DialogDescription className="mt-0.5 text-xs font-medium text-white/80 dark:text-zinc-400">
+                                    {isBulkEdit
+                                        ? `Terapkan perubahan nilai ke ${selectedIndices.length} otoritas yang dipilih`
+                                        : editIndex !== null
+                                          ? 'Perbarui kriteria atau kombinasi akses otoritas'
+                                          : 'Atur hak akses berdasarkan pengguna atau kombinasi organisasi'}
                                 </DialogDescription>
                             </div>
                         </div>
                     </div>
 
-                    <div className="p-6 bg-white dark:bg-zinc-900 flex-1 overflow-y-auto space-y-6 pb-24">
+                    <div className="flex-1 space-y-6 overflow-y-auto bg-white p-6 pb-24 dark:bg-zinc-900">
                         {/* Kategori Individu */}
                         <div className="space-y-3">
                             <div className="flex items-center gap-2 border-b border-slate-100 pb-2 dark:border-slate-800">
-                                <span className="flex h-5 w-5 items-center justify-center rounded bg-primary/10 text-primary font-bold text-[10px]">1</span>
-                                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+                                <span className="bg-primary/10 text-primary flex h-5 w-5 items-center justify-center rounded text-[10px] font-bold">
+                                    1
+                                </span>
+                                <h3 className="text-xs font-bold tracking-wider text-slate-900 uppercase dark:text-white">
                                     Tipe Pilih User (Personal)
                                 </h3>
                             </div>
@@ -1544,7 +1706,7 @@ export default function AuthorityTableManager({
                                                 { value: 'initiator', label: 'INISIATOR' },
                                                 { value: 'assigned_pic', label: 'PIC DITUGASKAN' },
                                                 { value: 'creator', label: 'PEMBUAT' },
-                                                { value: 'adhoc_approvers', label: 'APPROVER TAMBAHAN (DITENTUKAN SAAT PENGAJUAN)' }
+                                                { value: 'adhoc_approvers', label: 'APPROVER TAMBAHAN (DITENTUKAN SAAT PENGAJUAN)' },
                                             ]}
                                             placeholder="Pilih Aktor..."
                                         />
@@ -1556,7 +1718,7 @@ export default function AuthorityTableManager({
                                     <SearchableMultiSelect
                                         values={modalUserIds}
                                         onValuesChange={(val) => handleIndividualChange('user', val)}
-                                        options={activeUsers.map(u => ({ value: String(u.id), label: formatUserDetail(u) }))}
+                                        options={activeUsers.map((u) => ({ value: String(u.id), label: formatUserDetail(u) }))}
                                         placeholder="Pilih Pengguna..."
                                     />
                                 </div>
@@ -1567,12 +1729,14 @@ export default function AuthorityTableManager({
                         {showCombinations && (
                             <div className="space-y-3">
                                 <div className="flex items-center gap-2 border-b border-slate-100 pb-2 dark:border-slate-800">
-                                    <span className="flex h-5 w-5 items-center justify-center rounded bg-primary/10 text-primary font-bold text-[10px]">2</span>
-                                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+                                    <span className="bg-primary/10 text-primary flex h-5 w-5 items-center justify-center rounded text-[10px] font-bold">
+                                        2
+                                    </span>
+                                    <h3 className="text-xs font-bold tracking-wider text-slate-900 uppercase dark:text-white">
                                         Tipe Kombinasi Organisasi
                                     </h3>
                                 </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+                                <div className="grid grid-cols-1 gap-4 pt-1 md:grid-cols-2">
                                     <div className="space-y-1.5">
                                         <div className="flex items-center justify-between">
                                             <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Pilih Role</label>
@@ -1591,14 +1755,16 @@ export default function AuthorityTableManager({
                                                         }}
                                                         className="h-3.5 w-3.5"
                                                     />
-                                                    <label htmlFor="role_initiator" className="text-[11px] text-slate-500 font-medium cursor-pointer">Sesuai Inisiator</label>
+                                                    <label htmlFor="role_initiator" className="cursor-pointer text-[11px] font-medium text-slate-500">
+                                                        Sesuai Inisiator
+                                                    </label>
                                                 </div>
                                             )}
                                         </div>
                                         <SearchableMultiSelect
                                             values={modalRoleIds}
                                             onValuesChange={(vals) => handleGroupChange('role', vals)}
-                                            options={roles.map(r => ({ value: String(r.id), label: r.name }))}
+                                            options={roles.map((r) => ({ value: String(r.id), label: r.name }))}
                                             placeholder="Semua Role..."
                                             disabled={showInitiatorOption && roleUseInitiator}
                                         />
@@ -1622,14 +1788,16 @@ export default function AuthorityTableManager({
                                                         }}
                                                         className="h-3.5 w-3.5"
                                                     />
-                                                    <label htmlFor="dept_initiator" className="text-[11px] text-slate-500 font-medium cursor-pointer">Sesuai Inisiator</label>
+                                                    <label htmlFor="dept_initiator" className="cursor-pointer text-[11px] font-medium text-slate-500">
+                                                        Sesuai Inisiator
+                                                    </label>
                                                 </div>
                                             )}
                                         </div>
                                         <SearchableMultiSelect
                                             values={modalDepartmentIds}
                                             onValuesChange={(vals) => handleGroupChange('department', vals)}
-                                            options={activeDepartments.map(d => ({ value: String(d.id), label: d.name }))}
+                                            options={activeDepartments.map((d) => ({ value: String(d.id), label: d.name }))}
                                             placeholder="Semua Departemen..."
                                             disabled={showInitiatorOption && departmentUseInitiator}
                                         />
@@ -1653,14 +1821,16 @@ export default function AuthorityTableManager({
                                                         }}
                                                         className="h-3.5 w-3.5"
                                                     />
-                                                    <label htmlFor="div_initiator" className="text-[11px] text-slate-500 font-medium cursor-pointer">Sesuai Inisiator</label>
+                                                    <label htmlFor="div_initiator" className="cursor-pointer text-[11px] font-medium text-slate-500">
+                                                        Sesuai Inisiator
+                                                    </label>
                                                 </div>
                                             )}
                                         </div>
                                         <SearchableMultiSelect
                                             values={modalDivisionIds}
                                             onValuesChange={(vals) => handleGroupChange('division', vals)}
-                                            options={activeDivisions.map(div => ({ value: String(div.id), label: div.name }))}
+                                            options={activeDivisions.map((div) => ({ value: String(div.id), label: div.name }))}
                                             placeholder="Semua Divisi..."
                                             disabled={showInitiatorOption && divisionUseInitiator}
                                         />
@@ -1684,14 +1854,19 @@ export default function AuthorityTableManager({
                                                         }}
                                                         className="h-3.5 w-3.5"
                                                     />
-                                                    <label htmlFor="location_initiator" className="text-[11px] text-slate-500 font-medium cursor-pointer">Sesuai Inisiator</label>
+                                                    <label
+                                                        htmlFor="location_initiator"
+                                                        className="cursor-pointer text-[11px] font-medium text-slate-500"
+                                                    >
+                                                        Sesuai Inisiator
+                                                    </label>
                                                 </div>
                                             )}
                                         </div>
                                         <SearchableMultiSelect
                                             values={modalLocationIds}
                                             onValuesChange={(vals) => handleGroupChange('location', vals)}
-                                            options={activeLocations.map(loc => ({ value: String(loc.id), label: loc.name }))}
+                                            options={activeLocations.map((loc) => ({ value: String(loc.id), label: loc.name }))}
                                             placeholder="Semua Lokasi..."
                                             disabled={showInitiatorOption && locationUseInitiator}
                                         />
@@ -1715,14 +1890,16 @@ export default function AuthorityTableManager({
                                                         }}
                                                         className="h-3.5 w-3.5"
                                                     />
-                                                    <label htmlFor="cg_initiator" className="text-[11px] text-slate-500 font-medium cursor-pointer">Sesuai Inisiator</label>
+                                                    <label htmlFor="cg_initiator" className="cursor-pointer text-[11px] font-medium text-slate-500">
+                                                        Sesuai Inisiator
+                                                    </label>
                                                 </div>
                                             )}
                                         </div>
                                         <SearchableMultiSelect
                                             values={modalCompanyGroupIds}
                                             onValuesChange={(vals) => handleGroupChange('company_group', vals)}
-                                            options={activeCompanyGroups.map(cg => ({ value: String(cg.id), label: cg.name }))}
+                                            options={activeCompanyGroups.map((cg) => ({ value: String(cg.id), label: cg.name }))}
                                             placeholder="Semua Company Group..."
                                             disabled={showInitiatorOption && companyGroupUseInitiator}
                                         />
@@ -1730,7 +1907,9 @@ export default function AuthorityTableManager({
 
                                     <div className="space-y-1.5">
                                         <div className="flex items-center justify-between">
-                                            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Pilih Organization Group</label>
+                                            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                                Pilih Organization Group
+                                            </label>
                                             {showInitiatorOption && (
                                                 <div className="flex items-center gap-1.5">
                                                     <Checkbox
@@ -1746,14 +1925,16 @@ export default function AuthorityTableManager({
                                                         }}
                                                         className="h-3.5 w-3.5"
                                                     />
-                                                    <label htmlFor="og_initiator" className="text-[11px] text-slate-500 font-medium cursor-pointer">Sesuai Inisiator</label>
+                                                    <label htmlFor="og_initiator" className="cursor-pointer text-[11px] font-medium text-slate-500">
+                                                        Sesuai Inisiator
+                                                    </label>
                                                 </div>
                                             )}
                                         </div>
                                         <SearchableMultiSelect
                                             values={modalOrganizationGroupIds}
                                             onValuesChange={(vals) => handleGroupChange('organization_group', vals)}
-                                            options={activeOrganizationGroups.map(og => ({ value: String(og.id), label: og.name }))}
+                                            options={activeOrganizationGroups.map((og) => ({ value: String(og.id), label: og.name }))}
                                             placeholder="Semua Organization Group..."
                                             disabled={showInitiatorOption && organizationGroupUseInitiator}
                                         />
@@ -1777,14 +1958,19 @@ export default function AuthorityTableManager({
                                                         }}
                                                         className="h-3.5 w-3.5"
                                                     />
-                                                    <label htmlFor="company_initiator" className="text-[11px] text-slate-500 font-medium cursor-pointer">Sesuai Inisiator</label>
+                                                    <label
+                                                        htmlFor="company_initiator"
+                                                        className="cursor-pointer text-[11px] font-medium text-slate-500"
+                                                    >
+                                                        Sesuai Inisiator
+                                                    </label>
                                                 </div>
                                             )}
                                         </div>
                                         <SearchableMultiSelect
                                             values={modalCompanyIds}
                                             onValuesChange={(vals) => handleGroupChange('company', vals)}
-                                            options={activeCompanies.map(c => ({ value: String(c.id), label: c.name }))}
+                                            options={activeCompanies.map((c) => ({ value: String(c.id), label: c.name }))}
                                             placeholder="Semua Perusahaan PT..."
                                             disabled={showInitiatorOption && companyUseInitiator}
                                         />
@@ -1808,14 +1994,19 @@ export default function AuthorityTableManager({
                                                         }}
                                                         className="h-3.5 w-3.5"
                                                     />
-                                                    <label htmlFor="region_initiator" className="text-[11px] text-slate-500 font-medium cursor-pointer">Sesuai Inisiator</label>
+                                                    <label
+                                                        htmlFor="region_initiator"
+                                                        className="cursor-pointer text-[11px] font-medium text-slate-500"
+                                                    >
+                                                        Sesuai Inisiator
+                                                    </label>
                                                 </div>
                                             )}
                                         </div>
                                         <SearchableMultiSelect
                                             values={modalRegionIds}
                                             onValuesChange={(vals) => handleGroupChange('region', vals)}
-                                            options={activeRegions.map(r => ({ value: String(r.id), label: r.name }))}
+                                            options={activeRegions.map((r) => ({ value: String(r.id), label: r.name }))}
                                             placeholder="Semua Wilayah..."
                                             disabled={showInitiatorOption && regionUseInitiator}
                                         />
@@ -1825,11 +2016,15 @@ export default function AuthorityTableManager({
                         )}
                     </div>
 
-                    <DialogFooter className="px-6 py-4 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/50 flex items-center justify-end gap-2 rounded-b-[8px]">
-                        <Button type="button" variant="outline" onClick={closeModal} className="rounded-lg h-9 px-4 text-xs font-semibold">
+                    <DialogFooter className="flex items-center justify-end gap-2 rounded-b-[8px] border-t border-slate-100 bg-slate-50/50 px-6 py-4 dark:border-zinc-800 dark:bg-zinc-900/50">
+                        <Button type="button" variant="outline" onClick={closeModal} className="h-9 rounded-lg px-4 text-xs font-semibold">
                             Batal
                         </Button>
-                        <Button type="button" onClick={saveAuthority} className="rounded-lg h-9 px-4 text-xs font-semibold bg-primary text-white hover:bg-primary/95 shadow-sm">
+                        <Button
+                            type="button"
+                            onClick={saveAuthority}
+                            className="bg-primary hover:bg-primary/95 h-9 rounded-lg px-4 text-xs font-semibold text-white shadow-sm"
+                        >
                             {editIndex !== null ? 'Simpan' : 'Simpan'}
                         </Button>
                     </DialogFooter>

@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Holiday;
+use App\Models\Master\Holiday;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
@@ -78,6 +78,7 @@ class SyncHolidaysCommand extends Command
                         }
 
                         $this->info("✓ Berhasil menyinkronkan {$syncedCount} hari libur untuk tahun {$year} dari API.");
+
                         return;
                     }
                 }

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Actions\Workflow\DestroyWorkflowAction;
+use App\Enums\WorkflowType;
 use App\Http\Actions\Workflow\DuplicateWorkflowAction;
 use App\Http\Actions\Workflow\StoreWorkflowAction;
 use App\Http\Actions\Workflow\UpdateWorkflowAction;
@@ -13,20 +13,20 @@ use App\Http\Queries\Master\WorkflowQuery;
 use App\Http\Requests\Workflow\ImportWorkflowRequest;
 use App\Http\Requests\Workflow\StoreWorkflowRequest;
 use App\Http\Requests\Workflow\UpdateWorkflowRequest;
-use App\Models\Company;
-use App\Models\CompanyGroup;
-use App\Models\ContractStatus;
-use App\Models\ContractType;
-use App\Models\Department;
-use App\Models\Division;
-use App\Models\FormTemplate;
-use App\Models\Location;
-use App\Models\OrganizationGroup;
-use App\Models\Region;
-use App\Models\Role;
-use App\Models\User;
-use App\Models\Workflow;
-use App\Models\WorkflowStepPreset;
+use App\Models\Master\Company;
+use App\Models\Master\CompanyGroup;
+use App\Models\Master\ContractStatus;
+use App\Models\Master\ContractType;
+use App\Models\Master\Department;
+use App\Models\Master\Division;
+use App\Models\Master\FormTemplate;
+use App\Models\Master\Location;
+use App\Models\Master\OrganizationGroup;
+use App\Models\Master\Region;
+use App\Models\Master\Role;
+use App\Models\Master\User;
+use App\Models\Master\Workflow;
+use App\Models\Master\WorkflowStepPreset;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -174,7 +174,7 @@ class WorkflowAdminController extends Controller
                 'companies' => Company::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
                 'contractStatuses' => ContractStatus::select('id', 'code', 'label', 'color', 'bg_color', 'icon')->orderBy('label')->get(),
                 'allWorkflows' => $this->workflowQuery->options()->get(),
-                'workflowTypes' => \App\Enums\WorkflowType::options(),
+                'workflowTypes' => WorkflowType::options(),
                 'masterWorkflows' => Workflow::where('workflow_type', 'main')->select('id', 'name')->orderBy('name')->get(),
                 'formTemplates' => FormTemplate::select('id', 'name')->orderBy('name')->get(),
                 'stepPresets' => WorkflowStepPreset::select('id', 'name', 'step_data', 'created_at')->latest()->get(),
@@ -282,7 +282,7 @@ class WorkflowAdminController extends Controller
             'companies' => Company::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
             'contractStatuses' => ContractStatus::select('id', 'code', 'label', 'color', 'bg_color', 'icon')->orderBy('label')->get(),
             'allWorkflows' => $this->workflowQuery->options()->get(),
-            'workflowTypes' => \App\Enums\WorkflowType::options(),
+            'workflowTypes' => WorkflowType::options(),
             'masterWorkflows' => Workflow::where('workflow_type', 'main')->select('id', 'name')->orderBy('name')->get(),
             'formTemplates' => FormTemplate::select('id', 'name')->orderBy('name')->get(),
             'stepPresets' => WorkflowStepPreset::select('id', 'name', 'step_data', 'created_at')->latest()->get(),
@@ -312,7 +312,7 @@ class WorkflowAdminController extends Controller
             'companies' => Company::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
             'contractStatuses' => ContractStatus::select('id', 'code', 'label', 'color', 'bg_color', 'icon')->orderBy('label')->get(),
             'allWorkflows' => $this->workflowQuery->options()->get(),
-            'workflowTypes' => \App\Enums\WorkflowType::options(),
+            'workflowTypes' => WorkflowType::options(),
             'masterWorkflows' => Workflow::where('workflow_type', 'main')->where('id', '!=', $workflow->id)->select('id', 'name')->orderBy('name')->get(),
             'formTemplates' => FormTemplate::select('id', 'name')->orderBy('name')->get(),
             'stepPresets' => WorkflowStepPreset::select('id', 'name', 'step_data', 'created_at')->latest()->get(),
@@ -430,10 +430,10 @@ class WorkflowAdminController extends Controller
         }
     }
 
-    public function destroy(Workflow $workflow, DestroyWorkflowAction $action, Request $request)
+    public function destroy(Workflow $workflow, Request $request)
     {
         try {
-            $action->execute($workflow);
+            $workflow->delete();
 
             if ($request->wantsJson() || $request->is('api/*')) {
                 return response()->json([

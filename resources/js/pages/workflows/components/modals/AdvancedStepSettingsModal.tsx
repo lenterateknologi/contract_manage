@@ -1,5 +1,5 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialogs/Dialog';
 import { Button } from '@/components/ui/buttons/Button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialogs/Dialog';
 import { Checkbox } from '@/components/ui/selection/Checkbox';
 export interface WorkflowStep {
     id: any;
@@ -20,7 +20,7 @@ export interface WorkflowStep {
         show_tab_members?: boolean;
         show_action_panel?: boolean;
         show_document_detail?: boolean;
-        
+
         show_tab_f1?: boolean;
         show_tab_f2?: boolean;
         show_tab_agreement?: boolean;
@@ -28,7 +28,7 @@ export interface WorkflowStep {
         show_tab_references?: boolean;
         show_tab_timeline?: boolean;
         show_tab_chat?: boolean;
-        
+
         allow_f2_contract_no_edit?: boolean;
         allow_tax_toggle_edit?: boolean;
         allow_price_edit?: boolean;
@@ -84,30 +84,70 @@ export function AdvancedStepSettingsModal({ open, onOpenChange, step, onUpdateSt
     };
 
     const ALL_EDIT_KEYS = [
-        'allow_f1_edit', 'allow_f2_edit', 'allow_agreement_edit',
-        'allow_info_edit', 'allow_title_edit', 'allow_first_party_edit', 'allow_vendor_edit', 'allow_category_edit',
-        'allow_f2_contract_no_edit', 'allow_tax_toggle_edit', 'allow_price_edit', 'allow_period_edit',
-        'allow_timeline_edit', 'allow_chat_edit', 'allow_attachment_edit', 'allow_reference',
+        'allow_f1_edit',
+        'allow_f2_edit',
+        'allow_agreement_edit',
+        'allow_info_edit',
+        'allow_title_edit',
+        'allow_first_party_edit',
+        'allow_vendor_edit',
+        'allow_category_edit',
+        'allow_f2_contract_no_edit',
+        'allow_tax_toggle_edit',
+        'allow_price_edit',
+        'allow_period_edit',
+        'allow_timeline_edit',
+        'allow_chat_edit',
+        'allow_attachment_edit',
+        'allow_reference',
     ];
 
     const ALL_SHOW_KEYS = [
-        'show_tab_f1', 'show_tab_f2', 'show_tab_agreement',
-        'show_info', 'show_title', 'show_first_party', 'show_vendor', 'show_category',
-        'show_f2_contract_no', 'show_tax_toggle', 'show_price', 'show_period',
-        'show_tab_timeline', 'show_tab_chat', 'show_tab_members',
-        'show_tab_attachments', 'show_tab_references', 'show_action_panel', 'show_document_detail',
+        'show_tab_f1',
+        'show_tab_f2',
+        'show_tab_agreement',
+        'show_info',
+        'show_title',
+        'show_first_party',
+        'show_vendor',
+        'show_category',
+        'show_f2_contract_no',
+        'show_tax_toggle',
+        'show_price',
+        'show_period',
+        'show_tab_timeline',
+        'show_tab_chat',
+        'show_tab_members',
+        'show_tab_attachments',
+        'show_tab_references',
+        'show_action_panel',
+        'show_document_detail',
     ];
 
     const ALL_REQUIRE_KEYS = [
-        'require_f1', 'require_f2', 'require_agreement',
-        'require_title', 'require_first_party', 'require_vendor', 'require_category',
-        'require_f2_contract_no', 'require_tax_toggle', 'require_price', 'require_period',
+        'require_f1',
+        'require_f2',
+        'require_agreement',
+        'require_title',
+        'require_first_party',
+        'require_vendor',
+        'require_category',
+        'require_f2_contract_no',
+        'require_tax_toggle',
+        'require_price',
+        'require_period',
     ];
 
     const DOC_REQUIRE_KEYS = ['require_f1', 'require_f2', 'require_agreement'];
     const INFO_REQUIRE_KEYS = [
-        'require_title', 'require_first_party', 'require_vendor', 'require_category',
-        'require_f2_contract_no', 'require_tax_toggle', 'require_price', 'require_period',
+        'require_title',
+        'require_first_party',
+        'require_vendor',
+        'require_category',
+        'require_f2_contract_no',
+        'require_tax_toggle',
+        'require_price',
+        'require_period',
     ];
 
     const isSectionChecked = (keys: string[]) => {
@@ -208,24 +248,42 @@ export function AdvancedStepSettingsModal({ open, onOpenChange, step, onUpdateSt
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[760px] p-0 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-slate-800 dark:text-zinc-100 rounded-[8px] overflow-hidden">
-                <DialogHeader className="px-6 py-4 bg-primary dark:bg-zinc-800/90 text-white dark:text-zinc-100 border-b border-primary/20 dark:border-zinc-700/80">
-                    <DialogTitle className="text-white dark:text-zinc-100 font-bold">Pengaturan Lanjutan Tahap</DialogTitle>
-                    <DialogDescription className="text-white/80 dark:text-zinc-400">Konfigurasi kontrol perilaku & hak akses untuk tahap ini.</DialogDescription>
+            <DialogContent className="overflow-hidden rounded-[8px] border border-slate-200 bg-white p-0 text-slate-800 sm:max-w-[760px] dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100">
+                <DialogHeader className="bg-primary border-primary/20 border-b px-6 py-4 text-white dark:border-zinc-700/80 dark:bg-zinc-800/90 dark:text-zinc-100">
+                    <DialogTitle className="font-bold text-white dark:text-zinc-100">Pengaturan Lanjutan Tahap</DialogTitle>
+                    <DialogDescription className="text-white/80 dark:text-zinc-400">
+                        Konfigurasi kontrol perilaku & hak akses untuk tahap ini.
+                    </DialogDescription>
                 </DialogHeader>
 
                 <div className="px-6 py-4">
-                    <div className="flex justify-end gap-2 mb-3">
-                        <Button type="button" size="sm" variant="outline" className="border-slate-200/80 dark:border-zinc-700/80 bg-white dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-700 font-bold" onClick={() => handleSetAll(true)}>Centang Semua</Button>
-                        <Button type="button" size="sm" variant="outline" className="border-slate-200/80 dark:border-zinc-700/80 bg-white dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-700 font-bold" onClick={() => handleSetAll(false)}>Kosongkan Semua</Button>
+                    <div className="mb-3 flex justify-end gap-2">
+                        <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="border-slate-200/80 bg-white font-bold text-slate-800 hover:bg-slate-100 dark:border-zinc-700/80 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+                            onClick={() => handleSetAll(true)}
+                        >
+                            Centang Semua
+                        </Button>
+                        <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="border-slate-200/80 bg-white font-bold text-slate-800 hover:bg-slate-100 dark:border-zinc-700/80 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+                            onClick={() => handleSetAll(false)}
+                        >
+                            Kosongkan Semua
+                        </Button>
                     </div>
 
-                    <div className="rounded-[8px] border border-slate-200/80 bg-white overflow-hidden dark:border-zinc-800 dark:bg-zinc-900/90 shadow-xs max-h-[65vh] overflow-y-auto">
-                        <table className="w-full text-sm text-left">
-                            <thead className="bg-primary text-white border-b border-primary/20 dark:bg-zinc-800/90 dark:border-zinc-700/80 dark:text-zinc-200 sticky top-0 z-10">
+                    <div className="max-h-[65vh] overflow-hidden overflow-y-auto rounded-[8px] border border-slate-200/80 bg-white shadow-xs dark:border-zinc-800 dark:bg-zinc-900/90">
+                        <table className="w-full text-left text-sm">
+                            <thead className="bg-primary border-primary/20 sticky top-0 z-10 border-b text-white dark:border-zinc-700/80 dark:bg-zinc-800/90 dark:text-zinc-200">
                                 <tr>
                                     <th className="px-4 py-3 font-bold text-white dark:text-zinc-200">Fitur / Tab</th>
-                                    <th className="px-4 py-3 font-bold text-center w-28 text-white dark:text-zinc-200">
+                                    <th className="w-28 px-4 py-3 text-center font-bold text-white dark:text-zinc-200">
                                         <div className="flex items-center justify-center gap-2">
                                             <Checkbox
                                                 checked={isSectionChecked(ALL_EDIT_KEYS)}
@@ -235,7 +293,7 @@ export function AdvancedStepSettingsModal({ open, onOpenChange, step, onUpdateSt
                                             <span>Dapat Diedit</span>
                                         </div>
                                     </th>
-                                    <th className="px-4 py-3 font-bold text-center w-28 text-white dark:text-zinc-200">
+                                    <th className="w-28 px-4 py-3 text-center font-bold text-white dark:text-zinc-200">
                                         <div className="flex items-center justify-center gap-2">
                                             <Checkbox
                                                 checked={isSectionChecked(ALL_SHOW_KEYS)}
@@ -245,7 +303,7 @@ export function AdvancedStepSettingsModal({ open, onOpenChange, step, onUpdateSt
                                             <span>Tampilkan</span>
                                         </div>
                                     </th>
-                                    <th className="px-4 py-3 font-bold text-center w-28 text-white dark:text-zinc-200">
+                                    <th className="w-28 px-4 py-3 text-center font-bold text-white dark:text-zinc-200">
                                         <div className="flex items-center justify-center gap-2">
                                             <Checkbox
                                                 checked={isRequireSectionChecked(ALL_REQUIRE_KEYS)}
@@ -259,8 +317,8 @@ export function AdvancedStepSettingsModal({ open, onOpenChange, step, onUpdateSt
                             </thead>
                             <tbody className="divide-y divide-slate-200/60 dark:divide-zinc-800/80">
                                 {/* Tab 1: Dokumen */}
-                                <tr className="bg-slate-100/90 dark:bg-zinc-800/80 border-y border-slate-200 dark:border-zinc-700">
-                                    <td className="px-4 py-2 font-bold text-xs uppercase tracking-wider text-slate-700 dark:text-zinc-300">
+                                <tr className="border-y border-slate-200 bg-slate-100/90 dark:border-zinc-700 dark:bg-zinc-800/80">
+                                    <td className="px-4 py-2 text-xs font-bold tracking-wider text-slate-700 uppercase dark:text-zinc-300">
                                         Tab 1: Dokumen (Sub-dokumen F1, F2, & Perjanjian)
                                     </td>
                                     <td className="px-4 py-2 text-center">
@@ -285,41 +343,124 @@ export function AdvancedStepSettingsModal({ open, onOpenChange, step, onUpdateSt
                                         />
                                     </td>
                                 </tr>
-                                <tr className="hover:bg-slate-100/60 dark:hover:bg-zinc-800/50 transition-colors">
-                                    <td className="px-4 py-2.5 font-semibold text-slate-800 dark:text-zinc-200 pl-6">Sub-tab F1 (Permohonan)</td>
-                                    <td className="px-4 py-2.5 text-center"><Checkbox checked={step.meta?.allow_f1_edit !== false} onCheckedChange={(c) => handleMetaChange('allow_f1_edit', !!c)} /></td>
-                                    <td className="px-4 py-2.5 text-center"><Checkbox checked={step.meta?.show_tab_f1 !== false} onCheckedChange={(c) => handleMetaChange('show_tab_f1', !!c)} /></td>
-                                    <td className="px-4 py-2.5 text-center"><Checkbox checked={!!step.meta?.require_f1} onCheckedChange={(c) => handleMetaChange('require_f1', !!c)} /></td>
+                                <tr className="transition-colors hover:bg-slate-100/60 dark:hover:bg-zinc-800/50">
+                                    <td className="px-4 py-2.5 pl-6 font-semibold text-slate-800 dark:text-zinc-200">Sub-tab F1 (Permohonan)</td>
+                                    <td className="px-4 py-2.5 text-center">
+                                        <Checkbox
+                                            checked={step.meta?.allow_f1_edit !== false}
+                                            onCheckedChange={(c) => handleMetaChange('allow_f1_edit', !!c)}
+                                        />
+                                    </td>
+                                    <td className="px-4 py-2.5 text-center">
+                                        <Checkbox
+                                            checked={step.meta?.show_tab_f1 !== false}
+                                            onCheckedChange={(c) => handleMetaChange('show_tab_f1', !!c)}
+                                        />
+                                    </td>
+                                    <td className="px-4 py-2.5 text-center">
+                                        <Checkbox checked={!!step.meta?.require_f1} onCheckedChange={(c) => handleMetaChange('require_f1', !!c)} />
+                                    </td>
                                 </tr>
-                                <tr className="hover:bg-slate-100/60 dark:hover:bg-zinc-800/50 transition-colors">
-                                    <td className="px-4 py-2.5 font-semibold text-slate-800 dark:text-zinc-200 pl-6">Sub-tab F2 (Ringkasan)</td>
-                                    <td className="px-4 py-2.5 text-center"><Checkbox checked={step.meta?.allow_f2_edit !== false} onCheckedChange={(c) => handleMetaChange('allow_f2_edit', !!c)} /></td>
-                                    <td className="px-4 py-2.5 text-center"><Checkbox checked={step.meta?.show_tab_f2 !== false} onCheckedChange={(c) => handleMetaChange('show_tab_f2', !!c)} /></td>
-                                    <td className="px-4 py-2.5 text-center"><Checkbox checked={!!step.meta?.require_f2} onCheckedChange={(c) => handleMetaChange('require_f2', !!c)} /></td>
+                                <tr className="transition-colors hover:bg-slate-100/60 dark:hover:bg-zinc-800/50">
+                                    <td className="px-4 py-2.5 pl-6 font-semibold text-slate-800 dark:text-zinc-200">Sub-tab F2 (Ringkasan)</td>
+                                    <td className="px-4 py-2.5 text-center">
+                                        <Checkbox
+                                            checked={step.meta?.allow_f2_edit !== false}
+                                            onCheckedChange={(c) => handleMetaChange('allow_f2_edit', !!c)}
+                                        />
+                                    </td>
+                                    <td className="px-4 py-2.5 text-center">
+                                        <Checkbox
+                                            checked={step.meta?.show_tab_f2 !== false}
+                                            onCheckedChange={(c) => handleMetaChange('show_tab_f2', !!c)}
+                                        />
+                                    </td>
+                                    <td className="px-4 py-2.5 text-center">
+                                        <Checkbox checked={!!step.meta?.require_f2} onCheckedChange={(c) => handleMetaChange('require_f2', !!c)} />
+                                    </td>
                                 </tr>
-                                <tr className="hover:bg-slate-100/60 dark:hover:bg-zinc-800/50 transition-colors">
-                                    <td className="px-4 py-2.5 font-semibold text-slate-800 dark:text-zinc-200 pl-6">Sub-tab Perjanjian / Draft</td>
-                                    <td className="px-4 py-2.5 text-center"><Checkbox checked={step.meta?.allow_agreement_edit !== false} onCheckedChange={(c) => handleMetaChange('allow_agreement_edit', !!c)} /></td>
-                                    <td className="px-4 py-2.5 text-center"><Checkbox checked={step.meta?.show_tab_agreement !== false} onCheckedChange={(c) => handleMetaChange('show_tab_agreement', !!c)} /></td>
-                                    <td className="px-4 py-2.5 text-center"><Checkbox checked={!!step.meta?.require_agreement} onCheckedChange={(c) => handleMetaChange('require_agreement', !!c)} /></td>
+                                <tr className="transition-colors hover:bg-slate-100/60 dark:hover:bg-zinc-800/50">
+                                    <td className="px-4 py-2.5 pl-6 font-semibold text-slate-800 dark:text-zinc-200">Sub-tab Perjanjian / Draft</td>
+                                    <td className="px-4 py-2.5 text-center">
+                                        <Checkbox
+                                            checked={step.meta?.allow_agreement_edit !== false}
+                                            onCheckedChange={(c) => handleMetaChange('allow_agreement_edit', !!c)}
+                                        />
+                                    </td>
+                                    <td className="px-4 py-2.5 text-center">
+                                        <Checkbox
+                                            checked={step.meta?.show_tab_agreement !== false}
+                                            onCheckedChange={(c) => handleMetaChange('show_tab_agreement', !!c)}
+                                        />
+                                    </td>
+                                    <td className="px-4 py-2.5 text-center">
+                                        <Checkbox
+                                            checked={!!step.meta?.require_agreement}
+                                            onCheckedChange={(c) => handleMetaChange('require_agreement', !!c)}
+                                        />
+                                    </td>
                                 </tr>
 
                                 {/* Informational Section: Informasi Kontrak */}
-                                <tr className="bg-slate-100/90 dark:bg-zinc-800/80 border-y border-slate-200 dark:border-zinc-700">
-                                    <td className="px-4 py-2 font-bold text-xs uppercase tracking-wider text-slate-700 dark:text-zinc-300">
+                                <tr className="border-y border-slate-200 bg-slate-100/90 dark:border-zinc-700 dark:bg-zinc-800/80">
+                                    <td className="px-4 py-2 text-xs font-bold tracking-wider text-slate-700 uppercase dark:text-zinc-300">
                                         Informasi Kontrak (Panel & Field Data Utama)
                                     </td>
                                     <td className="px-4 py-2 text-center">
                                         <Checkbox
-                                            checked={isSectionChecked(['allow_info_edit', 'allow_title_edit', 'allow_first_party_edit', 'allow_vendor_edit', 'allow_category_edit', 'allow_f2_contract_no_edit', 'allow_tax_toggle_edit', 'allow_price_edit', 'allow_period_edit'])}
-                                            onCheckedChange={() => toggleSection(['allow_info_edit', 'allow_title_edit', 'allow_first_party_edit', 'allow_vendor_edit', 'allow_category_edit', 'allow_f2_contract_no_edit', 'allow_tax_toggle_edit', 'allow_price_edit', 'allow_period_edit'])}
+                                            checked={isSectionChecked([
+                                                'allow_info_edit',
+                                                'allow_title_edit',
+                                                'allow_first_party_edit',
+                                                'allow_vendor_edit',
+                                                'allow_category_edit',
+                                                'allow_f2_contract_no_edit',
+                                                'allow_tax_toggle_edit',
+                                                'allow_price_edit',
+                                                'allow_period_edit',
+                                            ])}
+                                            onCheckedChange={() =>
+                                                toggleSection([
+                                                    'allow_info_edit',
+                                                    'allow_title_edit',
+                                                    'allow_first_party_edit',
+                                                    'allow_vendor_edit',
+                                                    'allow_category_edit',
+                                                    'allow_f2_contract_no_edit',
+                                                    'allow_tax_toggle_edit',
+                                                    'allow_price_edit',
+                                                    'allow_period_edit',
+                                                ])
+                                            }
                                             title="Centang/Kosongkan Semua Dapat Diedit di Informasi Kontrak"
                                         />
                                     </td>
                                     <td className="px-4 py-2 text-center">
                                         <Checkbox
-                                            checked={isSectionChecked(['show_info', 'show_title', 'show_first_party', 'show_vendor', 'show_category', 'show_f2_contract_no', 'show_tax_toggle', 'show_price', 'show_period'])}
-                                            onCheckedChange={() => toggleSection(['show_info', 'show_title', 'show_first_party', 'show_vendor', 'show_category', 'show_f2_contract_no', 'show_tax_toggle', 'show_price', 'show_period'])}
+                                            checked={isSectionChecked([
+                                                'show_info',
+                                                'show_title',
+                                                'show_first_party',
+                                                'show_vendor',
+                                                'show_category',
+                                                'show_f2_contract_no',
+                                                'show_tax_toggle',
+                                                'show_price',
+                                                'show_period',
+                                            ])}
+                                            onCheckedChange={() =>
+                                                toggleSection([
+                                                    'show_info',
+                                                    'show_title',
+                                                    'show_first_party',
+                                                    'show_vendor',
+                                                    'show_category',
+                                                    'show_f2_contract_no',
+                                                    'show_tax_toggle',
+                                                    'show_price',
+                                                    'show_period',
+                                                ])
+                                            }
                                             title="Centang/Kosongkan Semua Tampilkan di Informasi Kontrak"
                                         />
                                     </td>
@@ -331,64 +472,202 @@ export function AdvancedStepSettingsModal({ open, onOpenChange, step, onUpdateSt
                                         />
                                     </td>
                                 </tr>
-                                <tr className="hover:bg-slate-100/60 dark:hover:bg-zinc-800/50 transition-colors">
-                                    <td className="px-4 py-2.5 font-semibold text-slate-800 dark:text-zinc-200 pl-6">Info Kontrak Utama (Kanan)</td>
-                                    <td className="px-4 py-2.5 text-center"><Checkbox checked={step.meta?.allow_info_edit !== false} onCheckedChange={(c) => handleMetaChange('allow_info_edit', !!c)} /></td>
-                                    <td className="px-4 py-2.5 text-center"><Checkbox checked={step.meta?.show_info !== false} onCheckedChange={(c) => handleMetaChange('show_info', !!c)} /></td>
-                                    <td className="px-4 py-2.5 text-center"><span className="text-slate-300 dark:text-zinc-600">-</span></td>
+                                <tr className="transition-colors hover:bg-slate-100/60 dark:hover:bg-zinc-800/50">
+                                    <td className="px-4 py-2.5 pl-6 font-semibold text-slate-800 dark:text-zinc-200">Info Kontrak Utama (Kanan)</td>
+                                    <td className="px-4 py-2.5 text-center">
+                                        <Checkbox
+                                            checked={step.meta?.allow_info_edit !== false}
+                                            onCheckedChange={(c) => handleMetaChange('allow_info_edit', !!c)}
+                                        />
+                                    </td>
+                                    <td className="px-4 py-2.5 text-center">
+                                        <Checkbox
+                                            checked={step.meta?.show_info !== false}
+                                            onCheckedChange={(c) => handleMetaChange('show_info', !!c)}
+                                        />
+                                    </td>
+                                    <td className="px-4 py-2.5 text-center">
+                                        <span className="text-slate-300 dark:text-zinc-600">-</span>
+                                    </td>
                                 </tr>
-                                <tr className="hover:bg-slate-100/60 dark:hover:bg-zinc-800/50 transition-colors">
-                                    <td className="px-4 py-2 text-xs font-normal text-slate-600 dark:text-zinc-400 pl-10">↳ Field Judul Kontrak</td>
-                                    <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.allow_title_edit !== false} onCheckedChange={(c) => handleMetaChange('allow_title_edit', !!c)} /></td>
-                                    <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.show_title !== false} onCheckedChange={(c) => handleMetaChange('show_title', !!c)} /></td>
-                                    <td className="px-4 py-2 text-center"><Checkbox checked={!!step.meta?.require_title} onCheckedChange={(c) => handleMetaChange('require_title', !!c)} /></td>
+                                <tr className="transition-colors hover:bg-slate-100/60 dark:hover:bg-zinc-800/50">
+                                    <td className="px-4 py-2 pl-10 text-xs font-normal text-slate-600 dark:text-zinc-400">↳ Field Judul Kontrak</td>
+                                    <td className="px-4 py-2 text-center">
+                                        <Checkbox
+                                            checked={step.meta?.allow_title_edit !== false}
+                                            onCheckedChange={(c) => handleMetaChange('allow_title_edit', !!c)}
+                                        />
+                                    </td>
+                                    <td className="px-4 py-2 text-center">
+                                        <Checkbox
+                                            checked={step.meta?.show_title !== false}
+                                            onCheckedChange={(c) => handleMetaChange('show_title', !!c)}
+                                        />
+                                    </td>
+                                    <td className="px-4 py-2 text-center">
+                                        <Checkbox
+                                            checked={!!step.meta?.require_title}
+                                            onCheckedChange={(c) => handleMetaChange('require_title', !!c)}
+                                        />
+                                    </td>
                                 </tr>
-                                <tr className="hover:bg-slate-100/60 dark:hover:bg-zinc-800/50 transition-colors">
-                                    <td className="px-4 py-2 text-xs font-normal text-slate-600 dark:text-zinc-400 pl-10">↳ Field Pihak Pertama</td>
-                                    <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.allow_first_party_edit !== false} onCheckedChange={(c) => handleMetaChange('allow_first_party_edit', !!c)} /></td>
-                                    <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.show_first_party !== false} onCheckedChange={(c) => handleMetaChange('show_first_party', !!c)} /></td>
-                                    <td className="px-4 py-2 text-center"><Checkbox checked={!!step.meta?.require_first_party} onCheckedChange={(c) => handleMetaChange('require_first_party', !!c)} /></td>
+                                <tr className="transition-colors hover:bg-slate-100/60 dark:hover:bg-zinc-800/50">
+                                    <td className="px-4 py-2 pl-10 text-xs font-normal text-slate-600 dark:text-zinc-400">↳ Field Pihak Pertama</td>
+                                    <td className="px-4 py-2 text-center">
+                                        <Checkbox
+                                            checked={step.meta?.allow_first_party_edit !== false}
+                                            onCheckedChange={(c) => handleMetaChange('allow_first_party_edit', !!c)}
+                                        />
+                                    </td>
+                                    <td className="px-4 py-2 text-center">
+                                        <Checkbox
+                                            checked={step.meta?.show_first_party !== false}
+                                            onCheckedChange={(c) => handleMetaChange('show_first_party', !!c)}
+                                        />
+                                    </td>
+                                    <td className="px-4 py-2 text-center">
+                                        <Checkbox
+                                            checked={!!step.meta?.require_first_party}
+                                            onCheckedChange={(c) => handleMetaChange('require_first_party', !!c)}
+                                        />
+                                    </td>
                                 </tr>
-                                <tr className="hover:bg-slate-100/60 dark:hover:bg-zinc-800/50 transition-colors">
-                                    <td className="px-4 py-2 text-xs font-normal text-slate-600 dark:text-zinc-400 pl-10">↳ Field Pihak Kedua</td>
-                                    <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.allow_vendor_edit !== false} onCheckedChange={(c) => handleMetaChange('allow_vendor_edit', !!c)} /></td>
-                                    <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.show_vendor !== false} onCheckedChange={(c) => handleMetaChange('show_vendor', !!c)} /></td>
-                                    <td className="px-4 py-2 text-center"><Checkbox checked={!!step.meta?.require_vendor} onCheckedChange={(c) => handleMetaChange('require_vendor', !!c)} /></td>
+                                <tr className="transition-colors hover:bg-slate-100/60 dark:hover:bg-zinc-800/50">
+                                    <td className="px-4 py-2 pl-10 text-xs font-normal text-slate-600 dark:text-zinc-400">↳ Field Pihak Kedua</td>
+                                    <td className="px-4 py-2 text-center">
+                                        <Checkbox
+                                            checked={step.meta?.allow_vendor_edit !== false}
+                                            onCheckedChange={(c) => handleMetaChange('allow_vendor_edit', !!c)}
+                                        />
+                                    </td>
+                                    <td className="px-4 py-2 text-center">
+                                        <Checkbox
+                                            checked={step.meta?.show_vendor !== false}
+                                            onCheckedChange={(c) => handleMetaChange('show_vendor', !!c)}
+                                        />
+                                    </td>
+                                    <td className="px-4 py-2 text-center">
+                                        <Checkbox
+                                            checked={!!step.meta?.require_vendor}
+                                            onCheckedChange={(c) => handleMetaChange('require_vendor', !!c)}
+                                        />
+                                    </td>
                                 </tr>
-                                <tr className="hover:bg-slate-100/60 dark:hover:bg-zinc-800/50 transition-colors">
-                                    <td className="px-4 py-2 text-xs font-normal text-slate-600 dark:text-zinc-400 pl-10">↳ Field Kategori Kontrak</td>
-                                    <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.allow_category_edit !== false} onCheckedChange={(c) => handleMetaChange('allow_category_edit', !!c)} /></td>
-                                    <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.show_category !== false} onCheckedChange={(c) => handleMetaChange('show_category', !!c)} /></td>
-                                    <td className="px-4 py-2 text-center"><Checkbox checked={!!step.meta?.require_category} onCheckedChange={(c) => handleMetaChange('require_category', !!c)} /></td>
+                                <tr className="transition-colors hover:bg-slate-100/60 dark:hover:bg-zinc-800/50">
+                                    <td className="px-4 py-2 pl-10 text-xs font-normal text-slate-600 dark:text-zinc-400">
+                                        ↳ Field Kategori Kontrak
+                                    </td>
+                                    <td className="px-4 py-2 text-center">
+                                        <Checkbox
+                                            checked={step.meta?.allow_category_edit !== false}
+                                            onCheckedChange={(c) => handleMetaChange('allow_category_edit', !!c)}
+                                        />
+                                    </td>
+                                    <td className="px-4 py-2 text-center">
+                                        <Checkbox
+                                            checked={step.meta?.show_category !== false}
+                                            onCheckedChange={(c) => handleMetaChange('show_category', !!c)}
+                                        />
+                                    </td>
+                                    <td className="px-4 py-2 text-center">
+                                        <Checkbox
+                                            checked={!!step.meta?.require_category}
+                                            onCheckedChange={(c) => handleMetaChange('require_category', !!c)}
+                                        />
+                                    </td>
                                 </tr>
-                                <tr className="hover:bg-slate-100/60 dark:hover:bg-zinc-800/50 transition-colors">
-                                    <td className="px-4 py-2 text-xs font-normal text-slate-600 dark:text-zinc-400 pl-10">↳ Field No. Kontrak</td>
-                                    <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.allow_f2_contract_no_edit !== false} onCheckedChange={(c) => handleMetaChange('allow_f2_contract_no_edit', !!c)} /></td>
-                                    <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.show_f2_contract_no !== false} onCheckedChange={(c) => handleMetaChange('show_f2_contract_no', !!c)} /></td>
-                                    <td className="px-4 py-2 text-center"><Checkbox checked={!!step.meta?.require_f2_contract_no} onCheckedChange={(c) => handleMetaChange('require_f2_contract_no', !!c)} /></td>
+                                <tr className="transition-colors hover:bg-slate-100/60 dark:hover:bg-zinc-800/50">
+                                    <td className="px-4 py-2 pl-10 text-xs font-normal text-slate-600 dark:text-zinc-400">↳ Field No. Kontrak</td>
+                                    <td className="px-4 py-2 text-center">
+                                        <Checkbox
+                                            checked={step.meta?.allow_f2_contract_no_edit !== false}
+                                            onCheckedChange={(c) => handleMetaChange('allow_f2_contract_no_edit', !!c)}
+                                        />
+                                    </td>
+                                    <td className="px-4 py-2 text-center">
+                                        <Checkbox
+                                            checked={step.meta?.show_f2_contract_no !== false}
+                                            onCheckedChange={(c) => handleMetaChange('show_f2_contract_no', !!c)}
+                                        />
+                                    </td>
+                                    <td className="px-4 py-2 text-center">
+                                        <Checkbox
+                                            checked={!!step.meta?.require_f2_contract_no}
+                                            onCheckedChange={(c) => handleMetaChange('require_f2_contract_no', !!c)}
+                                        />
+                                    </td>
                                 </tr>
-                                <tr className="hover:bg-slate-100/60 dark:hover:bg-zinc-800/50 transition-colors">
-                                    <td className="px-4 py-2 text-xs font-normal text-slate-600 dark:text-zinc-400 pl-10">↳ Field Penentuan Pajak</td>
-                                    <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.allow_tax_toggle_edit !== false} onCheckedChange={(c) => handleMetaChange('allow_tax_toggle_edit', !!c)} /></td>
-                                    <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.show_tax_toggle !== false} onCheckedChange={(c) => handleMetaChange('show_tax_toggle', !!c)} /></td>
-                                    <td className="px-4 py-2 text-center"><Checkbox checked={!!step.meta?.require_tax_toggle} onCheckedChange={(c) => handleMetaChange('require_tax_toggle', !!c)} /></td>
+                                <tr className="transition-colors hover:bg-slate-100/60 dark:hover:bg-zinc-800/50">
+                                    <td className="px-4 py-2 pl-10 text-xs font-normal text-slate-600 dark:text-zinc-400">↳ Field Penentuan Pajak</td>
+                                    <td className="px-4 py-2 text-center">
+                                        <Checkbox
+                                            checked={step.meta?.allow_tax_toggle_edit !== false}
+                                            onCheckedChange={(c) => handleMetaChange('allow_tax_toggle_edit', !!c)}
+                                        />
+                                    </td>
+                                    <td className="px-4 py-2 text-center">
+                                        <Checkbox
+                                            checked={step.meta?.show_tax_toggle !== false}
+                                            onCheckedChange={(c) => handleMetaChange('show_tax_toggle', !!c)}
+                                        />
+                                    </td>
+                                    <td className="px-4 py-2 text-center">
+                                        <Checkbox
+                                            checked={!!step.meta?.require_tax_toggle}
+                                            onCheckedChange={(c) => handleMetaChange('require_tax_toggle', !!c)}
+                                        />
+                                    </td>
                                 </tr>
-                                <tr className="hover:bg-slate-100/60 dark:hover:bg-zinc-800/50 transition-colors">
-                                    <td className="px-4 py-2 text-xs font-normal text-slate-600 dark:text-zinc-400 pl-10">↳ Field Nilai / Harga Kontrak</td>
-                                    <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.allow_price_edit !== false} onCheckedChange={(c) => handleMetaChange('allow_price_edit', !!c)} /></td>
-                                    <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.show_price !== false} onCheckedChange={(c) => handleMetaChange('show_price', !!c)} /></td>
-                                    <td className="px-4 py-2 text-center"><Checkbox checked={!!step.meta?.require_price} onCheckedChange={(c) => handleMetaChange('require_price', !!c)} /></td>
+                                <tr className="transition-colors hover:bg-slate-100/60 dark:hover:bg-zinc-800/50">
+                                    <td className="px-4 py-2 pl-10 text-xs font-normal text-slate-600 dark:text-zinc-400">
+                                        ↳ Field Nilai / Harga Kontrak
+                                    </td>
+                                    <td className="px-4 py-2 text-center">
+                                        <Checkbox
+                                            checked={step.meta?.allow_price_edit !== false}
+                                            onCheckedChange={(c) => handleMetaChange('allow_price_edit', !!c)}
+                                        />
+                                    </td>
+                                    <td className="px-4 py-2 text-center">
+                                        <Checkbox
+                                            checked={step.meta?.show_price !== false}
+                                            onCheckedChange={(c) => handleMetaChange('show_price', !!c)}
+                                        />
+                                    </td>
+                                    <td className="px-4 py-2 text-center">
+                                        <Checkbox
+                                            checked={!!step.meta?.require_price}
+                                            onCheckedChange={(c) => handleMetaChange('require_price', !!c)}
+                                        />
+                                    </td>
                                 </tr>
-                                <tr className="hover:bg-slate-100/60 dark:hover:bg-zinc-800/50 transition-colors">
-                                    <td className="px-4 py-2 text-xs font-normal text-slate-600 dark:text-zinc-400 pl-10">↳ Field Masa Berlaku Kontrak</td>
-                                    <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.allow_period_edit !== false} onCheckedChange={(c) => handleMetaChange('allow_period_edit', !!c)} /></td>
-                                    <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.show_period !== false} onCheckedChange={(c) => handleMetaChange('show_period', !!c)} /></td>
-                                    <td className="px-4 py-2 text-center"><Checkbox checked={!!step.meta?.require_period} onCheckedChange={(c) => handleMetaChange('require_period', !!c)} /></td>
+                                <tr className="transition-colors hover:bg-slate-100/60 dark:hover:bg-zinc-800/50">
+                                    <td className="px-4 py-2 pl-10 text-xs font-normal text-slate-600 dark:text-zinc-400">
+                                        ↳ Field Masa Berlaku Kontrak
+                                    </td>
+                                    <td className="px-4 py-2 text-center">
+                                        <Checkbox
+                                            checked={step.meta?.allow_period_edit !== false}
+                                            onCheckedChange={(c) => handleMetaChange('allow_period_edit', !!c)}
+                                        />
+                                    </td>
+                                    <td className="px-4 py-2 text-center">
+                                        <Checkbox
+                                            checked={step.meta?.show_period !== false}
+                                            onCheckedChange={(c) => handleMetaChange('show_period', !!c)}
+                                        />
+                                    </td>
+                                    <td className="px-4 py-2 text-center">
+                                        <Checkbox
+                                            checked={!!step.meta?.require_period}
+                                            onCheckedChange={(c) => handleMetaChange('require_period', !!c)}
+                                        />
+                                    </td>
                                 </tr>
 
                                 {/* Tab 2: Riwayat & Alur */}
-                                <tr className="bg-slate-100/90 dark:bg-zinc-800/80 border-y border-slate-200 dark:border-zinc-700">
-                                    <td className="px-4 py-2 font-bold text-xs uppercase tracking-wider text-slate-700 dark:text-zinc-300">
+                                <tr className="border-y border-slate-200 bg-slate-100/90 dark:border-zinc-700 dark:bg-zinc-800/80">
+                                    <td className="px-4 py-2 text-xs font-bold tracking-wider text-slate-700 uppercase dark:text-zinc-300">
                                         Tab 2: Riwayat & Alur (Sub-tab Alur & Audit Log)
                                     </td>
                                     <td className="px-4 py-2 text-center">
@@ -405,18 +684,34 @@ export function AdvancedStepSettingsModal({ open, onOpenChange, step, onUpdateSt
                                             title="Centang/Kosongkan Semua Tampilkan di Riwayat & Alur"
                                         />
                                     </td>
-                                    <td className="px-4 py-2 text-center"><span className="text-slate-300 dark:text-zinc-600">-</span></td>
+                                    <td className="px-4 py-2 text-center">
+                                        <span className="text-slate-300 dark:text-zinc-600">-</span>
+                                    </td>
                                 </tr>
-                                <tr className="hover:bg-slate-100/60 dark:hover:bg-zinc-800/50 transition-colors">
-                                    <td className="px-4 py-2.5 font-semibold text-slate-800 dark:text-zinc-200 pl-6">Sub-tab Alur Approval & Proses</td>
-                                    <td className="px-4 py-2.5 text-center"><Checkbox checked={step.meta?.allow_timeline_edit !== false} onCheckedChange={(c) => handleMetaChange('allow_timeline_edit', !!c)} /></td>
-                                    <td className="px-4 py-2.5 text-center"><Checkbox checked={step.meta?.show_tab_timeline !== false} onCheckedChange={(c) => handleMetaChange('show_tab_timeline', !!c)} /></td>
-                                    <td className="px-4 py-2.5 text-center"><span className="text-slate-300 dark:text-zinc-600">-</span></td>
+                                <tr className="transition-colors hover:bg-slate-100/60 dark:hover:bg-zinc-800/50">
+                                    <td className="px-4 py-2.5 pl-6 font-semibold text-slate-800 dark:text-zinc-200">
+                                        Sub-tab Alur Approval & Proses
+                                    </td>
+                                    <td className="px-4 py-2.5 text-center">
+                                        <Checkbox
+                                            checked={step.meta?.allow_timeline_edit !== false}
+                                            onCheckedChange={(c) => handleMetaChange('allow_timeline_edit', !!c)}
+                                        />
+                                    </td>
+                                    <td className="px-4 py-2.5 text-center">
+                                        <Checkbox
+                                            checked={step.meta?.show_tab_timeline !== false}
+                                            onCheckedChange={(c) => handleMetaChange('show_tab_timeline', !!c)}
+                                        />
+                                    </td>
+                                    <td className="px-4 py-2.5 text-center">
+                                        <span className="text-slate-300 dark:text-zinc-600">-</span>
+                                    </td>
                                 </tr>
 
                                 {/* Tab 3: Diskusi & Member */}
-                                <tr className="bg-slate-100/90 dark:bg-zinc-800/80 border-y border-slate-200 dark:border-zinc-700">
-                                    <td className="px-4 py-2 font-bold text-xs uppercase tracking-wider text-slate-700 dark:text-zinc-300">
+                                <tr className="border-y border-slate-200 bg-slate-100/90 dark:border-zinc-700 dark:bg-zinc-800/80">
+                                    <td className="px-4 py-2 text-xs font-bold tracking-wider text-slate-700 uppercase dark:text-zinc-300">
                                         Tab 3: Diskusi & Member (Sub-tab Chat & Member)
                                     </td>
                                     <td className="px-4 py-2 text-center">
@@ -433,24 +728,47 @@ export function AdvancedStepSettingsModal({ open, onOpenChange, step, onUpdateSt
                                             title="Centang/Kosongkan Semua Tampilkan di Diskusi & Member"
                                         />
                                     </td>
-                                    <td className="px-4 py-2 text-center"><span className="text-slate-300 dark:text-zinc-600">-</span></td>
+                                    <td className="px-4 py-2 text-center">
+                                        <span className="text-slate-300 dark:text-zinc-600">-</span>
+                                    </td>
                                 </tr>
-                                <tr className="hover:bg-slate-100/60 dark:hover:bg-zinc-800/50 transition-colors">
-                                    <td className="px-4 py-2.5 font-semibold text-slate-800 dark:text-zinc-200 pl-6">Sub-tab Chat & Diskusi Tim</td>
-                                    <td className="px-4 py-2.5 text-center"><Checkbox checked={step.meta?.allow_chat_edit !== false} onCheckedChange={(c) => handleMetaChange('allow_chat_edit', !!c)} /></td>
-                                    <td className="px-4 py-2.5 text-center"><Checkbox checked={step.meta?.show_tab_chat !== false} onCheckedChange={(c) => handleMetaChange('show_tab_chat', !!c)} /></td>
-                                    <td className="px-4 py-2.5 text-center"><span className="text-slate-300 dark:text-zinc-600">-</span></td>
+                                <tr className="transition-colors hover:bg-slate-100/60 dark:hover:bg-zinc-800/50">
+                                    <td className="px-4 py-2.5 pl-6 font-semibold text-slate-800 dark:text-zinc-200">Sub-tab Chat & Diskusi Tim</td>
+                                    <td className="px-4 py-2.5 text-center">
+                                        <Checkbox
+                                            checked={step.meta?.allow_chat_edit !== false}
+                                            onCheckedChange={(c) => handleMetaChange('allow_chat_edit', !!c)}
+                                        />
+                                    </td>
+                                    <td className="px-4 py-2.5 text-center">
+                                        <Checkbox
+                                            checked={step.meta?.show_tab_chat !== false}
+                                            onCheckedChange={(c) => handleMetaChange('show_tab_chat', !!c)}
+                                        />
+                                    </td>
+                                    <td className="px-4 py-2.5 text-center">
+                                        <span className="text-slate-300 dark:text-zinc-600">-</span>
+                                    </td>
                                 </tr>
-                                <tr className="hover:bg-slate-100/60 dark:hover:bg-zinc-800/50 transition-colors">
-                                    <td className="px-4 py-2.5 font-semibold text-slate-800 dark:text-zinc-200 pl-6">Sub-tab Member / Anggota Tim</td>
-                                    <td className="px-4 py-2.5 text-center"><span className="text-slate-300 dark:text-zinc-600">-</span></td>
-                                    <td className="px-4 py-2.5 text-center"><Checkbox checked={step.meta?.show_tab_members !== false} onCheckedChange={(c) => handleMetaChange('show_tab_members', !!c)} /></td>
-                                    <td className="px-4 py-2.5 text-center"><span className="text-slate-300 dark:text-zinc-600">-</span></td>
+                                <tr className="transition-colors hover:bg-slate-100/60 dark:hover:bg-zinc-800/50">
+                                    <td className="px-4 py-2.5 pl-6 font-semibold text-slate-800 dark:text-zinc-200">Sub-tab Member / Anggota Tim</td>
+                                    <td className="px-4 py-2.5 text-center">
+                                        <span className="text-slate-300 dark:text-zinc-600">-</span>
+                                    </td>
+                                    <td className="px-4 py-2.5 text-center">
+                                        <Checkbox
+                                            checked={step.meta?.show_tab_members !== false}
+                                            onCheckedChange={(c) => handleMetaChange('show_tab_members', !!c)}
+                                        />
+                                    </td>
+                                    <td className="px-4 py-2.5 text-center">
+                                        <span className="text-slate-300 dark:text-zinc-600">-</span>
+                                    </td>
                                 </tr>
 
                                 {/* Tab Lainnya & Panel */}
-                                <tr className="bg-slate-100/90 dark:bg-zinc-800/80 border-y border-slate-200 dark:border-zinc-700">
-                                    <td className="px-4 py-2 font-bold text-xs uppercase tracking-wider text-slate-700 dark:text-zinc-300">
+                                <tr className="border-y border-slate-200 bg-slate-100/90 dark:border-zinc-700 dark:bg-zinc-800/80">
+                                    <td className="px-4 py-2 text-xs font-bold tracking-wider text-slate-700 uppercase dark:text-zinc-300">
                                         Tab Lainnya & Panel Utama
                                     </td>
                                     <td className="px-4 py-2 text-center">
@@ -462,44 +780,104 @@ export function AdvancedStepSettingsModal({ open, onOpenChange, step, onUpdateSt
                                     </td>
                                     <td className="px-4 py-2 text-center">
                                         <Checkbox
-                                            checked={isSectionChecked(['show_tab_attachments', 'show_tab_references', 'show_action_panel', 'show_document_detail'])}
-                                            onCheckedChange={() => toggleSection(['show_tab_attachments', 'show_tab_references', 'show_action_panel', 'show_document_detail'])}
+                                            checked={isSectionChecked([
+                                                'show_tab_attachments',
+                                                'show_tab_references',
+                                                'show_action_panel',
+                                                'show_document_detail',
+                                            ])}
+                                            onCheckedChange={() =>
+                                                toggleSection([
+                                                    'show_tab_attachments',
+                                                    'show_tab_references',
+                                                    'show_action_panel',
+                                                    'show_document_detail',
+                                                ])
+                                            }
                                             title="Centang/Kosongkan Semua Tampilkan di Tab Lainnya & Panel"
                                         />
                                     </td>
-                                    <td className="px-4 py-2 text-center"><span className="text-slate-300 dark:text-zinc-600">-</span></td>
+                                    <td className="px-4 py-2 text-center">
+                                        <span className="text-slate-300 dark:text-zinc-600">-</span>
+                                    </td>
                                 </tr>
-                                <tr className="hover:bg-slate-100/60 dark:hover:bg-zinc-800/50 transition-colors">
+                                <tr className="transition-colors hover:bg-slate-100/60 dark:hover:bg-zinc-800/50">
                                     <td className="px-4 py-2.5 font-semibold text-slate-800 dark:text-zinc-200">Tab Lampiran Berkas</td>
-                                    <td className="px-4 py-2.5 text-center"><Checkbox checked={step.meta?.allow_attachment_edit !== false} onCheckedChange={(c) => handleMetaChange('allow_attachment_edit', !!c)} /></td>
-                                    <td className="px-4 py-2.5 text-center"><Checkbox checked={step.meta?.show_tab_attachments !== false} onCheckedChange={(c) => handleMetaChange('show_tab_attachments', !!c)} /></td>
-                                    <td className="px-4 py-2.5 text-center"><span className="text-slate-300 dark:text-zinc-600">-</span></td>
+                                    <td className="px-4 py-2.5 text-center">
+                                        <Checkbox
+                                            checked={step.meta?.allow_attachment_edit !== false}
+                                            onCheckedChange={(c) => handleMetaChange('allow_attachment_edit', !!c)}
+                                        />
+                                    </td>
+                                    <td className="px-4 py-2.5 text-center">
+                                        <Checkbox
+                                            checked={step.meta?.show_tab_attachments !== false}
+                                            onCheckedChange={(c) => handleMetaChange('show_tab_attachments', !!c)}
+                                        />
+                                    </td>
+                                    <td className="px-4 py-2.5 text-center">
+                                        <span className="text-slate-300 dark:text-zinc-600">-</span>
+                                    </td>
                                 </tr>
-                                <tr className="hover:bg-slate-100/60 dark:hover:bg-zinc-800/50 transition-colors">
+                                <tr className="transition-colors hover:bg-slate-100/60 dark:hover:bg-zinc-800/50">
                                     <td className="px-4 py-2.5 font-semibold text-slate-800 dark:text-zinc-200">Tab Kontrak Referensi</td>
-                                    <td className="px-4 py-2.5 text-center"><Checkbox checked={step.meta?.allow_reference !== false} onCheckedChange={(c) => handleMetaChange('allow_reference', !!c)} /></td>
-                                    <td className="px-4 py-2.5 text-center"><Checkbox checked={step.meta?.show_tab_references !== false} onCheckedChange={(c) => handleMetaChange('show_tab_references', !!c)} /></td>
-                                    <td className="px-4 py-2.5 text-center"><span className="text-slate-300 dark:text-zinc-600">-</span></td>
+                                    <td className="px-4 py-2.5 text-center">
+                                        <Checkbox
+                                            checked={step.meta?.allow_reference !== false}
+                                            onCheckedChange={(c) => handleMetaChange('allow_reference', !!c)}
+                                        />
+                                    </td>
+                                    <td className="px-4 py-2.5 text-center">
+                                        <Checkbox
+                                            checked={step.meta?.show_tab_references !== false}
+                                            onCheckedChange={(c) => handleMetaChange('show_tab_references', !!c)}
+                                        />
+                                    </td>
+                                    <td className="px-4 py-2.5 text-center">
+                                        <span className="text-slate-300 dark:text-zinc-600">-</span>
+                                    </td>
                                 </tr>
-                                <tr className="hover:bg-slate-100/60 dark:hover:bg-zinc-800/50 transition-colors">
+                                <tr className="transition-colors hover:bg-slate-100/60 dark:hover:bg-zinc-800/50">
                                     <td className="px-4 py-2.5 font-semibold text-slate-800 dark:text-zinc-200">Panel Aksi Approval (Kanan)</td>
-                                    <td className="px-4 py-2.5 text-center"><span className="text-slate-300 dark:text-zinc-600">-</span></td>
-                                    <td className="px-4 py-2.5 text-center"><Checkbox checked={step.meta?.show_action_panel !== false} onCheckedChange={(c) => handleMetaChange('show_action_panel', !!c)} /></td>
-                                    <td className="px-4 py-2.5 text-center"><span className="text-slate-300 dark:text-zinc-600">-</span></td>
+                                    <td className="px-4 py-2.5 text-center">
+                                        <span className="text-slate-300 dark:text-zinc-600">-</span>
+                                    </td>
+                                    <td className="px-4 py-2.5 text-center">
+                                        <Checkbox
+                                            checked={step.meta?.show_action_panel !== false}
+                                            onCheckedChange={(c) => handleMetaChange('show_action_panel', !!c)}
+                                        />
+                                    </td>
+                                    <td className="px-4 py-2.5 text-center">
+                                        <span className="text-slate-300 dark:text-zinc-600">-</span>
+                                    </td>
                                 </tr>
-                                <tr className="hover:bg-slate-100/60 dark:hover:bg-zinc-800/50 transition-colors">
+                                <tr className="transition-colors hover:bg-slate-100/60 dark:hover:bg-zinc-800/50">
                                     <td className="px-4 py-2.5 font-semibold text-slate-800 dark:text-zinc-200">Container Detail Dokumen</td>
-                                    <td className="px-4 py-2.5 text-center"><span className="text-slate-300 dark:text-zinc-600">-</span></td>
-                                    <td className="px-4 py-2.5 text-center"><Checkbox checked={step.meta?.show_document_detail !== false} onCheckedChange={(c) => handleMetaChange('show_document_detail', !!c)} /></td>
-                                    <td className="px-4 py-2.5 text-center"><span className="text-slate-300 dark:text-zinc-600">-</span></td>
+                                    <td className="px-4 py-2.5 text-center">
+                                        <span className="text-slate-300 dark:text-zinc-600">-</span>
+                                    </td>
+                                    <td className="px-4 py-2.5 text-center">
+                                        <Checkbox
+                                            checked={step.meta?.show_document_detail !== false}
+                                            onCheckedChange={(c) => handleMetaChange('show_document_detail', !!c)}
+                                        />
+                                    </td>
+                                    <td className="px-4 py-2.5 text-center">
+                                        <span className="text-slate-300 dark:text-zinc-600">-</span>
+                                    </td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
 
-                <DialogFooter className="px-6 py-4 border-t border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900/50">
-                    <Button variant="outline" className="border-slate-200/80 dark:border-zinc-700/80 bg-white dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-700 font-bold" onClick={() => onOpenChange(false)}>
+                <DialogFooter className="border-t border-slate-200/80 bg-white px-6 py-4 dark:border-zinc-800 dark:bg-zinc-900/50">
+                    <Button
+                        variant="outline"
+                        className="border-slate-200/80 bg-white font-bold text-slate-800 hover:bg-slate-100 dark:border-zinc-700/80 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+                        onClick={() => onOpenChange(false)}
+                    >
                         Tutup
                     </Button>
                 </DialogFooter>

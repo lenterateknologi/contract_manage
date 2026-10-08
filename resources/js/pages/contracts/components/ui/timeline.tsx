@@ -1,33 +1,23 @@
-import * as React from 'react';
 import { cn } from '@/lib/utils';
+import * as React from 'react';
 
 export interface TimelineProps extends React.HTMLAttributes<HTMLDivElement> {}
 
-export const Timeline = React.forwardRef<HTMLDivElement, TimelineProps>(
-    ({ className, children, ...props }, ref) => (
-        <div ref={ref} className={cn('relative', className)} {...props}>
-            <div className="absolute top-3 bottom-3 left-[11px] w-px bg-border/60" />
-            <div className="flex flex-col gap-3">
-                {children}
-            </div>
-        </div>
-    ),
-);
+export const Timeline = React.forwardRef<HTMLDivElement, TimelineProps>(({ className, children, ...props }, ref) => (
+    <div ref={ref} className={cn('relative', className)} {...props}>
+        <div className="bg-border/60 absolute top-3 bottom-3 left-[11px] w-px" />
+        <div className="flex flex-col gap-3">{children}</div>
+    </div>
+));
 Timeline.displayName = 'Timeline';
 
 export interface TimelineItemProps extends React.HTMLAttributes<HTMLDivElement> {
     status?: 'completed' | 'active' | 'rejected' | 'waiting' | 'skipped';
 }
 
-export const TimelineItem = React.forwardRef<HTMLDivElement, TimelineItemProps>(
-    ({ className, ...props }, ref) => (
-        <div
-            ref={ref}
-            className={cn('relative flex gap-3 group/timeline-item', className)}
-            {...props}
-        />
-    ),
-);
+export const TimelineItem = React.forwardRef<HTMLDivElement, TimelineItemProps>(({ className, ...props }, ref) => (
+    <div ref={ref} className={cn('group/timeline-item relative flex gap-3', className)} {...props} />
+));
 TimelineItem.displayName = 'TimelineItem';
 
 export interface TimelineIconProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -57,9 +47,7 @@ function getTimelineStatusClass(status: string, hasCustomBg: boolean): string {
 export const TimelineIcon = React.forwardRef<HTMLDivElement, TimelineIconProps>(
     ({ className, status = 'waiting', children, style, ...props }, ref) => {
         return (
-            <div
-                className="relative z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-background ring-1 ring-border/80 shadow-2xs"
-            >
+            <div className="bg-background ring-border/80 relative z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full shadow-2xs ring-1">
                 <div
                     ref={ref}
                     style={style}
@@ -80,16 +68,7 @@ TimelineIcon.displayName = 'TimelineIcon';
 
 export interface TimelineContentProps extends React.HTMLAttributes<HTMLDivElement> {}
 
-export const TimelineContent = React.forwardRef<HTMLDivElement, TimelineContentProps>(
-    ({ className, ...props }, ref) => (
-        <div
-            ref={ref}
-            className={cn(
-                'flex min-w-0 flex-1 flex-col',
-                className,
-            )}
-            {...props}
-        />
-    ),
-);
+export const TimelineContent = React.forwardRef<HTMLDivElement, TimelineContentProps>(({ className, ...props }, ref) => (
+    <div ref={ref} className={cn('flex min-w-0 flex-1 flex-col', className)} {...props} />
+));
 TimelineContent.displayName = 'TimelineContent';

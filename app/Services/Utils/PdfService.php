@@ -3,11 +3,72 @@
 namespace App\Services\Utils;
 
 use Illuminate\Support\Facades\Log;
+use Spatie\Browsershot\Browsershot;
 
 class PdfService
 {
     /**
-     * Convert a file to PDF using LibreOffice.
+     * Get the detected Chrome or Chromium-based browser path on host.
+     */
+    public static function getChromePath(): string
+    {
+        if (file_exists('/Applications/Brave Browser.app/Contents/MacOS/Brave Browser')) {
+            return '/Applications/Brave Browser.app/Contents/MacOS/Brave Browser';
+        }
+
+        return '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+    }
+
+    /**
+     * Create a pre-configured Browsershot instance from raw HTML.
+     */
+    public static function browsershotHtml(string $html, int $timeout = 180): Browsershot
+    {
+        return Browsershot::html($html)
+            ->setNodeBinary('/opt/homebrew/bin/node')
+            ->setNpmBinary('/opt/homebrew/bin/npm')
+            ->setChromePath(self::getChromePath())
+            ->noSandbox()
+            ->addChromiumArguments([
+                'disable-gpu',
+                'disable-dev-shm-usage',
+                'disable-setuid-sandbox',
+                'no-first-run',
+                'disable-extensions',
+            ])
+            ->timeout($timeout)
+            ->format('A4')
+            ->margins(0, 0, 0, 0)
+            ->showBackground()
+            ->setDelay(500);
+    }
+
+    /**
+     * Create a pre-configured Browsershot instance from a URL.
+     */
+    public static function browsershotUrl(string $url, int $timeout = 180): Browsershot
+    {
+        return Browsershot::url($url)
+            ->setNodeBinary('/opt/homebrew/bin/node')
+            ->setNpmBinary('/opt/homebrew/bin/npm')
+            ->setChromePath(self::getChromePath())
+            ->noSandbox()
+            ->addChromiumArguments([
+                'disable-gpu',
+                'disable-dev-shm-usage',
+                'disable-setuid-sandbox',
+                'no-first-run',
+                'disable-extensions',
+            ])
+            ->timeout($timeout)
+            ->paperSize(210, 297, 'mm')
+            ->margins(0, 0, 0, 0)
+            ->showBackground()
+            ->setDelay(1000);
+    }
+
+    /**
+     * Convert a document file to PDF using LibreOffice headless mode.
      */
     public function convertToPdf(string $sourcePath, string $pdfDir, string $pdfPath, string $uniqueId): bool
     {
@@ -26,6 +87,7 @@ class PdfService
                 if ($sourcePath !== $pdfPath) {
                     copy($sourcePath, $pdfPath);
                 }
+
                 return true;
             }
             if (in_array($ext, ['docx', 'xlsx', 'pptx'])) {

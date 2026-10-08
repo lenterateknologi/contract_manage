@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Exports\UsersExport;
+use App\Exports\Master\UsersExport;
 use App\Http\Actions\Role\RoleAccessAction;
 use App\Http\Controllers\Controller;
 use App\Http\Queries\Master\OrganizationQuery;
@@ -15,22 +15,22 @@ use App\Http\Requests\Role\UpdateRoleRequest;
 use App\Http\Requests\User\StoreUserRequest;
 use App\Http\Requests\User\UpdateUserRequest;
 use App\Imports\UsersImport;
-use App\Models\AccessModule;
-use App\Models\Company;
-use App\Models\CompanyGroup;
-use App\Models\Department;
-use App\Models\Division;
-use App\Models\JobLevel;
-use App\Models\JobLevelGroup;
-use App\Models\JobTitle;
-use App\Models\Location;
-use App\Models\Module;
-use App\Models\ModuleGroup;
-use App\Models\OrganizationGroup;
-use App\Models\Region;
-use App\Models\Role;
-use App\Models\RoleModuleGroup;
-use App\Models\User;
+use App\Models\Master\AccessModule;
+use App\Models\Master\Company;
+use App\Models\Master\CompanyGroup;
+use App\Models\Master\Department;
+use App\Models\Master\Division;
+use App\Models\Master\JobLevel;
+use App\Models\Master\JobLevelGroup;
+use App\Models\Master\JobTitle;
+use App\Models\Master\Location;
+use App\Models\Master\Module;
+use App\Models\Master\ModuleGroup;
+use App\Models\Master\OrganizationGroup;
+use App\Models\Master\Region;
+use App\Models\Master\Role;
+use App\Models\Master\RoleModuleGroup;
+use App\Models\Master\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -39,7 +39,6 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Maatwebsite\Excel\Facades\Excel;
-use OpenApi\Attributes as OA;
 
 class AdminController extends Controller
 {
@@ -48,7 +47,6 @@ class AdminController extends Controller
         protected OrganizationQuery $organizationQuery,
     ) {}
 
-    
     public function users(Request $request)
     {
         $query = $this->userQuery->list($request);
@@ -110,7 +108,7 @@ class AdminController extends Controller
                 ->where('is_used', true)
                 ->select([
                     'id', 'name', 'email', 'nik', 'code', 'image_src', 'is_used', 'idemployee', 'idreporting_to', 'reporting_to',
-                    'company_group_id', 'region_id', 'location_id', 'company_id', 'division_id', 'department_id', 'job_position_id', 'job_level_id', 'role_id'
+                    'company_group_id', 'region_id', 'location_id', 'company_id', 'division_id', 'department_id', 'job_position_id', 'job_level_id', 'role_id',
                 ])
                 ->with([
                     'companyGroup:id,name,code,is_used',
@@ -137,11 +135,11 @@ class AdminController extends Controller
                             $secName = $dept->name;
                             $secId = $dept->id;
                             if (strlen((string) $dept->code) >= 15) {
-                                $subCode = substr($dept->code, 0, 11) . '0000';
+                                $subCode = substr($dept->code, 0, 11).'0000';
                                 $sub = $deptByCode->get($subCode);
                                 $subName = $sub?->name;
                                 $subId = $sub?->id;
-                                $deptCode = substr($dept->code, 0, 8) . '0000000';
+                                $deptCode = substr($dept->code, 0, 8).'0000000';
                                 $parentDept = $deptByCode->get($deptCode);
                                 $deptName = $parentDept?->name ?? $subName ?? $dept->name;
                             }
@@ -149,7 +147,7 @@ class AdminController extends Controller
                             $subName = $dept->name;
                             $subId = $dept->id;
                             if (strlen((string) $dept->code) >= 15) {
-                                $deptCode = substr($dept->code, 0, 8) . '0000000';
+                                $deptCode = substr($dept->code, 0, 8).'0000000';
                                 $parentDept = $deptByCode->get($deptCode);
                                 $deptName = $parentDept?->name ?? $dept->name;
                             }
@@ -236,7 +234,6 @@ class AdminController extends Controller
         ]);
     }
 
-   
     public function roles(Request $request)
     {
         $query = Role::query()

@@ -2,8 +2,9 @@
 
 namespace App\Http\Actions\Contract;
 
-use App\Models\Contract;
-use App\Models\FormTemplate;
+use App\Models\Master\FormTemplate;
+use App\Models\Transaction\Contract;
+use App\Services\Utils\FileUtil;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -138,9 +139,7 @@ class GetContractDocumentTypesAction
                 'id' => $latestVersion->id,
                 'version_no' => $latestVersion->version_no,
                 'file_name' => $latestVersion->file_name,
-                'file_size' => $latestVersion->file_path && Storage::disk('local')->exists($latestVersion->file_path)
-                    ? Storage::disk('local')->size($latestVersion->file_path)
-                    : null,
+                'file_size' => FileUtil::size($latestVersion->file_path),
                 'mime_type' => $latestVersion->file_path && Storage::disk('local')->exists($latestVersion->file_path)
                     ? Storage::disk('local')->mimeType($latestVersion->file_path)
                     : null,

@@ -1,12 +1,7 @@
-import AppearanceToggleDropdown from '@/layouts/app/components/AppearanceDropdown';
-import { HeaderChat } from '@/layouts/app/components/header/HeaderChat';
-import { HeaderHelp } from '@/layouts/app/components/header/HeaderHelp';
-import { HeaderLanguage } from '@/layouts/app/components/header/HeaderLanguage';
+import { SidebarTrigger } from '@/components/ui/navigation/Sidebar';
 import { HeaderNotifications } from '@/layouts/app/components/header/HeaderNotifications';
 import { HeaderUserMenu } from '@/layouts/app/components/header/HeaderUserMenu';
-import { SiteCustomizer } from '@/layouts/app/components/SiteCustomizer';
 import { Breadcrumbs } from '@/layouts/app/components/nav/Breadcrumbs';
-import { SidebarTrigger } from '@/components/ui/navigation/Sidebar';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem as BreadcrumbItemType } from '@/types';
 import { usePage } from '@inertiajs/react';
@@ -15,12 +10,22 @@ import { memo } from 'react';
 export const AppSidebarHeader = memo(function AppSidebarHeader({ breadcrumbs = [] }: { readonly breadcrumbs?: BreadcrumbItemType[] }) {
     const { url } = usePage();
     const path = url.split('?')[0];
-    const isDetailRoute = /^\/contracts\/[a-zA-Z0-9-]+$/.test(path) && !['/contracts/mine', '/contracts/organization', '/contracts/org-group', '/contracts/pending', '/contracts/expiry', '/contracts/in-progress', '/contracts/archived'].includes(path);
+    const isDetailRoute =
+        /^\/contracts\/[a-zA-Z0-9-]+$/.test(path) &&
+        ![
+            '/contracts/mine',
+            '/contracts/organization',
+            '/contracts/org-group',
+            '/contracts/pending',
+            '/contracts/expiry',
+            '/contracts/in-progress',
+            '/contracts/archived',
+        ].includes(path);
 
     return (
         <div
             className={cn(
-                'origin-top overflow-hidden transition-all duration-300 ease-in-out border-b border-border/60 bg-background',
+                'border-border/60 bg-background origin-top overflow-hidden border-b transition-all duration-300 ease-in-out',
                 isDetailRoute ? 'pointer-events-none h-0 opacity-0' : 'h-16 opacity-100',
             )}
         >
@@ -132,7 +137,7 @@ export const AppSidebarHeader = memo(function AppSidebarHeader({ breadcrumbs = [
                 <div className="flex items-center gap-1.5">
                     <HeaderNotifications />
 
-                    <div className="border-border dark:border-border ml-2  pl-2">
+                    <div className="border-border dark:border-border ml-2 pl-2">
                         <HeaderUserMenu />
                     </div>
                 </div>

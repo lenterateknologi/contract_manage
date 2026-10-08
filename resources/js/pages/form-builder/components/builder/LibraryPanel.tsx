@@ -11,7 +11,7 @@ interface LibraryPanelProps {
     onRemoveCustomPreset?: (value: string) => void;
 }
 
-const LibPreview = ({ type, cat }: { type: any, cat?: any }) => {
+const LibPreview = ({ type, cat }: { type: any; cat?: any }) => {
     return <type.icon size={16} className="text-muted-foreground" />;
 };
 
@@ -40,17 +40,15 @@ const DraggableField = ({
             {...attributes}
             onDoubleClick={() => onAddField(type.value)}
             className={cn(
-                'group flex cursor-grab items-center gap-2 rounded-lg border border-slate-200/80 dark:border-zinc-800 p-1.5 transition-all active:cursor-grabbing hover:shadow-xs hover:border-primary/50 select-none bg-white dark:bg-zinc-900',
+                'group hover:border-primary/50 flex cursor-grab items-center gap-2 rounded-lg border border-slate-200/80 bg-white p-1.5 transition-all select-none hover:shadow-xs active:cursor-grabbing dark:border-zinc-800 dark:bg-zinc-900',
                 isDragging && 'opacity-50 grayscale',
             )}
         >
-            <div className={cn("flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-white shadow-xs", cat.color)}>
+            <div className={cn('flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-white shadow-xs', cat.color)}>
                 <type.icon size={13} />
             </div>
-            <div className="flex-1 min-w-0">
-                <span className="text-[10px] font-bold text-slate-700 dark:text-slate-200 block truncate leading-tight">
-                    {type.label}
-                </span>
+            <div className="min-w-0 flex-1">
+                <span className="block truncate text-[10px] leading-tight font-bold text-slate-700 dark:text-slate-200">{type.label}</span>
             </div>
             {isCustom && onRemoveCustomPreset && (
                 <button
@@ -59,7 +57,7 @@ const DraggableField = ({
                         e.stopPropagation();
                         onRemoveCustomPreset(type.value);
                     }}
-                    className="text-slate-400 hover:text-rose-500 p-1 rounded transition-colors opacity-0 group-hover:opacity-100 z-10"
+                    className="z-10 rounded p-1 text-slate-400 opacity-0 transition-colors group-hover:opacity-100 hover:text-rose-500"
                     title="Hapus Preset Kustom"
                 >
                     <Trash2 size={12} />
@@ -92,31 +90,33 @@ export const LibraryPanel: React.FC<LibraryPanelProps> = ({ onAddField, customPr
         return list;
     }, [customPresets]);
 
-    const filteredCategories = allCategories.map((cat: any) => {
-        const filteredItems = cat.items.filter(
-            (item: any) =>
-                item.label.toLowerCase().includes(searchQuery.toLowerCase()) || item.value.toLowerCase().includes(searchQuery.toLowerCase()),
-        );
-        return { ...cat, items: filteredItems };
-    }).filter((cat: any) => cat.items.length > 0);
+    const filteredCategories = allCategories
+        .map((cat: any) => {
+            const filteredItems = cat.items.filter(
+                (item: any) =>
+                    item.label.toLowerCase().includes(searchQuery.toLowerCase()) || item.value.toLowerCase().includes(searchQuery.toLowerCase()),
+            );
+            return { ...cat, items: filteredItems };
+        })
+        .filter((cat: any) => cat.items.length > 0);
 
     return (
         <div className="animate-in fade-in slide-in-from-left-4 space-y-5 pb-12 duration-300">
             {/* Search Input */}
             <div className="relative">
-                <Search size={14} className="text-slate-400 absolute top-1/2 left-3 -translate-y-1/2" />
+                <Search size={14} className="absolute top-1/2 left-3 -translate-y-1/2 text-slate-400" />
                 <Input
                     type="text"
                     placeholder="Cari elemen..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="h-8 pr-8 pl-9 font-sans text-xs rounded-xl border-slate-200 dark:border-zinc-800"
+                    className="h-8 rounded-xl border-slate-200 pr-8 pl-9 font-sans text-xs dark:border-zinc-800"
                 />
                 {searchQuery && (
                     <button
                         type="button"
                         onClick={() => setSearchQuery('')}
-                        className="text-slate-400 hover:text-slate-600 absolute top-1/2 right-2.5 -translate-y-1/2"
+                        className="absolute top-1/2 right-2.5 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                     >
                         <X size={12} />
                     </button>
@@ -124,21 +124,21 @@ export const LibraryPanel: React.FC<LibraryPanelProps> = ({ onAddField, customPr
             </div>
 
             {filteredCategories.length === 0 ? (
-                <div className="text-slate-400 py-8 text-center font-sans text-xs font-semibold uppercase">Elemen tidak ditemukan</div>
+                <div className="py-8 text-center font-sans text-xs font-semibold text-slate-400 uppercase">Elemen tidak ditemukan</div>
             ) : (
                 filteredCategories.map((cat: any) => (
                     <div key={cat.category} className="space-y-2.5">
-                        <h3 className="text-slate-500 dark:text-slate-400 flex items-center gap-2 font-sans text-[10px] font-bold uppercase tracking-wider">
+                        <h3 className="flex items-center gap-2 font-sans text-[10px] font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
                             <div className={cn('h-1.5 w-1.5 rounded-full', cat.color || 'bg-primary')} />
                             {cat.category}
                         </h3>
                         <div className="grid grid-cols-1 gap-1.5">
                             {cat.items.map((type: any) => (
-                                <DraggableField 
-                                    key={type.value} 
-                                    type={type} 
-                                    cat={cat} 
-                                    onAddField={onAddField} 
+                                <DraggableField
+                                    key={type.value}
+                                    type={type}
+                                    cat={cat}
+                                    onAddField={onAddField}
                                     onRemoveCustomPreset={onRemoveCustomPreset}
                                 />
                             ))}

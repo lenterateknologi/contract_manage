@@ -8,12 +8,12 @@ use App\Core\Crud\Fields\SelectInput;
 use App\Core\Crud\Fields\TextareaInput;
 use App\Core\Crud\Fields\TextInput;
 use App\Core\Crud\Fields\ToggleInput;
-use App\Core\Crud\Filters\Filter;
+use App\Core\Crud\Filter;
 use App\Core\Crud\Resource;
-use App\Exports\DepartmentsExport;
+use App\Exports\Master\DepartmentsExport;
 use App\Imports\DepartmentsImport;
-use App\Models\Company;
-use App\Models\Department;
+use App\Models\Master\Company;
+use App\Models\Master\Department;
 
 class DepartmentResource extends Resource
 {

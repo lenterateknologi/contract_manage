@@ -35,7 +35,6 @@ import {
     Network,
     PenTool,
     RotateCcw,
-    Settings2,
     Sparkles,
     Square,
     UserCheck,
@@ -45,15 +44,7 @@ import { useCallback, useMemo, useState } from 'react';
 
 const getActionCode = (act: any): string => {
     if (!act) return '';
-    return String(
-        act.action_code ||
-        act.code ||
-        act.master_action_id ||
-        act.master_action?.code ||
-        act.alias ||
-        act.name ||
-        ''
-    ).trim();
+    return String(act.action_code || act.code || act.master_action_id || act.master_action?.code || act.alias || act.name || '').trim();
 };
 
 const parseTransitionConfig = (act: any) => {
@@ -87,11 +78,16 @@ const resolveActionTarget = (
     currentStepNum: number,
     isLastStep: boolean,
     allSteps: any[] = [],
-    allWorkflows: any[] = []
+    allWorkflows: any[] = [],
 ): ActionTargetResolution => {
     const rawCode = getActionCode(act);
     const codeLower = rawCode.toLowerCase();
-    const isApprove = codeLower === 'approve' || codeLower.includes('setuju') || codeLower.includes('kirim') || codeLower.includes('ajukan') || codeLower.includes('selesai');
+    const isApprove =
+        codeLower === 'approve' ||
+        codeLower.includes('setuju') ||
+        codeLower.includes('kirim') ||
+        codeLower.includes('ajukan') ||
+        codeLower.includes('selesai');
     const isReject = codeLower === 'reject' || codeLower.includes('tolak') || codeLower.includes('revisi') || codeLower.includes('kembali');
     const isAssign = codeLower === 'assign' || codeLower.includes('tugas');
     const isSign = codeLower === 'signature' || codeLower === 'sign' || codeLower.includes('tanda tangan');
@@ -295,71 +291,55 @@ const WORKFLOW_THEMES = [
 
 // --- Custom Workflow Group / Container Node Component ---
 const WorkflowGroupNode = ({ data }: NodeProps) => {
-    const {
-        title,
-        subtitle,
-        badge,
-        isPrimary = false,
-        stepCount = 0,
-        themeIndex = 0,
-    } = data as any;
+    const { title, subtitle, badge, isPrimary = false, stepCount = 0, themeIndex = 0 } = data as any;
 
     const theme = WORKFLOW_THEMES[themeIndex % WORKFLOW_THEMES.length];
 
     return (
         <div
             className={cn(
-                'w-full h-full rounded-2xl border-2 transition-all pointer-events-none select-none flex flex-col justify-between p-4 shadow-sm backdrop-blur-xs',
+                'pointer-events-none flex h-full w-full flex-col justify-between rounded-2xl border-2 p-4 shadow-sm backdrop-blur-xs transition-all select-none',
                 theme.border,
-                theme.bg
+                theme.bg,
             )}
         >
             {/* Header Group */}
             <div
                 className={cn(
-                    'flex items-center justify-between pb-3 px-3 py-2 -mx-2 -mt-2 rounded-xl border-b pointer-events-auto shadow-2xs',
-                    theme.headerBg
+                    'pointer-events-auto -mx-2 -mt-2 flex items-center justify-between rounded-xl border-b px-3 py-2 pb-3 shadow-2xs',
+                    theme.headerBg,
                 )}
             >
-                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                <div className="flex min-w-0 flex-1 items-center gap-2.5">
                     <div
                         className={cn(
-                            'flex h-7 w-7 shrink-0 items-center justify-center rounded-xl text-white shadow-2xs text-xs font-bold',
-                            theme.iconBg
+                            'flex h-7 w-7 shrink-0 items-center justify-center rounded-xl text-xs font-bold text-white shadow-2xs',
+                            theme.iconBg,
                         )}
                     >
                         {isPrimary ? <Layers size={14} /> : <GitFork size={14} />}
                     </div>
                     <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                            <h3 className="text-xs font-bold text-slate-800 dark:text-zinc-100 truncate" title={title}>
+                            <h3 className="truncate text-xs font-bold text-slate-800 dark:text-zinc-100" title={title}>
                                 {title}
                             </h3>
-                            <span
-                                className={cn(
-                                    'px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider shrink-0',
-                                    theme.badge
-                                )}
-                            >
+                            <span className={cn('shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold tracking-wider uppercase', theme.badge)}>
                                 {badge}
                             </span>
                         </div>
-                        {subtitle && (
-                            <p className="text-[10px] text-muted-foreground truncate">
-                                {subtitle}
-                            </p>
-                        )}
+                        {subtitle && <p className="text-muted-foreground truncate text-[10px]">{subtitle}</p>}
                     </div>
                 </div>
 
-                <div className="text-[10.5px] font-semibold text-slate-600 dark:text-zinc-300 bg-white/90 dark:bg-zinc-900/90 px-2.5 py-0.5 rounded-md border border-slate-200 dark:border-zinc-800 shrink-0 shadow-2xs ml-2">
+                <div className="ml-2 shrink-0 rounded-md border border-slate-200 bg-white/90 px-2.5 py-0.5 text-[10.5px] font-semibold text-slate-600 shadow-2xs dark:border-zinc-800 dark:bg-zinc-900/90 dark:text-zinc-300">
                     {stepCount} Tahapan
                 </div>
             </div>
 
             {/* Footer Group Indicator */}
             <div className="pt-2 text-right">
-                <span className="text-[9px] font-medium text-slate-400 dark:text-zinc-500 uppercase tracking-wider">
+                <span className="text-[9px] font-medium tracking-wider text-slate-400 uppercase dark:text-zinc-500">
                     {isPrimary ? '• Alur Kerja Utama •' : '• Sub-Alur Terhubung •'}
                 </span>
             </div>
@@ -374,10 +354,10 @@ const CrossWorkflowTargetNode = ({ data, selected }: NodeProps) => {
     return (
         <div
             className={cn(
-                'w-[330px] rounded-xl border bg-white dark:bg-zinc-900 shadow-lg transition-all font-sans select-none cursor-grab active:cursor-grabbing border-t-4 border-t-indigo-500',
+                'w-[330px] cursor-grab rounded-xl border border-t-4 border-t-indigo-500 bg-white font-sans shadow-lg transition-all select-none active:cursor-grabbing dark:bg-zinc-900',
                 selected
-                    ? 'border-indigo-500 ring-2 ring-indigo-500/40 shadow-xl scale-102'
-                    : 'border-slate-200/90 dark:border-zinc-800 hover:border-indigo-400 dark:hover:border-indigo-600'
+                    ? 'scale-102 border-indigo-500 shadow-xl ring-2 ring-indigo-500/40'
+                    : 'border-slate-200/90 hover:border-indigo-400 dark:border-zinc-800 dark:hover:border-indigo-600',
             )}
         >
             <Handle
@@ -393,38 +373,34 @@ const CrossWorkflowTargetNode = ({ data, selected }: NodeProps) => {
                 className="!h-3.5 !w-3.5 !rounded-full !border-2 !border-white !bg-indigo-600 dark:!border-zinc-900"
             />
 
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800/80 px-3.5 py-2 bg-indigo-50/70 dark:bg-indigo-950/40 rounded-t-lg">
-                <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-indigo-600 text-white text-[10px] font-medium shadow-2xs">
+            <div className="flex items-center justify-between rounded-t-lg border-b border-slate-100 bg-indigo-50/70 px-3.5 py-2 dark:border-zinc-800/80 dark:bg-indigo-950/40">
+                <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-indigo-600 text-[10px] font-medium text-white shadow-2xs">
                         <ExternalLink size={11} />
                     </span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-900 dark:text-indigo-200 truncate">
+                    <span className="truncate text-[10px] font-bold tracking-wider text-indigo-900 uppercase dark:text-indigo-200">
                         Alur Kerja Eksternal
                     </span>
                 </div>
-                <span className="shrink-0 rounded-md px-1.5 py-0.5 text-[9px] font-semibold uppercase bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200/60">
+                <span className="shrink-0 rounded-md border border-indigo-200/60 bg-indigo-100 px-1.5 py-0.5 text-[9px] font-semibold text-indigo-700 uppercase dark:bg-indigo-900/50 dark:text-indigo-300">
                     Cross-Workflow
                 </span>
             </div>
 
-            <div className="p-3 space-y-2">
+            <div className="space-y-2 p-3">
                 <div>
-                    <h4 className="text-xs font-bold text-slate-900 dark:text-white leading-snug truncate">
+                    <h4 className="truncate text-xs leading-snug font-bold text-slate-900 dark:text-white">
                         {targetWorkflow?.name || 'Alur Kerja Lain'}
                     </h4>
                     {targetWorkflow?.contract_type && (
-                        <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
-                            Jenis: {targetWorkflow.contract_type.name}
-                        </p>
+                        <p className="text-muted-foreground mt-0.5 truncate text-[10px]">Jenis: {targetWorkflow.contract_type.name}</p>
                     )}
                 </div>
 
-                <div className="rounded-lg bg-indigo-50/60 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/40 p-2 text-[10.5px] text-indigo-900 dark:text-indigo-200 space-y-1">
+                <div className="space-y-1 rounded-lg border border-indigo-100 bg-indigo-50/60 p-2 text-[10.5px] text-indigo-900 dark:border-indigo-900/40 dark:bg-indigo-950/30 dark:text-indigo-200">
                     <div className="flex items-center justify-between">
-                        <span className="font-semibold text-[10px] uppercase tracking-wide">Mulai Pada Tahap:</span>
-                        <span className="px-1.5 py-0.2 rounded bg-indigo-600 text-white font-bold text-[10px]">
-                            Tahap {targetSequence}
-                        </span>
+                        <span className="text-[10px] font-semibold tracking-wide uppercase">Mulai Pada Tahap:</span>
+                        <span className="py-0.2 rounded bg-indigo-600 px-1.5 text-[10px] font-bold text-white">Tahap {targetSequence}</span>
                     </div>
                 </div>
             </div>
@@ -433,17 +409,7 @@ const CrossWorkflowTargetNode = ({ data, selected }: NodeProps) => {
 };
 
 // --- Custom Siku-Siku (Orthogonal Multi-Lane) Forward Edge ---
-const OrthogonalForwardEdge = ({
-    id,
-    sourceX,
-    sourceY,
-    targetX,
-    targetY,
-    style = {},
-    markerEnd,
-    label,
-    data,
-}: EdgeProps) => {
+const OrthogonalForwardEdge = ({ id, sourceX, sourceY, targetX, targetY, style = {}, markerEnd, label, data }: EdgeProps) => {
     const isSequentialNext = Boolean(data?.isSequentialNext);
     const lane = Number(data?.lane || 0);
     const laneSpacing = Number(data?.laneSpacing || 28);
@@ -469,7 +435,7 @@ const OrthogonalForwardEdge = ({
                             }}
                             className="nodrag nopan select-none"
                         >
-                            <div className="flex items-center gap-1 rounded-md border border-emerald-300 dark:border-emerald-900 bg-white/95 dark:bg-zinc-900/95 px-2 py-0.5 text-[9px] font-medium text-emerald-700 dark:text-emerald-300 shadow-2xs whitespace-nowrap backdrop-blur-xs">
+                            <div className="flex items-center gap-1 rounded-md border border-emerald-300 bg-white/95 px-2 py-0.5 text-[9px] font-medium whitespace-nowrap text-emerald-700 shadow-2xs backdrop-blur-xs dark:border-emerald-900 dark:bg-zinc-900/95 dark:text-emerald-300">
                                 <ArrowRight size={10} className="text-emerald-500" />
                                 <span>{label}</span>
                             </div>
@@ -502,7 +468,7 @@ const OrthogonalForwardEdge = ({
                         }}
                         className="nodrag nopan select-none"
                     >
-                        <div className="flex items-center gap-1 rounded-md border border-emerald-300 dark:border-emerald-900 bg-white/95 dark:bg-zinc-900/95 px-2 py-0.5 text-[9px] font-medium text-emerald-700 dark:text-emerald-300 shadow-2xs whitespace-nowrap backdrop-blur-xs">
+                        <div className="flex items-center gap-1 rounded-md border border-emerald-300 bg-white/95 px-2 py-0.5 text-[9px] font-medium whitespace-nowrap text-emerald-700 shadow-2xs backdrop-blur-xs dark:border-emerald-900 dark:bg-zinc-900/95 dark:text-emerald-300">
                             <ArrowRight size={10} className="text-emerald-500" />
                             <span>{label}</span>
                         </div>
@@ -514,17 +480,7 @@ const OrthogonalForwardEdge = ({
 };
 
 // --- Custom Siku-Siku (Orthogonal Multi-Lane) Rollback Edge ---
-const OrthogonalSikuRollbackEdge = ({
-    id,
-    sourceX,
-    sourceY,
-    targetX,
-    targetY,
-    style = {},
-    markerEnd,
-    label,
-    data,
-}: EdgeProps) => {
+const OrthogonalSikuRollbackEdge = ({ id, sourceX, sourceY, targetX, targetY, style = {}, markerEnd, label, data }: EdgeProps) => {
     const lane = Number(data?.lane || 0);
     const laneSpacing = Number(data?.laneSpacing || 32);
     const targetOffset = Number(data?.targetOffset || 0);
@@ -552,7 +508,7 @@ const OrthogonalSikuRollbackEdge = ({
                         }}
                         className="nodrag nopan select-none"
                     >
-                        <div className="flex items-center gap-1 rounded-md border border-rose-300 dark:border-rose-900 bg-white/95 dark:bg-zinc-900/95 px-2 py-0.5 text-[9px] font-medium text-rose-700 dark:text-rose-300 shadow-2xs whitespace-nowrap backdrop-blur-xs">
+                        <div className="flex items-center gap-1 rounded-md border border-rose-300 bg-white/95 px-2 py-0.5 text-[9px] font-medium whitespace-nowrap text-rose-700 shadow-2xs backdrop-blur-xs dark:border-rose-900 dark:bg-zinc-900/95 dark:text-rose-300">
                             <CornerUpLeft size={10} className="text-rose-500" />
                             <span>{label}</span>
                         </div>
@@ -589,13 +545,13 @@ const CustomStepNode = ({ data, selected }: NodeProps) => {
     return (
         <div
             className={cn(
-                'w-[330px] rounded-xl border bg-white dark:bg-zinc-900 shadow-md transition-all font-sans select-none cursor-grab active:cursor-grabbing',
+                'w-[330px] cursor-grab rounded-xl border bg-white font-sans shadow-md transition-all select-none active:cursor-grabbing dark:bg-zinc-900',
                 selected
-                    ? 'border-primary ring-2 ring-primary/40 shadow-xl scale-102'
-                    : 'border-slate-200/90 dark:border-zinc-800 hover:border-slate-400 dark:hover:border-zinc-700',
+                    ? 'border-primary ring-primary/40 scale-102 shadow-xl ring-2'
+                    : 'border-slate-200/90 hover:border-slate-400 dark:border-zinc-800 dark:hover:border-zinc-700',
                 isFirst && 'border-t-4 border-t-emerald-500',
                 isLast && 'border-t-4 border-t-purple-500',
-                !isFirst && !isLast && (theme.stepBorder ? `border-t-4 ${theme.stepBorder}` : 'border-t-4 border-t-blue-500')
+                !isFirst && !isLast && (theme.stepBorder ? `border-t-4 ${theme.stepBorder}` : 'border-t-4 border-t-blue-500'),
             )}
         >
             {/* Top Target Handle (Incoming Forward Flow) */}
@@ -621,26 +577,35 @@ const CustomStepNode = ({ data, selected }: NodeProps) => {
             />
 
             {/* Card Header */}
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800/80 px-3.5 py-2 bg-slate-50/70 dark:bg-zinc-900/70 rounded-t-lg">
-                <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                    <span className={cn('flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-white text-[10px] font-medium shadow-2xs', theme.iconBg)}>
+            <div className="flex items-center justify-between rounded-t-lg border-b border-slate-100 bg-slate-50/70 px-3.5 py-2 dark:border-zinc-800/80 dark:bg-zinc-900/70">
+                <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                    <span
+                        className={cn(
+                            'flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[10px] font-medium text-white shadow-2xs',
+                            theme.iconBg,
+                        )}
+                    >
                         {step?.step || 1}
                     </span>
                     <div className="min-w-0 flex-1 truncate">
-                        <span className="text-[10px] font-medium uppercase tracking-wider text-slate-700 dark:text-zinc-200 block truncate">
+                        <span className="block truncate text-[10px] font-medium tracking-wider text-slate-700 uppercase dark:text-zinc-200">
                             {isFirst ? 'Start / Inisiasi' : isLast ? 'Final / Selesai' : `Tahapan ${step?.step || 1}`}
                         </span>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-1.5 shrink-0">
+                <div className="flex shrink-0 items-center gap-1.5">
                     <span
                         className={cn(
-                            'rounded-md px-2 py-0.5 text-[9px] font-medium uppercase tracking-wider',
-                            targetStatus === 'draft' && 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200/60',
-                            targetStatus === 'in_review' && 'bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 border border-blue-200/60',
-                            targetStatus === 'pending' && 'bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-200/60',
-                            targetStatus === 'archived' && 'bg-purple-50 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300 border border-purple-200/60'
+                            'rounded-md px-2 py-0.5 text-[9px] font-medium tracking-wider uppercase',
+                            targetStatus === 'draft' &&
+                                'border border-emerald-200/60 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300',
+                            targetStatus === 'in_review' &&
+                                'border border-blue-200/60 bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300',
+                            targetStatus === 'pending' &&
+                                'border border-amber-200/60 bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300',
+                            targetStatus === 'archived' &&
+                                'border border-purple-200/60 bg-purple-50 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300',
                         )}
                     >
                         {targetStatus}
@@ -652,27 +617,25 @@ const CustomStepNode = ({ data, selected }: NodeProps) => {
             </div>
 
             {/* Card Body */}
-            <div className="p-3 space-y-2.5">
+            <div className="space-y-2.5 p-3">
                 <div>
-                    <h4 className="text-xs font-medium text-slate-900 dark:text-white leading-snug line-clamp-2">
+                    <h4 className="line-clamp-2 text-xs leading-snug font-medium text-slate-900 dark:text-white">
                         {step?.description || step?.label || `Tahap ${step?.step || 1}`}
                     </h4>
                     {step?.label && step?.description && step.label !== step.description && (
-                        <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
-                            {step.label}
-                        </p>
+                        <p className="text-muted-foreground mt-0.5 truncate text-[10px]">{step.label}</p>
                     )}
                 </div>
 
                 {/* Section Daftar Orang / Personil Berhak Akses */}
                 {showUsers && (
-                    <div className="rounded-lg bg-slate-50/80 dark:bg-zinc-950/60 border border-slate-200/70 dark:border-zinc-800 p-2 space-y-1.5 nodrag">
+                    <div className="nodrag space-y-1.5 rounded-lg border border-slate-200/70 bg-slate-50/80 p-2 dark:border-zinc-800 dark:bg-zinc-950/60">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-1 text-[10px] font-medium text-slate-700 dark:text-zinc-300">
                                 <UserCheck size={11} className="text-indigo-600 dark:text-indigo-400" />
                                 <span>Personil Berhak Akses</span>
                             </div>
-                            <span className="text-[9.5px] font-medium px-1.5 py-0.2 rounded-md bg-indigo-500/10 text-indigo-700 dark:text-indigo-300">
+                            <span className="py-0.2 rounded-md bg-indigo-500/10 px-1.5 text-[9.5px] font-medium text-indigo-700 dark:text-indigo-300">
                                 {totalEligibleCount} Orang
                             </span>
                         </div>
@@ -683,13 +646,11 @@ const CustomStepNode = ({ data, selected }: NodeProps) => {
                                 {dynamicRoles.map((dr: any, dIdx: number) => (
                                     <span
                                         key={dIdx}
-                                        className="inline-flex items-center gap-1 text-[9px] font-medium px-1.5 py-0.5 rounded-md bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/20"
+                                        className="inline-flex items-center gap-1 rounded-md border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-medium text-amber-800 dark:text-amber-300"
                                     >
                                         <Sparkles size={9} className="text-amber-600" />
                                         <span>{dr.label}</span>
-                                        {dr.activeUser && (
-                                            <span className="text-emerald-700 dark:text-emerald-400">({dr.activeUser.name})</span>
-                                        )}
+                                        {dr.activeUser && <span className="text-emerald-700 dark:text-emerald-400">({dr.activeUser.name})</span>}
                                     </span>
                                 ))}
                             </div>
@@ -701,17 +662,17 @@ const CustomStepNode = ({ data, selected }: NodeProps) => {
                                 {displayedUsers.map(({ user }: any, uIdx: number) => (
                                     <div
                                         key={user.id || uIdx}
-                                        className="flex items-center justify-between gap-1.5 text-[10.5px] bg-white dark:bg-zinc-900 px-2 py-1 rounded-md border border-slate-200/50 dark:border-zinc-800 shadow-2xs"
+                                        className="flex items-center justify-between gap-1.5 rounded-md border border-slate-200/50 bg-white px-2 py-1 text-[10.5px] shadow-2xs dark:border-zinc-800 dark:bg-zinc-900"
                                     >
-                                        <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                                            <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-secondary text-secondary-foreground text-[9px] font-medium uppercase">
+                                        <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                                            <div className="bg-secondary text-secondary-foreground flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[9px] font-medium uppercase">
                                                 {(user.name || 'U').substring(0, 2)}
                                             </div>
                                             <div className="min-w-0 flex-1 truncate">
-                                                <span className="font-medium text-slate-800 dark:text-zinc-200 truncate block leading-tight">
+                                                <span className="block truncate leading-tight font-medium text-slate-800 dark:text-zinc-200">
                                                     {user.name}
                                                 </span>
-                                                <span className="text-[9px] text-muted-foreground truncate block leading-tight">
+                                                <span className="text-muted-foreground block truncate text-[9px] leading-tight">
                                                     {user.role || 'User'}
                                                     {user.department_name ? ` • ${user.department_name}` : ''}
                                                 </span>
@@ -724,7 +685,7 @@ const CustomStepNode = ({ data, selected }: NodeProps) => {
                                     <button
                                         type="button"
                                         onClick={() => setIsUsersExpanded(!isUsersExpanded)}
-                                        className="w-full text-center py-0.5 text-[9.5px] font-medium text-indigo-600 dark:text-indigo-400 hover:underline flex items-center justify-center gap-0.5 cursor-pointer"
+                                        className="flex w-full cursor-pointer items-center justify-center gap-0.5 py-0.5 text-center text-[9.5px] font-medium text-indigo-600 hover:underline dark:text-indigo-400"
                                     >
                                         {isUsersExpanded ? (
                                             <>
@@ -742,17 +703,15 @@ const CustomStepNode = ({ data, selected }: NodeProps) => {
                             </div>
                         ) : (
                             dynamicRoles.length === 0 && (
-                                <p className="text-[9.5px] text-muted-foreground italic">
-                                    Belum ada aktor/otoritas yang dikonfigurasi
-                                </p>
+                                <p className="text-muted-foreground text-[9.5px] italic">Belum ada aktor/otoritas yang dikonfigurasi</p>
                             )
                         )}
                     </div>
                 )}
 
                 {/* Available Actions in this Step */}
-                <div className="border-t border-slate-100 dark:border-zinc-800/80 pt-2.5 space-y-1.5 nodrag">
-                    <div className="flex items-center justify-between text-[9.5px] font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wider px-0.5">
+                <div className="nodrag space-y-1.5 border-t border-slate-100 pt-2.5 dark:border-zinc-800/80">
+                    <div className="flex items-center justify-between px-0.5 text-[9.5px] font-semibold tracking-wider text-slate-500 uppercase dark:text-zinc-400">
                         <span>Aksi & Alur Tahap</span>
                         <span className="text-[9px] font-normal text-slate-400">({(step?.actions || []).length} Aksi)</span>
                     </div>
@@ -761,8 +720,17 @@ const CustomStepNode = ({ data, selected }: NodeProps) => {
                         {(step?.actions || []).map((act: any, aIdx: number) => {
                             const rawCode = getActionCode(act);
                             const codeLower = rawCode.toLowerCase();
-                            const isApprove = codeLower === 'approve' || codeLower.includes('setuju') || codeLower.includes('kirim') || codeLower.includes('ajukan') || codeLower.includes('selesai');
-                            const isReject = codeLower === 'reject' || codeLower.includes('tolak') || codeLower.includes('revisi') || codeLower.includes('kembali');
+                            const isApprove =
+                                codeLower === 'approve' ||
+                                codeLower.includes('setuju') ||
+                                codeLower.includes('kirim') ||
+                                codeLower.includes('ajukan') ||
+                                codeLower.includes('selesai');
+                            const isReject =
+                                codeLower === 'reject' ||
+                                codeLower.includes('tolak') ||
+                                codeLower.includes('revisi') ||
+                                codeLower.includes('kembali');
                             const isAssign = codeLower === 'assign' || codeLower.includes('tugas');
                             const isSign = codeLower === 'signature' || codeLower === 'sign' || codeLower.includes('tanda tangan');
                             const isCustomAct = Boolean(act?.is_custom_action || act?.isCustomAction);
@@ -770,24 +738,39 @@ const CustomStepNode = ({ data, selected }: NodeProps) => {
                             const displayLabel = act?.alias || act?.label || act?.name || (rawCode ? rawCode.toUpperCase() : `Aksi ${aIdx + 1}`);
                             const currentStepNum = Number(step?.step) || 1;
 
-                            const {
-                                isCrossWf,
-                                isRollbackDirection,
-                                isForwardDirection,
-                                flowDestinationText,
-                            } = resolveActionTarget(act, currentStepNum, Boolean(isLast), allSteps, allWorkflows);
+                            const { isCrossWf, isRollbackDirection, isForwardDirection, flowDestinationText } = resolveActionTarget(
+                                act,
+                                currentStepNum,
+                                Boolean(isLast),
+                                allSteps,
+                                allWorkflows,
+                            );
 
                             return (
                                 <div
                                     key={aIdx}
                                     className={cn(
-                                        'relative flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all shadow-2xs',
-                                        isCrossWf && 'bg-indigo-50/90 border-indigo-300 text-indigo-950 dark:bg-indigo-950/50 dark:border-indigo-800 dark:text-indigo-200',
-                                        !isCrossWf && isApprove && 'bg-emerald-50/80 border-emerald-200/90 text-emerald-900 dark:bg-emerald-950/40 dark:border-emerald-800/60 dark:text-emerald-200',
-                                        !isCrossWf && isReject && 'bg-rose-50/80 border-rose-200/90 text-rose-900 dark:bg-rose-950/40 dark:border-rose-800/60 dark:text-rose-200',
-                                        !isCrossWf && isAssign && 'bg-blue-50/80 border-blue-200/90 text-blue-900 dark:bg-blue-950/40 dark:border-blue-800/60 dark:text-blue-200',
-                                        !isCrossWf && isSign && 'bg-purple-50/80 border-purple-200/90 text-purple-900 dark:bg-purple-950/40 dark:border-purple-800/60 dark:text-purple-200',
-                                        !isCrossWf && !isApprove && !isReject && !isAssign && !isSign && 'bg-slate-50 border-slate-200 text-slate-800 dark:bg-zinc-800/60 dark:border-zinc-700 dark:text-zinc-200'
+                                        'relative flex items-center justify-between gap-2 rounded-lg border px-2.5 py-1.5 text-xs font-medium shadow-2xs transition-all',
+                                        isCrossWf &&
+                                            'border-indigo-300 bg-indigo-50/90 text-indigo-950 dark:border-indigo-800 dark:bg-indigo-950/50 dark:text-indigo-200',
+                                        !isCrossWf &&
+                                            isApprove &&
+                                            'border-emerald-200/90 bg-emerald-50/80 text-emerald-900 dark:border-emerald-800/60 dark:bg-emerald-950/40 dark:text-emerald-200',
+                                        !isCrossWf &&
+                                            isReject &&
+                                            'border-rose-200/90 bg-rose-50/80 text-rose-900 dark:border-rose-800/60 dark:bg-rose-950/40 dark:text-rose-200',
+                                        !isCrossWf &&
+                                            isAssign &&
+                                            'border-blue-200/90 bg-blue-50/80 text-blue-900 dark:border-blue-800/60 dark:bg-blue-950/40 dark:text-blue-200',
+                                        !isCrossWf &&
+                                            isSign &&
+                                            'border-purple-200/90 bg-purple-50/80 text-purple-900 dark:border-purple-800/60 dark:bg-purple-950/40 dark:text-purple-200',
+                                        !isCrossWf &&
+                                            !isApprove &&
+                                            !isReject &&
+                                            !isAssign &&
+                                            !isSign &&
+                                            'border-slate-200 bg-slate-50 text-slate-800 dark:border-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-200',
                                     )}
                                 >
                                     {/* Left Handle: untuk aksi Rollback */}
@@ -796,21 +779,21 @@ const CustomStepNode = ({ data, selected }: NodeProps) => {
                                             type="source"
                                             position={Position.Left}
                                             id={`action-handle-left-${aIdx}`}
-                                            className="!h-3 !w-3 !-left-2 !rounded-full !border-2 !border-white !bg-rose-500 dark:!border-zinc-900 shadow-xs"
+                                            className="!-left-2 !h-3 !w-3 !rounded-full !border-2 !border-white !bg-rose-500 shadow-xs dark:!border-zinc-900"
                                         />
                                     )}
 
                                     {/* Action Info */}
-                                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                                    <div className="flex min-w-0 flex-1 items-center gap-2">
                                         <div
                                             className={cn(
-                                                'flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-white text-[10px] shadow-2xs',
+                                                'flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[10px] text-white shadow-2xs',
                                                 isCrossWf && 'bg-indigo-600',
                                                 !isCrossWf && isApprove && 'bg-emerald-600',
                                                 !isCrossWf && isReject && 'bg-rose-600',
                                                 !isCrossWf && isAssign && 'bg-blue-600',
                                                 !isCrossWf && isSign && 'bg-purple-600',
-                                                !isCrossWf && !isApprove && !isReject && !isAssign && !isSign && 'bg-slate-600'
+                                                !isCrossWf && !isApprove && !isReject && !isAssign && !isSign && 'bg-slate-600',
                                             )}
                                         >
                                             {isCrossWf && <GitFork size={11} />}
@@ -821,19 +804,17 @@ const CustomStepNode = ({ data, selected }: NodeProps) => {
                                             {!isCrossWf && !isApprove && !isReject && !isAssign && !isSign && <Activity size={11} />}
                                         </div>
                                         <div className="min-w-0 flex-1 truncate">
-                                            <div className="flex items-center gap-1 leading-tight truncate">
-                                                <span className="font-semibold text-[11px] truncate">
-                                                    {displayLabel}
-                                                </span>
+                                            <div className="flex items-center gap-1 truncate leading-tight">
+                                                <span className="truncate text-[11px] font-semibold">{displayLabel}</span>
                                                 {isCustomAct && (
-                                                    <span className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded text-[8.5px] font-bold bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-300/40 shrink-0">
+                                                    <span className="py-0.2 inline-flex shrink-0 items-center gap-0.5 rounded border border-amber-300/40 bg-amber-500/20 px-1 text-[8.5px] font-bold text-amber-700 dark:text-amber-300">
                                                         <Zap size={9} />
                                                         <span>Khusus</span>
                                                     </span>
                                                 )}
                                             </div>
                                             {flowDestinationText && (
-                                                <span className="block text-[9.5px] opacity-80 truncate leading-tight font-normal mt-0.5">
+                                                <span className="mt-0.5 block truncate text-[9.5px] leading-tight font-normal opacity-80">
                                                     {flowDestinationText}
                                                 </span>
                                             )}
@@ -847,8 +828,8 @@ const CustomStepNode = ({ data, selected }: NodeProps) => {
                                             position={Position.Right}
                                             id={`action-handle-right-${aIdx}`}
                                             className={cn(
-                                                "!h-3 !w-3 !-right-2 !rounded-full !border-2 !border-white dark:!border-zinc-900 shadow-xs",
-                                                isCrossWf ? '!bg-indigo-600' : '!bg-emerald-500'
+                                                '!-right-2 !h-3 !w-3 !rounded-full !border-2 !border-white shadow-xs dark:!border-zinc-900',
+                                                isCrossWf ? '!bg-indigo-600' : '!bg-emerald-500',
                                             )}
                                         />
                                     )}
@@ -911,10 +892,7 @@ interface WorkflowFlowVisualizerProps {
 }
 
 // Helper to merge standard step actions with workflow custom actions
-export const getEffectiveStepActions = (
-    step: any,
-    customActions: any[] = []
-): any[] => {
+export const getEffectiveStepActions = (step: any, customActions: any[] = []): any[] => {
     const rawActions = Array.isArray(step?.actions) ? [...step.actions] : [];
     const stepId = String(step?.id || '');
     const currentStepNum = Number(step?.step) || 1;
@@ -926,7 +904,9 @@ export const getEffectiveStepActions = (
 
         const isMatchScope =
             ca.scope === 'all_steps' ||
-            (ca.scope === 'specific_steps' && Array.isArray(ca.step_ids) && (ca.step_ids.includes(stepId) || ca.step_ids.includes(String(currentStepNum))));
+            (ca.scope === 'specific_steps' &&
+                Array.isArray(ca.step_ids) &&
+                (ca.step_ids.includes(stepId) || ca.step_ids.includes(String(currentStepNum))));
 
         if (isMatchScope) {
             matchedCustomActions.push({
@@ -1049,7 +1029,6 @@ export function WorkflowFlowVisualizer({
         return 30;
     });
 
-
     const [animatedLines, _setAnimatedLines] = useState<boolean>(() => {
         if (typeof window !== 'undefined') {
             const saved = localStorage.getItem('wf_vis_animated');
@@ -1149,306 +1128,342 @@ export function WorkflowFlowVisualizer({
     }, [steps]);
 
     // Helper calculateStepUsers
-    const calculateStepUsers = useCallback((step: any) => {
-        const matchedUsersMap = new Map<string, { user: any; reasons: string[] }>();
-        const dynamicList: { type: string; label: string; description: string; activeUser?: any }[] = [];
-        const criteriaParts: string[] = [];
+    const calculateStepUsers = useCallback(
+        (step: any) => {
+            const matchedUsersMap = new Map<string, { user: any; reasons: string[] }>();
+            const dynamicList: { type: string; label: string; description: string; activeUser?: any }[] = [];
+            const criteriaParts: string[] = [];
 
-        const authorities: any[] = step.approver_authorities || [];
+            const authorities: any[] = step.approver_authorities || [];
 
-        if (authorities && authorities.length > 0) {
-            authorities.forEach((auth: any) => {
-                if (auth.authority_type === 'custom' || ['initiator', 'assigned_pic', 'creator', 'atasan', 'adhoc_approvers', 'adhoc'].includes(auth.authority_type)) {
-                    const customType = auth.authority_type === 'custom' ? (auth.role_id || auth.user_id) : auth.authority_type;
-                    if (customType === 'initiator') {
-                        criteriaParts.push('Inisiator');
-                        dynamicList.push({
-                            type: 'initiator',
-                            label: 'Inisiator Kontrak',
-                            description: 'Pengguna yang menginisiasi pengajuan kontrak.',
-                            activeUser: simInitiatorUser,
-                        });
-                        if (simInitiatorUser) {
-                            const deptName = departments.find((d: any) => String(d.id) === String(simInitiatorUser.department_id))?.name;
-                            matchedUsersMap.set(String(simInitiatorUser.id), {
-                                user: { ...simInitiatorUser, department_name: deptName },
-                                reasons: ['Inisiator (Simulasi)'],
+            if (authorities && authorities.length > 0) {
+                authorities.forEach((auth: any) => {
+                    if (
+                        auth.authority_type === 'custom' ||
+                        ['initiator', 'assigned_pic', 'creator', 'atasan', 'adhoc_approvers', 'adhoc'].includes(auth.authority_type)
+                    ) {
+                        const customType = auth.authority_type === 'custom' ? auth.role_id || auth.user_id : auth.authority_type;
+                        if (customType === 'initiator') {
+                            criteriaParts.push('Inisiator');
+                            dynamicList.push({
+                                type: 'initiator',
+                                label: 'Inisiator Kontrak',
+                                description: 'Pengguna yang menginisiasi pengajuan kontrak.',
+                                activeUser: simInitiatorUser,
                             });
-                        }
-                    } else if (customType === 'assigned_pic') {
-                        criteriaParts.push('PIC Ditugaskan');
-                        dynamicList.push({
-                            type: 'assigned_pic',
-                            label: 'PIC Ditugaskan',
-                            description: 'Pengguna yang ditugaskan sebagai PIC kontrak.',
-                            activeUser: simPicUser,
-                        });
-                        if (simPicUser) {
-                            const deptName = departments.find((d: any) => String(d.id) === String(simPicUser.department_id))?.name;
-                            matchedUsersMap.set(String(simPicUser.id), {
-                                user: { ...simPicUser, department_name: deptName },
-                                reasons: ['PIC Ditugaskan (Simulasi)'],
+                            if (simInitiatorUser) {
+                                const deptName = departments.find((d: any) => String(d.id) === String(simInitiatorUser.department_id))?.name;
+                                matchedUsersMap.set(String(simInitiatorUser.id), {
+                                    user: { ...simInitiatorUser, department_name: deptName },
+                                    reasons: ['Inisiator (Simulasi)'],
+                                });
+                            }
+                        } else if (customType === 'assigned_pic') {
+                            criteriaParts.push('PIC Ditugaskan');
+                            dynamicList.push({
+                                type: 'assigned_pic',
+                                label: 'PIC Ditugaskan',
+                                description: 'Pengguna yang ditugaskan sebagai PIC kontrak.',
+                                activeUser: simPicUser,
                             });
-                        }
-                    } else if (customType === 'creator') {
-                        criteriaParts.push('Pembuat Kontrak');
-                        dynamicList.push({
-                            type: 'creator',
-                            label: 'Pembuat Kontrak',
-                            description: 'Pengguna yang membuat draf kontrak.',
-                            activeUser: simCreatorUser,
-                        });
-                        if (simCreatorUser) {
-                            const deptName = departments.find((d: any) => String(d.id) === String(simCreatorUser.department_id))?.name;
-                            matchedUsersMap.set(String(simCreatorUser.id), {
-                                user: { ...simCreatorUser, department_name: deptName },
-                                reasons: ['Pembuat Kontrak (Simulasi)'],
+                            if (simPicUser) {
+                                const deptName = departments.find((d: any) => String(d.id) === String(simPicUser.department_id))?.name;
+                                matchedUsersMap.set(String(simPicUser.id), {
+                                    user: { ...simPicUser, department_name: deptName },
+                                    reasons: ['PIC Ditugaskan (Simulasi)'],
+                                });
+                            }
+                        } else if (customType === 'creator') {
+                            criteriaParts.push('Pembuat Kontrak');
+                            dynamicList.push({
+                                type: 'creator',
+                                label: 'Pembuat Kontrak',
+                                description: 'Pengguna yang membuat draf kontrak.',
+                                activeUser: simCreatorUser,
                             });
-                        }
-                    } else if (customType === 'adhoc_approvers' || customType === 'adhoc') {
-                        criteriaParts.push('Approver Tambahan');
-                        if (simAdhocUsers.length > 0) {
-                            simAdhocUsers.forEach((u: any) => {
-                                const deptName = departments.find((d: any) => String(d.id) === String(u.department_id))?.name;
+                            if (simCreatorUser) {
+                                const deptName = departments.find((d: any) => String(d.id) === String(simCreatorUser.department_id))?.name;
+                                matchedUsersMap.set(String(simCreatorUser.id), {
+                                    user: { ...simCreatorUser, department_name: deptName },
+                                    reasons: ['Pembuat Kontrak (Simulasi)'],
+                                });
+                            }
+                        } else if (customType === 'adhoc_approvers' || customType === 'adhoc') {
+                            criteriaParts.push('Approver Tambahan');
+                            if (simAdhocUsers.length > 0) {
+                                simAdhocUsers.forEach((u: any) => {
+                                    const deptName = departments.find((d: any) => String(d.id) === String(u.department_id))?.name;
+                                    dynamicList.push({
+                                        type: 'adhoc_approvers',
+                                        label: 'Approver Tambahan (Ad-Hoc)',
+                                        description: 'Pengguna yang ditunjuk sebagai approver tambahan saat pengajuan.',
+                                        activeUser: u,
+                                    });
+                                    matchedUsersMap.set(String(u.id), {
+                                        user: { ...u, department_name: deptName },
+                                        reasons: ['Approver Tambahan (Simulasi)'],
+                                    });
+                                });
+                            } else {
                                 dynamicList.push({
                                     type: 'adhoc_approvers',
                                     label: 'Approver Tambahan (Ad-Hoc)',
                                     description: 'Pengguna yang ditunjuk sebagai approver tambahan saat pengajuan.',
-                                    activeUser: u,
                                 });
-                                matchedUsersMap.set(String(u.id), {
-                                    user: { ...u, department_name: deptName },
-                                    reasons: ['Approver Tambahan (Simulasi)'],
-                                });
-                            });
-                        } else {
+                            }
+                        } else if (customType === 'atasan') {
+                            criteriaParts.push('Atasan Langsung');
                             dynamicList.push({
-                                type: 'adhoc_approvers',
-                                label: 'Approver Tambahan (Ad-Hoc)',
-                                description: 'Pengguna yang ditunjuk sebagai approver tambahan saat pengajuan.',
+                                type: 'atasan',
+                                label: 'Atasan Langsung',
+                                description: 'Atasan langsung inisiator.',
                             });
                         }
-                    } else if (customType === 'atasan') {
-                        criteriaParts.push('Atasan Langsung');
-                        dynamicList.push({
-                            type: 'atasan',
-                            label: 'Atasan Langsung',
-                            description: 'Atasan langsung inisiator.',
-                        });
-                    }
-                } else if (auth.authority_type === 'user' && auth.user_id) {
-                    const u = users.find((user: any) => String(user.id) === String(auth.user_id));
-                    if (u) {
-                        const deptName = departments.find((d: any) => String(d.id) === String(u.department_id))?.name;
-                        matchedUsersMap.set(String(u.id), {
-                            user: { ...u, department_name: deptName },
-                            reasons: ['User Spesifik'],
-                        });
-                    }
-                } else {
-                    const hasFilters = Boolean(
-                        auth.role_id ||
-                        auth.role_use_initiator ||
-                        auth.department_id ||
-                        auth.department_use_initiator ||
-                        auth.division_id ||
-                        auth.division_use_initiator ||
-                        auth.location_id ||
-                        auth.location_use_initiator ||
-                        auth.company_group_id ||
-                        auth.company_group_use_initiator ||
-                        auth.company_id ||
-                        auth.company_use_initiator ||
-                        auth.region_id ||
-                        auth.region_use_initiator ||
-                        auth.organization_group_id ||
-                        auth.organization_group_use_initiator
-                    );
+                    } else if (auth.authority_type === 'user' && auth.user_id) {
+                        const u = users.find((user: any) => String(user.id) === String(auth.user_id));
+                        if (u) {
+                            const deptName = departments.find((d: any) => String(d.id) === String(u.department_id))?.name;
+                            matchedUsersMap.set(String(u.id), {
+                                user: { ...u, department_name: deptName },
+                                reasons: ['User Spesifik'],
+                            });
+                        }
+                    } else {
+                        const hasFilters = Boolean(
+                            auth.role_id ||
+                            auth.role_use_initiator ||
+                            auth.department_id ||
+                            auth.department_use_initiator ||
+                            auth.division_id ||
+                            auth.division_use_initiator ||
+                            auth.location_id ||
+                            auth.location_use_initiator ||
+                            auth.company_group_id ||
+                            auth.company_group_use_initiator ||
+                            auth.company_id ||
+                            auth.company_use_initiator ||
+                            auth.region_id ||
+                            auth.region_use_initiator ||
+                            auth.organization_group_id ||
+                            auth.organization_group_use_initiator,
+                        );
 
-                    if (hasFilters) {
-                        users.forEach((user: any) => {
-                            const userRoleId = String(user.role_id || user.role || '');
-                            const userDeptId = String(user.department_id || user.department?.id || '');
-                            const userDivId = String(user.division_id || user.division?.id || user.department?.division_id || '');
-                            const userLocId = String(user.location_id || user.idlocation || user.location?.id || '');
-                            const userCompId = String(user.company_id || user.company?.id || '');
-                            const userCgId = String(user.company_group_id || user.company?.company_group_id || '');
-                            const userRegionId = String(user.region_id || user.company?.region_id || '');
+                        if (hasFilters) {
+                            users.forEach((user: any) => {
+                                const userRoleId = String(user.role_id || user.role || '');
+                                const userDeptId = String(user.department_id || user.department?.id || '');
+                                const userDivId = String(user.division_id || user.division?.id || user.department?.division_id || '');
+                                const userLocId = String(user.location_id || user.idlocation || user.location?.id || '');
+                                const userCompId = String(user.company_id || user.company?.id || '');
+                                const userCgId = String(user.company_group_id || user.company?.company_group_id || '');
+                                const userRegionId = String(user.region_id || user.company?.region_id || '');
 
-                            let match = true;
+                                let match = true;
 
-                            if (auth.role_use_initiator) {
-                                if (!simInitiatorUser) match = false;
-                                else {
-                                    const initRoleId = String(simInitiatorUser.role_id || simInitiatorUser.role || '');
-                                    if (userRoleId !== initRoleId) match = false;
+                                if (auth.role_use_initiator) {
+                                    if (!simInitiatorUser) match = false;
+                                    else {
+                                        const initRoleId = String(simInitiatorUser.role_id || simInitiatorUser.role || '');
+                                        if (userRoleId !== initRoleId) match = false;
+                                    }
+                                } else if (auth.role_id) {
+                                    const targetRole = roles.find((r: any) => String(r.id) === String(auth.role_id) || r.name === auth.role_id);
+                                    const matchRoleId = targetRole ? String(targetRole.id) : String(auth.role_id);
+                                    const matchRoleName = targetRole ? targetRole.name.toLowerCase() : String(auth.role_id).toLowerCase();
+                                    const isRoleMatch = userRoleId === matchRoleId || userRoleId.toLowerCase() === matchRoleName;
+                                    if (!isRoleMatch) match = false;
                                 }
-                            } else if (auth.role_id) {
-                                const targetRole = roles.find((r: any) => String(r.id) === String(auth.role_id) || r.name === auth.role_id);
-                                const matchRoleId = targetRole ? String(targetRole.id) : String(auth.role_id);
-                                const matchRoleName = targetRole ? targetRole.name.toLowerCase() : String(auth.role_id).toLowerCase();
-                                const isRoleMatch = userRoleId === matchRoleId || userRoleId.toLowerCase() === matchRoleName;
-                                if (!isRoleMatch) match = false;
-                            }
 
-                            if (match && auth.department_use_initiator) {
-                                if (!simInitiatorUser) match = false;
-                                else {
-                                    const initDeptId = String(simInitiatorUser.department_id || simInitiatorUser.department?.id || '');
-                                    if (userDeptId !== initDeptId) match = false;
+                                if (match && auth.department_use_initiator) {
+                                    if (!simInitiatorUser) match = false;
+                                    else {
+                                        const initDeptId = String(simInitiatorUser.department_id || simInitiatorUser.department?.id || '');
+                                        if (userDeptId !== initDeptId) match = false;
+                                    }
+                                } else if (match && auth.department_id) {
+                                    if (userDeptId !== String(auth.department_id)) match = false;
                                 }
-                            } else if (match && auth.department_id) {
-                                if (userDeptId !== String(auth.department_id)) match = false;
-                            }
 
-                            if (match && auth.division_use_initiator) {
-                                if (!simInitiatorUser) match = false;
-                                else {
-                                    const initDivId = String(simInitiatorUser.division_id || simInitiatorUser.division?.id || '');
-                                    if (userDivId !== initDivId) match = false;
+                                if (match && auth.division_use_initiator) {
+                                    if (!simInitiatorUser) match = false;
+                                    else {
+                                        const initDivId = String(simInitiatorUser.division_id || simInitiatorUser.division?.id || '');
+                                        if (userDivId !== initDivId) match = false;
+                                    }
+                                } else if (match && auth.division_id) {
+                                    if (userDivId !== String(auth.division_id)) match = false;
                                 }
-                            } else if (match && auth.division_id) {
-                                if (userDivId !== String(auth.division_id)) match = false;
-                            }
 
-                            if (match && auth.location_use_initiator) {
-                                if (!simInitiatorUser) match = false;
-                                else {
-                                    const initLocId = String(simInitiatorUser.location_id || simInitiatorUser.idlocation || simInitiatorUser.location?.id || '');
-                                    const initLocName = (simInitiatorUser.location_name || simInitiatorUser.location?.name || '').toLowerCase().trim();
+                                if (match && auth.location_use_initiator) {
+                                    if (!simInitiatorUser) match = false;
+                                    else {
+                                        const initLocId = String(
+                                            simInitiatorUser.location_id || simInitiatorUser.idlocation || simInitiatorUser.location?.id || '',
+                                        );
+                                        const initLocName = (simInitiatorUser.location_name || simInitiatorUser.location?.name || '')
+                                            .toLowerCase()
+                                            .trim();
+                                        const userLocName = (user.location_name || user.location?.name || '').toLowerCase().trim();
+                                        const isLocMatch =
+                                            (initLocId && userLocId && initLocId === userLocId) ||
+                                            (initLocName && userLocName && initLocName === userLocName);
+                                        if (!isLocMatch) match = false;
+                                    }
+                                } else if (match && auth.location_id) {
+                                    const targetLocId = String(auth.location_id);
+                                    const targetLoc = locations.find(
+                                        (l: any) => String(l.id) === targetLocId || l.code === targetLocId || l.name === targetLocId,
+                                    );
+                                    const matchLocId = targetLoc ? String(targetLoc.id) : targetLocId;
+                                    const matchLocName = targetLoc ? targetLoc.name.toLowerCase() : targetLocId.toLowerCase();
                                     const userLocName = (user.location_name || user.location?.name || '').toLowerCase().trim();
-                                    const isLocMatch = (initLocId && userLocId && initLocId === userLocId) ||
-                                                       (initLocName && userLocName && initLocName === userLocName);
+                                    const isLocMatch = userLocId === matchLocId || (userLocName && userLocName === matchLocName);
                                     if (!isLocMatch) match = false;
                                 }
-                            } else if (match && auth.location_id) {
-                                const targetLocId = String(auth.location_id);
-                                const targetLoc = locations.find((l: any) => String(l.id) === targetLocId || l.code === targetLocId || l.name === targetLocId);
-                                const matchLocId = targetLoc ? String(targetLoc.id) : targetLocId;
-                                const matchLocName = targetLoc ? targetLoc.name.toLowerCase() : targetLocId.toLowerCase();
-                                const userLocName = (user.location_name || user.location?.name || '').toLowerCase().trim();
-                                const isLocMatch = userLocId === matchLocId || (userLocName && userLocName === matchLocName);
-                                if (!isLocMatch) match = false;
-                            }
 
-                            if (match && auth.company_group_use_initiator) {
-                                if (!simInitiatorUser) match = false;
-                                else {
-                                    const initCg = String(simInitiatorUser.company_group_id || '');
-                                    if (userCgId !== initCg) match = false;
+                                if (match && auth.company_group_use_initiator) {
+                                    if (!simInitiatorUser) match = false;
+                                    else {
+                                        const initCg = String(simInitiatorUser.company_group_id || '');
+                                        if (userCgId !== initCg) match = false;
+                                    }
+                                } else if (match && auth.company_group_id) {
+                                    if (userCgId !== String(auth.company_group_id)) match = false;
                                 }
-                            } else if (match && auth.company_group_id) {
-                                if (userCgId !== String(auth.company_group_id)) match = false;
-                            }
 
-                            if (match && auth.company_use_initiator) {
-                                if (!simInitiatorUser) match = false;
-                                else {
-                                    const initC = String(simInitiatorUser.company_id || '');
-                                    if (userCompId !== initC) match = false;
+                                if (match && auth.company_use_initiator) {
+                                    if (!simInitiatorUser) match = false;
+                                    else {
+                                        const initC = String(simInitiatorUser.company_id || '');
+                                        if (userCompId !== initC) match = false;
+                                    }
+                                } else if (match && auth.company_id) {
+                                    if (userCompId !== String(auth.company_id)) match = false;
                                 }
-                            } else if (match && auth.company_id) {
-                                if (userCompId !== String(auth.company_id)) match = false;
-                            }
 
-                            if (match && auth.region_use_initiator) {
-                                if (!simInitiatorUser) match = false;
-                                else {
-                                    const initR = String(simInitiatorUser.region_id || '');
-                                    if (userRegionId !== initR) match = false;
+                                if (match && auth.region_use_initiator) {
+                                    if (!simInitiatorUser) match = false;
+                                    else {
+                                        const initR = String(simInitiatorUser.region_id || '');
+                                        if (userRegionId !== initR) match = false;
+                                    }
+                                } else if (match && auth.region_id) {
+                                    if (userRegionId !== String(auth.region_id)) match = false;
                                 }
-                            } else if (match && auth.region_id) {
-                                if (userRegionId !== String(auth.region_id)) match = false;
-                            }
 
-                            if (match && (auth.organization_group_use_initiator || auth.organization_group_id)) {
-                                const userOrgId = String(user.department?.organization_group_id || user.organization_group_id || '');
-                                const userIdOrgGroup = user.department?.idorg_group !== undefined && user.department?.idorg_group !== null
-                                    ? String(user.department.idorg_group)
-                                    : (user.idorg_group !== undefined && user.idorg_group !== null ? String(user.idorg_group) : '');
-                                const userOrgGroupName = (user.org_group_name || user.department?.org_group_name || '').toLowerCase().trim();
+                                if (match && (auth.organization_group_use_initiator || auth.organization_group_id)) {
+                                    const userOrgId = String(user.department?.organization_group_id || user.organization_group_id || '');
+                                    const userIdOrgGroup =
+                                        user.department?.idorg_group !== undefined && user.department?.idorg_group !== null
+                                            ? String(user.department.idorg_group)
+                                            : user.idorg_group !== undefined && user.idorg_group !== null
+                                              ? String(user.idorg_group)
+                                              : '';
+                                    const userOrgGroupName = (user.org_group_name || user.department?.org_group_name || '').toLowerCase().trim();
 
-                                const userOgObj = organizationGroups.find((og: any) => 
-                                    (userOrgId && String(og.id) === userOrgId) ||
-                                    (userIdOrgGroup && String(og.idorg_group) === userIdOrgGroup) ||
-                                    (userOrgGroupName && og.name?.toLowerCase().trim() === userOrgGroupName)
-                                );
-                                const resolvedUserOgId = userOgObj ? String(userOgObj.id) : userOrgId;
-                                const resolvedUserIdOrgGroup = userOgObj && userOgObj.idorg_group !== undefined && userOgObj.idorg_group !== null
-                                    ? String(userOgObj.idorg_group)
-                                    : userIdOrgGroup;
-                                const resolvedUserOgName = (userOgObj?.name || userOrgGroupName).toLowerCase().trim();
+                                    const userOgObj = organizationGroups.find(
+                                        (og: any) =>
+                                            (userOrgId && String(og.id) === userOrgId) ||
+                                            (userIdOrgGroup && String(og.idorg_group) === userIdOrgGroup) ||
+                                            (userOrgGroupName && og.name?.toLowerCase().trim() === userOrgGroupName),
+                                    );
+                                    const resolvedUserOgId = userOgObj ? String(userOgObj.id) : userOrgId;
+                                    const resolvedUserIdOrgGroup =
+                                        userOgObj && userOgObj.idorg_group !== undefined && userOgObj.idorg_group !== null
+                                            ? String(userOgObj.idorg_group)
+                                            : userIdOrgGroup;
+                                    const resolvedUserOgName = (userOgObj?.name || userOrgGroupName).toLowerCase().trim();
 
-                                if (auth.organization_group_use_initiator) {
-                                    if (!simInitiatorUser) {
-                                        match = false;
-                                    } else {
-                                        const initOrgId = String(simInitiatorUser.department?.organization_group_id || simInitiatorUser.organization_group_id || '');
-                                        const initIdOrgGroup = simInitiatorUser.department?.idorg_group !== undefined && simInitiatorUser.department?.idorg_group !== null
-                                            ? String(simInitiatorUser.department.idorg_group)
-                                            : (simInitiatorUser.idorg_group !== undefined && simInitiatorUser.idorg_group !== null ? String(simInitiatorUser.idorg_group) : '');
-                                        const initOrgGroupName = (simInitiatorUser.org_group_name || simInitiatorUser.department?.org_group_name || '').toLowerCase().trim();
+                                    if (auth.organization_group_use_initiator) {
+                                        if (!simInitiatorUser) {
+                                            match = false;
+                                        } else {
+                                            const initOrgId = String(
+                                                simInitiatorUser.department?.organization_group_id || simInitiatorUser.organization_group_id || '',
+                                            );
+                                            const initIdOrgGroup =
+                                                simInitiatorUser.department?.idorg_group !== undefined &&
+                                                simInitiatorUser.department?.idorg_group !== null
+                                                    ? String(simInitiatorUser.department.idorg_group)
+                                                    : simInitiatorUser.idorg_group !== undefined && simInitiatorUser.idorg_group !== null
+                                                      ? String(simInitiatorUser.idorg_group)
+                                                      : '';
+                                            const initOrgGroupName = (
+                                                simInitiatorUser.org_group_name ||
+                                                simInitiatorUser.department?.org_group_name ||
+                                                ''
+                                            )
+                                                .toLowerCase()
+                                                .trim();
 
-                                        const initOgObj = organizationGroups.find((og: any) => 
-                                            (initOrgId && String(og.id) === initOrgId) ||
-                                            (initIdOrgGroup && String(og.idorg_group) === initIdOrgGroup) ||
-                                            (initOrgGroupName && og.name?.toLowerCase().trim() === initOrgGroupName)
+                                            const initOgObj = organizationGroups.find(
+                                                (og: any) =>
+                                                    (initOrgId && String(og.id) === initOrgId) ||
+                                                    (initIdOrgGroup && String(og.idorg_group) === initIdOrgGroup) ||
+                                                    (initOrgGroupName && og.name?.toLowerCase().trim() === initOrgGroupName),
+                                            );
+                                            const resolvedInitOgId = initOgObj ? String(initOgObj.id) : initOrgId;
+                                            const resolvedInitIdOrgGroup =
+                                                initOgObj && initOgObj.idorg_group !== undefined && initOgObj.idorg_group !== null
+                                                    ? String(initOgObj.idorg_group)
+                                                    : initIdOrgGroup;
+                                            const resolvedInitOgName = (initOgObj?.name || initOrgGroupName).toLowerCase().trim();
+
+                                            const isOrgGroupMatch =
+                                                (resolvedInitOgId && resolvedUserOgId && resolvedInitOgId === resolvedUserOgId) ||
+                                                (resolvedInitIdOrgGroup &&
+                                                    resolvedUserIdOrgGroup &&
+                                                    resolvedInitIdOrgGroup === resolvedUserIdOrgGroup) ||
+                                                (resolvedInitOgName && resolvedUserOgName && resolvedInitOgName === resolvedUserOgName);
+
+                                            if (!isOrgGroupMatch) match = false;
+                                        }
+                                    } else if (auth.organization_group_id) {
+                                        const targetOg = organizationGroups.find(
+                                            (og: any) =>
+                                                String(og.id) === String(auth.organization_group_id) ||
+                                                String(og.idorg_group) === String(auth.organization_group_id) ||
+                                                og.code === auth.organization_group_id ||
+                                                og.name === auth.organization_group_id,
                                         );
-                                        const resolvedInitOgId = initOgObj ? String(initOgObj.id) : initOrgId;
-                                        const resolvedInitIdOrgGroup = initOgObj && initOgObj.idorg_group !== undefined && initOgObj.idorg_group !== null
-                                            ? String(initOgObj.idorg_group)
-                                            : initIdOrgGroup;
-                                        const resolvedInitOgName = (initOgObj?.name || initOrgGroupName).toLowerCase().trim();
+                                        const targetOgId = targetOg ? String(targetOg.id) : String(auth.organization_group_id);
+                                        const targetIdOrgGroup =
+                                            targetOg && targetOg.idorg_group !== undefined && targetOg.idorg_group !== null
+                                                ? String(targetOg.idorg_group)
+                                                : null;
+                                        const targetOgName = (targetOg?.name || String(auth.organization_group_id)).toLowerCase().trim();
 
-                                        const isOrgGroupMatch = 
-                                            (resolvedInitOgId && resolvedUserOgId && resolvedInitOgId === resolvedUserOgId) ||
-                                            (resolvedInitIdOrgGroup && resolvedUserIdOrgGroup && resolvedInitIdOrgGroup === resolvedUserIdOrgGroup) ||
-                                            (resolvedInitOgName && resolvedUserOgName && resolvedInitOgName === resolvedUserOgName);
+                                        const isOrgGroupMatch =
+                                            (targetOgId && resolvedUserOgId && targetOgId === resolvedUserOgId) ||
+                                            (targetIdOrgGroup !== null && resolvedUserIdOrgGroup && targetIdOrgGroup === resolvedUserIdOrgGroup) ||
+                                            (targetOgName && resolvedUserOgName && targetOgName === resolvedUserOgName) ||
+                                            (targetOgId && resolvedUserIdOrgGroup && targetOgId === resolvedUserIdOrgGroup);
 
                                         if (!isOrgGroupMatch) match = false;
                                     }
-                                } else if (auth.organization_group_id) {
-                                    const targetOg = organizationGroups.find((og: any) => 
-                                        String(og.id) === String(auth.organization_group_id) ||
-                                        String(og.idorg_group) === String(auth.organization_group_id) ||
-                                        og.code === auth.organization_group_id ||
-                                        og.name === auth.organization_group_id
-                                    );
-                                    const targetOgId = targetOg ? String(targetOg.id) : String(auth.organization_group_id);
-                                    const targetIdOrgGroup = targetOg && targetOg.idorg_group !== undefined && targetOg.idorg_group !== null
-                                        ? String(targetOg.idorg_group)
-                                        : null;
-                                    const targetOgName = (targetOg?.name || String(auth.organization_group_id)).toLowerCase().trim();
-
-                                    const isOrgGroupMatch = 
-                                        (targetOgId && resolvedUserOgId && targetOgId === resolvedUserOgId) ||
-                                        (targetIdOrgGroup !== null && resolvedUserIdOrgGroup && targetIdOrgGroup === resolvedUserIdOrgGroup) ||
-                                        (targetOgName && resolvedUserOgName && targetOgName === resolvedUserOgName) ||
-                                        (targetOgId && resolvedUserIdOrgGroup && targetOgId === resolvedUserIdOrgGroup);
-
-                                    if (!isOrgGroupMatch) match = false;
                                 }
-                            }
 
-                            if (match) {
-                                const deptName = departments.find((d: any) => String(d.id) === String(user.department_id))?.name;
-                                matchedUsersMap.set(String(user.id), {
-                                    user: { ...user, department_name: deptName },
-                                    reasons: ['Otoritas Sesuai'],
-                                });
-                            }
-                        });
+                                if (match) {
+                                    const deptName = departments.find((d: any) => String(d.id) === String(user.department_id))?.name;
+                                    matchedUsersMap.set(String(user.id), {
+                                        user: { ...user, department_name: deptName },
+                                        reasons: ['Otoritas Sesuai'],
+                                    });
+                                }
+                            });
+                        }
                     }
-                }
-            });
-        }
+                });
+            }
 
-        return {
-            eligibleUsers: Array.from(matchedUsersMap.values()),
-            dynamicRoles: dynamicList,
-            criteriaSummary: criteriaParts.join(' • ') || '—',
-        };
-    }, [departments, roles, users, simInitiatorUser, simPicUser, simCreatorUser, simAdhocUsers]);
+            return {
+                eligibleUsers: Array.from(matchedUsersMap.values()),
+                dynamicRoles: dynamicList,
+                criteriaSummary: criteriaParts.join(' • ') || '—',
+            };
+        },
+        [departments, roles, users, simInitiatorUser, simPicUser, simCreatorUser, simAdhocUsers],
+    );
 
     // Generator Node & Edge Layout for Multi-Workflow Grouping
     const generateLayout = useCallback(() => {
@@ -1515,7 +1530,9 @@ export function WorkflowFlowVisualizer({
                             // Jangan sertakan master workflow lain di kanvas yang sama
                             if (foundWf && (!isMasterWorkflow(foundWf) || String(targetId) === primaryWfId)) {
                                 visitedWfIds.add(String(targetId));
-                                const sortedSteps = (foundWf.steps || []).slice().sort((a: any, b: any) => (Number(a.step) || 0) - (Number(b.step) || 0));
+                                const sortedSteps = (foundWf.steps || [])
+                                    .slice()
+                                    .sort((a: any, b: any) => (Number(a.step) || 0) - (Number(b.step) || 0));
                                 const subCustomActions = foundWf.meta?.custom_actions || [];
                                 workflowsToRender.push({
                                     id: String(targetId),
@@ -1594,11 +1611,11 @@ export function WorkflowFlowVisualizer({
             const stepCount = Math.max(1, wfItem.steps.length);
             const groupHeight = Math.max(
                 400,
-                GROUP_PADDING_TOP + stepCount * NODE_HEIGHT + Math.max(0, stepCount - 1) * VERTICAL_GAP + GROUP_PADDING_BOTTOM
+                GROUP_PADDING_TOP + stepCount * NODE_HEIGHT + Math.max(0, stepCount - 1) * VERTICAL_GAP + GROUP_PADDING_BOTTOM,
             );
             const groupId = `group-wf-${wfItem.id}`;
             const isPrimary = wfItem.isPrimary;
-            const currentWfCustomActions = isPrimary ? effectiveCustomActions : (wfItem.workflow?.meta?.custom_actions || []);
+            const currentWfCustomActions = isPrimary ? effectiveCustomActions : wfItem.workflow?.meta?.custom_actions || [];
 
             // Group Container Node (Hanya dirender jika showGroups aktif)
             if (showGroups) {
@@ -1684,12 +1701,13 @@ export function WorkflowFlowVisualizer({
                 // Evaluasi Aksi untuk Forward dan Rollback Internal dalam Workflow ini
                 effectiveActions.forEach((act: any, aIdx: number) => {
                     const isLastStep = sIdx === wfItem.steps.length - 1;
-                    const {
-                        targetStepNum,
-                        isCrossWf,
-                        isRollbackDirection,
-                        isForwardDirection,
-                    } = resolveActionTarget(act, stepNum, isLastStep, wfItem.steps, allWorkflows);
+                    const { targetStepNum, isCrossWf, isRollbackDirection, isForwardDirection } = resolveActionTarget(
+                        act,
+                        stepNum,
+                        isLastStep,
+                        wfItem.steps,
+                        allWorkflows,
+                    );
 
                     if (isCrossWf) {
                         // Ditangani di tahap cross-workflow edges
@@ -1762,7 +1780,7 @@ export function WorkflowFlowVisualizer({
                                 width: 18,
                                 height: 18,
                             },
-                            label: showLabels ? (cand.act?.alias || `Maju -> Step ${cand.targetStepNum}`) : undefined,
+                            label: showLabels ? cand.act?.alias || `Maju -> Step ${cand.targetStepNum}` : undefined,
                         });
                     } else {
                         // Loncatan forward multi-step (misal Step 1 -> Step 3): alokasikan jalur orthogonal terpisah di kanan
@@ -1773,7 +1791,7 @@ export function WorkflowFlowVisualizer({
                                 break;
                             }
                             const hasConflict = occupiedForwardLanes[assignedLane].some(
-                                (interval) => Math.max(interval.start, cand.sourceStepNum) <= Math.min(interval.end, cand.targetStepNum)
+                                (interval) => Math.max(interval.start, cand.sourceStepNum) <= Math.min(interval.end, cand.targetStepNum),
                             );
                             if (!hasConflict) break;
                             assignedLane++;
@@ -1800,7 +1818,7 @@ export function WorkflowFlowVisualizer({
                                 width: 18,
                                 height: 18,
                             },
-                            label: showLabels ? (cand.act?.alias || `Lompat -> Step ${cand.targetStepNum}`) : undefined,
+                            label: showLabels ? cand.act?.alias || `Lompat -> Step ${cand.targetStepNum}` : undefined,
                         });
                     }
                 });
@@ -1832,7 +1850,7 @@ export function WorkflowFlowVisualizer({
                         }
                         // Bentrok jika rentang interval [targetStepNum, sourceStepNum] tumpang tindih
                         const hasConflict = occupiedLanes[assignedLane].some(
-                            (interval) => Math.max(interval.start, cand.targetStepNum) <= Math.min(interval.end, cand.sourceStepNum)
+                            (interval) => Math.max(interval.start, cand.targetStepNum) <= Math.min(interval.end, cand.sourceStepNum),
                         );
                         if (!hasConflict) {
                             break;
@@ -1870,7 +1888,7 @@ export function WorkflowFlowVisualizer({
                             width: 18,
                             height: 18,
                         },
-                        label: showLabels ? (cand.act?.alias || `Revisi -> Step ${cand.targetStepNum}`) : undefined,
+                        label: showLabels ? cand.act?.alias || `Revisi -> Step ${cand.targetStepNum}` : undefined,
                     });
                 });
             }
@@ -1879,7 +1897,7 @@ export function WorkflowFlowVisualizer({
         // 3. Buat Cross-Workflow Edges Menghubungkan Antar Workflow Container
         if (showCrossRoutes) {
             workflowsToRender.forEach((sourceWfItem) => {
-                const sourceWfCustomActions = sourceWfItem.isPrimary ? effectiveCustomActions : (sourceWfItem.workflow?.meta?.custom_actions || []);
+                const sourceWfCustomActions = sourceWfItem.isPrimary ? effectiveCustomActions : sourceWfItem.workflow?.meta?.custom_actions || [];
                 sourceWfItem.steps.forEach((step: any) => {
                     const stepNum = Number(step.step) || 1;
                     const sourceNodeId = `wf-${sourceWfItem.id}-step-${stepNum}`;
@@ -1904,8 +1922,16 @@ export function WorkflowFlowVisualizer({
                             if (!targetSeq) targetSeq = 1;
 
                             const isOriginTarget = targetWfId === 'origin_workflow' || tConfig?.type === 'origin_return';
-                            const targetWf = isOriginTarget ? { name: 'Workflow Asal (Origin / Pemanggil)' } : (allWorkflows || []).find((w: any) => String(w.id) === targetWfId);
-                            const dynamicSeqLabel = isOriginTarget ? (tConfig?.return_mode === 'branch_next' ? 'Step Asal + 1 (Dinamis)' : (tConfig?.return_mode === 'branch_origin' ? 'Step Asal (Dinamis)' : `Tahap ${targetSeq}`)) : targetSeq;
+                            const targetWf = isOriginTarget
+                                ? { name: 'Workflow Asal (Origin / Pemanggil)' }
+                                : (allWorkflows || []).find((w: any) => String(w.id) === targetWfId);
+                            const dynamicSeqLabel = isOriginTarget
+                                ? tConfig?.return_mode === 'branch_next'
+                                    ? 'Step Asal + 1 (Dinamis)'
+                                    : tConfig?.return_mode === 'branch_origin'
+                                      ? 'Step Asal (Dinamis)'
+                                      : `Tahap ${targetSeq}`
+                                : targetSeq;
 
                             const targetLookup = nodePositionMap.get(`${targetWfId}:${targetSeq}`);
 
@@ -1926,14 +1952,14 @@ export function WorkflowFlowVisualizer({
                                         width: 18,
                                         height: 18,
                                     },
-                                    label: showLabels ? (act?.alias || `Beralih -> ${targetWf?.name || 'Sub-Alur'} (Tahap ${targetSeq})`) : undefined,
+                                    label: showLabels ? act?.alias || `Beralih -> ${targetWf?.name || 'Sub-Alur'} (Tahap ${targetSeq})` : undefined,
                                     labelStyle: { fill: '#4338ca', fontWeight: 700, fontSize: 10 },
                                     labelBgStyle: { fill: '#e0e7ff', fillOpacity: 0.95, rx: 6, ry: 6 },
                                     labelBgPadding: [6, 4],
                                 });
                             } else if (targetWfId) {
                                 // Fallback jika target workflow belum berada dalam view rendering: buat kartu external mini
-                                const crossFallbackId = `cross-fallback-${targetWfId}-${isOriginTarget ? (tConfig?.return_mode || 'origin') : targetSeq}`;
+                                const crossFallbackId = `cross-fallback-${targetWfId}-${isOriginTarget ? tConfig?.return_mode || 'origin' : targetSeq}`;
                                 if (!generatedNodes.some((n) => n.id === crossFallbackId)) {
                                     const sourcePos = nodePositionMap.get(`${sourceWfItem.id}:${stepNum}`);
                                     const fallbackX = (sourcePos?.x || START_X) + 420;
@@ -1965,7 +1991,12 @@ export function WorkflowFlowVisualizer({
                                         width: 18,
                                         height: 18,
                                     },
-                                    label: showLabels ? (act?.alias || (isOriginTarget ? `Kembali -> Workflow Asal (${dynamicSeqLabel})` : `Beralih -> ${targetWf?.name || 'Sub-Alur'}`)) : undefined,
+                                    label: showLabels
+                                        ? act?.alias ||
+                                          (isOriginTarget
+                                              ? `Kembali -> Workflow Asal (${dynamicSeqLabel})`
+                                              : `Beralih -> ${targetWf?.name || 'Sub-Alur'}`)
+                                        : undefined,
                                     labelStyle: { fill: '#4338ca', fontWeight: 700, fontSize: 10 },
                                     labelBgStyle: { fill: '#e0e7ff', fillOpacity: 0.95, rx: 6, ry: 6 },
                                     labelBgPadding: [6, 4],
@@ -2027,24 +2058,27 @@ export function WorkflowFlowVisualizer({
 
     const edges = layout.edges;
 
-    const onNodesChange = useCallback((changes: any[]) => {
-        changes.forEach((change: any) => {
-            if (change.type === 'position' && change.position && change.id) {
-                setDragPositions((prev) => {
-                    const next = {
-                        ...prev,
-                        [change.id]: change.position,
-                    };
-                    if (typeof window !== 'undefined') {
-                        try {
-                            localStorage.setItem(storageKey, JSON.stringify(next));
-                        } catch { }
-                    }
-                    return next;
-                });
-            }
-        });
-    }, [storageKey]);
+    const onNodesChange = useCallback(
+        (changes: any[]) => {
+            changes.forEach((change: any) => {
+                if (change.type === 'position' && change.position && change.id) {
+                    setDragPositions((prev) => {
+                        const next = {
+                            ...prev,
+                            [change.id]: change.position,
+                        };
+                        if (typeof window !== 'undefined') {
+                            try {
+                                localStorage.setItem(storageKey, JSON.stringify(next));
+                            } catch {}
+                        }
+                        return next;
+                    });
+                }
+            });
+        },
+        [storageKey],
+    );
 
     const resetLayoutPositions = useCallback(() => {
         setDragPositions({});
@@ -2054,23 +2088,23 @@ export function WorkflowFlowVisualizer({
     }, [storageKey]);
 
     return (
-        <div className="flex flex-col h-[820px] w-full rounded-2xl border border-slate-200/80 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-950 overflow-hidden shadow-xs font-sans">
+        <div className="flex h-[820px] w-full flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-50/50 font-sans shadow-xs dark:border-zinc-800 dark:bg-zinc-950">
             {/* Toolbar Header */}
-            <div className="flex flex-wrap items-center justify-between border-b border-slate-200/80 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 px-4 py-2.5 backdrop-blur-md z-10 gap-3">
+            <div className="z-10 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 bg-white/95 px-4 py-2.5 backdrop-blur-md dark:border-zinc-800 dark:bg-zinc-900/95">
                 <div className="flex items-center gap-2.5">
-                    <div className="bg-primary/10 text-primary p-2 rounded-xl font-medium flex items-center justify-center">
+                    <div className="bg-primary/10 text-primary flex items-center justify-center rounded-xl p-2 font-medium">
                         <Network size={16} />
                     </div>
                     <div>
                         <div className="flex items-center gap-2">
-                            <h3 className="text-xs font-medium text-slate-900 dark:text-white flex items-center gap-1.5">
+                            <h3 className="flex items-center gap-1.5 text-xs font-medium text-slate-900 dark:text-white">
                                 Diagram & Visualisasi Multi-Workflow
                             </h3>
-                            <span className="px-2 py-0.5 rounded-full text-[9.5px] font-semibold bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border border-indigo-200/80">
+                            <span className="rounded-full border border-indigo-200/80 bg-indigo-50 px-2 py-0.5 text-[9.5px] font-semibold text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300">
                                 {layout.totalWorkflows} Workflow • {layout.totalSteps} Tahap • {layout.totalCrossTransitions} Lintas Alur
                             </span>
                         </div>
-                        <p className="text-[10px] text-muted-foreground">
+                        <p className="text-muted-foreground text-[10px]">
                             Peta visual alur persetujuan, sub-workflow modular, dan transisi lintas alur
                         </p>
                     </div>
@@ -2079,15 +2113,15 @@ export function WorkflowFlowVisualizer({
                 {/* Interactive Toolbar Controls */}
                 <div className="flex flex-wrap items-center gap-2 text-xs">
                     {/* View Mode Switcher (Connected / Show All / Single) */}
-                    <div className="flex items-center bg-slate-100 dark:bg-zinc-800 p-0.5 rounded-xl border border-slate-200 dark:border-zinc-700">
+                    <div className="flex items-center rounded-xl border border-slate-200 bg-slate-100 p-0.5 dark:border-zinc-700 dark:bg-zinc-800">
                         <button
                             type="button"
                             onClick={() => setViewMode('connected')}
                             className={cn(
-                                'px-2.5 py-1 rounded-lg text-[10px] font-medium transition-all cursor-pointer flex items-center gap-1',
+                                'flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-medium transition-all',
                                 viewMode === 'connected'
-                                    ? 'bg-indigo-600 text-white shadow-2xs font-semibold'
-                                    : 'text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200'
+                                    ? 'bg-indigo-600 font-semibold text-white shadow-2xs'
+                                    : 'text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200',
                             )}
                             title="Tampilkan Workflow Ini dan Seluruh Sub-Workflow yang Terhubung Langsung"
                         >
@@ -2098,10 +2132,10 @@ export function WorkflowFlowVisualizer({
                             type="button"
                             onClick={() => setViewMode('all')}
                             className={cn(
-                                'px-2.5 py-1 rounded-lg text-[10px] font-medium transition-all cursor-pointer flex items-center gap-1',
+                                'flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-medium transition-all',
                                 viewMode === 'all'
-                                    ? 'bg-indigo-600 text-white shadow-2xs font-semibold'
-                                    : 'text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200'
+                                    ? 'bg-indigo-600 font-semibold text-white shadow-2xs'
+                                    : 'text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200',
                             )}
                             title="Tampilkan Semua Workflow di Sistem dengan Grouping Berdampingan"
                         >
@@ -2112,10 +2146,10 @@ export function WorkflowFlowVisualizer({
                             type="button"
                             onClick={() => setViewMode('single')}
                             className={cn(
-                                'px-2.5 py-1 rounded-lg text-[10px] font-medium transition-all cursor-pointer',
+                                'cursor-pointer rounded-lg px-2.5 py-1 text-[10px] font-medium transition-all',
                                 viewMode === 'single'
-                                    ? 'bg-white dark:bg-zinc-900 text-slate-900 dark:text-white shadow-2xs font-semibold'
-                                    : 'text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200'
+                                    ? 'bg-white font-semibold text-slate-900 shadow-2xs dark:bg-zinc-900 dark:text-white'
+                                    : 'text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200',
                             )}
                             title="Hanya Tampilkan Alur Ini Saja"
                         >
@@ -2127,7 +2161,7 @@ export function WorkflowFlowVisualizer({
                     <button
                         type="button"
                         onClick={resetLayoutPositions}
-                        className="px-2.5 py-1.5 rounded-xl border text-[10px] font-medium transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-300 border-slate-200 dark:border-zinc-700 hover:bg-slate-200 dark:hover:bg-zinc-700"
+                        className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-100 px-2.5 py-1.5 text-[10px] font-medium text-slate-600 shadow-2xs transition-all hover:bg-slate-200 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
                         title="Rapikan posisi kartu kembali ke susunan awal"
                     >
                         <RotateCcw size={12} />
@@ -2139,10 +2173,10 @@ export function WorkflowFlowVisualizer({
                         type="button"
                         onClick={() => setShowUsers(!showUsers)}
                         className={cn(
-                            'px-2.5 py-1.5 rounded-xl border text-[10px] font-medium transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs',
+                            'inline-flex cursor-pointer items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-[10px] font-medium shadow-2xs transition-all',
                             showUsers
-                                ? 'bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800'
-                                : 'bg-slate-100 dark:bg-zinc-800 text-slate-500 border-slate-200 dark:border-zinc-700 hover:text-slate-700 dark:hover:text-zinc-300'
+                                ? 'border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-800 dark:bg-indigo-950/50 dark:text-indigo-300'
+                                : 'border-slate-200 bg-slate-100 text-slate-500 hover:text-slate-700 dark:border-zinc-700 dark:bg-zinc-800 dark:hover:text-zinc-300',
                         )}
                         title="Tampilkan / Sembunyikan Personil Berhak Akses"
                     >
@@ -2155,10 +2189,10 @@ export function WorkflowFlowVisualizer({
                         type="button"
                         onClick={() => setShowGroups(!showGroups)}
                         className={cn(
-                            'px-2.5 py-1.5 rounded-xl border text-[10px] font-medium transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs',
+                            'inline-flex cursor-pointer items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-[10px] font-medium shadow-2xs transition-all',
                             showGroups
-                                ? 'bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800'
-                                : 'bg-slate-100 dark:bg-zinc-800 text-slate-500 border-slate-200 dark:border-zinc-700 hover:text-slate-700 dark:hover:text-zinc-300'
+                                ? 'border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-800 dark:bg-indigo-950/50 dark:text-indigo-300'
+                                : 'border-slate-200 bg-slate-100 text-slate-500 hover:text-slate-700 dark:border-zinc-700 dark:bg-zinc-800 dark:hover:text-zinc-300',
                         )}
                         title="Tampilkan / Sembunyikan Kotak Pembungkus Grouping Workflow"
                     >
@@ -2167,16 +2201,16 @@ export function WorkflowFlowVisualizer({
                     </button>
 
                     {/* Filter Rute Checkboxes (Independen: Maju, Rollback, Antar-Alur) */}
-                    <div className="flex items-center gap-1 bg-slate-100 dark:bg-zinc-800 p-1 rounded-xl border border-slate-200 dark:border-zinc-700">
+                    <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-100 p-1 dark:border-zinc-700 dark:bg-zinc-800">
                         {/* Checkbox Rute Maju */}
                         <button
                             type="button"
                             onClick={() => setShowForwardRoutes(!showForwardRoutes)}
                             className={cn(
-                                'px-2.5 py-1 rounded-lg text-[10px] font-medium transition-all cursor-pointer flex items-center gap-1.5 select-none',
+                                'flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1 text-[10px] font-medium transition-all select-none',
                                 showForwardRoutes
-                                    ? 'bg-emerald-500 text-white shadow-2xs font-semibold'
-                                    : 'text-slate-500 hover:text-slate-800 dark:hover:text-zinc-200 opacity-60'
+                                    ? 'bg-emerald-500 font-semibold text-white shadow-2xs'
+                                    : 'text-slate-500 opacity-60 hover:text-slate-800 dark:hover:text-zinc-200',
                             )}
                             title="Tampilkan / Sembunyikan Garis Rute Maju (Forward)"
                         >
@@ -2190,10 +2224,10 @@ export function WorkflowFlowVisualizer({
                             type="button"
                             onClick={() => setShowRollbackRoutes(!showRollbackRoutes)}
                             className={cn(
-                                'px-2.5 py-1 rounded-lg text-[10px] font-medium transition-all cursor-pointer flex items-center gap-1.5 select-none',
+                                'flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1 text-[10px] font-medium transition-all select-none',
                                 showRollbackRoutes
-                                    ? 'bg-rose-500 text-white shadow-2xs font-semibold'
-                                    : 'text-slate-500 hover:text-slate-800 dark:hover:text-zinc-200 opacity-60'
+                                    ? 'bg-rose-500 font-semibold text-white shadow-2xs'
+                                    : 'text-slate-500 opacity-60 hover:text-slate-800 dark:hover:text-zinc-200',
                             )}
                             title="Tampilkan / Sembunyikan Garis Rute Rollback / Revisi"
                         >
@@ -2207,10 +2241,10 @@ export function WorkflowFlowVisualizer({
                             type="button"
                             onClick={() => setShowCrossRoutes(!showCrossRoutes)}
                             className={cn(
-                                'px-2.5 py-1 rounded-lg text-[10px] font-medium transition-all cursor-pointer flex items-center gap-1.5 select-none',
+                                'flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1 text-[10px] font-medium transition-all select-none',
                                 showCrossRoutes
-                                    ? 'bg-indigo-600 text-white shadow-2xs font-semibold'
-                                    : 'text-slate-500 hover:text-slate-800 dark:hover:text-zinc-200 opacity-60'
+                                    ? 'bg-indigo-600 font-semibold text-white shadow-2xs'
+                                    : 'text-slate-500 opacity-60 hover:text-slate-800 dark:hover:text-zinc-200',
                             )}
                             title="Tampilkan / Sembunyikan Garis Rute Antar-Alur (Cross-Workflow)"
                         >
@@ -2226,10 +2260,10 @@ export function WorkflowFlowVisualizer({
                         onClick={() => setAnimatedLines(!animatedLines)}
                         title="Toggle Animasi Aliran Garis"
                         className={cn(
-                            'p-1.5 rounded-xl border transition-all cursor-pointer',
+                            'cursor-pointer rounded-xl border p-1.5 transition-all',
                             animatedLines
                                 ? 'bg-primary/10 text-primary border-primary/30'
-                                : 'bg-slate-100 dark:bg-zinc-800 text-slate-400 border-slate-200 dark:border-zinc-700'
+                                : 'border-slate-200 bg-slate-100 text-slate-400 dark:border-zinc-700 dark:bg-zinc-800',
                         )}
                     >
                         <Sparkles size={13} />
@@ -2239,10 +2273,10 @@ export function WorkflowFlowVisualizer({
                         onClick={() => setShowLabels(!showLabels)}
                         title="Tampilkan / Sembunyikan Label Teks"
                         className={cn(
-                            'p-1.5 rounded-xl border transition-all cursor-pointer',
+                            'cursor-pointer rounded-xl border p-1.5 transition-all',
                             showLabels
                                 ? 'bg-primary/10 text-primary border-primary/30'
-                                : 'bg-slate-100 dark:bg-zinc-800 text-slate-400 border-slate-200 dark:border-zinc-700'
+                                : 'border-slate-200 bg-slate-100 text-slate-400 dark:border-zinc-700 dark:bg-zinc-800',
                         )}
                     >
                         {showLabels ? <Eye size={13} /> : <EyeOff size={13} />}
@@ -2251,7 +2285,7 @@ export function WorkflowFlowVisualizer({
             </div>
 
             {/* React Flow Canvas */}
-            <div className="flex-1 w-full h-full relative">
+            <div className="relative h-full w-full flex-1">
                 <ReactFlow
                     nodes={nodes}
                     edges={edges}
@@ -2267,12 +2301,12 @@ export function WorkflowFlowVisualizer({
                     maxZoom={1.6}
                 >
                     <Background variant={BackgroundVariant.Dots} gap={20} size={1.2} color="#94a3b8" />
-                    <Controls className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl shadow-md overflow-hidden text-slate-700 dark:text-zinc-300" />
+                    <Controls className="overflow-hidden rounded-xl border border-slate-200 bg-white text-slate-700 shadow-md dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300" />
                     <MiniMap
                         nodeStrokeColor="#0284c7"
                         nodeColor="#f1f5f9"
                         nodeBorderRadius={8}
-                        className="bg-white/80 dark:bg-zinc-900/80 border border-slate-200 dark:border-zinc-800 rounded-xl shadow-md"
+                        className="rounded-xl border border-slate-200 bg-white/80 shadow-md dark:border-zinc-800 dark:bg-zinc-900/80"
                     />
                 </ReactFlow>
             </div>

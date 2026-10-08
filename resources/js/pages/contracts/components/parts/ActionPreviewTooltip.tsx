@@ -17,7 +17,7 @@ export function getActionTransitionPreview(
         isSubStep?: boolean;
         actionCode?: string;
         isSigner?: boolean;
-    }
+    },
 ): TransitionPreviewInfo | null {
     if (!contract) return null;
 
@@ -155,8 +155,9 @@ export function getActionTransitionPreview(
         }
 
         case 'add_adhoc': {
-            const nextStep = (action?.next_step_id ? steps.find((s: any) => String(s.id) === String(action.next_step_id)) : null)
-                || steps.find((s: any) => Number(s.step) > currentStepSeq);
+            const nextStep =
+                (action?.next_step_id ? steps.find((s: any) => String(s.id) === String(action.next_step_id)) : null) ||
+                steps.find((s: any) => Number(s.step) > currentStepSeq);
             return {
                 label: action?.alias || 'Approval Tambahan',
                 targetStepText: formatStepInfo(nextStep),
@@ -166,8 +167,9 @@ export function getActionTransitionPreview(
 
         case 'assign':
         case 'assign_pic': {
-            const nextStep = (action?.next_step_id ? steps.find((s: any) => String(s.id) === String(action.next_step_id)) : null)
-                || steps.find((s: any) => Number(s.step) > currentStepSeq);
+            const nextStep =
+                (action?.next_step_id ? steps.find((s: any) => String(s.id) === String(action.next_step_id)) : null) ||
+                steps.find((s: any) => Number(s.step) > currentStepSeq);
             return {
                 label: action?.alias || 'Tugaskan PIC & Lanjutkan',
                 targetStepText: formatStepInfo(nextStep),
@@ -176,8 +178,9 @@ export function getActionTransitionPreview(
         }
 
         default: {
-            const nextStep = (action?.next_step_id ? steps.find((s: any) => String(s.id) === String(action.next_step_id)) : null)
-                || steps.find((s: any) => Number(s.step) > currentStepSeq);
+            const nextStep =
+                (action?.next_step_id ? steps.find((s: any) => String(s.id) === String(action.next_step_id)) : null) ||
+                steps.find((s: any) => Number(s.step) > currentStepSeq);
             return {
                 label: action?.alias || (currentStepSeq === 1 ? 'Kirim Persetujuan' : 'Setujui & Lanjut ke Langkah Berikutnya'),
                 targetStepText: formatStepInfo(nextStep),
@@ -201,30 +204,32 @@ export function ActionPreviewTooltip({ preview, children, missingRequirements, d
     return (
         <Tooltip>
             <TooltipTrigger asChild>
-                <span className="w-full inline-block cursor-default">{children}</span>
+                <span className="inline-block w-full cursor-default">{children}</span>
             </TooltipTrigger>
             <TooltipContent
                 side="left"
                 align="center"
                 sideOffset={8}
-                className="max-w-[280px] w-auto p-2.5 bg-slate-900 text-slate-100 dark:bg-zinc-900 dark:text-zinc-100 border border-slate-700/80 shadow-2xl rounded-lg text-xs space-y-2 z-50 pointer-events-none"
+                className="pointer-events-none z-50 w-auto max-w-[280px] space-y-2 rounded-lg border border-slate-700/80 bg-slate-900 p-2.5 text-xs text-slate-100 shadow-2xl dark:bg-zinc-900 dark:text-zinc-100"
             >
                 {hasMissingReqs && (
-                    <div className="bg-rose-950/80 p-2 rounded border border-rose-800/80 space-y-1 text-left">
+                    <div className="space-y-1 rounded border border-rose-800/80 bg-rose-950/80 p-2 text-left">
                         <div className="flex items-center gap-1.5 font-bold text-rose-300">
-                            <span className="w-1.5 h-1.5 rounded-full bg-rose-400 shrink-0" />
+                            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-rose-400" />
                             <span>Syarat Wajib Belum Lengkap:</span>
                         </div>
-                        <ul className="list-disc list-inside text-[10.5px] text-rose-200/90 space-y-0.5 mt-1">
+                        <ul className="mt-1 list-inside list-disc space-y-0.5 text-[10.5px] text-rose-200/90">
                             {missingRequirements.map((req) => (
-                                <li key={req.id} className="leading-tight">{req.label}</li>
+                                <li key={req.id} className="leading-tight">
+                                    {req.label}
+                                </li>
                             ))}
                         </ul>
                     </div>
                 )}
 
                 {disabledReason && !hasMissingReqs && (
-                    <div className="bg-amber-950/80 p-2 rounded border border-amber-800/80 space-y-1 text-left text-amber-200 text-[11px]">
+                    <div className="space-y-1 rounded border border-amber-800/80 bg-amber-950/80 p-2 text-left text-[11px] text-amber-200">
                         {disabledReason}
                     </div>
                 )}
@@ -235,18 +240,18 @@ export function ActionPreviewTooltip({ preview, children, missingRequirements, d
                             <ArrowRight size={13} className="text-primary shrink-0" />
                             <span>Pratinjau Alur Langkah:</span>
                         </div>
-                        <div className="bg-slate-950/80 dark:bg-black/60 p-2 rounded border border-slate-800/80 space-y-1 text-left">
+                        <div className="space-y-1 rounded border border-slate-800/80 bg-slate-950/80 p-2 text-left dark:bg-black/60">
                             <div className="flex items-center justify-between gap-2 text-[10px] text-slate-400">
-                                <span className="font-semibold uppercase tracking-wider">Aksi:</span>
-                                <span className="font-bold text-slate-200 truncate">{preview.label}</span>
+                                <span className="font-semibold tracking-wider uppercase">Aksi:</span>
+                                <span className="truncate font-bold text-slate-200">{preview.label}</span>
                             </div>
                             <div className="flex items-start justify-between gap-2 text-[10.5px]">
-                                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider shrink-0 mt-0.5">Tujuan:</span>
-                                <span className="font-bold text-emerald-400 text-right leading-tight break-words">{preview.targetStepText}</span>
+                                <span className="mt-0.5 shrink-0 text-[10px] font-semibold tracking-wider text-slate-400 uppercase">Tujuan:</span>
+                                <span className="text-right leading-tight font-bold break-words text-emerald-400">{preview.targetStepText}</span>
                             </div>
                             {preview.targetStatus && (
-                                <div className="flex items-center justify-between gap-2 text-[10px] text-slate-400 pt-0.5 border-t border-slate-800/80">
-                                    <span className="font-semibold uppercase tracking-wider">Status Target:</span>
+                                <div className="flex items-center justify-between gap-2 border-t border-slate-800/80 pt-0.5 text-[10px] text-slate-400">
+                                    <span className="font-semibold tracking-wider uppercase">Status Target:</span>
                                     <span className="font-bold text-amber-400 uppercase">{preview.targetStatus}</span>
                                 </div>
                             )}

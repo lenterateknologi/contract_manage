@@ -2,9 +2,9 @@
 
 namespace App\Imports;
 
-use App\Models\Company;
-use App\Models\CompanyGroup;
-use App\Models\Region;
+use App\Models\Master\Company;
+use App\Models\Master\CompanyGroup;
+use App\Models\Master\Region;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;

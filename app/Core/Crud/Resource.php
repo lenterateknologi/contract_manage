@@ -4,7 +4,6 @@ namespace App\Core\Crud;
 
 use App\Core\Crud\Columns\Column;
 use App\Core\Crud\Fields\Field;
-use App\Core\Crud\Filters\Filter;
 
 abstract class Resource
 {

@@ -25,7 +25,7 @@ export function PageFooter({ className, children, pagination }: PageFooterProps)
         if (!pagination) return [];
         const { currentPage, lastPage } = pagination;
         let start = Math.max(1, currentPage - 2);
-        let end = Math.min(lastPage, start + 4);
+        const end = Math.min(lastPage, start + 4);
         
         if (end - start < 4) {
             start = Math.max(1, end - 4);

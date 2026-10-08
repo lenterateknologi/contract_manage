@@ -2,8 +2,8 @@
 
 namespace App\Http\Actions\File;
 
-use App\Models\Contract;
-use App\Models\ContractVersion;
+use App\Models\Transaction\Contract;
+use App\Models\Transaction\ContractVersion;
 use App\Traits\ApiResponse;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;

@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Actions\Admin\Contract\AdminOverrideWorkflowAction;
 use App\Http\Controllers\Controller;
 use App\Http\Queries\Contract\ContractDetailQuery;
-use App\Models\Workflow;
+use App\Models\Master\Workflow;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;

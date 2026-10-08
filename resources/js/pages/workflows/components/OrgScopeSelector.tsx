@@ -21,9 +21,7 @@ interface OrgScopeSelectorProps {
 }
 
 function toSection(raw: any[]): OrgScopeSection {
-    const arr: OrgScopeItem[] = raw.map((i) =>
-        typeof i === 'object' ? i : { value: String(i), is_initiator: false },
-    );
+    const arr: OrgScopeItem[] = raw.map((i) => (typeof i === 'object' ? i : { value: String(i), is_initiator: false }));
     const is_initiator = arr.length > 0 && arr.every((i) => i.is_initiator);
     return { is_initiator, items: is_initiator ? [] : arr };
 }
@@ -84,7 +82,7 @@ export default function OrgScopeSelector({ form, companyGroups = [], regions = [
                         onValuesChange={(vals) =>
                             form.setData((prev: any) => ({
                                 ...prev,
-                                company_group_ids: vals.map(v => ({ value: v, is_initiator: false })),
+                                company_group_ids: vals.map((v) => ({ value: v, is_initiator: false })),
                                 region_ids: [],
                                 company_ids: [],
                             }))
@@ -108,7 +106,7 @@ export default function OrgScopeSelector({ form, companyGroups = [], regions = [
                         onValuesChange={(vals) =>
                             form.setData((prev: any) => ({
                                 ...prev,
-                                region_ids: vals.map(v => ({ value: v, is_initiator: false })),
+                                region_ids: vals.map((v) => ({ value: v, is_initiator: false })),
                                 company_ids: [],
                             }))
                         }
@@ -126,7 +124,10 @@ export default function OrgScopeSelector({ form, companyGroups = [], regions = [
                         }
                         values={companySection.items.map((i) => String(i.value))}
                         onValuesChange={(vals) =>
-                            form.setData('company_ids', vals.map(v => ({ value: v, is_initiator: false })))
+                            form.setData(
+                                'company_ids',
+                                vals.map((v) => ({ value: v, is_initiator: false })),
+                            )
                         }
                         options={companyOptions}
                         placeholder="Tambah Perusahaan..."

@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\Module;
+use App\Models\Master\Module;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\Cache;
 

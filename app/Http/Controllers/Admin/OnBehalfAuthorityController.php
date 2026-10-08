@@ -3,16 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Authority;
-use App\Models\Company;
-use App\Models\CompanyGroup;
-use App\Models\Department;
-use App\Models\Division;
-use App\Models\Location;
-use App\Models\OrganizationGroup;
-use App\Models\Region;
-use App\Models\Role;
-use App\Models\User;
+use App\Models\Master\Authority;
 use App\Services\MasterData\MasterAuthoritySyncService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;

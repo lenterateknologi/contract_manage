@@ -2,23 +2,22 @@
 
 namespace App\Services;
 
-use App\Models\BusinessUnit;
-use App\Models\Company;
-use App\Models\CompanyGroup;
-use App\Models\ContractFilterTemplate;
-use App\Models\Department;
-use App\Models\Division;
-use App\Models\JobLevel;
-use App\Models\JobLevelGroup;
-use App\Models\JobTitle;
-use App\Models\Location;
-use App\Models\OrganizationGroup;
-use App\Models\OrganizationLevel;
-use App\Models\Region;
-use App\Models\Role;
-use App\Models\User;
+use App\Models\Master\BusinessUnit;
+use App\Models\Master\Company;
+use App\Models\Master\CompanyGroup;
+use App\Models\Master\Department;
+use App\Models\Master\Division;
+use App\Models\Master\JobLevel;
+use App\Models\Master\JobLevelGroup;
+use App\Models\Master\JobTitle;
+use App\Models\Master\Location;
+use App\Models\Master\OrganizationGroup;
+use App\Models\Master\OrganizationLevel;
+use App\Models\Master\Region;
+use App\Models\Master\Role;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
@@ -46,7 +45,7 @@ class PortalSyncService
     /**
      * Synchronize Regions from Portal API.
      *
-     * @param string $isUsedMode Options: 'keep' (default), 'set_true', 'set_false'
+     * @param  string  $isUsedMode  Options: 'keep' (default), 'set_true', 'set_false'
      * @return array{success: bool, message: string, synced: int, total: int, data?: array}
      */
     public function syncRegions(string $isUsedMode = 'keep'): array
@@ -184,7 +183,7 @@ class PortalSyncService
     /**
      * Synchronize Company Groups from Portal API.
      *
-     * @param string $isUsedMode Options: 'keep' (default), 'set_true', 'set_false'
+     * @param  string  $isUsedMode  Options: 'keep' (default), 'set_true', 'set_false'
      * @return array{success: bool, message: string, synced: int, total: int}
      */
     public function syncCompanyGroups(string $isUsedMode = 'keep'): array
@@ -319,7 +318,7 @@ class PortalSyncService
     /**
      * Synchronize Locations from Portal API.
      *
-     * @param string $isUsedMode Options: 'keep' (default), 'set_true', 'set_false'
+     * @param  string  $isUsedMode  Options: 'keep' (default), 'set_true', 'set_false'
      * @return array{success: bool, message: string, synced: int, total: int}
      */
     public function syncLocations(string $isUsedMode = 'keep'): array
@@ -471,7 +470,7 @@ class PortalSyncService
     /**
      * Synchronize Companies from Portal API.
      *
-     * @param string $isUsedMode Options: 'keep' (default), 'set_true', 'set_false'
+     * @param  string  $isUsedMode  Options: 'keep' (default), 'set_true', 'set_false'
      * @return array{success: bool, message: string, synced: int, total: int}
      */
     public function syncCompanies(string $isUsedMode = 'keep'): array
@@ -649,7 +648,7 @@ class PortalSyncService
     /**
      * Synchronize Business Units from Portal API.
      *
-     * @param string $isUsedMode Options: 'keep' (default), 'set_true', 'set_false'
+     * @param  string  $isUsedMode  Options: 'keep' (default), 'set_true', 'set_false'
      * @return array{success: bool, message: string, synced: int, total: int}
      */
     public function syncBusinessUnits(string $isUsedMode = 'keep'): array
@@ -844,7 +843,7 @@ class PortalSyncService
     /**
      * Synchronize Employees/Users from Portal API.
      *
-     * @param string $isUsedMode Options: 'keep' (default), 'set_true', 'set_false'
+     * @param  string  $isUsedMode  Options: 'keep' (default), 'set_true', 'set_false'
      * @return array{success: bool, message: string, synced: int, total: int}
      */
     public function syncEmployees(string $isUsedMode = 'keep'): array
@@ -1189,7 +1188,7 @@ class PortalSyncService
                 }
             });
 
-            \Illuminate\Support\Facades\Cache::forget('admin_members_tree_users_v2');
+            Cache::forget('admin_members_tree_users_v2');
 
             return [
                 'success' => true,
@@ -1212,7 +1211,7 @@ class PortalSyncService
     /**
      * Synchronize Departments / Organizations from Portal API.
      *
-     * @param string $isUsedMode Options: 'keep' (default), 'set_true', 'set_false'
+     * @param  string  $isUsedMode  Options: 'keep' (default), 'set_true', 'set_false'
      * @return array{success: bool, message: string, synced: int, total: int}
      */
     public function syncDepartments(string $isUsedMode = 'keep'): array
@@ -1352,7 +1351,7 @@ class PortalSyncService
     /**
      * Synchronize Job Levels from Portal API.
      *
-     * @param string $isUsedMode Options: 'keep' (default), 'set_true', 'set_false'
+     * @param  string  $isUsedMode  Options: 'keep' (default), 'set_true', 'set_false'
      * @return array{success: bool, message: string, synced: int, total: int}
      */
     public function syncJobLevels(string $isUsedMode = 'keep'): array
@@ -1509,7 +1508,7 @@ class PortalSyncService
     /**
      * Synchronize Job Titles from Portal API.
      *
-     * @param string $isUsedMode Options: 'keep' (default), 'set_true', 'set_false'
+     * @param  string  $isUsedMode  Options: 'keep' (default), 'set_true', 'set_false'
      * @return array{success: bool, message: string, synced: int, total: int}
      */
     public function syncJobTitles(string $isUsedMode = 'keep'): array
@@ -1670,7 +1669,7 @@ class PortalSyncService
     /**
      * Synchronize Organization Levels from Portal API.
      *
-     * @param string $isUsedMode Options: 'keep' (default), 'set_true', 'set_false'
+     * @param  string  $isUsedMode  Options: 'keep' (default), 'set_true', 'set_false'
      * @return array{success: bool, message: string, synced: int, total: int, data?: array}
      */
     public function syncOrganizationLevels(string $isUsedMode = 'keep'): array
@@ -1803,7 +1802,7 @@ class PortalSyncService
     /**
      * Synchronize Organization Groups from Portal API.
      *
-     * @param string $isUsedMode Options: 'keep' (default), 'set_true', 'set_false'
+     * @param  string  $isUsedMode  Options: 'keep' (default), 'set_true', 'set_false'
      * @return array{success: bool, message: string, synced: int, total: int, data?: array}
      */
     public function syncOrganizationGroups(string $isUsedMode = 'keep'): array
@@ -1938,7 +1937,7 @@ class PortalSyncService
     /**
      * Synchronize Job Level Groups from Portal API.
      *
-     * @param string $isUsedMode Options: 'keep' (default), 'set_true', 'set_false'
+     * @param  string  $isUsedMode  Options: 'keep' (default), 'set_true', 'set_false'
      * @return array{success: bool, message: string, synced: int, total: int, data?: array}
      */
     public function syncJobLevelGroups(string $isUsedMode = 'keep'): array

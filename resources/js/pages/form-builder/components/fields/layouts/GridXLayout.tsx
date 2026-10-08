@@ -58,7 +58,7 @@ export const GridXLayout: React.FC<LayoutProps> = ({ field, children, isBuilder 
                             icon={Columns}
                             label={`Kolom ${colIndex + 1} (${sizeLabel})`}
                             description="Tarik elemen ke sini"
-                            className="min-h-[80px] py-6 border border-dashed border-primary/20 hover:border-primary/40"
+                            className="border-primary/20 hover:border-primary/40 min-h-[80px] border border-dashed py-6"
                         />
                     );
                 })}

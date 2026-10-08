@@ -1,24 +1,13 @@
-import React, { useMemo, useState } from 'react';
-import { Contract, ContractApproval } from '@/pages/contracts/types';
-import { ApprovalCard } from '@/pages/contracts/components/parts/ApprovalCard';
-import { InitiatorStepCard } from '@/pages/contracts/components/parts/InitiatorStepCard';
-import { Timeline, TimelineItem, TimelineIcon, TimelineContent } from '@/pages/contracts/components/ui/timeline';
+import { Button } from '@/components/ui/buttons/Button';
+import { Badge } from '@/components/ui/feedback/Badge';
 import { SearchInput } from '@/components/ui/inputs/SearchInput';
 import { useDebounce } from '@/hooks/use-debounce';
-import { Badge } from '@/components/ui/feedback/Badge';
-import { Button } from '@/components/ui/buttons/Button';
 import { cn, formatDateTime } from '@/lib/utils';
-import {
-    Workflow,
-    GitBranch,
-    CheckCircle2,
-    Clock,
-    Layers,
-    ListFilter,
-    Download,
-    ArrowRight,
-    Sparkles,
-} from 'lucide-react';
+import { ApprovalCard } from '@/pages/contracts/components/parts/ApprovalCard';
+import { Timeline, TimelineContent, TimelineIcon, TimelineItem } from '@/pages/contracts/components/ui/timeline';
+import { Contract, ContractApproval } from '@/pages/contracts/types';
+import { CheckCircle2, Clock, Download, ListFilter, Workflow } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
 
 interface RelatedWorkflowsTabProps {
     contract: Contract;
@@ -41,11 +30,7 @@ interface WorkflowBlock {
     lastTimestamp?: string | null;
 }
 
-export const RelatedWorkflowsTab: React.FC<RelatedWorkflowsTabProps> = ({
-    contract,
-    meId,
-    showToast,
-}) => {
+export const RelatedWorkflowsTab: React.FC<RelatedWorkflowsTabProps> = ({ contract, meId, showToast }) => {
     const [search, setSearch] = useState('');
     const [selectedWorkflowId, setSelectedWorkflowId] = useState<string | 'all'>('all');
     const debouncedSearch = useDebounce(search, 400);
@@ -59,14 +44,7 @@ export const RelatedWorkflowsTab: React.FC<RelatedWorkflowsTabProps> = ({
         const map = new Map<string, WorkflowBlock>();
 
         // Helper to register workflow entry
-        const registerWorkflow = (
-            id: string,
-            name: string,
-            wfType?: string,
-            isOrigin = false,
-            isCurrent = false,
-            totalSteps = 0,
-        ) => {
+        const registerWorkflow = (id: string, name: string, wfType?: string, isOrigin = false, isCurrent = false, totalSteps = 0) => {
             if (!map.has(id)) {
                 map.set(id, {
                     id,
@@ -116,13 +94,7 @@ export const RelatedWorkflowsTab: React.FC<RelatedWorkflowsTabProps> = ({
             const wfName = wf?.name || (wfId === contract.workflow_id ? contract.workflow?.name : 'Alur Kerja Terkait');
 
             if (!map.has(wfId)) {
-                registerWorkflow(
-                    wfId,
-                    wfName || 'Alur Kerja',
-                    (wf as any)?.workflow_type,
-                    wfId === originWfId,
-                    wfId === currentWfId,
-                );
+                registerWorkflow(wfId, wfName || 'Alur Kerja', (wf as any)?.workflow_type, wfId === originWfId, wfId === currentWfId);
             }
 
             const block = map.get(wfId)!;
@@ -193,20 +165,20 @@ export const RelatedWorkflowsTab: React.FC<RelatedWorkflowsTabProps> = ({
     };
 
     return (
-        <div className="flex flex-col flex-1 min-h-0 h-full overflow-hidden p-3 gap-3 animate-in fade-in duration-300">
+        <div className="animate-in fade-in flex h-full min-h-0 flex-1 flex-col gap-3 overflow-hidden p-3 duration-300">
             {/* ═══════════════════════════════════════════════════════════════════
                 TOP SECTION: DYNAMIC WORKFLOW LIFECYCLE STEPPER (BY WORKFLOW)
             ═══════════════════════════════════════════════════════════════════ */}
-            <div className="shrink-0 flex flex-col gap-2 pb-2.5 border-b border-surface-border/70">
-                <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="border-surface-border/70 flex shrink-0 flex-col gap-2 border-b pb-2.5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
-                        <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-primary/10 text-primary font-bold shrink-0">
+                        <div className="bg-primary/10 text-primary flex h-6 w-6 shrink-0 items-center justify-center rounded-lg font-bold">
                             <Workflow size={13} />
                         </div>
                         <div>
-                            <h3 className="text-xs font-bold text-foreground leading-tight flex items-center gap-1.5">
+                            <h3 className="text-foreground flex items-center gap-1.5 text-xs leading-tight font-bold">
                                 <span>Alur & Sub-Workflow Terkait</span>
-                                <span className="text-[9.5px] font-semibold px-2 py-0.2 rounded-full bg-surface-muted text-muted-foreground border border-surface-border">
+                                <span className="py-0.2 bg-surface-muted text-muted-foreground border-surface-border rounded-full border px-2 text-[9.5px] font-semibold">
                                     {workflowBlocks.length} Alur Kerja
                                 </span>
                             </h3>
@@ -218,7 +190,7 @@ export const RelatedWorkflowsTab: React.FC<RelatedWorkflowsTabProps> = ({
                             type="button"
                             onClick={() => setSelectedWorkflowId('all')}
                             className={cn(
-                                'text-[10px] font-bold px-2.5 py-0.5 rounded-full border transition-all cursor-pointer',
+                                'cursor-pointer rounded-full border px-2.5 py-0.5 text-[10px] font-bold transition-all',
                                 selectedWorkflowId === 'all'
                                     ? 'bg-primary text-primary-foreground border-primary shadow-xs'
                                     : 'bg-surface-muted text-muted-foreground hover:text-foreground border-surface-border',
@@ -230,57 +202,47 @@ export const RelatedWorkflowsTab: React.FC<RelatedWorkflowsTabProps> = ({
                 </div>
 
                 {/* Horizontal Stepper: PER WORKFLOW (Pengajuan Kontrak F1 -> Sub-Workflow -> F2 -> Sign) */}
-                <div className="w-full overflow-x-auto custom-scrollbar pb-1 pt-1">
-                    <div className="flex items-center min-w-max gap-0 justify-between px-1">
+                <div className="custom-scrollbar w-full overflow-x-auto pt-1 pb-1">
+                    <div className="flex min-w-max items-center justify-between gap-0 px-1">
                         {workflowBlocks.map((block, idx) => {
                             const isSelected = selectedWorkflowId === block.id;
                             const isCurrentActive = block.isCurrent;
-                            const isCompleted =
-                                block.approvals.length > 0 &&
-                                block.approvals.every((a) => a.status === 'approved');
+                            const isCompleted = block.approvals.length > 0 && block.approvals.every((a) => a.status === 'approved');
                             const isLast = idx === workflowBlocks.length - 1;
 
                             return (
                                 <React.Fragment key={block.id || idx}>
                                     <button
                                         type="button"
-                                        onClick={() =>
-                                            setSelectedWorkflowId(isSelected ? 'all' : block.id)
-                                        }
+                                        onClick={() => setSelectedWorkflowId(isSelected ? 'all' : block.id)}
                                         className={cn(
-                                            'group flex flex-col items-center text-center relative max-w-[140px] sm:max-w-[170px] p-2 rounded-xl transition-all cursor-pointer select-none focus:outline-none',
-                                            isSelected
-                                                ? 'bg-primary/10 ring-2 ring-primary shadow-xs'
-                                                : 'hover:bg-surface-muted/80',
+                                            'group relative flex max-w-[140px] cursor-pointer flex-col items-center rounded-xl p-2 text-center transition-all select-none focus:outline-none sm:max-w-[170px]',
+                                            isSelected ? 'bg-primary/10 ring-primary shadow-xs ring-2' : 'hover:bg-surface-muted/80',
                                         )}
                                         title={`Klik untuk filter workflow: ${block.name}`}
                                     >
                                         {/* Stepper Node Circle */}
                                         <div
                                             className={cn(
-                                                'relative flex h-7.5 w-7.5 items-center justify-center rounded-full text-xs font-bold transition-all duration-200 z-10 group-hover:scale-105',
+                                                'relative z-10 flex h-7.5 w-7.5 items-center justify-center rounded-full text-xs font-bold transition-all duration-200 group-hover:scale-105',
                                                 isCompleted
                                                     ? 'bg-emerald-500 text-white shadow-xs'
                                                     : isCurrentActive
-                                                    ? 'bg-primary text-primary-foreground ring-4 ring-primary/20 shadow-sm animate-pulse'
-                                                    : block.hasRejected
-                                                    ? 'bg-rose-500 text-white shadow-xs'
-                                                    : 'bg-surface-muted text-muted-foreground border border-surface-border',
-                                                isSelected && 'ring-2 ring-primary ring-offset-2 dark:ring-offset-surface-base',
+                                                      ? 'bg-primary text-primary-foreground ring-primary/20 animate-pulse shadow-sm ring-4'
+                                                      : block.hasRejected
+                                                        ? 'bg-rose-500 text-white shadow-xs'
+                                                        : 'bg-surface-muted text-muted-foreground border-surface-border border',
+                                                isSelected && 'ring-primary dark:ring-offset-surface-base ring-2 ring-offset-2',
                                             )}
                                         >
-                                            {isCompleted ? (
-                                                <CheckCircle2 size={15} strokeWidth={2.5} />
-                                            ) : (
-                                                <span>{idx + 1}</span>
-                                            )}
+                                            {isCompleted ? <CheckCircle2 size={15} strokeWidth={2.5} /> : <span>{idx + 1}</span>}
                                         </div>
 
                                         {/* Workflow Title & Meta Badge */}
-                                        <div className="flex flex-col items-center mt-1.5 px-1">
+                                        <div className="mt-1.5 flex flex-col items-center px-1">
                                             <span
                                                 className={cn(
-                                                    'text-[11px] font-bold leading-tight line-clamp-2 text-center transition-colors',
+                                                    'line-clamp-2 text-center text-[11px] leading-tight font-bold transition-colors',
                                                     isSelected ? 'text-primary font-extrabold underline underline-offset-2' : '',
                                                     !isSelected && isCurrentActive && 'text-primary font-extrabold',
                                                     !isSelected && isCompleted && 'text-foreground group-hover:text-primary',
@@ -290,35 +252,33 @@ export const RelatedWorkflowsTab: React.FC<RelatedWorkflowsTabProps> = ({
                                                 {block.name}
                                             </span>
 
-                                            <div className="flex items-center gap-1 mt-1 flex-wrap justify-center">
+                                            <div className="mt-1 flex flex-wrap items-center justify-center gap-1">
                                                 {block.isOrigin && (
-                                                    <span className="text-[8px] font-extrabold bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-500/20 px-1.5 py-0.2 rounded">
+                                                    <span className="py-0.2 rounded border border-blue-500/20 bg-blue-500/15 px-1.5 text-[8px] font-extrabold text-blue-700 dark:text-blue-300">
                                                         Utama
                                                     </span>
                                                 )}
                                                 {block.isCurrent && (
-                                                    <span className="text-[8px] font-extrabold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 px-1.5 py-0.2 rounded">
+                                                    <span className="py-0.2 rounded border border-emerald-500/20 bg-emerald-500/15 px-1.5 text-[8px] font-extrabold text-emerald-700 dark:text-emerald-300">
                                                         Aktif
                                                     </span>
                                                 )}
-                                                <span className="text-[8.5px] text-muted-foreground/75 font-mono">
-                                                    {block.approvals.length} Step
-                                                </span>
+                                                <span className="text-muted-foreground/75 font-mono text-[8.5px]">{block.approvals.length} Step</span>
                                             </div>
                                         </div>
                                     </button>
 
                                     {/* Connecting Line Between Workflows */}
                                     {!isLast && (
-                                        <div className="flex-1 mx-1.5 sm:mx-2 h-0.5 min-w-[28px] sm:min-w-[40px] relative -top-4.5">
+                                        <div className="relative -top-4.5 mx-1.5 h-0.5 min-w-[28px] flex-1 sm:mx-2 sm:min-w-[40px]">
                                             <div
                                                 className={cn(
                                                     'h-full w-full rounded-full transition-all duration-300',
                                                     isCompleted
                                                         ? 'bg-emerald-500 dark:bg-emerald-600'
                                                         : isCurrentActive
-                                                        ? 'bg-gradient-to-r from-primary to-surface-border'
-                                                        : 'bg-surface-border',
+                                                          ? 'from-primary to-surface-border bg-gradient-to-r'
+                                                          : 'bg-surface-border',
                                                 )}
                                             />
                                         </div>
@@ -333,17 +293,17 @@ export const RelatedWorkflowsTab: React.FC<RelatedWorkflowsTabProps> = ({
             {/* ═══════════════════════════════════════════════════════════════════
                 FILTER & SEARCH BAR
             ═══════════════════════════════════════════════════════════════════ */}
-            <div className="shrink-0 flex items-center justify-between gap-2 bg-surface-muted border border-surface-border p-1.5 px-2.5 rounded-lg">
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-semibold flex-wrap">
+            <div className="bg-surface-muted border-surface-border flex shrink-0 items-center justify-between gap-2 rounded-lg border p-1.5 px-2.5">
+                <div className="text-muted-foreground flex flex-wrap items-center gap-1.5 text-xs font-semibold">
                     <ListFilter size={13} />
                     <span>Daftar Tahapan per Workflow</span>
                     {selectedWorkflowId !== 'all' && (
-                        <span className="inline-flex items-center gap-1 bg-primary/10 text-primary border border-primary/20 text-[10px] px-2 py-0.5 rounded-full font-bold">
+                        <span className="bg-primary/10 text-primary border-primary/20 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold">
                             Workflow: {workflowBlocks.find((b) => b.id === selectedWorkflowId)?.name}
                             <button
                                 type="button"
                                 onClick={() => setSelectedWorkflowId('all')}
-                                className="hover:text-rose-500 ml-0.5 text-xs cursor-pointer"
+                                className="ml-0.5 cursor-pointer text-xs hover:text-rose-500"
                                 title="Hapus filter"
                             >
                                 ×
@@ -358,7 +318,7 @@ export const RelatedWorkflowsTab: React.FC<RelatedWorkflowsTabProps> = ({
                             placeholder="CARI TAHAP / PIC..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="h-7 text-[10px] uppercase bg-surface-base"
+                            className="bg-surface-base h-7 text-[10px] uppercase"
                         />
                     </div>
 
@@ -366,7 +326,7 @@ export const RelatedWorkflowsTab: React.FC<RelatedWorkflowsTabProps> = ({
                         variant="outline"
                         size="sm"
                         onClick={handleExportPdf}
-                        className="border-surface-border bg-surface-base text-text-main hover:bg-surface-muted h-7 gap-1 px-2 rounded transition-colors text-[10px] font-semibold uppercase shadow-none"
+                        className="border-surface-border bg-surface-base text-text-main hover:bg-surface-muted h-7 gap-1 rounded px-2 text-[10px] font-semibold uppercase shadow-none transition-colors"
                     >
                         <Download size={12} strokeWidth={2.5} />
                         <span className="hidden sm:inline">Export</span>
@@ -377,34 +337,40 @@ export const RelatedWorkflowsTab: React.FC<RelatedWorkflowsTabProps> = ({
             {/* ═══════════════════════════════════════════════════════════════════
                 WORKFLOW BLOCKS WITH THEIR STEP CARDS
             ═══════════════════════════════════════════════════════════════════ */}
-            <div className="flex-1 min-h-0 overflow-y-auto space-y-4 custom-scrollbar pr-1 pb-6">
+            <div className="custom-scrollbar min-h-0 flex-1 space-y-4 overflow-y-auto pr-1 pb-6">
                 {displayedBlocks.map((block, bIdx) => (
                     <div
                         key={block.id || bIdx}
-                        className="flex flex-col bg-surface-base border border-surface-border rounded-xl p-3 shadow-2xs gap-3"
+                        className="bg-surface-base border-surface-border flex flex-col gap-3 rounded-xl border p-3 shadow-2xs"
                     >
                         {/* Block Header */}
-                        <div className="flex items-center justify-between gap-2 border-b border-surface-border/60 pb-2">
+                        <div className="border-surface-border/60 flex items-center justify-between gap-2 border-b pb-2">
                             <div className="flex items-center gap-2">
-                                <div className="flex h-6 w-6 items-center justify-center rounded bg-primary/10 text-primary font-bold text-xs shrink-0">
+                                <div className="bg-primary/10 text-primary flex h-6 w-6 shrink-0 items-center justify-center rounded text-xs font-bold">
                                     {bIdx + 1}
                                 </div>
                                 <div>
-                                    <h4 className="text-xs font-bold text-foreground leading-tight flex items-center gap-1.5">
+                                    <h4 className="text-foreground flex items-center gap-1.5 text-xs leading-tight font-bold">
                                         <span>{block.name}</span>
                                         {block.isOrigin && (
-                                            <Badge variant="outline" className="text-[9px] py-0 px-1.5 bg-blue-500/10 text-blue-700 border-blue-500/20">
+                                            <Badge
+                                                variant="outline"
+                                                className="border-blue-500/20 bg-blue-500/10 px-1.5 py-0 text-[9px] text-blue-700"
+                                            >
                                                 Origin / Alur Awal
                                             </Badge>
                                         )}
                                         {block.isCurrent && (
-                                            <Badge variant="outline" className="text-[9px] py-0 px-1.5 bg-emerald-500/10 text-emerald-700 border-emerald-500/20">
+                                            <Badge
+                                                variant="outline"
+                                                className="border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0 text-[9px] text-emerald-700"
+                                            >
                                                 Alur Saat Ini
                                             </Badge>
                                         )}
                                     </h4>
                                     {block.firstTimestamp && (
-                                        <span className="text-[9px] text-muted-foreground flex items-center gap-1 mt-0.5 font-mono">
+                                        <span className="text-muted-foreground mt-0.5 flex items-center gap-1 font-mono text-[9px]">
                                             <Clock size={9} />
                                             Masuk: {formatDateTime(block.firstTimestamp)}
                                         </span>
@@ -413,9 +379,7 @@ export const RelatedWorkflowsTab: React.FC<RelatedWorkflowsTabProps> = ({
                             </div>
 
                             <div className="flex items-center gap-1.5">
-                                <span className="text-[10px] font-semibold text-muted-foreground">
-                                    {block.approvals.length} Tahap
-                                </span>
+                                <span className="text-muted-foreground text-[10px] font-semibold">{block.approvals.length} Tahap</span>
                             </div>
                         </div>
 
@@ -424,24 +388,20 @@ export const RelatedWorkflowsTab: React.FC<RelatedWorkflowsTabProps> = ({
                             {block.approvals.map((approvalItem, aIdx) => {
                                 const isDone = approvalItem.status === 'approved';
                                 const isRej = approvalItem.status === 'rejected';
-                                const isCurr =
-                                    contract.workflow_step_id &&
-                                    approvalItem.workflow_step_id === contract.workflow_step_id;
+                                const isCurr = contract.workflow_step_id && approvalItem.workflow_step_id === contract.workflow_step_id;
                                 const itemStatus = isDone
                                     ? 'completed'
                                     : isRej
-                                    ? 'rejected'
-                                    : isCurr || approvalItem.status === 'pending'
-                                    ? 'active'
-                                    : 'waiting';
+                                      ? 'rejected'
+                                      : isCurr || approvalItem.status === 'pending'
+                                        ? 'active'
+                                        : 'waiting';
 
                                 const stepNoStr = String(approvalItem.sequence || aIdx + 1);
 
                                 return (
                                     <TimelineItem key={approvalItem.id || aIdx} status={itemStatus}>
-                                        <TimelineIcon status={itemStatus}>
-                                            {isDone ? '✓' : isRej ? '✗' : approvalItem.sequence}
-                                        </TimelineIcon>
+                                        <TimelineIcon status={itemStatus}>{isDone ? '✓' : isRej ? '✗' : approvalItem.sequence}</TimelineIcon>
                                         <TimelineContent className="w-full min-w-0">
                                             <ApprovalCard
                                                 approval={approvalItem}
@@ -452,16 +412,14 @@ export const RelatedWorkflowsTab: React.FC<RelatedWorkflowsTabProps> = ({
                                                 displaySubSteps={true}
                                                 isPending={itemStatus === 'active'}
                                             />
-                                            {aIdx < block.approvals.length - 1 && (
-                                                <div className="mt-2.5 w-full border-b border-border/40" />
-                                            )}
+                                            {aIdx < block.approvals.length - 1 && <div className="border-border/40 mt-2.5 w-full border-b" />}
                                         </TimelineContent>
                                     </TimelineItem>
                                 );
                             })}
 
                             {block.approvals.length === 0 && (
-                                <div className="text-center py-4 text-xs italic text-muted-foreground">
+                                <div className="text-muted-foreground py-4 text-center text-xs italic">
                                     Belum ada persetujuan yang dieksekusi pada alur ini.
                                 </div>
                             )}
@@ -470,7 +428,7 @@ export const RelatedWorkflowsTab: React.FC<RelatedWorkflowsTabProps> = ({
                 ))}
 
                 {displayedBlocks.length === 0 && (
-                    <div className="text-center py-12 text-muted-foreground text-xs italic">
+                    <div className="text-muted-foreground py-12 text-center text-xs italic">
                         Tidak ada alur kerja atau tahapan yang cocok dengan pencarian.
                     </div>
                 )}

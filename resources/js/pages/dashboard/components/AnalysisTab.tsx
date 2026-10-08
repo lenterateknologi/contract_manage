@@ -26,7 +26,7 @@ export function AnalysisTab({ data }: AnalysisTabProps) {
                 {/* 1. Expiry Risk Heatmap */}
                 <Card className="lg:col-span-6">
                     <CardHeader className="p-5 pb-0">
-                        <CardTitle className="text-text-main flex items-center gap-2 text-xs font-semibold  uppercase">
+                        <CardTitle className="text-text-main flex items-center gap-2 text-xs font-semibold uppercase">
                             <ShieldAlert className="text-danger h-4 w-4" />
                             Matriks Risiko Masa Berlaku per Divisi
                         </CardTitle>
@@ -39,16 +39,10 @@ export function AnalysisTab({ data }: AnalysisTabProps) {
                             <table className="w-full border-collapse text-left">
                                 <thead>
                                     <tr className="border-surface-border/10 border-b">
-                                        <th className="text-text-desc py-2 text-[8.5px] font-medium  uppercase">Divisi / Departemen</th>
-                                        <th className="text-text-desc py-2 text-center text-[8.5px] font-medium  uppercase">
-                                            Risiko Tinggi
-                                        </th>
-                                        <th className="text-text-desc py-2 text-center text-[8.5px] font-medium  uppercase">
-                                            Risiko Sedang
-                                        </th>
-                                        <th className="text-text-desc py-2 text-center text-[8.5px] font-medium  uppercase">
-                                            Risiko Rendah
-                                        </th>
+                                        <th className="text-text-desc py-2 text-[8.5px] font-medium uppercase">Divisi / Departemen</th>
+                                        <th className="text-text-desc py-2 text-center text-[8.5px] font-medium uppercase">Risiko Tinggi</th>
+                                        <th className="text-text-desc py-2 text-center text-[8.5px] font-medium uppercase">Risiko Sedang</th>
+                                        <th className="text-text-desc py-2 text-center text-[8.5px] font-medium uppercase">Risiko Rendah</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -98,10 +92,7 @@ export function AnalysisTab({ data }: AnalysisTabProps) {
                                     ))}
                                     {expiryRiskHeatmap.length === 0 && (
                                         <tr>
-                                            <td
-                                                colSpan={4}
-                                                className="text-text-desc py-8 text-center text-[10px] font-medium  uppercase"
-                                            >
+                                            <td colSpan={4} className="text-text-desc py-8 text-center text-[10px] font-medium uppercase">
                                                 Tidak ada data risiko
                                             </td>
                                         </tr>
@@ -115,9 +106,7 @@ export function AnalysisTab({ data }: AnalysisTabProps) {
                 {/* 2. Renewal Success vs Failure by Category */}
                 <Card className="lg:col-span-6">
                     <CardHeader className="p-5 pb-0">
-                        <CardTitle className="text-text-main text-xs font-semibold  uppercase">
-                            Laju Kegagalan Perpanjangan per Kategori
-                        </CardTitle>
+                        <CardTitle className="text-text-main text-xs font-semibold uppercase">Laju Kegagalan Perpanjangan per Kategori</CardTitle>
                         <p className="text-text-desc mt-0.5 text-[9px] font-semibold">
                             Analisis jumlah kontrak jatuh tempo yang diperpanjang (sukses) vs dibiarkan berakhir (gagal) per kategori.
                         </p>
@@ -185,7 +174,7 @@ export function AnalysisTab({ data }: AnalysisTabProps) {
                 {/* 3. Vendor Performance Matriks */}
                 <Card className="lg:col-span-7">
                     <CardHeader className="p-5 pb-0">
-                        <CardTitle className="text-text-main flex items-center gap-2 text-xs font-semibold  uppercase">
+                        <CardTitle className="text-text-main flex items-center gap-2 text-xs font-semibold uppercase">
                             <Award className="text-primary h-4 w-4" />
                             Matriks Kinerja Kerja Sama Vendor
                         </CardTitle>
@@ -198,16 +187,10 @@ export function AnalysisTab({ data }: AnalysisTabProps) {
                             <table className="w-full border-collapse text-left">
                                 <thead>
                                     <tr className="border-surface-border/10 border-b">
-                                        <th className="text-text-desc py-2 text-[8.5px] font-medium  uppercase">Mitra / Vendor</th>
-                                        <th className="text-text-desc py-2 text-center text-[8.5px] font-medium  uppercase">
-                                            Total Kontrak
-                                        </th>
-                                        <th className="text-text-desc py-2 text-center text-[8.5px] font-medium  uppercase">
-                                            Rasio Renewal
-                                        </th>
-                                        <th className="text-text-desc py-2 text-center text-[8.5px] font-medium  uppercase">
-                                            Waktu Siklus Avg
-                                        </th>
+                                        <th className="text-text-desc py-2 text-[8.5px] font-medium uppercase">Mitra / Vendor</th>
+                                        <th className="text-text-desc py-2 text-center text-[8.5px] font-medium uppercase">Total Kontrak</th>
+                                        <th className="text-text-desc py-2 text-center text-[8.5px] font-medium uppercase">Rasio Renewal</th>
+                                        <th className="text-text-desc py-2 text-center text-[8.5px] font-medium uppercase">Waktu Siklus Avg</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -222,8 +205,8 @@ export function AnalysisTab({ data }: AnalysisTabProps) {
                                                         v.renewal_rate >= 80
                                                             ? 'bg-success/10 text-success border-success/10 border'
                                                             : v.renewal_rate >= 40
-                                                                ? 'bg-warning/10 text-warning border-warning/10 border'
-                                                                : 'bg-danger/10 text-danger border-danger/10 border',
+                                                              ? 'bg-warning/10 text-warning border-warning/10 border'
+                                                              : 'bg-danger/10 text-danger border-danger/10 border',
                                                     )}
                                                 >
                                                     {v.renewal_rate}%
@@ -238,7 +221,7 @@ export function AnalysisTab({ data }: AnalysisTabProps) {
                                         <tr>
                                             <td
                                                 colSpan={4}
-                                                className="text-text-desc py-8 text-center text-[10px] font-medium font-semibold  uppercase"
+                                                className="text-text-desc py-8 text-center text-[10px] font-medium font-semibold uppercase"
                                             >
                                                 Tidak ada data vendor
                                             </td>
@@ -253,9 +236,7 @@ export function AnalysisTab({ data }: AnalysisTabProps) {
                 {/* 4. Value Distribution Histogram */}
                 <Card className="lg:col-span-5">
                     <CardHeader className="p-5 pb-0">
-                        <CardTitle className="text-text-main text-xs font-semibold  uppercase">
-                            Distribusi Rentang Nilai Kontrak
-                        </CardTitle>
+                        <CardTitle className="text-text-main text-xs font-semibold uppercase">Distribusi Rentang Nilai Kontrak</CardTitle>
                         <p className="text-text-desc mt-0.5 text-[9px] font-semibold">Pengelompokkan kontrak berdasarkan nilai finansialnya.</p>
                     </CardHeader>
                     <CardContent className="p-5">

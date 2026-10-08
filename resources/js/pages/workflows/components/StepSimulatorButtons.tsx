@@ -1,8 +1,8 @@
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/dialogs/Popover';
 import { useToast } from '@/components/ui/feedback/Toast';
 import { cn } from '@/lib/utils';
+import { ArrowRight, Play, Sparkles } from 'lucide-react';
 import { MASTER_ACTIONS, getActionTheme } from '../constants';
-import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/dialogs/Popover';
-import { Play, ChevronDown, Sparkles, ArrowRight } from 'lucide-react';
 
 interface StepSimulatorButtonsProps {
     actions: any[];
@@ -64,9 +64,10 @@ export function StepSimulatorButtons({ actions, idx, totalSteps, allWorkflows, a
                     tooltip = `Lompat ke Workflow: ${targetWfName}${targetSeq}`;
                 }
             } else if (tc.type === 'absolute') {
-                const targetStep = (tc.step_id || act.next_step_id)
-                    ? allWorkflowSteps.find((s: any) => String(s.id) === String(tc.step_id || act.next_step_id))
-                    : allWorkflowSteps.find((s: any) => Number(s.step) === Number(tc.sequence));
+                const targetStep =
+                    tc.step_id || act.next_step_id
+                        ? allWorkflowSteps.find((s: any) => String(s.id) === String(tc.step_id || act.next_step_id))
+                        : allWorkflowSteps.find((s: any) => Number(s.step) === Number(tc.sequence));
                 const targetSeq = targetStep?.step ?? tc.sequence ?? 1;
                 tooltip = `Lompat ke Tahap ${targetSeq}`;
             } else if (tc.type === 'initial_step') {
@@ -114,46 +115,39 @@ export function StepSimulatorButtons({ actions, idx, totalSteps, allWorkflows, a
     }
 
     return (
-        <div 
-            onClick={(e) => e.stopPropagation()}
-            className="inline-flex items-center"
-        >
+        <div onClick={(e) => e.stopPropagation()} className="inline-flex items-center">
             <Popover className="relative">
                 {({ close }) => (
                     <>
                         <PopoverTrigger
                             type="button"
                             onClick={(e) => e.stopPropagation()}
-                            className="relative flex h-7 items-center justify-center gap-1 px-1.5 rounded-md text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-all cursor-pointer select-none"
+                            className="relative flex h-7 cursor-pointer items-center justify-center gap-1 rounded-md px-1.5 text-emerald-600 transition-all select-none hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
                             title={`Simulasi Alur Aksi (${buttons.length} aksi)`}
                         >
                             <Play size={11} className="fill-current" />
-                            <span className="flex h-4 min-w-4 px-1 items-center justify-center rounded-md bg-emerald-500 text-[9.5px] font-medium text-white shadow-2xs leading-none">
+                            <span className="flex h-4 min-w-4 items-center justify-center rounded-md bg-emerald-500 px-1 text-[9.5px] leading-none font-medium text-white shadow-2xs">
                                 {buttons.length}
                             </span>
                         </PopoverTrigger>
 
                         <PopoverContent
                             align="end"
-                            className="w-72 p-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-xl space-y-2 z-[9999]"
+                            className="z-[9999] w-72 space-y-2 rounded-xl border border-slate-200 bg-white p-2.5 shadow-xl dark:border-zinc-800 dark:bg-zinc-950"
                         >
-                            <div className="flex items-center justify-between pb-1.5 border-b border-slate-100 dark:border-zinc-800/80 px-1">
+                            <div className="flex items-center justify-between border-b border-slate-100 px-1 pb-1.5 dark:border-zinc-800/80">
                                 <div className="flex items-center gap-1.5">
                                     <Sparkles size={12} className="text-primary" />
-                                    <span className="text-xs font-bold text-slate-900 dark:text-zinc-100">
-                                        Simulasi Alur Aksi
-                                    </span>
+                                    <span className="text-xs font-bold text-slate-900 dark:text-zinc-100">Simulasi Alur Aksi</span>
                                 </div>
-                                <span className="text-[10px] font-bold text-slate-400 uppercase">
-                                    Tahap #{idx + 1}
-                                </span>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase">Tahap #{idx + 1}</span>
                             </div>
 
-                            <p className="text-[11px] text-slate-500 dark:text-zinc-400 px-1">
+                            <p className="px-1 text-[11px] text-slate-500 dark:text-zinc-400">
                                 Klik salah satu aksi di bawah untuk menguji simulasi alur / form modal aksi:
                             </p>
 
-                            <div className="space-y-1 pt-1 max-h-60 overflow-y-auto">
+                            <div className="max-h-60 space-y-1 overflow-y-auto pt-1">
                                 {buttons.map((btn, bIdx) => (
                                     <button
                                         key={bIdx}
@@ -170,25 +164,28 @@ export function StepSimulatorButtons({ actions, idx, totalSteps, allWorkflows, a
                                                 );
                                             }
                                         }}
-                                        className="w-full flex items-center justify-between gap-2 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-zinc-900 transition-colors text-left group/item border border-transparent hover:border-slate-200/60 dark:hover:border-zinc-800 cursor-pointer"
+                                        className="group/item flex w-full cursor-pointer items-center justify-between gap-2 rounded-lg border border-transparent p-2 text-left transition-colors hover:border-slate-200/60 hover:bg-slate-50 dark:hover:border-zinc-800 dark:hover:bg-zinc-900"
                                     >
-                                        <div className="flex items-center gap-2 min-w-0">
-                                            <div className={cn(
-                                                "flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-white shadow-2xs",
-                                                btn.color
-                                            )}>
+                                        <div className="flex min-w-0 items-center gap-2">
+                                            <div
+                                                className={cn(
+                                                    'flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-white shadow-2xs',
+                                                    btn.color,
+                                                )}
+                                            >
                                                 <btn.icon size={11} />
                                             </div>
                                             <div className="min-w-0">
-                                                <div className="text-xs font-bold text-slate-800 dark:text-zinc-200 truncate group-hover/item:text-primary transition-colors">
+                                                <div className="group-hover/item:text-primary truncate text-xs font-bold text-slate-800 transition-colors dark:text-zinc-200">
                                                     {btn.label}
                                                 </div>
-                                                <div className="text-[10px] text-slate-500 dark:text-zinc-400 truncate">
-                                                    {btn.tooltip}
-                                                </div>
+                                                <div className="truncate text-[10px] text-slate-500 dark:text-zinc-400">{btn.tooltip}</div>
                                             </div>
                                         </div>
-                                        <ArrowRight size={12} className="text-slate-400 opacity-0 group-hover/item:opacity-100 transition-opacity shrink-0" />
+                                        <ArrowRight
+                                            size={12}
+                                            className="shrink-0 text-slate-400 opacity-0 transition-opacity group-hover/item:opacity-100"
+                                        />
                                     </button>
                                 ))}
                             </div>

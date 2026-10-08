@@ -1,4 +1,3 @@
-import { cn } from '@/lib/utils';
 import { usePage } from '@inertiajs/react';
 import { SectionTitle } from './SectionTitle';
 import { StatusItem } from './types';
@@ -13,7 +12,7 @@ export function StatusDistribution({ items }: StatusDistributionProps) {
     const total = items.reduce((sum, s) => sum + s.count, 0) || 1;
 
     return (
-        <div className="bg-white dark:bg-surface-base border border-surface-border/60 rounded-lg text-text-main select-none lg:col-span-4">
+        <div className="dark:bg-surface-base border-surface-border/60 text-text-main rounded-lg border bg-white select-none lg:col-span-4">
             <div className="border-surface-border/60 flex items-center justify-between border-b px-6 py-4">
                 <SectionTitle>Distribusi Status</SectionTitle>
             </div>
@@ -31,7 +30,9 @@ export function StatusDistribution({ items }: StatusDistributionProps) {
                                 <div className="mb-1.5 flex items-center justify-between">
                                     <div className="flex items-center gap-2">
                                         <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />
-                                        <span className="text-[12px] font-medium uppercase" style={{ color }}>{label}</span>
+                                        <span className="text-[12px] font-medium uppercase" style={{ color }}>
+                                            {label}
+                                        </span>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <span className="text-text-main text-[11px] font-semibold">{s.count}</span>
@@ -39,7 +40,10 @@ export function StatusDistribution({ items }: StatusDistributionProps) {
                                     </div>
                                 </div>
                                 <div className="bg-surface-muted/40 border-surface-border/10 h-1.5 w-full overflow-hidden rounded-full border">
-                                    <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, backgroundColor: color }} />
+                                    <div
+                                        className="h-full rounded-full transition-all duration-700"
+                                        style={{ width: `${pct}%`, backgroundColor: color }}
+                                    />
                                 </div>
                             </div>
                         );

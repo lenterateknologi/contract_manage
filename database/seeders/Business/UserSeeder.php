@@ -2,10 +2,10 @@
 
 namespace Database\Seeders\Business;
 
-use App\Models\Company;
-use App\Models\Department;
-use App\Models\Role;
-use App\Models\User;
+use App\Models\Master\Company;
+use App\Models\Master\Department;
+use App\Models\Master\Role;
+use App\Models\Master\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;

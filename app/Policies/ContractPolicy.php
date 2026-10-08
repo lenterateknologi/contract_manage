@@ -2,8 +2,9 @@
 
 namespace App\Policies;
 
-use App\Models\Contract;
-use App\Models\User;
+use App\Models\Master\AccessModule;
+use App\Models\Master\User;
+use App\Models\Transaction\Contract;
 
 class ContractPolicy
 {
@@ -65,7 +66,7 @@ class ContractPolicy
             return false;
         }
 
-        $canReadModule = \App\Models\AccessModule::where('role_id', $roleId)
+        $canReadModule = AccessModule::where('role_id', $roleId)
             ->whereHas('module', fn ($q) => $q->where('route', '/contracts'))
             ->where('can_read', true)
             ->exists();

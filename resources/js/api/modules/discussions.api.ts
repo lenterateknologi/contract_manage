@@ -1,6 +1,6 @@
+import { PaginatedData } from '@/pages/contracts/types';
 import { apiClient, unwrapResponse } from '../client';
 import { API_ENDPOINTS } from '../endpoints';
-import { PaginatedData } from '@/pages/contracts/types';
 
 export interface DiscussionMessage {
     id: string;
@@ -34,16 +34,14 @@ export const discussionsApi = {
         return unwrapResponse(apiClient.post(API_ENDPOINTS.DISCUSSIONS.SEND(contractId), fd));
     },
 
-    markRead: (contractId: string): Promise<any> =>
-        unwrapResponse(apiClient.post(API_ENDPOINTS.DISCUSSIONS.MARK_READ(contractId))),
+    markRead: (contractId: string): Promise<any> => unwrapResponse(apiClient.post(API_ENDPOINTS.DISCUSSIONS.MARK_READ(contractId))),
 
     // 2. Direct Contract Discussion Messages
     messages: {
         list: (contractId: string, params?: { limit?: number; search?: string }): Promise<DiscussionMessage[]> =>
             unwrapResponse(apiClient.get(API_ENDPOINTS.DISCUSSIONS.CONTRACT_MESSAGES(contractId), { params })),
 
-        detail: (messageId: string): Promise<DiscussionMessage> =>
-            unwrapResponse(apiClient.get(API_ENDPOINTS.DISCUSSIONS.MESSAGE_DETAIL(messageId))),
+        detail: (messageId: string): Promise<DiscussionMessage> => unwrapResponse(apiClient.get(API_ENDPOINTS.DISCUSSIONS.MESSAGE_DETAIL(messageId))),
 
         send: (contractId: string, message: string, file?: File): Promise<DiscussionMessage> => {
             const fd = new FormData();
@@ -55,7 +53,6 @@ export const discussionsApi = {
         react: (messageId: string, emoji: string): Promise<DiscussionMessage> =>
             unwrapResponse(apiClient.post(API_ENDPOINTS.DISCUSSIONS.MESSAGE_REACTION(messageId), { emoji })),
 
-        markRead: (contractId: string): Promise<any> =>
-            unwrapResponse(apiClient.post(API_ENDPOINTS.DISCUSSIONS.CONTRACT_MESSAGES_READ(contractId))),
+        markRead: (contractId: string): Promise<any> => unwrapResponse(apiClient.post(API_ENDPOINTS.DISCUSSIONS.CONTRACT_MESSAGES_READ(contractId))),
     },
 };

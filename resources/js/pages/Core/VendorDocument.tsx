@@ -24,23 +24,28 @@ export default function VendorDocument({ vendor }: VendorDocumentProps) {
                 display = value ? 'Ya' : 'Tidak';
             } else if (Array.isArray(value)) {
                 display = value.length > 0 ? value.join(', ') : '-';
-            } else if (isFile || (typeof value === 'string' && (/\.(pdf|png|jpe?g|jfif|webp|gif|svg|docx?|xlsx?|pptx?|zip|rar|txt|csv)$/i.test(value) || value.includes('__')))) {
+            } else if (
+                isFile ||
+                (typeof value === 'string' &&
+                    (/\.(pdf|png|jpe?g|jfif|webp|gif|svg|docx?|xlsx?|pptx?|zip|rar|txt|csv)$/i.test(value) || value.includes('__')))
+            ) {
                 const valStr = String(value);
                 display = (
                     <button
                         type="button"
                         onClick={() => {
-                            const fileUrl = valStr.startsWith('http') || valStr.startsWith('/')
-                                ? valStr
-                                : `/admin/core/vendors/file-download?fileName=${encodeURIComponent(valStr)}`;
+                            const fileUrl =
+                                valStr.startsWith('http') || valStr.startsWith('/')
+                                    ? valStr
+                                    : `/admin/core/vendors/file-download?fileName=${encodeURIComponent(valStr)}`;
                             window.open(fileUrl, '_blank');
                         }}
-                        className="inline-flex items-center gap-1.5 font-semibold text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 underline hover:no-underline transition-all cursor-pointer text-left"
+                        className="inline-flex cursor-pointer items-center gap-1.5 text-left font-semibold text-blue-600 underline transition-all hover:text-blue-800 hover:no-underline dark:text-blue-400 dark:hover:text-blue-300"
                         title="Klik untuk membuka/preview dokumen"
                     >
-                        <FileText className="w-3.5 h-3.5 shrink-0" />
+                        <FileText className="h-3.5 w-3.5 shrink-0" />
                         <span>{valStr}</span>
-                        <ExternalLink className="w-3 h-3 shrink-0 opacity-70" />
+                        <ExternalLink className="h-3 w-3 shrink-0 opacity-70" />
                     </button>
                 );
             } else {
@@ -49,9 +54,12 @@ export default function VendorDocument({ vendor }: VendorDocumentProps) {
         }
 
         return (
-            <div key={label} className="py-2.5 grid grid-cols-3 gap-4 border-b border-slate-200/80 dark:border-slate-800/80 last:border-none text-xs font-sans">
+            <div
+                key={label}
+                className="grid grid-cols-3 gap-4 border-b border-slate-200/80 py-2.5 font-sans text-xs last:border-none dark:border-slate-800/80"
+            >
                 <span className="font-semibold text-slate-500 dark:text-slate-400">{label}</span>
-                <span className="col-span-2 font-normal text-slate-900 dark:text-slate-100 break-words">{display}</span>
+                <span className="col-span-2 font-normal break-words text-slate-900 dark:text-slate-100">{display}</span>
             </div>
         );
     };
@@ -60,41 +68,39 @@ export default function VendorDocument({ vendor }: VendorDocumentProps) {
         <>
             <Head title={`Dokumen Vendor - ${r.vendor_name || detail.name || 'Vendor'}`} />
 
-            <div className="min-h-screen bg-slate-100 dark:bg-zinc-950 p-4 md:p-8 flex flex-col items-center w-full">
+            <div className="flex min-h-screen w-full flex-col items-center bg-slate-100 p-4 md:p-8 dark:bg-zinc-950">
                 {/* Header Action Bar */}
-                <div className="w-full max-w-4xl mb-4 flex items-center justify-between no-print px-1">
+                <div className="no-print mb-4 flex w-full max-w-4xl items-center justify-between px-1">
                     <button
                         type="button"
                         onClick={() => window.close()}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-xs font-semibold text-slate-700 dark:text-slate-200 transition-all hover:bg-slate-50 dark:hover:bg-zinc-800 cursor-pointer"
+                        className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition-all hover:bg-slate-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-slate-200 dark:hover:bg-zinc-800"
                     >
                         <ArrowLeft size={14} />
                         <span>Tutup Halaman</span>
                     </button>
-                    <div className="text-xs font-medium text-slate-500">
-                        Dokumen Resmi Profil Vendor
-                    </div>
+                    <div className="text-xs font-medium text-slate-500">Dokumen Resmi Profil Vendor</div>
                 </div>
 
                 {/* Flat Paper View Container */}
-                <div className="w-full max-w-4xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 p-8 md:p-12 space-y-8 text-slate-900 dark:text-slate-100">
-
+                <div className="w-full max-w-4xl space-y-8 border border-slate-200 bg-white p-8 text-slate-900 md:p-12 dark:border-zinc-800 dark:bg-zinc-900 dark:text-slate-100">
                     {/* Document Header / Kop Resmi */}
-                    <div className="border-b-2 border-slate-900 dark:border-slate-100 pb-5">
-                        <div className="inline-flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 font-sans">
-                            <Building2 className="w-4 h-4 text-primary" /> Dokumen Rekanan Master (Vendor Profile)
+                    <div className="border-b-2 border-slate-900 pb-5 dark:border-slate-100">
+                        <div className="mb-1 inline-flex items-center gap-2 font-sans text-[10px] font-bold tracking-widest text-slate-500 uppercase">
+                            <Building2 className="text-primary h-4 w-4" /> Dokumen Rekanan Master (Vendor Profile)
                         </div>
-                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight font-sans">
+                        <h2 className="font-sans text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
                             {r.vendor_name || detail.name || 'Nama Vendor Tidak Tersedia'}
                         </h2>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-mono">
-                            KODE VENDOR: <strong className="text-slate-800 dark:text-slate-200">{r.vendor_code || detail.registrationNumber || '-'}</strong>
+                        <p className="mt-1 font-mono text-xs text-slate-500 dark:text-slate-400">
+                            KODE VENDOR:{' '}
+                            <strong className="text-slate-800 dark:text-slate-200">{r.vendor_code || detail.registrationNumber || '-'}</strong>
                         </p>
                     </div>
 
                     {/* Section 1: Profil & Identitas Perusahaan */}
                     <div className="space-y-2">
-                        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-100 border-b border-slate-200 dark:border-slate-800 pb-1 font-sans">
+                        <h3 className="border-b border-slate-200 pb-1 font-sans text-xs font-bold tracking-wider text-slate-900 uppercase dark:border-slate-800 dark:text-slate-100">
                             I. Profil & Identitas Rekanan
                         </h3>
                         <div>
@@ -116,12 +122,12 @@ export default function VendorDocument({ vendor }: VendorDocumentProps) {
 
                     {/* Section 2: Alamat & Lokasi Operasional */}
                     <div className="space-y-2">
-                        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-100 border-b border-slate-200 dark:border-slate-800 pb-1 font-sans">
+                        <h3 className="border-b border-slate-200 pb-1 font-sans text-xs font-bold tracking-wider text-slate-900 uppercase dark:border-slate-800 dark:text-slate-100">
                             II. Alamat & Kontak Resmi
                         </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                             <div>
-                                <h4 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1 font-sans">Alamat Utama</h4>
+                                <h4 className="mb-1 font-sans text-[11px] font-semibold tracking-wider text-slate-400 uppercase">Alamat Utama</h4>
                                 {renderDocRow('Alamat', detail.address)}
                                 {renderDocRow('Kota', detail.city)}
                                 {renderDocRow('Provinsi', detail.region)}
@@ -129,7 +135,9 @@ export default function VendorDocument({ vendor }: VendorDocumentProps) {
                                 {renderDocRow('Kode Pos', detail.postalCode)}
                             </div>
                             <div>
-                                <h4 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1 font-sans">Alamat Surat Menyurat</h4>
+                                <h4 className="mb-1 font-sans text-[11px] font-semibold tracking-wider text-slate-400 uppercase">
+                                    Alamat Surat Menyurat
+                                </h4>
                                 {renderDocRow('Alamat Surat', detail.mailingAddress)}
                                 {renderDocRow('Kota Surat', detail.mailingCity)}
                                 {renderDocRow('Provinsi Surat', detail.mailingRegion)}
@@ -141,7 +149,7 @@ export default function VendorDocument({ vendor }: VendorDocumentProps) {
 
                     {/* Section 3: Kontak & Penanggung Jawab (PIC) */}
                     <div className="space-y-2">
-                        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-100 border-b border-slate-200 dark:border-slate-800 pb-1 font-sans">
+                        <h3 className="border-b border-slate-200 pb-1 font-sans text-xs font-bold tracking-wider text-slate-900 uppercase dark:border-slate-800 dark:text-slate-100">
                             III. Informasi Kontak & Person in Charge (PIC)
                         </h3>
                         <div>
@@ -158,7 +166,7 @@ export default function VendorDocument({ vendor }: VendorDocumentProps) {
 
                     {/* Section 4: Perpajakan */}
                     <div className="space-y-2">
-                        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-100 border-b border-slate-200 dark:border-slate-800 pb-1 font-sans">
+                        <h3 className="border-b border-slate-200 pb-1 font-sans text-xs font-bold tracking-wider text-slate-900 uppercase dark:border-slate-800 dark:text-slate-100">
                             IV. Data Perpajakan
                         </h3>
                         <div>
@@ -178,20 +186,18 @@ export default function VendorDocument({ vendor }: VendorDocumentProps) {
                     </div>
 
                     {/* Section 5: Bidang Usaha & Bank */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                         <div className="space-y-2">
-                            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-100 border-b border-slate-200 dark:border-slate-800 pb-1 font-sans">
+                            <h3 className="border-b border-slate-200 pb-1 font-sans text-xs font-bold tracking-wider text-slate-900 uppercase dark:border-slate-800 dark:text-slate-100">
                                 V. Bidang Usaha
                             </h3>
                             <div className="space-y-2 font-sans">
                                 <p className="text-xs font-medium text-slate-500">Lokal:</p>
-                                <ul className="list-disc list-inside text-xs text-slate-800 dark:text-slate-200 space-y-1">
-                                    {businessFields.length > 0 ? businessFields.map((bf, idx) => (
-                                        <li key={idx}>{bf.businessField}</li>
-                                    )) : <li>-</li>}
+                                <ul className="list-inside list-disc space-y-1 text-xs text-slate-800 dark:text-slate-200">
+                                    {businessFields.length > 0 ? businessFields.map((bf, idx) => <li key={idx}>{bf.businessField}</li>) : <li>-</li>}
                                 </ul>
                                 {detail.businessFieldsForeign && (
-                                    <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
+                                    <div className="border-t border-slate-200 pt-2 dark:border-slate-800">
                                         <p className="text-xs font-medium text-slate-500">Asing:</p>
                                         <p className="text-xs text-slate-800 dark:text-slate-200">{detail.businessFieldsForeign}</p>
                                     </div>
@@ -200,26 +206,39 @@ export default function VendorDocument({ vendor }: VendorDocumentProps) {
                         </div>
 
                         <div className="space-y-2">
-                            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-100 border-b border-slate-200 dark:border-slate-800 pb-1 font-sans">
+                            <h3 className="border-b border-slate-200 pb-1 font-sans text-xs font-bold tracking-wider text-slate-900 uppercase dark:border-slate-800 dark:text-slate-100">
                                 VI. Perbankan & Pembayaran
                             </h3>
                             <div className="space-y-2 font-sans">
                                 <div>
-                                    <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Rekening Bank</p>
-                                    {bankList.length > 0 ? bankList.map((b, idx) => (
-                                        <div key={idx} className="text-xs border-b border-slate-200/60 dark:border-slate-800/60 py-1 last:border-none">
-                                            <p className="font-semibold text-slate-900 dark:text-slate-100">{b.bankName}</p>
-                                            <p className="text-slate-600 dark:text-slate-400">No. Rek: <span className="font-mono font-semibold">{b.accountNumber}</span> a/n {b.accountName}</p>
-                                        </div>
-                                    )) : <p className="text-xs text-slate-500">-</p>}
+                                    <p className="mb-1 text-[11px] font-semibold tracking-wider text-slate-400 uppercase">Rekening Bank</p>
+                                    {bankList.length > 0 ? (
+                                        bankList.map((b, idx) => (
+                                            <div
+                                                key={idx}
+                                                className="border-b border-slate-200/60 py-1 text-xs last:border-none dark:border-slate-800/60"
+                                            >
+                                                <p className="font-semibold text-slate-900 dark:text-slate-100">{b.bankName}</p>
+                                                <p className="text-slate-600 dark:text-slate-400">
+                                                    No. Rek: <span className="font-mono font-semibold">{b.accountNumber}</span> a/n {b.accountName}
+                                                </p>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p className="text-xs text-slate-500">-</p>
+                                    )}
                                 </div>
                                 <div>
-                                    <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Metode Pembayaran</p>
-                                    {paymentMethods.length > 0 ? paymentMethods.map((p, idx) => (
-                                        <p key={idx} className="text-xs text-slate-700 dark:text-slate-300">
-                                            TOP: <strong>{p.top ?? '-'} hari</strong> | Full Payment: <strong>{p.fullPayment ?? '-'}%</strong>
-                                        </p>
-                                    )) : <p className="text-xs text-slate-500">-</p>}
+                                    <p className="mb-1 text-[11px] font-semibold tracking-wider text-slate-400 uppercase">Metode Pembayaran</p>
+                                    {paymentMethods.length > 0 ? (
+                                        paymentMethods.map((p, idx) => (
+                                            <p key={idx} className="text-xs text-slate-700 dark:text-slate-300">
+                                                TOP: <strong>{p.top ?? '-'} hari</strong> | Full Payment: <strong>{p.fullPayment ?? '-'}%</strong>
+                                            </p>
+                                        ))
+                                    ) : (
+                                        <p className="text-xs text-slate-500">-</p>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -227,7 +246,7 @@ export default function VendorDocument({ vendor }: VendorDocumentProps) {
 
                     {/* Section 6: Legalitas & Berkas */}
                     <div className="space-y-2">
-                        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-100 border-b border-slate-200 dark:border-slate-800 pb-1 font-sans">
+                        <h3 className="border-b border-slate-200 pb-1 font-sans text-xs font-bold tracking-wider text-slate-900 uppercase dark:border-slate-800 dark:text-slate-100">
                             VII. Perizinan Legalitas
                         </h3>
                         <div>
@@ -247,7 +266,7 @@ export default function VendorDocument({ vendor }: VendorDocumentProps) {
 
                     {/* Section 7: File Lampiran & Berkas Dokumen */}
                     <div className="space-y-2">
-                        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-100 border-b border-slate-200 dark:border-slate-800 pb-1 font-sans">
+                        <h3 className="border-b border-slate-200 pb-1 font-sans text-xs font-bold tracking-wider text-slate-900 uppercase dark:border-slate-800 dark:text-slate-100">
                             VIII. Berkas & Lampiran Dokumen
                         </h3>
                         <div>
@@ -284,11 +303,10 @@ export default function VendorDocument({ vendor }: VendorDocumentProps) {
                     </div>
 
                     {/* Document Footer */}
-                    <div className="pt-4 border-t border-slate-200 dark:border-slate-800 flex justify-between items-center text-[11px] text-slate-400 font-sans">
+                    <div className="flex items-center justify-between border-t border-slate-200 pt-4 font-sans text-[11px] text-slate-400 dark:border-slate-800">
                         <span>Dicetak dari Sistem Manajemen Kontrak</span>
                         <span>Master Data Synchronized from COMA</span>
                     </div>
-
                 </div>
             </div>
         </>

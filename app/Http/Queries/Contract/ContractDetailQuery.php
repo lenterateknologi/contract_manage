@@ -2,7 +2,7 @@
 
 namespace App\Http\Queries\Contract;
 
-use App\Models\Contract;
+use App\Models\Transaction\Contract;
 use App\Services\Utils\ShortIdService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Str;
@@ -14,19 +14,19 @@ class ContractDetailQuery
      */
     private const WITH = [
         'creator:id,name,role_id,department_id,division_id,company_id,location_id,idlocation,location_name,company_group_id,region_id,email,spv_id,idreporting_to,reporting_to,nik,jobtitle_name,phone_number,mobile_no',
-        'creator.department:id,name',
+        'creator.department:id,name,code,idorg_group,org_group_name',
         'creator.division:id,name',
         'creator.location:id,name,code',
         'creator.company:id,name,company_group_id,region_id',
         'creator.company.companyGroup:id,name',
         'creator.company.region:id,name',
         'creator.supervisor:id,name,role_id,department_id,division_id,company_id,email,nik,jobtitle_name',
-        'creator.supervisor.department:id,name',
+        'creator.supervisor.department:id,name,code,idorg_group,org_group_name',
         'contractType:id,name,parent_id,ancestry_id,f1_input_mechanism,f1_form_template_id,f2_input_mechanism,f2_form_template_id,contract_input_mechanism,contract_form_template_id',
         'contractTypeParent:id,name,f1_input_mechanism,f1_form_template_id,f2_input_mechanism,f2_form_template_id,contract_input_mechanism,contract_form_template_id',
         'submissionType:id,name',
         'approvals.approver:id,name,role_id,department_id,division_id,company_id,location_id,idlocation,location_name,company_group_id,region_id,email,spv_id,idreporting_to,reporting_to,nik,jobtitle_name,phone_number,mobile_no',
-        'approvals.approver.department:id,name',
+        'approvals.approver.department:id,name,code,idorg_group,org_group_name',
         'approvals.workflowStep:id,step,description,step_category,workflow_id,is_visible,is_active,meta,approver_type,filter_department,filter_company_group,filter_region,filter_company',
         'approvals.workflowStep.workflow:id,name,contract_type_id,workflow_type,meta',
         'approvals.workflowStep.workflow.steps:id,workflow_id,step,description,approver_type,step_category,meta,filter_department,filter_company_group,filter_region,filter_company,is_visible,is_active',

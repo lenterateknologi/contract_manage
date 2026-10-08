@@ -2,8 +2,8 @@
 
 namespace App\Http\Actions\Export;
 
-use App\Exports\AuditReportExport;
-use App\Models\Contract;
+use App\Exports\Transaction\AuditReportExport;
+use App\Models\Transaction\Contract;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;

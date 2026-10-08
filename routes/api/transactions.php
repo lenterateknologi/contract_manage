@@ -7,13 +7,21 @@ use App\Http\Controllers\Contract\ContractExportController;
 use App\Http\Controllers\Contract\ContractFileController;
 use App\Http\Controllers\Contract\ContractFormController;
 use App\Http\Controllers\Contract\ContractMemberController;
-use App\Http\Controllers\Contract\PurchaseOrder\ContractPurchaseOrderController;
-use App\Http\Controllers\Contract\Reference\ContractReferenceController;
-use App\Models\FormTemplate;
+use App\Http\Controllers\Contract\ContractPurchaseOrderController;
+use App\Http\Controllers\Contract\ContractReferenceController;
+use App\Http\Controllers\Contract\ContractSlaOverdueController;
+use App\Models\Master\FormTemplate;
 use Illuminate\Support\Facades\Route;
 
 // ── Contract API ──
 Route::prefix('contracts')->group(function () {
+    // ── SLA Overdue Monitoring & Notification ──
+    Route::controller(ContractSlaOverdueController::class)->prefix('sla')->group(function () {
+        Route::get('/overdue', 'index')->name('api.contracts.sla.overdue');
+        Route::post('/overdue/notify-all', 'notifyAllOverdue')->name('api.contracts.sla.notify-all');
+        Route::post('/{id}/notify', 'notifyManager')->name('api.contracts.sla.notify-manager');
+    });
+
     Route::controller(ContractController::class)->group(function () {
         Route::get('/', 'index');
         Route::get('/types', 'getTypes');

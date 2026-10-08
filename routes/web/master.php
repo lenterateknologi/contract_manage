@@ -14,7 +14,6 @@ use App\Http\Controllers\Report\ReportController;
 use App\Http\Controllers\System\EmailTestController;
 use App\Http\Controllers\Template\TemplateController;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 

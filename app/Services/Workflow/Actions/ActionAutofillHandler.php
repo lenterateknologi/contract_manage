@@ -2,10 +2,10 @@
 
 namespace App\Services\Workflow\Actions;
 
-use App\Models\Contract;
-use App\Models\ContractType;
-use App\Models\NumberingFormat;
-use App\Models\User;
+use App\Models\Master\ContractType;
+use App\Models\Master\NumberingFormat;
+use App\Models\Master\User;
+use App\Models\Transaction\Contract;
 use Illuminate\Support\Facades\Auth;
 
 class ActionAutofillHandler
@@ -70,7 +70,7 @@ class ActionAutofillHandler
                     $metaUpdated = true;
                     break;
 
-                // ── OPSI ORIGIN WORKFLOW & STEP ──
+                    // ── OPSI ORIGIN WORKFLOW & STEP ──
                 case 'set_origin_workflow_step':
                     if ($contract->workflow_step_id) {
                         $updates['origin_workflow_step_id'] = $contract->workflow_step_id;
@@ -105,7 +105,7 @@ class ActionAutofillHandler
                     $metaUpdated = true;
                     break;
 
-                // ── OPSI RESET / REGENERASI ──
+                    // ── OPSI RESET / REGENERASI ──
                 case 'reset_form_no':
                     $initiator = $contract->initiator ?: ($contract->initiated_by_id ? User::with('department')->find($contract->initiated_by_id) : null);
                     $contractType = $contract->contractType ?: ($contract->contract_type_id ? ContractType::find($contract->contract_type_id) : null);
@@ -119,7 +119,7 @@ class ActionAutofillHandler
                     $metaUpdated = true;
                     break;
 
-                // ── OPSI HAPUS / CLEAR VALUES ──
+                    // ── OPSI HAPUS / CLEAR VALUES ──
                 case 'clear_received_at':
                     $updates['received_at'] = null;
                     unset($metadata['received_at']);

@@ -5,37 +5,34 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\CleanMasterDataRequest;
 use App\Http\Requests\Admin\ImportMasterDataRequest;
-use App\Models\AccessModule;
-use App\Models\Company;
-use App\Models\CompanyGroup;
-use App\Models\Contract;
-use App\Models\ContractStatus;
-use App\Models\ContractType;
-use App\Models\Department;
-use App\Models\Division;
-use App\Models\FormField;
-use App\Models\FormTemplate;
-use App\Models\JobLevel;
-use App\Models\JobLevelGroup;
-use App\Models\JobTitle;
-use App\Models\Module;
-use App\Models\ModuleGroup;
-use App\Models\Region;
-use App\Models\Role;
-use App\Models\RoleModuleGroup;
-use App\Models\User;
-use App\Models\Authority;
-use App\Models\Workflow;
-use App\Models\WorkflowStep;
-use App\Models\WorkflowStepAction;
+use App\Models\Master\AccessModule;
+use App\Models\Master\Authority;
+use App\Models\Master\Company;
+use App\Models\Master\CompanyGroup;
+use App\Models\Master\ContractStatus;
+use App\Models\Master\ContractType;
+use App\Models\Master\Department;
+use App\Models\Master\Division;
+use App\Models\Master\FormField;
+use App\Models\Master\FormTemplate;
+use App\Models\Master\JobLevel;
+use App\Models\Master\JobLevelGroup;
+use App\Models\Master\JobTitle;
+use App\Models\Master\Module;
+use App\Models\Master\ModuleGroup;
+use App\Models\Master\Region;
+use App\Models\Master\Role;
+use App\Models\Master\RoleModuleGroup;
+use App\Models\Master\User;
+use App\Models\Master\Workflow;
+use App\Models\Master\WorkflowStep;
+use App\Models\Master\WorkflowStepAction;
+use App\Models\Transaction\Contract;
 use App\Services\MasterData\MasterDataImportService;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
 use OpenApi\Attributes as OA;
 
@@ -44,10 +41,10 @@ class MasterDataAdminController extends Controller
     public function __construct(
         protected MasterDataImportService $importService
     ) {}
+
     /**
      * Display the index view with statistics.
      */
-   
     public function index()
     {
         return Inertia::render('admin/Index', [
@@ -80,7 +77,6 @@ class MasterDataAdminController extends Controller
         ]);
     }
 
-    
     public function export(Request $request)
     {
         try {

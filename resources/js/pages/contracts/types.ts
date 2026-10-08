@@ -36,11 +36,13 @@ export interface UserProfile {
         id: string;
         name: string;
     };
-    company?: {
-        id?: string;
-        name?: string;
-        address?: string;
-    } | string;
+    company?:
+        | {
+              id?: string;
+              name?: string;
+              address?: string;
+          }
+        | string;
     manager?: UserProfile | null;
     reporting_to?: UserProfile | null;
     nip?: string;

@@ -1,5 +1,5 @@
-import { Contract, PaginatedData } from '@/pages/contracts/types';
 import { apiClient, unwrapResponse } from '@/api/client';
+import { Contract, PaginatedData } from '@/pages/contracts/types';
 
 // ── HTTP API Client & Helper ──────────────────────────────────────────
 const api = apiClient;
@@ -17,7 +17,11 @@ export const contractApi = {
     delete: (id: string): Promise<any> => unwrap(api.delete(`/api/contracts/${id}`)),
     getTypes: (): Promise<any[]> => unwrap(api.get('/api/contracts/types')),
     getWorkflows: (contractType?: string, userId?: string, all?: boolean): Promise<any[]> =>
-        unwrap(api.get(all ? '/api/contracts/admin/workflows' : '/api/contracts/workflows', { params: { contract_type: contractType, user_id: userId, all: all ? 1 : undefined } })),
+        unwrap(
+            api.get(all ? '/api/contracts/admin/workflows' : '/api/contracts/workflows', {
+                params: { contract_type: contractType, user_id: userId, all: all ? 1 : undefined },
+            }),
+        ),
     getUsers: (params?: any): Promise<any[]> => unwrap(api.get('/api/contracts/users', { params })),
     getRoles: (): Promise<any[]> => unwrap(api.get('/api/contracts/roles')),
 
@@ -26,13 +30,17 @@ export const contractApi = {
     documentTypes: (id: string, type?: string): Promise<any> => unwrap(api.get(`/api/contracts/${id}/document-types${type ? `?type=${type}` : ''}`)),
     send: (id: string, data?: { workflow_id?: string; custom_steps?: any[] }): Promise<Contract> =>
         unwrap(api.post(`/api/contracts/${id}/send`, data)),
-    adminOverrideWorkflow: (
-        id: string,
-        data: { workflow_id: string; workflow_step_id: string; reason?: string }
-    ): Promise<Contract> =>
+    adminOverrideWorkflow: (id: string, data: { workflow_id: string; workflow_step_id: string; reason?: string }): Promise<Contract> =>
         unwrap(api.post(`/api/contracts/${id}/override-workflow`, data)),
 
-    assignPic: (id: string, assignedPicId: string, note?: string, attachments?: File | File[], actionCode?: string, actionId?: string): Promise<Contract> => {
+    assignPic: (
+        id: string,
+        assignedPicId: string,
+        note?: string,
+        attachments?: File | File[],
+        actionCode?: string,
+        actionId?: string,
+    ): Promise<Contract> => {
         const fd = new FormData();
         fd.append('assigned_pic_id', assignedPicId);
         if (note) fd.append('note', note);
@@ -125,15 +133,13 @@ export const contractApi = {
         return unwrap(api.post(`/api/contracts/${id}/add-approver`, fd));
     },
 
-    removeAdhocApprover: (id: string, approvalId: string): Promise<Contract> =>
-        unwrap(api.delete(`/api/contracts/${id}/approver/${approvalId}`)),
+    removeAdhocApprover: (id: string, approvalId: string): Promise<Contract> => unwrap(api.delete(`/api/contracts/${id}/approver/${approvalId}`)),
 
     submitAdhocApprovers: (id: string): Promise<Contract> => unwrap(api.post(`/api/contracts/${id}/submit-approvers`)),
 
     // 3. File & Attachment Management
     uploadRevision: (id: string, data: FormData): Promise<Contract> => unwrap(api.post(`/api/contracts/${id}/revision`, data)),
-    changeVersion: (id: string, versionNo: number): Promise<Contract> =>
-        unwrap(api.post(`/api/contracts/${id}/version`, { version_no: versionNo })),
+    changeVersion: (id: string, versionNo: number): Promise<Contract> => unwrap(api.post(`/api/contracts/${id}/version`, { version_no: versionNo })),
     uploadAttachment: (id: string, data: FormData): Promise<Contract> => unwrap(api.post(`/api/contracts/${id}/attachments`, data)),
     deleteAttachment: (id: string, atId: string): Promise<Contract> => unwrap(api.delete(`/api/contracts/${id}/attachments/${atId}`)),
 
@@ -152,8 +158,7 @@ export const contractApi = {
     discussions: {
         list: (params?: { page?: number; per_page?: number; category?: string; search?: string; unread_only?: boolean }) =>
             unwrap(api.get('/api/discussions', { params })),
-        detail: (contractId: string, params?: { limit?: number; search?: string }) =>
-            unwrap(api.get(`/api/discussions/${contractId}`, { params })),
+        detail: (contractId: string, params?: { limit?: number; search?: string }) => unwrap(api.get(`/api/discussions/${contractId}`, { params })),
         send: (contractId: string, message: string, file?: File) => {
             const fd = new FormData();
             fd.append('message', message);
@@ -173,8 +178,7 @@ export const contractApi = {
             if (file) fd.append('attachment', file);
             return unwrap(api.post(`/api/contracts/${contractId}/messages`, fd));
         },
-        react: (messageId: string, emoji: string) =>
-            unwrap(api.post(`/api/messages/${messageId}/reaction`, { emoji })),
+        react: (messageId: string, emoji: string) => unwrap(api.post(`/api/messages/${messageId}/reaction`, { emoji })),
         markRead: (contractId: string) => unwrap(api.post(`/api/contracts/${contractId}/messages/read`)),
     },
 
@@ -188,18 +192,15 @@ export const contractApi = {
         get: (contractId: string) => unwrap(api.get(`/api/contracts/${contractId}/reference`)),
         search: (contractId: string, query: string, limit: number = 10) =>
             unwrap(api.get(`/api/contracts/${contractId}/reference/search`, { params: { query, limit } })),
-        update: (contractId: string, parentId: string | null) =>
-            unwrap(api.patch(`/api/contracts/${contractId}/reference`, { parent_id: parentId })),
+        update: (contractId: string, parentId: string | null) => unwrap(api.patch(`/api/contracts/${contractId}/reference`, { parent_id: parentId })),
     },
 
     // 5.3 Contract Purchase Orders (PO)
     purchaseOrders: {
         list: (contractId: string) => unwrap(api.get(`/api/contracts/${contractId}/purchase-orders`)),
         create: (contractId: string, data: any) => unwrap(api.post(`/api/contracts/${contractId}/purchase-orders`, data)),
-        update: (contractId: string, poId: string, data: any) =>
-            unwrap(api.patch(`/api/contracts/${contractId}/purchase-orders/${poId}`, data)),
-        delete: (contractId: string, poId: string) =>
-            unwrap(api.delete(`/api/contracts/${contractId}/purchase-orders/${poId}`)),
+        update: (contractId: string, poId: string, data: any) => unwrap(api.patch(`/api/contracts/${contractId}/purchase-orders/${poId}`, data)),
+        delete: (contractId: string, poId: string) => unwrap(api.delete(`/api/contracts/${contractId}/purchase-orders/${poId}`)),
     },
 
     // 6. Dynamic Form Submissions (F1 / F2)
@@ -238,7 +239,7 @@ export const formatRuangLingkup = (contractNo?: string, signerName?: string): st
 
 export const formatLampiranList = (docs?: any[]): string => {
     if (!docs || !docs.length) return '';
-    
+
     // Filter documents that actually have valid file paths/names or non-empty content
     const validDocs = docs.filter((d: any) => {
         if (!d) return false;
@@ -258,14 +259,20 @@ export const formatLampiranList = (docs?: any[]): string => {
         return validDocs.map((d: any) => getDocLabel(d)).join(', ');
     }
 
-    const firstTwo = validDocs.slice(0, 2).map((d: any) => getDocLabel(d)).join(', ');
+    const firstTwo = validDocs
+        .slice(0, 2)
+        .map((d: any) => getDocLabel(d))
+        .join(', ');
     const remaining = validDocs.length - 2;
     return `${firstTwo}, dan +${remaining} lampiran lainnya`;
 };
 
 export const cleanSingleLineText = (text?: string | null): string => {
     if (!text) return '';
-    return text.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
+    return text
+        .replace(/[\r\n]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
 };
 
 /**
@@ -280,7 +287,13 @@ export const resolveVendorTaxPkp = (vendor: any): { isPkp: boolean; pkpStatus: s
     const tax = detail.tax || vendor.tax || {};
     const typePkp = String(tax.typePkp || tax.type_pkp || tax.pkp_type || tax.status_pkp || '').trim();
 
-    if (!typePkp || typePkp === '-' || typePkp.toLowerCase() === 'non pkp' || typePkp.toLowerCase() === 'non-pkp' || typePkp.toLowerCase() === 'ptkp') {
+    if (
+        !typePkp ||
+        typePkp === '-' ||
+        typePkp.toLowerCase() === 'non pkp' ||
+        typePkp.toLowerCase() === 'non-pkp' ||
+        typePkp.toLowerCase() === 'ptkp'
+    ) {
         return { isPkp: false, pkpStatus: typePkp || '-' };
     }
 
@@ -358,13 +371,14 @@ export function resolveTransitionPreview({
                 const targetSeq = Number(sequence ?? 1);
                 const targetStep = steps.find((s: any) => Number(s.step) === targetSeq);
                 return {
-                    label: actionCode === 'reject' ? `Kembali ke Tahap Spesifik (Tahap ${targetSeq})` : `Lompat ke Tahap Spesifik (Tahap ${targetSeq})`,
+                    label:
+                        actionCode === 'reject' ? `Kembali ke Tahap Spesifik (Tahap ${targetSeq})` : `Lompat ke Tahap Spesifik (Tahap ${targetSeq})`,
                     target: formatStepInfo(targetStep),
                 };
             }
             case 'cross_workflow': {
                 const isOrigin = workflow_id === 'origin_workflow' || workflow_id === 'origin' || workflow_id === contract.origin_workflow_id;
-                const targetWfId = isOrigin ? (contract.origin_workflow_id || contract.workflow_id) : workflow_id;
+                const targetWfId = isOrigin ? contract.origin_workflow_id || contract.workflow_id : workflow_id;
                 const targetWf = allWorkflows.find((w: any) => String(w.id) === String(targetWfId));
                 const wfName = targetWf?.name || (isOrigin ? 'Alur Kerja Utama' : 'Alur Kerja Target');
 
@@ -413,4 +427,3 @@ export function resolveTransitionPreview({
         target: formatStepInfo(nextStep),
     };
 }
-

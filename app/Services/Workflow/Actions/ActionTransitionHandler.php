@@ -2,11 +2,12 @@
 
 namespace App\Services\Workflow\Actions;
 
-use App\Models\Approval;
-use App\Models\Contract;
-use App\Models\WorkflowStep;
-use App\Models\WorkflowStepAction;
+use App\Models\Master\WorkflowStep;
+use App\Models\Master\WorkflowStepAction;
+use App\Models\Transaction\Approval;
+use App\Models\Transaction\Contract;
 use App\Services\Workflow\Concerns\EvaluatesWorkflowSteps;
+use App\Services\Workflow\ContractWorkflowService;
 
 class ActionTransitionHandler
 {
@@ -182,7 +183,7 @@ class ActionTransitionHandler
                                     ->update(['status' => 'pending']);
 
                                 if ($waitingCount === 0 && ! Approval::where('contract_id', $contract->id)->where('workflow_step_id', $targetStep->id)->where('status', 'pending')->exists()) {
-                                    app(\App\Services\Workflow\ContractWorkflowService::class)->createApprovalForStep($contract, $targetStep);
+                                    app(ContractWorkflowService::class)->createApprovalForStep($contract, $targetStep);
                                 }
                             }
 

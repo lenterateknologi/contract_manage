@@ -3,10 +3,10 @@
 namespace App\Http\Formatters;
 
 use App\Enums\WorkflowAction;
-use App\Models\Contract;
-use App\Models\ContractStatus;
-use App\Models\WorkflowStep;
-use App\Models\WorkflowStepAction;
+use App\Models\Master\ContractStatus;
+use App\Models\Master\WorkflowStep;
+use App\Models\Master\WorkflowStepAction;
+use App\Models\Transaction\Contract;
 use Illuminate\Support\Facades\Cache;
 
 class WorkflowStepFormatter
@@ -25,7 +25,7 @@ class WorkflowStepFormatter
             $targetApprovers = $c->approvals
                 ->where('sequence', $step->step)
                 ->whereIn('status', ['pending', 'waiting'])
-                ->first()?->target_approvers;
+                ->first()?->approver_name;
         }
 
         return [
@@ -68,7 +68,7 @@ class WorkflowStepFormatter
 
         return $actions->sortBy(fn ($action) => (int) data_get($action->transition_config, 'order', 999))
             ->values()
-            ->map(function ($action) use ($statusMap, $c, $step) {
+            ->map(function ($action) use ($statusMap, $step) {
                 /* @var WorkflowStepAction $action */
                 $code = $action->action_code instanceof WorkflowAction ? $action->action_code->value : $action->action_code;
                 $effectiveStatus = $action->target_status ?: data_get($step->meta, 'target_status');

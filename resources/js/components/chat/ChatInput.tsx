@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils';
-import { RefreshCw, Send, Paperclip, X, File as FileIcon, Plus } from 'lucide-react';
-import React, { useState } from 'react';
 import { MentionDropdown } from '@/pages/contracts/components/parts/MentionDropdown';
+import { File as FileIcon, Plus, RefreshCw, Send, X } from 'lucide-react';
+import React, { useState } from 'react';
 
 interface ChatInputProps {
     input: string;
@@ -40,7 +40,7 @@ export function ChatInput({
     const [showTools, setShowTools] = useState(false);
 
     return (
-        <div className="border-surface-border border-t pt-3 relative">
+        <div className="border-surface-border relative border-t pt-3">
             {/* Mention Auto-Suggest Dropdown */}
             <div className="relative">
                 <MentionDropdown
@@ -53,9 +53,9 @@ export function ChatInput({
             </div>
 
             {/* Single Unified Card */}
-            <div className="border-surface-border bg-surface-muted/30 focus-within:border-primary/50 focus-within:bg-surface-muted rounded-2xl border transition-all duration-200 overflow-hidden shadow-2xs">
+            <div className="border-surface-border bg-surface-muted/30 focus-within:border-primary/50 focus-within:bg-surface-muted overflow-hidden rounded-2xl border shadow-2xs transition-all duration-200">
                 {selectedFile && (
-                    <div className="bg-surface-muted border-b border-surface-border/50 animate-in fade-in flex items-center justify-between p-2.5 duration-200">
+                    <div className="bg-surface-muted border-surface-border/50 animate-in fade-in flex items-center justify-between border-b p-2.5 duration-200">
                         <div className="flex items-center gap-2.5">
                             <FileIcon size={14} strokeWidth={2.5} />
                             <div className="flex flex-col">
@@ -69,7 +69,7 @@ export function ChatInput({
                         </div>
                         <button
                             onClick={() => setSelectedFile(null)}
-                            className="hover:bg-surface-muted flex h-6 w-6 items-center justify-center rounded-lg transition-all active:scale-90 cursor-pointer"
+                            className="hover:bg-surface-muted flex h-6 w-6 cursor-pointer items-center justify-center rounded-lg transition-all active:scale-90"
                         >
                             <X size={13} strokeWidth={2.5} />
                         </button>
@@ -91,11 +91,11 @@ export function ChatInput({
 
                     <button
                         type="button"
-                        title={showTools ? "Tutup menu" : "Lampirkan berkas"}
+                        title={showTools ? 'Tutup menu' : 'Lampirkan berkas'}
                         onClick={() => {
                             fileInputRef.current?.click();
                         }}
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl hover:bg-surface-muted text-text-soft hover:text-text-main transition-all duration-200 cursor-pointer"
+                        className="hover:bg-surface-muted text-text-soft hover:text-text-main flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-xl transition-all duration-200"
                     >
                         <Plus size={18} strokeWidth={2.5} />
                     </button>
@@ -107,12 +107,12 @@ export function ChatInput({
                         onKeyDown={handleKeyDown}
                         placeholder="Ketik pesan..."
                         rows={1}
-                        className="text-text-main placeholder:text-text-soft/30 max-h-[120px] min-h-[36px] flex-1 resize-none bg-transparent py-2 px-2 text-[13px] leading-relaxed font-medium tracking-tight transition-all outline-none border-0"
+                        className="text-text-main placeholder:text-text-soft/30 max-h-[120px] min-h-[36px] flex-1 resize-none border-0 bg-transparent px-2 py-2 text-[13px] leading-relaxed font-medium tracking-tight transition-all outline-none"
                     />
 
                     <button
                         className={cn(
-                            'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-all duration-200 cursor-pointer',
+                            'flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-xl transition-all duration-200',
                             input.trim() || selectedFile
                                 ? 'bg-primary hover:bg-primary/90 text-white shadow-2xs active:scale-95'
                                 : 'text-text-soft/30 cursor-not-allowed',

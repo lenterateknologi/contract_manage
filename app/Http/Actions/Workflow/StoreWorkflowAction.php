@@ -4,8 +4,8 @@ namespace App\Http\Actions\Workflow;
 
 use App\Enums\ApproverType;
 use App\Enums\WorkflowPhase;
-use App\Models\Workflow;
-use App\Models\WorkflowStep;
+use App\Models\Master\Workflow;
+use App\Models\Master\WorkflowStep;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 

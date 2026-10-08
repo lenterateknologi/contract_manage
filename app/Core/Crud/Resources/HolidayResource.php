@@ -4,13 +4,12 @@ namespace App\Core\Crud\Resources;
 
 use App\Core\Crud\Columns\BooleanColumn;
 use App\Core\Crud\Columns\TextColumn;
-use App\Core\Crud\Fields\DateInput;
 use App\Core\Crud\Fields\TextareaInput;
 use App\Core\Crud\Fields\TextInput;
 use App\Core\Crud\Fields\ToggleInput;
-use App\Core\Crud\Filters\Filter;
+use App\Core\Crud\Filter;
 use App\Core\Crud\Resource;
-use App\Models\Holiday;
+use App\Models\Master\Holiday;
 
 class HolidayResource extends Resource
 {

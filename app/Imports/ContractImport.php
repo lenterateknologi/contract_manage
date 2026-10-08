@@ -2,11 +2,11 @@
 
 namespace App\Imports;
 
-use App\Models\Contract;
-use App\Models\ContractType;
-use App\Models\SubmissionType;
-use App\Models\User;
-use App\Models\Vendor;
+use App\Models\Master\ContractType;
+use App\Models\Master\SubmissionType;
+use App\Models\Master\User;
+use App\Models\Master\Vendor;
+use App\Models\Transaction\Contract;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Concerns\ToModel;

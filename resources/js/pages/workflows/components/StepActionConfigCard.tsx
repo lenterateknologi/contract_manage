@@ -6,7 +6,6 @@ import {
     ArrowDown,
     ArrowRight,
     ArrowUp,
-    CheckCircle2,
     Copy,
     CornerDownLeft,
     Eye,
@@ -16,7 +15,6 @@ import {
     Key,
     RefreshCw,
     Settings2,
-    Sliders,
     Sparkles,
     Target,
     Trash2,
@@ -24,7 +22,6 @@ import {
     UserPlus,
     Users as UsersIcon,
     Workflow as WorkflowIcon,
-    XCircle,
     Zap,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -202,39 +199,39 @@ export function StepActionConfigCard({
         assign: {
             badgeBg: 'bg-blue-600 text-white',
             text: 'text-blue-600 dark:text-blue-400',
-            icon: <UserCheck size={12} className="text-blue-500 shrink-0" />,
+            icon: <UserCheck size={12} className="shrink-0 text-blue-500" />,
             label: `#${actIdx + 1} Tugaskan`,
         },
         assign_pic: {
             badgeBg: 'bg-blue-600 text-white',
             text: 'text-blue-600 dark:text-blue-400',
-            icon: <UsersIcon size={12} className="text-blue-500 shrink-0" />,
+            icon: <UsersIcon size={12} className="shrink-0 text-blue-500" />,
             label: `#${actIdx + 1} Tugaskan`,
         },
         add_adhoc: {
             badgeBg: 'bg-indigo-600 text-white',
             text: 'text-indigo-600 dark:text-indigo-400',
-            icon: <UserPlus size={12} className="text-indigo-500 shrink-0" />,
+            icon: <UserPlus size={12} className="shrink-0 text-indigo-500" />,
             label: `#${actIdx + 1} Tambahan`,
         },
         branch: {
             badgeBg: 'bg-sky-600 text-white',
             text: 'text-sky-600 dark:text-sky-400',
-            icon: <GitBranch size={12} className="text-sky-500 shrink-0" />,
+            icon: <GitBranch size={12} className="shrink-0 text-sky-500" />,
             label: `#${actIdx + 1} Cabang`,
         },
         auto: {
             badgeBg: 'bg-purple-600 text-white',
             text: 'text-purple-600 dark:text-purple-400',
-            icon: <Zap size={12} className="text-purple-500 shrink-0" />,
+            icon: <Zap size={12} className="shrink-0 text-purple-500" />,
             label: `#${actIdx + 1} Otomatis`,
         },
         automation: {
             badgeBg: 'bg-purple-600 text-white',
             text: 'text-purple-600 dark:text-purple-400',
-            icon: <Zap size={12} className="text-purple-500 shrink-0" />,
+            icon: <Zap size={12} className="shrink-0 text-purple-500" />,
             label: `#${actIdx + 1} Otomatis`,
-        }
+        },
     };
 
     const theme = actionStyleMap[actionCode] || {
@@ -280,16 +277,16 @@ export function StepActionConfigCard({
     return (
         <div
             className={cn(
-                "rounded-lg border bg-white dark:bg-zinc-900/90 transition-all p-3 shadow-2xs space-y-2.5",
+                'space-y-2.5 rounded-lg border bg-white p-3 shadow-2xs transition-all dark:bg-zinc-900/90',
                 act.is_active !== false
-                    ? "border-slate-200/90 hover:border-slate-300 dark:border-zinc-800"
-                    : "border-slate-200/50 bg-slate-50/50 dark:bg-zinc-900/40 opacity-60"
+                    ? 'border-slate-200/90 hover:border-slate-300 dark:border-zinc-800'
+                    : 'border-slate-200/50 bg-slate-50/50 opacity-60 dark:bg-zinc-900/40',
             )}
         >
             {/* Row 1: Header (Badge, Master Action, Status, Action Buttons) */}
             <div className="flex flex-wrap items-center justify-between gap-2.5">
-                <div className="flex flex-wrap items-center gap-2 min-w-0">
-                    <span className={cn("text-[10px] font-bold uppercase px-2 py-1 rounded-md tracking-wider shrink-0", theme.badgeBg)}>
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
+                    <span className={cn('shrink-0 rounded-md px-2 py-1 text-[10px] font-bold tracking-wider uppercase', theme.badgeBg)}>
                         {theme.label}
                     </span>
 
@@ -306,7 +303,7 @@ export function StepActionConfigCard({
                                 });
                             }}
                         >
-                            <SelectTrigger className="h-8.5 py-1.5 px-3 rounded-lg border-slate-200 bg-white text-xs font-semibold dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-2xs">
+                            <SelectTrigger className="h-8.5 rounded-lg border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 shadow-2xs dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
                                 <SelectValue placeholder="Pilih Aksi" />
                             </SelectTrigger>
                             <SelectContent className="rounded-lg border-slate-200 bg-white text-slate-800 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
@@ -329,15 +326,19 @@ export function StepActionConfigCard({
                                 });
                             }}
                         >
-                            <SelectTrigger className="h-8.5 py-1.5 px-3 rounded-lg border-slate-200 bg-white text-xs font-medium dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-2xs">
+                            <SelectTrigger className="h-8.5 rounded-lg border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-2xs dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
                                 <SelectValue placeholder="Status Target" />
                             </SelectTrigger>
-                            <SelectContent className="rounded-lg border-slate-200 bg-white text-slate-800 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 max-h-72">
+                            <SelectContent className="max-h-72 rounded-lg border-slate-200 bg-white text-slate-800 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
                                 <SelectItem value="default" className="text-xs font-medium text-slate-500">
                                     <div className="flex items-center gap-1.5">
                                         <div
-                                            className="h-2 w-2 rounded-full border border-slate-300 shrink-0"
-                                            style={{ backgroundColor: step?.meta?.target_status ? (contractStatuses.find((s: any) => s.code === step.meta.target_status)?.color || '#cbd5e1') : '#cbd5e1' }}
+                                            className="h-2 w-2 shrink-0 rounded-full border border-slate-300"
+                                            style={{
+                                                backgroundColor: step?.meta?.target_status
+                                                    ? contractStatuses.find((s: any) => s.code === step.meta.target_status)?.color || '#cbd5e1'
+                                                    : '#cbd5e1',
+                                            }}
                                         />
                                         <span>DEFAULT{step?.meta?.target_status ? ` (${step.meta.target_status.toUpperCase()})` : ''}</span>
                                     </div>
@@ -345,25 +346,19 @@ export function StepActionConfigCard({
                                 {contractStatuses.map((status: any) => {
                                     const StatusIcon = status.icon && (LucideIcons as any)[status.icon] ? (LucideIcons as any)[status.icon] : null;
                                     return (
-                                        <SelectItem
-                                            key={status.id}
-                                            value={status.code}
-                                            className="text-xs font-medium uppercase"
-                                        >
+                                        <SelectItem key={status.id} value={status.code} className="text-xs font-medium uppercase">
                                             <div className="flex items-center gap-1.5">
                                                 {StatusIcon ? (
-                                                    <StatusIcon
-                                                        className="h-3 w-3 shrink-0"
-                                                        style={{ color: status.color || 'currentColor' }}
-                                                    />
+                                                    <StatusIcon className="h-3 w-3 shrink-0" style={{ color: status.color || 'currentColor' }} />
                                                 ) : (
                                                     <div
-                                                        className="h-2 w-2 rounded-full shrink-0"
+                                                        className="h-2 w-2 shrink-0 rounded-full"
                                                         style={{ backgroundColor: status.color || '#cbd5e1' }}
                                                     />
                                                 )}
                                                 <span className="font-semibold">
-                                                    {status.code?.toUpperCase()}{status.label ? ` • ${status.label}` : ''}
+                                                    {status.code?.toUpperCase()}
+                                                    {status.label ? ` • ${status.label}` : ''}
                                                 </span>
                                             </div>
                                         </SelectItem>
@@ -375,25 +370,29 @@ export function StepActionConfigCard({
                 </div>
 
                 {/* Right Side Header Controls */}
-                <div className="flex items-center gap-1.5 shrink-0">
+                <div className="flex shrink-0 items-center gap-1.5">
                     {/* 1. Tombol Otoritas Akses Tombol (Siapa yang bisa melihat / klik tombol) */}
                     <button
                         type="button"
                         title="Tentukan siapa yang berhak melihat dan mengklik tombol aksi ini"
                         onClick={() => setIsButtonAuthorityModalOpen(true)}
                         className={cn(
-                            "inline-flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs font-bold shadow-2xs transition-colors cursor-pointer border",
+                            'inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-lg border px-3 text-xs font-bold shadow-2xs transition-colors',
                             buttonAuthorityCount > 0
-                                ? "bg-slate-800 text-white border-slate-800 hover:bg-slate-700 dark:bg-zinc-700 dark:border-zinc-600"
-                                : "bg-white dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-zinc-300 hover:bg-slate-50"
+                                ? 'border-slate-800 bg-slate-800 text-white hover:bg-slate-700 dark:border-zinc-600 dark:bg-zinc-700'
+                                : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300',
                         )}
                     >
                         <Key size={13} className="text-amber-400" />
                         <span>Otoritas Tombol</span>
-                        <span className={cn(
-                            "ml-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none",
-                            buttonAuthorityCount > 0 ? "bg-white/20 text-white" : "bg-slate-200 dark:bg-zinc-700 text-slate-700 dark:text-zinc-300"
-                        )}>
+                        <span
+                            className={cn(
+                                'ml-0.5 rounded-full px-1.5 py-0.5 text-[10px] leading-none font-bold',
+                                buttonAuthorityCount > 0
+                                    ? 'bg-white/20 text-white'
+                                    : 'bg-slate-200 text-slate-700 dark:bg-zinc-700 dark:text-zinc-300',
+                            )}
+                        >
                             {buttonAuthorityCount}
                         </span>
                     </button>
@@ -402,21 +401,27 @@ export function StepActionConfigCard({
                     {isSelectionAction && (
                         <button
                             type="button"
-                            title={isForwardAction ? 'Tentukan lingkup reviewer tambahan' : 'Tentukan daftar personil yang bisa dipilih saat aksi digunakan'}
+                            title={
+                                isForwardAction
+                                    ? 'Tentukan lingkup reviewer tambahan'
+                                    : 'Tentukan daftar personil yang bisa dipilih saat aksi digunakan'
+                            }
                             onClick={() => setIsAssigneeModalOpen(true)}
                             className={cn(
-                                "inline-flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs font-bold shadow-2xs transition-colors cursor-pointer border",
+                                'inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-lg border px-3 text-xs font-bold shadow-2xs transition-colors',
                                 personnelCount > 0
-                                    ? "bg-primary text-white border-primary hover:bg-primary/90"
-                                    : "bg-white dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-zinc-300 hover:bg-slate-50"
+                                    ? 'bg-primary border-primary hover:bg-primary/90 text-white'
+                                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300',
                             )}
                         >
                             <UsersIcon size={13} className="text-blue-500" />
                             <span>{isForwardAction ? 'Atur Reviewer' : 'Tentukan Personil'}</span>
-                            <span className={cn(
-                                "ml-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none",
-                                personnelCount > 0 ? "bg-white/25 text-white" : "bg-primary text-white"
-                            )}>
+                            <span
+                                className={cn(
+                                    'ml-0.5 rounded-full px-1.5 py-0.5 text-[10px] leading-none font-bold',
+                                    personnelCount > 0 ? 'bg-white/25 text-white' : 'bg-primary text-white',
+                                )}
+                            >
                                 {personnelCount}
                             </span>
                         </button>
@@ -424,14 +429,14 @@ export function StepActionConfigCard({
 
                     {/* 3. Reorder Buttons */}
                     {moveAction && totalActions > 1 && (
-                        <div className="flex items-center gap-0.5 h-8 rounded-lg bg-slate-100 dark:bg-zinc-800 p-0.5 border border-slate-200 dark:border-zinc-700 shadow-2xs">
+                        <div className="flex h-8 items-center gap-0.5 rounded-lg border border-slate-200 bg-slate-100 p-0.5 shadow-2xs dark:border-zinc-700 dark:bg-zinc-800">
                             <button
                                 type="button"
                                 disabled={actIdx === 0}
                                 onClick={() => moveAction(actIdx, 'up')}
                                 className={cn(
-                                    'cursor-pointer transition-all p-1.5 h-7 w-7 rounded-md text-slate-600 dark:text-zinc-300 flex items-center justify-center',
-                                    actIdx === 0 ? 'opacity-30 cursor-not-allowed' : 'hover:bg-white dark:hover:bg-zinc-700 active:scale-95'
+                                    'flex h-7 w-7 cursor-pointer items-center justify-center rounded-md p-1.5 text-slate-600 transition-all dark:text-zinc-300',
+                                    actIdx === 0 ? 'cursor-not-allowed opacity-30' : 'hover:bg-white active:scale-95 dark:hover:bg-zinc-700',
                                 )}
                                 title="Pindah ke Atas (Tukar Posisi)"
                             >
@@ -442,8 +447,10 @@ export function StepActionConfigCard({
                                 disabled={actIdx === totalActions - 1}
                                 onClick={() => moveAction(actIdx, 'down')}
                                 className={cn(
-                                    'cursor-pointer transition-all p-1.5 h-7 w-7 rounded-md text-slate-600 dark:text-zinc-300 flex items-center justify-center',
-                                    actIdx === totalActions - 1 ? 'opacity-30 cursor-not-allowed' : 'hover:bg-white dark:hover:bg-zinc-700 active:scale-95'
+                                    'flex h-7 w-7 cursor-pointer items-center justify-center rounded-md p-1.5 text-slate-600 transition-all dark:text-zinc-300',
+                                    actIdx === totalActions - 1
+                                        ? 'cursor-not-allowed opacity-30'
+                                        : 'hover:bg-white active:scale-95 dark:hover:bg-zinc-700',
                                 )}
                                 title="Pindah ke Bawah (Tukar Posisi)"
                             >
@@ -457,12 +464,16 @@ export function StepActionConfigCard({
                         type="button"
                         onClick={() => updateAction(actIdx, { is_visible: act.is_visible === false ? true : false })}
                         className={cn(
-                            'cursor-pointer transition-all p-1.5 h-8 w-8 rounded-lg border flex items-center justify-center shadow-2xs',
+                            'flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border p-1.5 shadow-2xs transition-all',
                             act.is_visible !== false
-                                ? 'bg-white dark:bg-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-300 border-slate-200 dark:border-zinc-700'
-                                : 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-800'
+                                ? 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700'
+                                : 'border-amber-300 bg-amber-500/15 text-amber-600 hover:bg-amber-500/25 dark:border-amber-800 dark:text-amber-400',
                         )}
-                        title={act.is_visible !== false ? 'Aksi Terlihat (Tombol Tampil di Form/Detail Kontrak)' : 'Aksi Tersembunyi (Aksi Otomatis/Sistem Tanpa Tombol)'}
+                        title={
+                            act.is_visible !== false
+                                ? 'Aksi Terlihat (Tombol Tampil di Form/Detail Kontrak)'
+                                : 'Aksi Tersembunyi (Aksi Otomatis/Sistem Tanpa Tombol)'
+                        }
                     >
                         {act.is_visible !== false ? <Eye size={14} /> : <EyeOff size={14} />}
                     </button>
@@ -472,10 +483,10 @@ export function StepActionConfigCard({
                         type="button"
                         onClick={() => updateAction(actIdx, { is_active: act.is_active !== false ? false : true })}
                         className={cn(
-                            'flex h-8 cursor-pointer items-center rounded-lg px-3 text-[10px] font-bold uppercase transition-all shadow-2xs',
+                            'flex h-8 cursor-pointer items-center rounded-lg px-3 text-[10px] font-bold uppercase shadow-2xs transition-all',
                             act.is_active !== false
                                 ? 'bg-emerald-600 text-white hover:bg-emerald-700'
-                                : 'bg-slate-200 text-slate-600 dark:bg-zinc-800 dark:text-zinc-400 hover:bg-slate-300'
+                                : 'bg-slate-200 text-slate-600 hover:bg-slate-300 dark:bg-zinc-800 dark:text-zinc-400',
                         )}
                     >
                         {act.is_active !== false ? 'AKTIF' : 'NON-AKTIF'}
@@ -486,7 +497,7 @@ export function StepActionConfigCard({
                         <button
                             type="button"
                             onClick={() => cloneAction(actIdx)}
-                            className="cursor-pointer transition-colors p-1.5 h-8 w-8 rounded-lg bg-white dark:bg-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-300 border border-slate-200 dark:border-zinc-700 flex items-center justify-center shadow-2xs"
+                            className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-slate-200 bg-white p-1.5 text-slate-700 shadow-2xs transition-colors hover:bg-slate-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
                             title="Duplikat Aksi"
                         >
                             <Copy size={13} />
@@ -497,7 +508,7 @@ export function StepActionConfigCard({
                     <button
                         type="button"
                         onClick={() => removeAction(actIdx)}
-                        className="cursor-pointer transition-colors p-1.5 h-8 w-8 rounded-lg bg-white dark:bg-zinc-800 hover:bg-rose-50 text-rose-600 dark:text-rose-400 hover:border-rose-200 dark:hover:bg-rose-950/30 border border-slate-200 dark:border-zinc-700 flex items-center justify-center shadow-2xs"
+                        className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-slate-200 bg-white p-1.5 text-rose-600 shadow-2xs transition-colors hover:border-rose-200 hover:bg-rose-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-rose-400 dark:hover:bg-rose-950/30"
                         title="Hapus Aksi"
                     >
                         <Trash2 size={13} />
@@ -507,43 +518,39 @@ export function StepActionConfigCard({
 
             {/* Row 2: Standardized Normalized Fields Layout */}
             {act.is_active !== false && (
-                <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 pt-3 border-t border-slate-100 dark:border-zinc-800/80 text-xs">
+                <div className="grid grid-cols-1 gap-3 border-t border-slate-100 pt-3 text-xs sm:grid-cols-12 dark:border-zinc-800/80">
                     {/* Label Tombol */}
-                    <div className="sm:col-span-6 space-y-1">
-                        <label className="text-[11px] font-semibold text-slate-700 dark:text-zinc-300 block">
-                            Label Tombol (Alias):
-                        </label>
+                    <div className="space-y-1 sm:col-span-6">
+                        <label className="block text-[11px] font-semibold text-slate-700 dark:text-zinc-300">Label Tombol (Alias):</label>
                         <input
                             type="text"
                             value={act.alias || ''}
                             onChange={(e) => updateAction(actIdx, { alias: e.target.value })}
-                            className="h-8.5 w-full py-1.5 px-3 rounded-lg border border-slate-200 bg-white text-xs font-medium transition-all focus:border-primary focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-2xs placeholder:text-slate-400"
+                            className="focus:border-primary h-8.5 w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-2xs transition-all placeholder:text-slate-400 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                             placeholder="Label tombol aksi..."
                         />
                     </div>
 
                     {/* Deskripsi Aksi */}
-                    <div className="sm:col-span-6 space-y-1">
-                        <label className="text-[11px] font-semibold text-slate-700 dark:text-zinc-300 block">
-                            Deskripsi / Tooltip Aksi:
-                        </label>
+                    <div className="space-y-1 sm:col-span-6">
+                        <label className="block text-[11px] font-semibold text-slate-700 dark:text-zinc-300">Deskripsi / Tooltip Aksi:</label>
                         <input
                             type="text"
                             value={act.description || ''}
                             onChange={(e) => updateAction(actIdx, { description: e.target.value })}
-                            className="h-8.5 w-full py-1.5 px-3 rounded-lg border border-slate-200 bg-white text-xs font-medium transition-all focus:border-primary focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-2xs placeholder:text-slate-400"
+                            className="focus:border-primary h-8.5 w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-2xs transition-all placeholder:text-slate-400 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                             placeholder="Deskripsi / tooltip fungsi tombol..."
                         />
                     </div>
 
                     {/* Pengaturan Transisi (Next Step) */}
-                    <div className="sm:col-span-12 pt-2 border-t border-dashed border-slate-200 dark:border-zinc-800 space-y-1.5">
-                        <label className="text-[11px] font-semibold text-slate-700 dark:text-zinc-300 flex items-center gap-1.5">
+                    <div className="space-y-1.5 border-t border-dashed border-slate-200 pt-2 sm:col-span-12 dark:border-zinc-800">
+                        <label className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-700 dark:text-zinc-300">
                             <GitBranch size={13} className="text-primary" />
                             <span>Transisi Alur & Tahap Target:</span>
                         </label>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center w-full">
+                        <div className="grid w-full grid-cols-1 items-center gap-3 sm:grid-cols-3">
                             {/* 1. Transition Type Selector (1/3 width) */}
                             <div className="w-full">
                                 <Select
@@ -584,7 +591,12 @@ export function StepActionConfigCard({
                                             });
                                         } else if (val === 'origin_return') {
                                             updateAction(actIdx, {
-                                                transition_config: { type: 'cross_workflow', workflow_id: 'origin_workflow', return_mode: 'branch_next', sequence: 1 },
+                                                transition_config: {
+                                                    type: 'cross_workflow',
+                                                    workflow_id: 'origin_workflow',
+                                                    return_mode: 'branch_next',
+                                                    sequence: 1,
+                                                },
                                                 next_step_id: null,
                                                 next_workflow_id: null,
                                                 next_workflow_step_id: null,
@@ -606,7 +618,7 @@ export function StepActionConfigCard({
                                         }
                                     }}
                                 >
-                                    <SelectTrigger className="h-8.5 w-full py-1.5 px-3 rounded-lg border-slate-200 bg-white text-xs font-medium dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-2xs">
+                                    <SelectTrigger className="h-8.5 w-full rounded-lg border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-2xs dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
                                         <SelectValue placeholder="Pilih Transisi" />
                                     </SelectTrigger>
                                     <SelectContent className="rounded-lg border-slate-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
@@ -614,19 +626,19 @@ export function StepActionConfigCard({
                                             const getTransitionIcon = (val: string) => {
                                                 switch (val) {
                                                     case 'sequential':
-                                                        return <ArrowRight size={13} className="text-emerald-500 shrink-0" />;
+                                                        return <ArrowRight size={13} className="shrink-0 text-emerald-500" />;
                                                     case 'origin_return':
-                                                        return <RefreshCw size={13} className="text-indigo-500 shrink-0" />;
+                                                        return <RefreshCw size={13} className="shrink-0 text-indigo-500" />;
                                                     case 'cross_workflow':
-                                                        return <GitBranch size={13} className="text-blue-500 shrink-0" />;
+                                                        return <GitBranch size={13} className="shrink-0 text-blue-500" />;
                                                     case 'stay':
-                                                        return <Settings2 size={13} className="text-slate-400 shrink-0" />;
+                                                        return <Settings2 size={13} className="shrink-0 text-slate-400" />;
                                                     case 'back':
-                                                        return <CornerDownLeft size={13} className="text-amber-500 shrink-0" />;
+                                                        return <CornerDownLeft size={13} className="shrink-0 text-amber-500" />;
                                                     case 'initial_step':
-                                                        return <Flag size={13} className="text-rose-500 shrink-0" />;
+                                                        return <Flag size={13} className="shrink-0 text-rose-500" />;
                                                     case 'absolute':
-                                                        return <Target size={13} className="text-teal-500 shrink-0" />;
+                                                        return <Target size={13} className="shrink-0 text-teal-500" />;
                                                     default:
                                                         return <ArrowRight size={13} className="shrink-0" />;
                                                 }
@@ -677,11 +689,14 @@ export function StepActionConfigCard({
                                                 }
                                             }}
                                         >
-                                            <SelectTrigger className="h-8.5 w-full py-1.5 px-3 rounded-lg border-slate-200 bg-white text-xs font-medium dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-2xs">
+                                            <SelectTrigger className="h-8.5 w-full rounded-lg border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-2xs dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
                                                 <SelectValue placeholder="Pilih Alur Kerja" />
                                             </SelectTrigger>
                                             <SelectContent className="z-[9999] rounded-lg border-slate-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
-                                                <SelectItem value="origin_workflow" className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">
+                                                <SelectItem
+                                                    value="origin_workflow"
+                                                    className="text-xs font-semibold text-indigo-600 dark:text-indigo-400"
+                                                >
                                                     <div className="flex items-center gap-1.5">
                                                         <RefreshCw size={13} className="shrink-0 text-indigo-600 dark:text-indigo-400" />
                                                         <span>Workflow Asal (Origin Workflow)</span>
@@ -691,7 +706,9 @@ export function StepActionConfigCard({
                                                     <SelectItem key={w.id} value={String(w.id)} className="text-xs font-medium">
                                                         <div className="flex items-center gap-1.5">
                                                             <WorkflowIcon size={12} className="shrink-0 text-slate-400" />
-                                                            <span>{w.name} {w.contract_type ? `[${w.contract_type.name}]` : '[SEMUA JENIS]'}</span>
+                                                            <span>
+                                                                {w.name} {w.contract_type ? `[${w.contract_type.name}]` : '[SEMUA JENIS]'}
+                                                            </span>
                                                         </div>
                                                     </SelectItem>
                                                 ))}
@@ -729,17 +746,23 @@ export function StepActionConfigCard({
                                                     }
                                                 }}
                                             >
-                                                <SelectTrigger className="h-8.5 w-full py-1.5 px-3 rounded-lg border-slate-200 bg-white text-xs font-medium dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-2xs">
+                                                <SelectTrigger className="h-8.5 w-full rounded-lg border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-2xs dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
                                                     <SelectValue placeholder="Pilih Tahap Target" />
                                                 </SelectTrigger>
                                                 <SelectContent className="rounded-lg border-slate-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
-                                                    <SelectItem value="branch_next" className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                                                    <SelectItem
+                                                        value="branch_next"
+                                                        className="text-xs font-semibold text-emerald-600 dark:text-emerald-400"
+                                                    >
                                                         <div className="flex items-center gap-1.5">
                                                             <Sparkles size={13} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
                                                             <span>Lanjut ke Step Berikutnya (+1)</span>
                                                         </div>
                                                     </SelectItem>
-                                                    <SelectItem value="branch_origin" className="text-xs font-semibold text-amber-600 dark:text-amber-400">
+                                                    <SelectItem
+                                                        value="branch_origin"
+                                                        className="text-xs font-semibold text-amber-600 dark:text-amber-400"
+                                                    >
                                                         <div className="flex items-center gap-1.5">
                                                             <CornerDownLeft size={13} className="shrink-0 text-amber-600 dark:text-amber-400" />
                                                             <span>Kembali ke Step Pemanggil</span>
@@ -758,12 +781,17 @@ export function StepActionConfigCard({
                                                 value={String(act.transition_config?.sequence || '')}
                                                 onValueChange={(val) =>
                                                     updateAction(actIdx, {
-                                                        transition_config: { ...act.transition_config, type: 'cross_workflow', sequence: Number(val), return_mode: null },
+                                                        transition_config: {
+                                                            ...act.transition_config,
+                                                            type: 'cross_workflow',
+                                                            sequence: Number(val),
+                                                            return_mode: null,
+                                                        },
                                                         next_workflow_step_id: null,
                                                     })
                                                 }
                                             >
-                                                <SelectTrigger className="h-8.5 w-full py-1.5 px-3 rounded-lg border-slate-200 bg-white text-xs font-medium dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-2xs">
+                                                <SelectTrigger className="h-8.5 w-full rounded-lg border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-2xs dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
                                                     <SelectValue placeholder="Pilih Tahap Target" />
                                                 </SelectTrigger>
                                                 <SelectContent className="rounded-lg border-slate-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
@@ -789,7 +817,9 @@ export function StepActionConfigCard({
                                     <Select
                                         value={(() => {
                                             if (act.transition_config?.step_id) {
-                                                const found = allWorkflowSteps.find((s: any) => String(s.id) === String(act.transition_config.step_id));
+                                                const found = allWorkflowSteps.find(
+                                                    (s: any) => String(s.id) === String(act.transition_config.step_id),
+                                                );
                                                 if (found) return String(found.id);
                                             }
                                             if (act.next_step_id) {
@@ -797,7 +827,9 @@ export function StepActionConfigCard({
                                                 if (found) return String(found.id);
                                             }
                                             if (act.transition_config?.sequence) {
-                                                const found = allWorkflowSteps.find((s: any) => (s.step || 0) === Number(act.transition_config.sequence));
+                                                const found = allWorkflowSteps.find(
+                                                    (s: any) => (s.step || 0) === Number(act.transition_config.sequence),
+                                                );
                                                 if (found) return String(found.id);
                                             }
                                             return allWorkflowSteps[0]?.id ? String(allWorkflowSteps[0].id) : '';
@@ -815,7 +847,7 @@ export function StepActionConfigCard({
                                             });
                                         }}
                                     >
-                                        <SelectTrigger className="h-8.5 w-full py-1.5 px-3 rounded-lg border-slate-200 bg-white text-xs font-medium dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-2xs">
+                                        <SelectTrigger className="h-8.5 w-full rounded-lg border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-2xs dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
                                             <SelectValue placeholder="Pilih Tahap Target" />
                                         </SelectTrigger>
                                         <SelectContent className="rounded-lg border-slate-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
@@ -832,10 +864,8 @@ export function StepActionConfigCard({
                     </div>
 
                     {/* Kolom Wajib & Autofill Fields */}
-                    <div className="sm:col-span-6 space-y-1">
-                        <label className="text-[11px] font-semibold text-slate-700 dark:text-zinc-300 block">
-                            Kolom Wajib Diisi (Required):
-                        </label>
+                    <div className="space-y-1 sm:col-span-6">
+                        <label className="block text-[11px] font-semibold text-slate-700 dark:text-zinc-300">Kolom Wajib Diisi (Required):</label>
                         <SearchableMultiSelectPortal
                             values={act.required_fields || []}
                             onValuesChange={(vals: string[]) => updateAction(actIdx, { required_fields: vals })}
@@ -845,8 +875,8 @@ export function StepActionConfigCard({
                         />
                     </div>
 
-                    <div className="sm:col-span-6 space-y-1">
-                        <label className="text-[11px] font-semibold text-slate-700 dark:text-zinc-300 block">
+                    <div className="space-y-1 sm:col-span-6">
+                        <label className="block text-[11px] font-semibold text-slate-700 dark:text-zinc-300">
                             Aksi & Pengisian Data Otomatis (Autofill / Reset):
                         </label>
                         <SearchableMultiSelectPortal
@@ -863,24 +893,24 @@ export function StepActionConfigCard({
             {/* Modal Dialog 1: Otoritas Tombol (Siapa yang bisa melihat / klik tombol) */}
             {isButtonAuthorityModalOpen && (
                 <Dialog open={isButtonAuthorityModalOpen} onOpenChange={setIsButtonAuthorityModalOpen}>
-                    <DialogContent className="sm:max-w-[96vw] w-[96vw] max-w-[96vw] h-[90vh] max-h-[90vh] border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 rounded-[12px] border p-0 shadow-2xl overflow-hidden flex flex-col">
-                        <div className="px-6 py-4 border-b border-slate-800 bg-slate-900 text-white flex items-center justify-between rounded-t-[12px] shrink-0">
+                    <DialogContent className="flex h-[90vh] max-h-[90vh] w-[96vw] max-w-[96vw] flex-col overflow-hidden rounded-[12px] border border-slate-200/80 bg-white p-0 text-slate-800 shadow-2xl sm:max-w-[96vw] dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100">
+                        <div className="flex shrink-0 items-center justify-between rounded-t-[12px] border-b border-slate-800 bg-slate-900 px-6 py-4 text-white">
                             <div className="flex items-center gap-3">
-                                <div className="bg-white/20 text-white border border-white/20 flex h-9 w-9 items-center justify-center rounded-lg">
+                                <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/20 bg-white/20 text-white">
                                     <Key size={18} className="text-amber-400" />
                                 </div>
                                 <div>
                                     <DialogTitle className="text-sm font-bold tracking-tight text-white">
                                         Otoritas Akses Tombol — Aksi #{actIdx + 1}: {act.alias || act.master_action?.name || 'Aksi'}
                                     </DialogTitle>
-                                    <DialogDescription className="text-white/80 text-xs font-medium mt-0.5">
+                                    <DialogDescription className="mt-0.5 text-xs font-medium text-white/80">
                                         Tentukan siapa yang berhak melihat dan mengklik tombol aksi ini pada form persetujuan
                                     </DialogDescription>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="p-6 bg-white dark:bg-zinc-900 flex-1 overflow-y-auto">
+                        <div className="flex-1 overflow-y-auto bg-white p-6 dark:bg-zinc-900">
                             <AuthorityTableManager
                                 title="Otoritas Akses Tombol"
                                 authorities={buttonAuthorities}
@@ -901,12 +931,8 @@ export function StepActionConfigCard({
                             />
                         </div>
 
-                        <DialogFooter className="p-4 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-800/50 flex items-center justify-end">
-                            <Button
-                                type="button"
-                                onClick={() => setIsButtonAuthorityModalOpen(false)}
-                                className="cursor-pointer font-bold text-xs"
-                            >
+                        <DialogFooter className="flex items-center justify-end border-t border-slate-100 bg-slate-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-800/50">
+                            <Button type="button" onClick={() => setIsButtonAuthorityModalOpen(false)} className="cursor-pointer text-xs font-bold">
                                 Selesai
                             </Button>
                         </DialogFooter>
@@ -917,17 +943,18 @@ export function StepActionConfigCard({
             {/* Modal Dialog 2: Tentukan Personil / Assignee / Reviewer Pool */}
             {isAssigneeModalOpen && (
                 <Dialog open={isAssigneeModalOpen} onOpenChange={setIsAssigneeModalOpen}>
-                    <DialogContent className="sm:max-w-[96vw] w-[96vw] max-w-[96vw] h-[90vh] max-h-[90vh] border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 rounded-[12px] border p-0 shadow-2xl overflow-hidden flex flex-col">
-                        <div className="px-6 py-4 border-b border-primary/20 dark:border-zinc-700/80 bg-primary dark:bg-zinc-800/90 text-white dark:text-zinc-200 flex items-center justify-between rounded-t-[12px] shrink-0">
+                    <DialogContent className="flex h-[90vh] max-h-[90vh] w-[96vw] max-w-[96vw] flex-col overflow-hidden rounded-[12px] border border-slate-200/80 bg-white p-0 text-slate-800 shadow-2xl sm:max-w-[96vw] dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100">
+                        <div className="border-primary/20 bg-primary flex shrink-0 items-center justify-between rounded-t-[12px] border-b px-6 py-4 text-white dark:border-zinc-700/80 dark:bg-zinc-800/90 dark:text-zinc-200">
                             <div className="flex items-center gap-3">
-                                <div className="bg-white/20 text-white border border-white/20 dark:bg-primary/20 dark:text-primary dark:border-primary/30 flex h-9 w-9 items-center justify-center rounded-lg">
+                                <div className="dark:bg-primary/20 dark:text-primary dark:border-primary/30 flex h-9 w-9 items-center justify-center rounded-lg border border-white/20 bg-white/20 text-white">
                                     <UsersIcon size={18} />
                                 </div>
                                 <div>
                                     <DialogTitle className="text-sm font-bold tracking-tight text-white dark:text-zinc-100">
-                                        {isForwardAction ? 'Konfigurasi Reviewer Tambahan' : 'Konfigurasi Personil Penugasan (Assignee Pool)'} — Aksi #{actIdx + 1}: {act.alias || act.master_action?.name || 'Aksi'}
+                                        {isForwardAction ? 'Konfigurasi Reviewer Tambahan' : 'Konfigurasi Personil Penugasan (Assignee Pool)'} — Aksi
+                                        #{actIdx + 1}: {act.alias || act.master_action?.name || 'Aksi'}
                                     </DialogTitle>
-                                    <DialogDescription className="text-white/80 dark:text-zinc-400 text-xs font-medium mt-0.5">
+                                    <DialogDescription className="mt-0.5 text-xs font-medium text-white/80 dark:text-zinc-400">
                                         {isForwardAction
                                             ? 'Tentukan langkah target dan daftar reviewer yang berhak menerima pengajuan'
                                             : 'Tentukan aktor/pengguna yang dapat dipilih dan ditugaskan sebagai PIC'}
@@ -936,12 +963,10 @@ export function StepActionConfigCard({
                             </div>
                         </div>
 
-                        <div className="p-6 bg-white dark:bg-zinc-900 flex-1 overflow-y-auto space-y-4">
+                        <div className="flex-1 space-y-4 overflow-y-auto bg-white p-6 dark:bg-zinc-900">
                             {isForwardAction && (
-                                <div className="space-y-1 max-w-sm">
-                                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                                        Target Langkah (Insert To)
-                                    </label>
+                                <div className="max-w-sm space-y-1">
+                                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Target Langkah (Insert To)</label>
                                     <Select
                                         value={act.next_step_id || 'current'}
                                         onValueChange={(val) => {
@@ -950,7 +975,7 @@ export function StepActionConfigCard({
                                             });
                                         }}
                                     >
-                                        <SelectTrigger className="h-9 py-2 px-3 rounded-lg border-slate-200 bg-white text-xs font-medium focus:border-slate-900 dark:border-slate-800 dark:bg-slate-950">
+                                        <SelectTrigger className="h-9 rounded-lg border-slate-200 bg-white px-3 py-2 text-xs font-medium focus:border-slate-900 dark:border-slate-800 dark:bg-slate-950">
                                             <SelectValue placeholder="Pilih Tahap Target" />
                                         </SelectTrigger>
                                         <SelectContent className="rounded-lg bg-white dark:bg-slate-950">
@@ -990,12 +1015,8 @@ export function StepActionConfigCard({
                             />
                         </div>
 
-                        <DialogFooter className="p-4 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-800/50 flex items-center justify-end">
-                            <Button
-                                type="button"
-                                onClick={() => setIsAssigneeModalOpen(false)}
-                                className="cursor-pointer font-bold text-xs"
-                            >
+                        <DialogFooter className="flex items-center justify-end border-t border-slate-100 bg-slate-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-800/50">
+                            <Button type="button" onClick={() => setIsAssigneeModalOpen(false)} className="cursor-pointer text-xs font-bold">
                                 Selesai
                             </Button>
                         </DialogFooter>

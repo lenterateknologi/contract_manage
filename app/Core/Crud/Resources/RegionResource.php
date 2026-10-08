@@ -6,11 +6,11 @@ use App\Core\Crud\Columns\BooleanColumn;
 use App\Core\Crud\Columns\TextColumn;
 use App\Core\Crud\Fields\TextInput;
 use App\Core\Crud\Fields\ToggleInput;
-use App\Core\Crud\Filters\Filter;
+use App\Core\Crud\Filter;
 use App\Core\Crud\Resource;
-use App\Exports\RegionsExport;
+use App\Exports\Master\RegionsExport;
 use App\Imports\RegionsImport;
-use App\Models\Region;
+use App\Models\Master\Region;
 
 class RegionResource extends Resource
 {

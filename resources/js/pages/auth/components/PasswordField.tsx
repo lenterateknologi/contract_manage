@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { Eye, EyeOff } from 'lucide-react';
 import { FormInput } from '@/components/ui/inputs/FormInput';
+import { Eye, EyeOff } from 'lucide-react';
+import { useState } from 'react';
 
 interface PasswordFieldProps {
     id?: string;
@@ -47,7 +47,7 @@ export function PasswordField({
                     type="button"
                     tabIndex={-1}
                     onClick={() => setShowPassword((prev) => !prev)}
-                    className="flex items-center justify-center text-slate-400 hover:text-slate-600 dark:text-zinc-400 dark:hover:text-zinc-200 transition-colors cursor-pointer"
+                    className="flex cursor-pointer items-center justify-center text-slate-400 transition-colors hover:text-slate-600 dark:text-zinc-400 dark:hover:text-zinc-200"
                     aria-label={showPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'}
                 >
                     {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}

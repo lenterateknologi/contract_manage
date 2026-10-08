@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Master;
 
 use App\Http\Controllers\Controller;
-use App\Models\CompanyGroup;
+use App\Models\Master\CompanyGroup;
 use Inertia\Inertia;
 
 class OrganizationTreeController extends Controller

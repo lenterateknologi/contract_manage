@@ -2,9 +2,9 @@
 
 namespace Database\Seeders\Business;
 
-use App\Models\ContractType;
-use App\Models\Workflow;
-use App\Models\WorkflowStep;
+use App\Models\Master\ContractType;
+use App\Models\Master\Workflow;
+use App\Models\Master\WorkflowStep;
 use App\Models\WorkflowStepRole;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;

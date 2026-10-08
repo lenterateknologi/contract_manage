@@ -1,15 +1,15 @@
 import { cn } from '@/lib/utils';
-import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import React from 'react';
 
 // New modular imports
+import { getFieldCategory } from '../builder/constants';
 import { getMarginStyle, getPaddingStyle } from '../utils';
 import { LabeledValueField, TextAreaField, TextField } from './InputFields';
 import { EmptyDropZone, GridXLayout, GridYLayout, GroupLayout } from './LayoutFields';
 import { CheckboxField, RadioField, SelectField } from './SelectionFields';
 import { ImageField, PageBreakField, SignatureBoxField, StaticTextField } from './VisualFields';
-import { getFieldCategory } from '../builder/constants';
 
 export interface FormField {
     id: string;
@@ -154,7 +154,7 @@ export const FormElement: React.FC<FormElementProps> = (props) => {
 
         if (isBuilder) {
             return (
-                <SortableContext items={children.map(c => String(c.id))} strategy={verticalListSortingStrategy}>
+                <SortableContext items={children.map((c) => String(c.id))} strategy={verticalListSortingStrategy}>
                     {renderedChildren}
                 </SortableContext>
             );
@@ -225,25 +225,28 @@ export const FormElement: React.FC<FormElementProps> = (props) => {
             {...listeners}
             className={cn(
                 'group/element form-element-container relative',
-                isBuilder && cn(
-                    cat ? cat.borderColor : 'border-primary/20 hover:border-primary/40',
-                    'border border-dashed rounded-md transition-all',
-                    ['group', 'grid_x', 'grid_y'].includes(field.type) ? 'p-4' : 'p-2'
-                ),
+                isBuilder &&
+                    cn(
+                        cat ? cat.borderColor : 'border-primary/20 hover:border-primary/40',
+                        'rounded-md border border-dashed transition-all',
+                        ['group', 'grid_x', 'grid_y'].includes(field.type) ? 'p-4' : 'p-2',
+                    ),
                 // ponytail: dynamic category color highlight for selected builder element
-                isBuilder && isSelected && cn(
-                    cat ? `${ringColor} ${cat.bgColor} ${cat.borderColor}` : 'ring-primary bg-primary/10 border-primary',
-                    'ring-1 ring-offset-1 ring-offset-background shadow-sm font-medium z-40 !border-solid'
-                ),
+                isBuilder &&
+                    isSelected &&
+                    cn(
+                        cat ? `${ringColor} ${cat.bgColor} ${cat.borderColor}` : 'ring-primary bg-primary/10 border-primary',
+                        'ring-offset-background z-40 !border-solid font-medium shadow-sm ring-1 ring-offset-1',
+                    ),
                 isBuilder &&
                     isOver &&
                     !isDragging &&
                     ['group', 'grid_x', 'grid_y', 'grid_view'].includes(field.type) &&
                     `${ringColor} ring-dashed ${bgDashed} ring-2`,
                 // Audit mode styling for comparisons
-                diffStatus === 'added' && 'ring-2 ring-emerald-500 bg-emerald-50/50 rounded-md shadow-sm p-1.5',
-                diffStatus === 'modified' && 'ring-2 ring-amber-500 bg-amber-50/50 rounded-md shadow-sm p-1.5',
-                diffStatus === 'removed' && 'ring-2 ring-rose-500 bg-rose-50/50 rounded-md shadow-sm opacity-60 p-1.5',
+                diffStatus === 'added' && 'rounded-md bg-emerald-50/50 p-1.5 shadow-sm ring-2 ring-emerald-500',
+                diffStatus === 'modified' && 'rounded-md bg-amber-50/50 p-1.5 shadow-sm ring-2 ring-amber-500',
+                diffStatus === 'removed' && 'rounded-md bg-rose-50/50 p-1.5 opacity-60 shadow-sm ring-2 ring-rose-500',
             )}
             onClick={(e) => {
                 if (isBuilder) {
@@ -255,7 +258,7 @@ export const FormElement: React.FC<FormElementProps> = (props) => {
             {renderContent()}
 
             {isBuilder && isOver && !isDragging && !['group', 'grid_x', 'grid_y', 'grid_view'].includes(field.type) && (
-                <div className={cn("absolute right-0 -bottom-1 left-0 z-40 h-1 animate-pulse rounded-full", cat?.color || 'bg-primary')} />
+                <div className={cn('absolute right-0 -bottom-1 left-0 z-40 h-1 animate-pulse rounded-full', cat?.color || 'bg-primary')} />
             )}
         </div>
     );

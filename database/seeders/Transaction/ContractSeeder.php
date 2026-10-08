@@ -2,12 +2,12 @@
 
 namespace Database\Seeders\Transaction;
 
-use App\Models\Contract;
-use App\Models\ContractMeta;
-use App\Models\ContractStatus;
-use App\Models\ContractType;
-use App\Models\User;
-use App\Models\Vendor;
+use App\Models\Master\ContractStatus;
+use App\Models\Master\ContractType;
+use App\Models\Master\User;
+use App\Models\Master\Vendor;
+use App\Models\Transaction\Contract;
+use App\Models\Transaction\ContractMeta;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 

@@ -8,12 +8,12 @@ use App\Core\Crud\Fields\SelectInput;
 use App\Core\Crud\Fields\TextInput;
 use App\Core\Crud\Fields\ToggleInput;
 use App\Core\Crud\Resource;
-use App\Models\Company;
-use App\Models\CompanyGroup;
-use App\Models\ContractFilterTemplate;
-use App\Models\Department;
-use App\Models\Division;
-use App\Models\Region;
+use App\Models\Master\Company;
+use App\Models\Master\CompanyGroup;
+use App\Models\Master\ContractFilterTemplate;
+use App\Models\Master\Department;
+use App\Models\Master\Division;
+use App\Models\Master\Region;
 
 class ContractFilterTemplateResource extends Resource
 {

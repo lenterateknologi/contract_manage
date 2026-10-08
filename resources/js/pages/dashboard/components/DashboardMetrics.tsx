@@ -1,16 +1,15 @@
-import { Input } from '@/components/ui/inputs/Input';
-import { ScrollArea } from '@/components/ui/utilities/ScrollArea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/dialogs/Popover';
-import { cn } from '@/lib/utils';
-import { router, usePage } from '@inertiajs/react';
-import { Briefcase, Check, ChevronDown, LayoutDashboard, Search, X, Loader2 } from 'lucide-react';
-import React, { useMemo, useState, lazy, Suspense } from 'react';
 import { DashboardSkeleton } from '@/components/ui/feedback/DashboardSkeleton';
+import { Input } from '@/components/ui/inputs/Input';
+import { cn } from '@/lib/utils';
+import { router } from '@inertiajs/react';
+import { Briefcase, Check, ChevronDown, Search, X } from 'lucide-react';
+import React, { lazy, Suspense, useMemo, useState } from 'react';
 
 // Lazy load heavy dashboard tabs
-const OverviewTab = lazy(() => import('@/pages/dashboard/components/OverviewTab').then(m => ({ default: m.OverviewTab })));
-const WorkloadTab = lazy(() => import('@/pages/dashboard/components/WorkloadTab').then(m => ({ default: m.WorkloadTab })));
-const MasterDataTab = lazy(() => import('@/pages/dashboard/components/MasterDataTab').then(m => ({ default: m.MasterDataTab })));
+const OverviewTab = lazy(() => import('@/pages/dashboard/components/OverviewTab').then((m) => ({ default: m.OverviewTab })));
+const WorkloadTab = lazy(() => import('@/pages/dashboard/components/WorkloadTab').then((m) => ({ default: m.WorkloadTab })));
+const MasterDataTab = lazy(() => import('@/pages/dashboard/components/MasterDataTab').then((m) => ({ default: m.MasterDataTab })));
 
 const TabLoading = () => <DashboardSkeleton />;
 
@@ -55,7 +54,7 @@ function DropdownSearchFilter({ label, options, selectedValues, onChange, placeh
                     'hover:bg-muted/10 flex h-8 cursor-pointer items-center gap-1.5 rounded-lg border px-3 text-[11px] font-semibold shadow-xs transition-all outline-none select-none',
                     selectedValues.length > 0
                         ? 'bg-primary text-primary-foreground border-primary'
-                        : 'bg-transparent border-surface-border text-text-main hover:bg-surface-muted/50',
+                        : 'border-surface-border text-text-main hover:bg-surface-muted/50 bg-transparent',
                 )}
             >
                 <span className="max-w-[120px] truncate">{selectedValues.length > 0 ? `${label}: ${selectedLabels.join(', ')}` : label}</span>
@@ -89,7 +88,7 @@ function DropdownSearchFilter({ label, options, selectedValues, onChange, placeh
                     </div>
                 </div>
 
-                <div className="max-h-[200px] overflow-y-auto custom-scrollbar">
+                <div className="custom-scrollbar max-h-[200px] overflow-y-auto">
                     <div className="space-y-0.5 p-1">
                         {filteredOptions.length === 0 ? (
                             <div className="py-6 text-center">
@@ -105,7 +104,9 @@ function DropdownSearchFilter({ label, options, selectedValues, onChange, placeh
                                         onClick={() => handleToggle(opt.value)}
                                         className={cn(
                                             'flex w-full items-center justify-between rounded-md p-2 text-left text-xs font-semibold transition-all select-none',
-                                            isSelected ? 'bg-primary text-primary-foreground' : 'bg-transparent text-text-main hover:bg-surface-muted/50',
+                                            isSelected
+                                                ? 'bg-primary text-primary-foreground'
+                                                : 'text-text-main hover:bg-surface-muted/50 bg-transparent',
                                         )}
                                     >
                                         <span className="truncate pr-2">{opt.label}</span>
@@ -148,22 +149,22 @@ export function DashboardMetrics({
     console.log('[DASHBOARD LOG] Resolved Dashboard Config:', config);
 
     const hasAnyTab = config
-        ? (config.show_overview ||
-           config.show_overview_contract ||
-           config.show_overview_non_contract ||
-           config.show_overview_nda ||
-           config.show_workload ||
-           config.show_master_data)
+        ? config.show_overview ||
+          config.show_overview_contract ||
+          config.show_overview_non_contract ||
+          config.show_overview_nda ||
+          config.show_workload ||
+          config.show_master_data
         : false;
 
     if (!hasAnyTab) {
         return (
-            <div className="flex h-[320px] w-full flex-col items-center justify-center rounded-lg border border-dashed border-surface-border bg-surface-base p-8 text-center animate-in fade-in duration-300">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 mb-3">
+            <div className="border-surface-border bg-surface-base animate-in fade-in flex h-[320px] w-full flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center duration-300">
+                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400 dark:bg-slate-800">
                     <Briefcase size={24} />
                 </div>
-                <h3 className="text-sm font-semibold text-text-main">Tidak Ada Dashboard yang Dikonfigurasi</h3>
-                <p className="text-xs text-text-desc max-w-sm mt-1">
+                <h3 className="text-text-main text-sm font-semibold">Tidak Ada Dashboard yang Dikonfigurasi</h3>
+                <p className="text-text-desc mt-1 max-w-sm text-xs">
                     Role atau departemen Anda saat ini belum diatur untuk menampilkan tab dashboard manapun.
                 </p>
             </div>
@@ -193,13 +194,7 @@ export function DashboardMetrics({
                 <Suspense fallback={<TabLoading />}>
                     {activeTab === 'overview' && config?.show_overview && (
                         <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-                            <OverviewTab
-                                data={metrics}
-                                scope="all"
-                                onNavigate={handleNavigate}
-                                meUser={meUser}
-                                onCreateContract={onCreateContract}
-                            />
+                            <OverviewTab data={metrics} scope="all" onNavigate={handleNavigate} meUser={meUser} onCreateContract={onCreateContract} />
                         </div>
                     )}
 
@@ -229,13 +224,7 @@ export function DashboardMetrics({
 
                     {activeTab === 'overview_nda' && config?.show_overview_nda && (
                         <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-                            <OverviewTab
-                                data={metrics}
-                                scope="nda"
-                                onNavigate={handleNavigate}
-                                meUser={meUser}
-                                onCreateContract={onCreateContract}
-                            />
+                            <OverviewTab data={metrics} scope="nda" onNavigate={handleNavigate} meUser={meUser} onCreateContract={onCreateContract} />
                         </div>
                     )}
 
@@ -263,17 +252,20 @@ export function DashboardTab({ active, onClick, label, icon: Icon }: { active: b
             className={cn(
                 'group relative flex cursor-pointer items-center gap-2 rounded-lg border px-3.5 py-1.5 text-[10px] font-bold tracking-[0.1em] whitespace-nowrap uppercase transition-all duration-300 outline-none',
                 active
-                    ? 'bg-primary text-primary-foreground border-primary dark:bg-white dark:text-zinc-950 dark:border-white'
-                    : 'bg-transparent text-primary border-primary/50 hover:bg-primary/10 hover:border-primary dark:bg-transparent dark:text-white dark:border-white dark:hover:bg-white/10 dark:hover:border-white',
+                    ? 'bg-primary text-primary-foreground border-primary dark:border-white dark:bg-white dark:text-zinc-950'
+                    : 'text-primary border-primary/50 hover:bg-primary/10 hover:border-primary bg-transparent dark:border-white dark:bg-transparent dark:text-white dark:hover:border-white dark:hover:bg-white/10',
             )}
         >
             <Icon
                 size={12}
-                className={cn('transition-colors', active ? 'text-primary-foreground dark:text-zinc-950' : 'text-primary opacity-70 group-hover:opacity-100 dark:text-white dark:opacity-100')}
+                className={cn(
+                    'transition-colors',
+                    active
+                        ? 'text-primary-foreground dark:text-zinc-950'
+                        : 'text-primary opacity-70 group-hover:opacity-100 dark:text-white dark:opacity-100',
+                )}
             />
             {label}
         </button>
     );
 }
-
-

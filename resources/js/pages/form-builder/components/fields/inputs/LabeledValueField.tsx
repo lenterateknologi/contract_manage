@@ -1,5 +1,5 @@
-import { cn } from '@/lib/utils';
 import { formatDate } from '@/lib/time-utils';
+import { cn } from '@/lib/utils';
 import { Calendar, ChevronDown } from 'lucide-react';
 import React from 'react';
 import { getTypographyStyle } from '../../utils';
@@ -19,11 +19,18 @@ export const LabeledValueField: React.FC<FieldProps & { previewData?: any }> = (
 
     const showColon = field.options?.show_colon !== false;
     const fieldStyle = field.options?.field_style || 'dashed_bottom';
-    
+
     // Support both field_style and explicit border_style option
-    const activeBorderStyle = field.options?.border_style && field.options?.border_style !== 'none'
-        ? field.options.border_style
-        : (fieldStyle === 'dashed_bottom' ? 'dotted' : fieldStyle === 'solid_bottom' ? 'solid' : fieldStyle === 'box' || fieldStyle === 'bordered' ? 'solid' : 'none');
+    const activeBorderStyle =
+        field.options?.border_style && field.options?.border_style !== 'none'
+            ? field.options.border_style
+            : fieldStyle === 'dashed_bottom'
+              ? 'dotted'
+              : fieldStyle === 'solid_bottom'
+                ? 'solid'
+                : fieldStyle === 'box' || fieldStyle === 'bordered'
+                  ? 'solid'
+                  : 'none';
 
     const isNoBorder = activeBorderStyle === 'none' || fieldStyle === 'none';
     const isBox = fieldStyle === 'box' || fieldStyle === 'bordered';
@@ -31,7 +38,8 @@ export const LabeledValueField: React.FC<FieldProps & { previewData?: any }> = (
     const typographyStyle = getTypographyStyle(field);
 
     const borderColor = field.options?.border_color || '#e2e8f0';
-    const borderWidthVal = field.options?.border_width !== undefined && field.options?.border_width !== '' ? `${field.options.border_width}px` : '1px';
+    const borderWidthVal =
+        field.options?.border_width !== undefined && field.options?.border_width !== '' ? `${field.options.border_width}px` : '1px';
 
     const lineStyle: React.CSSProperties = {
         ...typographyStyle,
@@ -43,7 +51,8 @@ export const LabeledValueField: React.FC<FieldProps & { previewData?: any }> = (
 
     const getRepeatingBackground = () => {
         if (isNoBorder || isBox) return undefined;
-        const bw = field.options?.border_width !== undefined && field.options?.border_width !== '' ? Math.max(1, Number(field.options.border_width)) : 1;
+        const bw =
+            field.options?.border_width !== undefined && field.options?.border_width !== '' ? Math.max(1, Number(field.options.border_width)) : 1;
         const yOffset = Math.max(0, 24 - bw);
 
         if (activeBorderStyle === 'dotted') {
@@ -63,9 +72,7 @@ export const LabeledValueField: React.FC<FieldProps & { previewData?: any }> = (
             const items = field.options?.items || [];
             const isMulti = field.options?.is_multiselect === true;
             if (isMulti && Array.isArray(value)) {
-                displayValue = value
-                    .map((val) => items.find((item: any) => String(item.value) === String(val))?.label || val)
-                    .join(', ') || '';
+                displayValue = value.map((val) => items.find((item: any) => String(item.value) === String(val))?.label || val).join(', ') || '';
             } else {
                 const selected = items.find((item: any) => String(item.value) === String(value));
                 displayValue = selected ? selected.label : value || '';
@@ -101,23 +108,23 @@ export const LabeledValueField: React.FC<FieldProps & { previewData?: any }> = (
             }
         }
 
-        const maxLines = field.options?.max_lines ? Number(field.options.max_lines) : (valueType === 'textarea' ? 3 : 1);
+        const maxLines = field.options?.max_lines ? Number(field.options.max_lines) : valueType === 'textarea' ? 3 : 1;
 
         if (maxLines > 1 || valueType === 'textarea') {
             const backgroundStyle = getRepeatingBackground();
 
             return (
-                <div className="flex w-full gap-1 py-0.5 items-start">
+                <div className="flex w-full items-start gap-1 py-0.5">
                     <span
-                        className="shrink-0 pt-px flex justify-between pr-1"
+                        className="flex shrink-0 justify-between pt-px pr-1"
                         style={{ width: labelWidth, minWidth: labelWidth, ...getTypographyStyle(field, 0.9, true) }}
                     >
-                        <span className="min-w-0 break-words whitespace-pre-wrap leading-tight">{field.label}</span>
+                        <span className="min-w-0 leading-tight break-words whitespace-pre-wrap">{field.label}</span>
                         {showColon && <span className="ml-1 shrink-0">:</span>}
                     </span>
                     <div
                         className={cn(
-                            'min-w-0 flex-1 break-words leading-6 whitespace-pre-wrap block w-full',
+                            'block w-full min-w-0 flex-1 leading-6 break-words whitespace-pre-wrap',
                             isNoBorder ? '' : !isBox ? 'border-none' : 'rounded border px-2 py-0.5',
                         )}
                         style={{
@@ -134,19 +141,16 @@ export const LabeledValueField: React.FC<FieldProps & { previewData?: any }> = (
         }
 
         return (
-            <div className="flex w-full gap-1 py-0.5 items-baseline">
+            <div className="flex w-full items-baseline gap-1 py-0.5">
                 <span
-                    className="shrink-0 pt-px flex justify-between pr-1"
+                    className="flex shrink-0 justify-between pt-px pr-1"
                     style={{ width: labelWidth, minWidth: labelWidth, ...getTypographyStyle(field, 0.9, true) }}
                 >
-                    <span className="min-w-0 break-words whitespace-pre-wrap leading-tight">{field.label}</span>
+                    <span className="min-w-0 leading-tight break-words whitespace-pre-wrap">{field.label}</span>
                     {showColon && <span className="ml-1 shrink-0">:</span>}
                 </span>
                 <span
-                    className={cn(
-                        'min-w-0 flex-1 break-words',
-                        isNoBorder ? '' : !isBox ? 'border-b' : 'rounded border px-2 py-0.5',
-                    )}
+                    className={cn('min-w-0 flex-1 break-words', isNoBorder ? '' : !isBox ? 'border-b' : 'rounded border px-2 py-0.5')}
                     style={lineStyle}
                 >
                     {displayValue || '\u00A0'}
@@ -159,21 +163,19 @@ export const LabeledValueField: React.FC<FieldProps & { previewData?: any }> = (
 
     const renderInteractiveInput = () => {
         const baseClass = cn(
-            'w-full min-w-0 transition-all font-sans text-xs text-slate-900',
+            'w-full min-w-0 font-sans text-xs text-slate-900 transition-all',
             isNoBorder
                 ? 'border-none bg-transparent px-0 shadow-none outline-none'
                 : !isBox
                   ? 'focus:border-primary border-t-0 border-r-0 border-b border-l-0 border-slate-300 bg-transparent px-0 shadow-none outline-none'
-                  : 'bg-white text-slate-900 border-slate-300 focus:border-primary rounded-lg border border-solid px-3 py-1 shadow-2xs',
+                  : 'focus:border-primary rounded-lg border border-solid border-slate-300 bg-white px-3 py-1 text-slate-900 shadow-2xs',
         );
 
         const allowDirectEdit = field.options?.allow_direct_edit !== false;
         const customPlaceholder = field.placeholder;
 
         if (valueType === 'date') {
-            const rawDateStr = typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(value)
-                ? value.split('T')[0]
-                : (value || '');
+            const rawDateStr = typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(value) ? value.split('T')[0] : value || '';
             const isoDateOnly = typeof value === 'string' && /^\d{4}-\d{2}-\d{2}/.test(value) ? value.substring(0, 10) : '';
 
             return (
@@ -182,16 +184,19 @@ export const LabeledValueField: React.FC<FieldProps & { previewData?: any }> = (
                         type="text"
                         value={rawDateStr}
                         onChange={(e) => onChange?.(e.target.value)}
-                        placeholder={customPlaceholder || (allowDirectEdit ? "Ketik atau pilih tanggal..." : "Pilih tanggal dari kalender...")}
+                        placeholder={customPlaceholder || (allowDirectEdit ? 'Ketik atau pilih tanggal...' : 'Pilih tanggal dari kalender...')}
                         readOnly={!allowDirectEdit}
                         className={cn(baseClass, !allowDirectEdit && 'cursor-default bg-transparent opacity-80 select-text')}
                         style={lineStyle}
                     />
                     {allowDirectEdit && (
-                        <div className="relative shrink-0 flex items-center justify-center">
+                        <div className="relative flex shrink-0 items-center justify-center">
                             <button
                                 type="button"
-                                className={cn(baseClass, 'w-7 h-7 p-0 flex items-center justify-center cursor-pointer shrink-0 bg-white text-slate-700 border-slate-300 hover:bg-slate-50 shadow-2xs rounded-lg')}
+                                className={cn(
+                                    baseClass,
+                                    'flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-lg border-slate-300 bg-white p-0 text-slate-700 shadow-2xs hover:bg-slate-50',
+                                )}
                                 style={{
                                     ...lineStyle,
                                     width: '28px',
@@ -206,7 +211,7 @@ export const LabeledValueField: React.FC<FieldProps & { previewData?: any }> = (
                                 type="date"
                                 value={isoDateOnly}
                                 onChange={(e) => onChange?.(e.target.value)}
-                                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
                             />
                         </div>
                     )}
@@ -260,9 +265,9 @@ export const LabeledValueField: React.FC<FieldProps & { previewData?: any }> = (
                         readOnly={!allowDirectEdit}
                         className={cn(
                             baseClass,
-                            'resize-none leading-6 py-0 bg-transparent block w-full outline-none ring-0 focus:ring-0',
+                            'block w-full resize-none bg-transparent py-0 leading-6 ring-0 outline-none focus:ring-0',
                             !isBox ? 'border-none' : '',
-                            !allowDirectEdit && 'cursor-default opacity-80 select-text'
+                            !allowDirectEdit && 'cursor-default opacity-80 select-text',
                         )}
                         style={{
                             ...lineStyle,
@@ -279,9 +284,9 @@ export const LabeledValueField: React.FC<FieldProps & { previewData?: any }> = (
             const isMulti = field.options?.is_multiselect === true;
 
             if (isMulti) {
-                const currentVals: string[] = Array.isArray(value) ? value.map(String) : (value ? [String(value)] : []);
+                const currentVals: string[] = Array.isArray(value) ? value.map(String) : value ? [String(value)] : [];
                 return (
-                    <div className="flex flex-wrap gap-1.5 items-center w-full min-w-0">
+                    <div className="flex w-full min-w-0 flex-wrap items-center gap-1.5">
                         {items.map((opt: any, idx: number) => {
                             const optVal = String(opt.value);
                             const isChecked = currentVals.includes(optVal);
@@ -292,17 +297,15 @@ export const LabeledValueField: React.FC<FieldProps & { previewData?: any }> = (
                                     disabled={!allowDirectEdit}
                                     onClick={() => {
                                         if (!allowDirectEdit) return;
-                                        const next = isChecked
-                                            ? currentVals.filter((v) => v !== optVal)
-                                            : [...currentVals, optVal];
+                                        const next = isChecked ? currentVals.filter((v) => v !== optVal) : [...currentVals, optVal];
                                         onChange?.(next);
                                     }}
                                     className={cn(
-                                        'px-2 py-0.5 rounded text-[11px] font-medium border transition-colors',
+                                        'rounded border px-2 py-0.5 text-[11px] font-medium transition-colors',
                                         allowDirectEdit ? 'cursor-pointer' : 'cursor-default opacity-80',
                                         isChecked
                                             ? 'bg-primary text-primary-foreground border-primary'
-                                            : 'bg-background text-foreground border-border hover:bg-muted'
+                                            : 'bg-background text-foreground border-border hover:bg-muted',
                                     )}
                                     style={typographyStyle}
                                 >
@@ -315,7 +318,7 @@ export const LabeledValueField: React.FC<FieldProps & { previewData?: any }> = (
             }
 
             return (
-                <div className="relative w-full min-w-0 flex items-center">
+                <div className="relative flex w-full min-w-0 items-center">
                     <select
                         value={value !== undefined && value !== null ? String(value) : ''}
                         disabled={!allowDirectEdit}
@@ -325,27 +328,25 @@ export const LabeledValueField: React.FC<FieldProps & { previewData?: any }> = (
                         }}
                         className={cn(
                             baseClass,
-                            allowDirectEdit ? 'cursor-pointer' : 'cursor-default pointer-events-none opacity-80',
-                            'appearance-none pr-6 bg-transparent text-slate-900',
-                            isBox ? 'bg-white text-slate-900' : ''
+                            allowDirectEdit ? 'cursor-pointer' : 'pointer-events-none cursor-default opacity-80',
+                            'appearance-none bg-transparent pr-6 text-slate-900',
+                            isBox ? 'bg-white text-slate-900' : '',
                         )}
                         style={{
                             ...lineStyle,
                             color: typographyStyle.color || '#0f172a',
                         }}
                     >
-                        <option value="" disabled className="text-slate-500 bg-white">
+                        <option value="" disabled className="bg-white text-slate-500">
                             {customPlaceholder || 'Pilih...'}
                         </option>
                         {items.map((opt: any, idx: number) => (
-                            <option key={idx} value={String(opt.value)} className="text-slate-900 bg-white">
+                            <option key={idx} value={String(opt.value)} className="bg-white text-slate-900">
                                 {opt.label}
                             </option>
                         ))}
                     </select>
-                    {allowDirectEdit && (
-                        <ChevronDown className="absolute right-1 pointer-events-none h-3.5 w-3.5 text-slate-400 shrink-0" />
-                    )}
+                    {allowDirectEdit && <ChevronDown className="pointer-events-none absolute right-1 h-3.5 w-3.5 shrink-0 text-slate-400" />}
                 </div>
             );
         }
@@ -362,18 +363,24 @@ export const LabeledValueField: React.FC<FieldProps & { previewData?: any }> = (
                             if (!allowDirectEdit) return;
                             onChange?.(e.target.checked);
                         }}
-                        className={cn("h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary", allowDirectEdit ? "cursor-pointer" : "cursor-default opacity-80")}
+                        className={cn(
+                            'text-primary focus:ring-primary h-4 w-4 rounded border-slate-300',
+                            allowDirectEdit ? 'cursor-pointer' : 'cursor-default opacity-80',
+                        )}
                     />
-                    <span className={cn("text-xs text-foreground select-none", allowDirectEdit ? "cursor-pointer" : "cursor-default opacity-80")} onClick={() => { if (allowDirectEdit) onChange?.(!isChecked); }}>
+                    <span
+                        className={cn('text-foreground text-xs select-none', allowDirectEdit ? 'cursor-pointer' : 'cursor-default opacity-80')}
+                        onClick={() => {
+                            if (allowDirectEdit) onChange?.(!isChecked);
+                        }}
+                    >
                         {isChecked ? 'Ya' : 'Tidak'}
                     </span>
                 </div>
             );
         }
 
-        const cleanInputValue = typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(value)
-            ? value.split('T')[0]
-            : (value || '');
+        const cleanInputValue = typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(value) ? value.split('T')[0] : value || '';
 
         return (
             <input
@@ -392,17 +399,15 @@ export const LabeledValueField: React.FC<FieldProps & { previewData?: any }> = (
     };
 
     return (
-        <div className={cn("flex w-full min-w-0 gap-1 py-0.5", valueType === 'textarea' ? 'items-start' : 'items-center')}>
+        <div className={cn('flex w-full min-w-0 gap-1 py-0.5', valueType === 'textarea' ? 'items-start' : 'items-center')}>
             <span
-                className="shrink-0 pt-px flex justify-between pr-1"
+                className="flex shrink-0 justify-between pt-px pr-1"
                 style={{ width: labelWidth, minWidth: labelWidth, ...getTypographyStyle(field, 0.9, true) }}
             >
-                <span className="min-w-0 break-words whitespace-pre-wrap leading-tight">{field.label}</span>
+                <span className="min-w-0 leading-tight break-words whitespace-pre-wrap">{field.label}</span>
                 {showColon && <span className="ml-1 shrink-0">:</span>}
             </span>
-            <div className="relative min-w-0 flex-1">
-                {renderInteractiveInput()}
-            </div>
+            <div className="relative min-w-0 flex-1">{renderInteractiveInput()}</div>
         </div>
     );
 };

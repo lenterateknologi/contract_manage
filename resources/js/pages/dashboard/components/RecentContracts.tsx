@@ -1,7 +1,7 @@
+import { StatusBadge } from '@/components/ui/feedback/StatusBadge';
 import { cn, formatDateShort } from '@/lib/utils';
 import { getContractTypeBadgeConfig } from '@/pages/contracts/components/ContractTableCells';
-import { StatusBadge } from '@/components/ui/feedback/StatusBadge';
-import { usePage, router } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import { SectionTitle } from './SectionTitle';
 import { ContractItem } from './types';
 
@@ -15,12 +15,12 @@ export function RecentContracts({ items, onViewAll }: RecentContractsProps) {
     const masterStatuses = pageProps?.masterContractStatuses || [];
 
     return (
-        <div className="bg-white dark:bg-surface-base border border-surface-border/60 rounded-lg text-foreground w-full overflow-hidden">
+        <div className="dark:bg-surface-base border-surface-border/60 text-foreground w-full overflow-hidden rounded-lg border bg-white">
             <div className="border-border/60 flex items-center justify-between border-b px-6 py-4 dark:border-slate-800/60">
                 <SectionTitle>Kontrak Terbaru</SectionTitle>
                 <button
                     onClick={onViewAll}
-                    className="text-primary/70 hover:text-primary cursor-pointer text-[11px] font-medium  uppercase transition-colors"
+                    className="text-primary/70 hover:text-primary cursor-pointer text-[11px] font-medium uppercase transition-colors"
                 >
                     Lihat Semua →
                 </button>
@@ -29,13 +29,11 @@ export function RecentContracts({ items, onViewAll }: RecentContractsProps) {
                 <table className="w-full border-collapse text-left">
                     <thead>
                         <tr className="border-border/40 bg-muted/20 border-b dark:border-slate-800/40 dark:bg-slate-900/35">
-                            <th className="text-muted-foreground px-5 py-3 text-[9px] font-medium  uppercase">No. Pengajuan</th>
-                            <th className="text-muted-foreground px-5 py-3 text-[9px] font-medium  uppercase">Judul & Pembuat</th>
-                            <th className="text-muted-foreground hidden px-5 py-3 text-[9px] font-medium  uppercase md:table-cell">
-                                Tipe
-                            </th>
-                            <th className="text-muted-foreground px-5 py-3 text-[9px] font-medium  uppercase">Status</th>
-                            <th className="text-muted-foreground hidden px-5 py-3 text-right text-[9px] font-medium  uppercase lg:table-cell">
+                            <th className="text-muted-foreground px-5 py-3 text-[9px] font-medium uppercase">No. Pengajuan</th>
+                            <th className="text-muted-foreground px-5 py-3 text-[9px] font-medium uppercase">Judul & Pembuat</th>
+                            <th className="text-muted-foreground hidden px-5 py-3 text-[9px] font-medium uppercase md:table-cell">Tipe</th>
+                            <th className="text-muted-foreground px-5 py-3 text-[9px] font-medium uppercase">Status</th>
+                            <th className="text-muted-foreground hidden px-5 py-3 text-right text-[9px] font-medium uppercase lg:table-cell">
                                 Tanggal
                             </th>
                         </tr>
@@ -58,7 +56,7 @@ export function RecentContracts({ items, onViewAll }: RecentContractsProps) {
                                     <tr
                                         key={c.id}
                                         onClick={() => router.get(`/contracts/${c.id}`)}
-                                        className="group hover:bg-muted/40 text-foreground cursor-pointer transition-all duration-200 border-b"
+                                        className="group hover:bg-muted/40 text-foreground cursor-pointer border-b transition-all duration-200"
                                         style={{ borderLeft: `3px solid ${statusColor}` }}
                                     >
                                         {/* No. Kontrak */}

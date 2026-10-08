@@ -2,9 +2,9 @@
 
 namespace App\Services\Workflow;
 
-use App\Models\Approval;
-use App\Models\Contract;
-use App\Models\WorkflowStep;
+use App\Models\Master\WorkflowStep;
+use App\Models\Transaction\Approval;
+use App\Models\Transaction\Contract;
 use Illuminate\Support\Facades\Auth;
 
 class StepApprovalLifecycleService

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Exports\DepartmentsWorkbookExport;
+use App\Exports\Master\DepartmentsWorkbookExport;
 use App\Http\Controllers\Controller;
 use App\Http\Queries\Master\OrganizationQuery;
 use App\Http\Requests\Common\BulkDeleteRequest;
@@ -20,17 +20,17 @@ use App\Http\Requests\Module\UpdateModuleRequest;
 use App\Http\Requests\Role\ReorderRoleNavigationRequest;
 use App\Http\Requests\Settings\UpdateNumberingFormatRequest;
 use App\Imports\DepartmentsImport;
-use App\Models\AccessModule;
-use App\Models\ContractStatus;
-use App\Models\ContractTemplate;
-use App\Models\ContractType;
-use App\Models\Department;
-use App\Models\FormTemplate;
-use App\Models\Module;
-use App\Models\ModuleGroup;
-use App\Models\NumberingFormat;
-use App\Models\Role;
-use App\Models\RoleModuleGroup;
+use App\Models\Master\AccessModule;
+use App\Models\Master\ContractStatus;
+use App\Models\Master\ContractTemplate;
+use App\Models\Master\ContractType;
+use App\Models\Master\Department;
+use App\Models\Master\FormTemplate;
+use App\Models\Master\Module;
+use App\Models\Master\ModuleGroup;
+use App\Models\Master\NumberingFormat;
+use App\Models\Master\Role;
+use App\Models\Master\RoleModuleGroup;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;

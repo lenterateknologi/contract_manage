@@ -1,0 +1,75 @@
+<?php
+
+namespace App\Models\Master;
+
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+class JobTitle extends Model
+{
+    use HasFactory, HasUuids, SoftDeletes;
+
+    protected $table = 'm_job_titles';
+
+    protected $fillable = [
+        'idjobtitle',
+        'code',
+        'name',
+        'job_level_id',
+        'idjoblevel',
+        'job_level_name',
+        'created_by_name',
+        'modified_by_name',
+        'portal_created_date',
+        'portal_modified_date',
+        'is_used',
+        'is_active',
+        'created_by',
+        'updated_by',
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
+        'is_used' => 'boolean',
+        'portal_created_date' => 'datetime',
+        'portal_modified_date' => 'datetime',
+    ];
+
+    protected $appends = [
+        'job_level_name',
+    ];
+
+    public function getJobLevelNameAttribute(): ?string
+    {
+        $raw = $this->attributes['job_level_name'] ?? null;
+        if ($this->relationLoaded('jobLevel') && $this->getRelation('jobLevel')) {
+            $level = $this->getRelation('jobLevel');
+            $name = $level->name ?: $raw;
+            $code = $level->code;
+
+            return $code ? "({$code}) {$name}" : $name;
+        }
+
+        return $raw;
+    }
+
+    /**
+     * @return BelongsTo<JobLevel, JobTitle>
+     */
+    public function jobLevel(): BelongsTo
+    {
+        return $this->belongsTo(JobLevel::class, 'job_level_id');
+    }
+
+    /**
+     * @return HasMany<User, JobTitle>
+     */
+    public function users(): HasMany
+    {
+        return $this->hasMany(User::class, 'job_position_id');
+    }
+}

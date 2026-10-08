@@ -2,25 +2,29 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\AccessModule;
-use App\Models\ContractFilterTemplate;
-use App\Models\DashboardType;
-use App\Models\Module;
-use App\Models\Role;
+use App\Http\Queries\Contract\ContractListQuery;
+use App\Models\Master\AccessModule;
+use App\Models\Master\ContractFilterTemplate;
+use App\Models\Master\ContractStatus;
+use App\Models\Master\DashboardType;
+use App\Models\Master\Module;
+use App\Models\Master\Role;
+use App\Models\Master\User;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Inertia\Middleware;
+use Tighten\Ziggy\BladeRouteGenerator;
 
 class HandleInertiaRequests extends Middleware
 {
     public function handle(Request $request, \Closure $next)
     {
         // ponytail: ensure fresh Ziggy routes script on long-running PHP servers (Octane/FrankenPHP/serve)
-        if (class_exists(\Tighten\Ziggy\BladeRouteGenerator::class)) {
-            \Tighten\Ziggy\BladeRouteGenerator::$generated = false;
+        if (class_exists(BladeRouteGenerator::class)) {
+            BladeRouteGenerator::$generated = false;
         }
 
         $response = parent::handle($request, $next);
@@ -64,7 +68,7 @@ class HandleInertiaRequests extends Middleware
         $hasSession = $request->hasSession();
         $isImpersonating = $hasSession && $request->session()->has('impersonator_id');
         $impersonatorId = $isImpersonating ? $request->session()->get('impersonator_id') : null;
-        $impersonatorUser = $impersonatorId ? \App\Models\User::find($impersonatorId) : null;
+        $impersonatorUser = $impersonatorId ? User::find($impersonatorId) : null;
 
         return array_merge(parent::share($request), [
             'name' => config('app.name'),
@@ -106,7 +110,7 @@ class HandleInertiaRequests extends Middleware
             'sidebarNavGroups' => $this->getSidebarNavGroups($request),
             'povOptions' => $this->getPovOptions($request),
             'masterContractStatuses' => Cache::remember('master_contract_statuses_global', now()->addMinutes(10), function () {
-                return \App\Models\ContractStatus::select('id', 'code', 'label', 'color', 'bg_color', 'icon')->get();
+                return ContractStatus::select('id', 'code', 'label', 'color', 'bg_color', 'icon')->get();
             }),
             'upload_configs' => config('uploads.categories'),
             'flash' => [
@@ -154,12 +158,24 @@ class HandleInertiaRequests extends Middleware
 
             $dashboardTypes = DashboardType::orderBy('name')->get()->map(function ($d) {
                 $activeTabs = [];
-                if ($d->show_overview) $activeTabs[] = 'Ringkasan';
-                if ($d->show_overview_contract) $activeTabs[] = 'Kontrak';
-                if ($d->show_overview_non_contract) $activeTabs[] = 'Non Kontrak';
-                if ($d->show_overview_nda) $activeTabs[] = 'NDA';
-                if ($d->show_workload) $activeTabs[] = 'Beban Kerja';
-                if ($d->show_master_data) $activeTabs[] = 'Master Data';
+                if ($d->show_overview) {
+                    $activeTabs[] = 'Ringkasan';
+                }
+                if ($d->show_overview_contract) {
+                    $activeTabs[] = 'Kontrak';
+                }
+                if ($d->show_overview_non_contract) {
+                    $activeTabs[] = 'Non Kontrak';
+                }
+                if ($d->show_overview_nda) {
+                    $activeTabs[] = 'NDA';
+                }
+                if ($d->show_workload) {
+                    $activeTabs[] = 'Beban Kerja';
+                }
+                if ($d->show_master_data) {
+                    $activeTabs[] = 'Master Data';
+                }
 
                 $badge = empty($activeTabs) ? 'Tanpa Tab' : implode(' + ', $activeTabs);
 
@@ -180,11 +196,21 @@ class HandleInertiaRequests extends Middleware
 
             $filterTemplates = ContractFilterTemplate::orderBy('name')->get()->map(function ($t) {
                 $dimCount = 0;
-                if ($t->can_change_company_group) $dimCount++;
-                if ($t->can_change_region) $dimCount++;
-                if ($t->can_change_company) $dimCount++;
-                if ($t->can_change_division) $dimCount++;
-                if ($t->can_change_department) $dimCount++;
+                if ($t->can_change_company_group) {
+                    $dimCount++;
+                }
+                if ($t->can_change_region) {
+                    $dimCount++;
+                }
+                if ($t->can_change_company) {
+                    $dimCount++;
+                }
+                if ($t->can_change_division) {
+                    $dimCount++;
+                }
+                if ($t->can_change_department) {
+                    $dimCount++;
+                }
 
                 $badge = $dimCount === 5 ? 'Open All' : "{$dimCount}/5 Dimensi";
 
@@ -368,7 +394,7 @@ class HandleInertiaRequests extends Middleware
                 $ndaIds = $getDescendantIds($ndaParent?->id);
 
                 // Scoped base query for all contracts and expiry respecting user organization permissions
-                $scopedAllQuery = app(\App\Http\Queries\Contract\ContractListQuery::class)->build(new Request(), 'all');
+                $scopedAllQuery = app(ContractListQuery::class)->build(new Request, 'all');
                 $scopedActiveQuery = (clone $scopedAllQuery)->whereRaw("UPPER(status) != 'ARCHIVED'")->whereNull('closed_at');
 
                 $allTotal = (clone $scopedActiveQuery)->count();
@@ -416,7 +442,7 @@ class HandleInertiaRequests extends Middleware
                 $expiryNda = (clone $scopedExpiryQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $ndaIds)->orWhereIn('contract_type_parent_id', $ndaIds))->count();
 
                 // Scoped base query for organization group contracts
-                $scopedOrgQuery = app(\App\Http\Queries\Contract\ContractListQuery::class)->build(new Request(), 'organization');
+                $scopedOrgQuery = app(ContractListQuery::class)->build(new Request, 'organization');
                 $scopedOrgActiveQuery = (clone $scopedOrgQuery)->whereRaw("UPPER(status) != 'ARCHIVED'")->whereNull('closed_at');
                 $orgTotal = (clone $scopedOrgActiveQuery)->count();
                 $orgKontrak = (clone $scopedOrgActiveQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $kontrakIds)->orWhereIn('contract_type_parent_id', $kontrakIds))->count();

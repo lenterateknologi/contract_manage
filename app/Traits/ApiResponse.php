@@ -8,12 +8,6 @@ trait ApiResponse
 {
     /**
      * Return a standardized success JSON response.
-     *
-     * @param  mixed  $data
-     * @param  string  $message
-     * @param  int  $code
-     * @param  array  $meta
-     * @return JsonResponse
      */
     public function successResponse(mixed $data = null, string $message = 'Success', int $code = 200, array $meta = []): JsonResponse
     {
@@ -33,12 +27,6 @@ trait ApiResponse
 
     /**
      * Return a standardized error JSON response.
-     *
-     * @param  string  $message
-     * @param  int  $code
-     * @param  mixed  $errors
-     * @param  mixed  $data
-     * @return JsonResponse
      */
     public function errorResponse(string $message = 'Error', int $code = 400, mixed $errors = null, mixed $data = null): JsonResponse
     {

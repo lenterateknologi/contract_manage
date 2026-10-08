@@ -3,19 +3,11 @@
 namespace Database\Seeders\Business;
 
 use App\Enums\WorkflowAction;
-use App\Models\Authority;
-use App\Models\Company;
-use App\Models\CompanyGroup;
-use App\Models\ContractType;
-use App\Models\Department;
-use App\Models\Division;
-use App\Models\Location;
-use App\Models\Region;
-use App\Models\Role;
-use App\Models\User;
-use App\Models\Workflow;
-use App\Models\WorkflowStep;
-use App\Models\WorkflowStepAction;
+use App\Models\Master\Authority;
+use App\Models\Master\Role;
+use App\Models\Master\Workflow;
+use App\Models\Master\WorkflowStep;
+use App\Models\Master\WorkflowStepAction;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -37,6 +29,7 @@ class DynamicContractWorkflow2Seeder extends Seeder
 
         if (! $wf1) {
             $this->command->error("Workflow 1 Utama ('{$wf1Name}') tidak ditemukan. Harap jalankan DynamicContractApprovalSeeder terlebih dahulu.");
+
             return;
         }
 

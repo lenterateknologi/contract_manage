@@ -1,50 +1,44 @@
-import { Head, router } from '@inertiajs/react';
-import React, { lazy, Suspense, useState, useMemo, useEffect } from 'react';
 import LoadingLottie from '@/components/ui/feedback/LoadingLottie';
 import { ToastProvider } from '@/components/ui/feedback/Toast';
+import { PageHeader } from '@/components/ui/navigation/PageHeader';
+import { cn } from '@/lib/utils';
+import { SENIORITY_TIERS } from '@/pages/admin/components/JobHierarchyFlow';
+import { ALL_LEVELS, HierarchyLevelKey, MultiSelectDropdown } from '@/pages/admin/components/OrgHierarchyFlow';
+import { Head, router } from '@inertiajs/react';
 import {
-    Network,
-    Layers,
-    Sparkles,
-    SlidersHorizontal,
-    Search,
-    X,
-    RefreshCw,
+    Briefcase,
+    Building,
+    Building2,
     ChevronDown,
     ChevronUp,
     Filter,
-    RotateCcw,
     FolderClosed,
-    MapPin,
-    Building2,
-    Building,
-    Briefcase,
     FolderTree,
     GitBranch,
+    Layers,
+    MapPin,
+    Network,
+    RefreshCw,
+    RotateCcw,
+    Search,
+    Shield,
+    SlidersHorizontal,
+    Sparkles,
     Tags,
     UserCheck,
-    Shield,
     Users,
+    X,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { PageHeader } from '@/components/ui/navigation/PageHeader';
-import {
-    ALL_LEVELS,
-    HierarchyLevelKey,
-    MultiSelectDropdown,
-} from '@/pages/admin/components/OrgHierarchyFlow';
-import {
-    SENIORITY_TIERS,
-    ROLE_TIERS,
-    SeniorityTierKey,
-} from '@/pages/admin/components/JobHierarchyFlow';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 
-const MasterDataSync = lazy(() => import('@/pages/admin/components/MasterDataSync').then(m => ({ default: m.MasterDataSync })));
-const NavigationManagement = lazy(() => import('@/pages/admin/components/NavigationManagement').then(m => ({ default: m.NavigationManagement })));
-const NumberingFormatManagement = lazy(() => import('@/pages/admin/components/NumberingFormatManagement').then(m => ({ default: m.NumberingFormatManagement })));
-const OrgHierarchyFlow = lazy(() => import('@/pages/admin/components/OrgHierarchyFlow').then(m => ({ default: m.OrgHierarchyFlow })));
-const JobHierarchyFlow = lazy(() => import('@/pages/admin/components/JobHierarchyFlow').then(m => ({ default: m.JobHierarchyFlow })));
-const WorkflowManagement = lazy(() => import('@/pages/admin/components/WorkflowManagement').then(m => ({ default: m.WorkflowManagement })));
+const MasterDataSync = lazy(() => import('@/pages/admin/components/MasterDataSync').then((m) => ({ default: m.MasterDataSync })));
+const NavigationManagement = lazy(() => import('@/pages/admin/components/NavigationManagement').then((m) => ({ default: m.NavigationManagement })));
+const NumberingFormatManagement = lazy(() =>
+    import('@/pages/admin/components/NumberingFormatManagement').then((m) => ({ default: m.NumberingFormatManagement })),
+);
+const OrgHierarchyFlow = lazy(() => import('@/pages/admin/components/OrgHierarchyFlow').then((m) => ({ default: m.OrgHierarchyFlow })));
+const JobHierarchyFlow = lazy(() => import('@/pages/admin/components/JobHierarchyFlow').then((m) => ({ default: m.JobHierarchyFlow })));
+const WorkflowManagement = lazy(() => import('@/pages/admin/components/WorkflowManagement').then((m) => ({ default: m.WorkflowManagement })));
 
 const MEMBERS_FILTER_STORAGE_KEY = 'admin_members_filter_settings_v1';
 
@@ -148,9 +142,7 @@ function MembersViewOrchestrator({
 
     // Org level keys toggle
     const [enabledLevelKeys, setEnabledLevelKeys] = useState<HierarchyLevelKey[]>(() => {
-        return saved.enabledLevelKeys && saved.enabledLevelKeys.length > 0
-            ? saved.enabledLevelKeys
-            : ['group', 'employee'];
+        return saved.enabledLevelKeys && saved.enabledLevelKeys.length > 0 ? saved.enabledLevelKeys : ['group', 'employee'];
     });
 
     // Job seniority tier toggles
@@ -234,7 +226,7 @@ function MembersViewOrchestrator({
                 preserveState: false,
                 preserveScroll: true,
                 onFinish: () => setIsSyncing(false),
-            }
+            },
         );
     };
 
@@ -304,16 +296,31 @@ function MembersViewOrchestrator({
         return usersList.filter((u) => {
             if (usedFilter === 'used_only' && !u.is_used) return false;
             if (selectedGroups.length > 0 && !selectedGroups.some((g) => g.toLowerCase() === u.group_name?.toLowerCase())) return false;
-            if (selectedOrganizationGroups.length > 0 && !selectedOrganizationGroups.some((og) => og.toLowerCase() === (u.org_group_name || '').toLowerCase())) return false;
+            if (
+                selectedOrganizationGroups.length > 0 &&
+                !selectedOrganizationGroups.some((og) => og.toLowerCase() === (u.org_group_name || '').toLowerCase())
+            )
+                return false;
             if (selectedRegions.length > 0 && !selectedRegions.some((r) => r.toLowerCase() === u.region_name?.toLowerCase())) return false;
             if (selectedLocations.length > 0 && !selectedLocations.some((l) => l.toLowerCase() === u.location_name?.toLowerCase())) return false;
             if (selectedCompanies.length > 0 && !selectedCompanies.some((c) => c.toLowerCase() === u.company_name?.toLowerCase())) return false;
-            if (selectedDivisions.length > 0 && !selectedDivisions.some((d) => d.toLowerCase() === (u.division_name || '').toLowerCase())) return false;
-            if (selectedDepartments.length > 0 && !selectedDepartments.some((d) => d.toLowerCase() === u.department_name?.toLowerCase())) return false;
-            if (selectedSubdepartments.length > 0 && !selectedSubdepartments.some((s) => s.toLowerCase() === (u.subdepartment_name || '').toLowerCase())) return false;
+            if (selectedDivisions.length > 0 && !selectedDivisions.some((d) => d.toLowerCase() === (u.division_name || '').toLowerCase()))
+                return false;
+            if (selectedDepartments.length > 0 && !selectedDepartments.some((d) => d.toLowerCase() === u.department_name?.toLowerCase()))
+                return false;
+            if (
+                selectedSubdepartments.length > 0 &&
+                !selectedSubdepartments.some((s) => s.toLowerCase() === (u.subdepartment_name || '').toLowerCase())
+            )
+                return false;
             if (selectedSections.length > 0 && !selectedSections.some((s) => s.toLowerCase() === (u.section_name || '').toLowerCase())) return false;
-            if (selectedJobLevelGroups.length > 0 && !selectedJobLevelGroups.some((jlg) => jlg.toLowerCase() === (u.job_level_group_name || '').toLowerCase())) return false;
-            if (selectedJobLevels.length > 0 && !selectedJobLevels.some((jl) => jl.toLowerCase() === (u.job_level_name || '').toLowerCase())) return false;
+            if (
+                selectedJobLevelGroups.length > 0 &&
+                !selectedJobLevelGroups.some((jlg) => jlg.toLowerCase() === (u.job_level_group_name || '').toLowerCase())
+            )
+                return false;
+            if (selectedJobLevels.length > 0 && !selectedJobLevels.some((jl) => jl.toLowerCase() === (u.job_level_name || '').toLowerCase()))
+                return false;
             if (selectedJobTitles.length > 0 && !selectedJobTitles.some((jt) => jt.toLowerCase() === u.job_title_name?.toLowerCase())) return false;
             if (selectedRoles.length > 0 && !selectedRoles.some((r) => r.toLowerCase() === (u.role_name || '').toLowerCase())) return false;
 
@@ -362,7 +369,7 @@ function MembersViewOrchestrator({
     };
 
     return (
-        <div className="flex flex-col h-full w-full overflow-hidden">
+        <div className="flex h-full w-full flex-col overflow-hidden">
             {/* Header Utama dengan Toolbar Actions */}
             <PageHeader
                 title="Struktur & Anggota Organisasi"
@@ -376,10 +383,10 @@ function MembersViewOrchestrator({
                                 type="button"
                                 onClick={() => setUsedFilter('used_only')}
                                 className={cn(
-                                    'px-2.5 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer',
+                                    'cursor-pointer rounded-lg px-2.5 py-1 text-xs font-semibold transition-all',
                                     usedFilter === 'used_only'
-                                        ? 'bg-white text-primary shadow-xs dark:bg-zinc-900 dark:text-primary'
-                                        : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
+                                        ? 'text-primary dark:text-primary bg-white shadow-xs dark:bg-zinc-900'
+                                        : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200',
                                 )}
                                 title="Tampilkan hanya entitas dengan is_used = true"
                             >
@@ -389,10 +396,10 @@ function MembersViewOrchestrator({
                                 type="button"
                                 onClick={() => setUsedFilter('all')}
                                 className={cn(
-                                    'px-2.5 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer',
+                                    'cursor-pointer rounded-lg px-2.5 py-1 text-xs font-semibold transition-all',
                                     usedFilter === 'all'
                                         ? 'bg-white text-slate-900 shadow-xs dark:bg-zinc-900 dark:text-slate-100'
-                                        : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
+                                        : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200',
                                 )}
                                 title="Tampilkan semua master data"
                             >
@@ -402,20 +409,20 @@ function MembersViewOrchestrator({
 
                         {/* Search Input */}
                         <div className="relative">
-                            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                            <Search className="absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
                             <input
                                 type="text"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder="Cari nama, NIK, jabatan..."
-                                className="h-8 pl-8 pr-7 text-xs rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary w-44 sm:w-56"
+                                className="focus:ring-primary h-8 w-44 rounded-xl border border-slate-200 bg-white pr-7 pl-8 text-xs text-slate-800 focus:ring-2 focus:outline-none sm:w-56 dark:border-zinc-700 dark:bg-zinc-800 dark:text-slate-200"
                             />
                             {searchQuery && (
                                 <button
                                     onClick={() => setSearchQuery('')}
-                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                                    className="absolute top-1/2 right-2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-slate-600"
                                 >
-                                    <X className="w-3.5 h-3.5" />
+                                    <X className="h-3.5 w-3.5" />
                                 </button>
                             )}
                         </div>
@@ -425,7 +432,7 @@ function MembersViewOrchestrator({
                             type="button"
                             onClick={handleSyncData}
                             disabled={isSyncing}
-                            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-zinc-700 text-xs font-semibold shadow-2xs transition-all cursor-pointer disabled:opacity-60"
+                            className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-2xs transition-all hover:bg-slate-50 disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-800 dark:text-slate-200 dark:hover:bg-zinc-700"
                             title="Segarkan data hierarki langsung dari database"
                         >
                             <RefreshCw size={13} className={cn('text-primary', isSyncing && 'animate-spin')} />
@@ -436,40 +443,40 @@ function MembersViewOrchestrator({
             />
 
             {/* Tab Mode Switcher Row + Minimize/Expand Section */}
-            <div className="flex items-center justify-between px-5 py-2.5 bg-slate-50/90 dark:bg-zinc-900/90 border-b border-slate-200 dark:border-zinc-800 shrink-0 backdrop-blur-sm z-10">
+            <div className="z-10 flex shrink-0 items-center justify-between border-b border-slate-200 bg-slate-50/90 px-5 py-2.5 backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-900/90">
                 {/* Left: Tab Buttons */}
-                <div className="inline-flex p-1 bg-slate-200/60 dark:bg-zinc-800/80 rounded-xl border border-slate-200 dark:border-zinc-700/60 shadow-xs">
+                <div className="inline-flex rounded-xl border border-slate-200 bg-slate-200/60 p-1 shadow-xs dark:border-zinc-700/60 dark:bg-zinc-800/80">
                     <button
                         type="button"
                         onClick={() => handleTabChange('org')}
                         className={cn(
-                            "flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer",
+                            'flex cursor-pointer items-center gap-2 rounded-lg px-4 py-1.5 text-xs font-semibold transition-all',
                             membersTab === 'org'
-                                ? "bg-white dark:bg-zinc-900 text-primary shadow-xs"
-                                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                                ? 'text-primary bg-white shadow-xs dark:bg-zinc-900'
+                                : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200',
                         )}
                     >
-                        <Network className="w-3.5 h-3.5" />
+                        <Network className="h-3.5 w-3.5" />
                         <span>Struktur Unit Organisasi</span>
                     </button>
                     <button
                         type="button"
                         onClick={() => handleTabChange('job')}
                         className={cn(
-                            "flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer",
+                            'flex cursor-pointer items-center gap-2 rounded-lg px-4 py-1.5 text-xs font-semibold transition-all',
                             membersTab === 'job'
-                                ? "bg-white dark:bg-zinc-900 text-primary shadow-xs"
-                                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                                ? 'text-primary bg-white shadow-xs dark:bg-zinc-900'
+                                : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200',
                         )}
                     >
-                        <Sparkles className="w-3.5 h-3.5" />
+                        <Sparkles className="h-3.5 w-3.5" />
                         <span>Pohon Jenjang Jabatan & Level</span>
                     </button>
                 </div>
 
                 {/* Right: Active Filter Stats & Minimize/Expand Button */}
                 <div className="flex items-center gap-2.5">
-                    <span className="text-xs font-bold bg-primary/10 text-primary px-2.5 py-1 rounded-lg border border-primary/20 flex items-center gap-1.5">
+                    <span className="bg-primary/10 text-primary border-primary/20 flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-bold">
                         <Users size={13} />
                         {filteredCount} Anggota Terfilter
                     </span>
@@ -479,10 +486,10 @@ function MembersViewOrchestrator({
                         type="button"
                         onClick={() => setIsFilterExpanded(!isFilterExpanded)}
                         className={cn(
-                            'inline-flex items-center gap-1.5 h-8 px-3 rounded-xl border text-xs font-semibold transition-all cursor-pointer',
+                            'inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-xl border px-3 text-xs font-semibold transition-all',
                             isFilterExpanded
-                                ? 'bg-primary text-white border-primary shadow-xs'
-                                : 'bg-white dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-zinc-700'
+                                ? 'bg-primary border-primary text-white shadow-xs'
+                                : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-slate-200 dark:hover:bg-zinc-700',
                         )}
                         title={isFilterExpanded ? 'Sembunyikan filter untuk memperluas ruang tampilan' : 'Tampilkan panel filter'}
                     >
@@ -495,10 +502,10 @@ function MembersViewOrchestrator({
 
             {/* Collapsible Filter Section (Multi-Select & Level Toggles) */}
             {isFilterExpanded && (
-                <div className="border-b border-slate-200 bg-slate-50/95 dark:bg-zinc-900/95 backdrop-blur-md px-5 py-3 dark:border-zinc-800 z-10 space-y-3 shrink-0 animate-in slide-in-from-top duration-150">
+                <div className="animate-in slide-in-from-top z-10 shrink-0 space-y-3 border-b border-slate-200 bg-slate-50/95 px-5 py-3 backdrop-blur-md duration-150 dark:border-zinc-800 dark:bg-zinc-900/95">
                     {/* Row 1: Multiple Select Criteria */}
                     <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 mr-1">
+                        <span className="mr-1 flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-300">
                             <Filter size={13} className="text-primary" /> Filter Entitas (Multi-Select):
                         </span>
 
@@ -611,7 +618,7 @@ function MembersViewOrchestrator({
                             <button
                                 type="button"
                                 onClick={resetAllFilters}
-                                className="inline-flex items-center gap-1 h-8 px-2.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 text-xs font-semibold cursor-pointer transition-colors"
+                                className="inline-flex h-8 cursor-pointer items-center gap-1 rounded-xl border border-rose-200 bg-rose-50 px-2.5 text-xs font-semibold text-rose-600 transition-colors hover:bg-rose-100"
                             >
                                 <RotateCcw size={12} />
                                 Reset Filter
@@ -620,12 +627,10 @@ function MembersViewOrchestrator({
                     </div>
 
                     {/* Row 2: Level or Seniority Toggles */}
-                    <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-200/80 dark:border-zinc-800">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200/80 pt-2 dark:border-zinc-800">
                         {membersTab === 'org' ? (
                             <div className="flex flex-wrap items-center gap-1.5">
-                                <span className="text-xs font-bold text-slate-700 dark:text-slate-300 mr-2">
-                                    Tampilkan Level:
-                                </span>
+                                <span className="mr-2 text-xs font-bold text-slate-700 dark:text-slate-300">Tampilkan Level:</span>
                                 {ALL_LEVELS.map((lvl) => {
                                     const isEnabled = enabledLevelKeys.includes(lvl.key);
                                     const IconComponent = lvl.icon;
@@ -635,47 +640,47 @@ function MembersViewOrchestrator({
                                             type="button"
                                             onClick={() => toggleOrgLevel(lvl.key)}
                                             className={cn(
-                                                'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-semibold border transition-all cursor-pointer',
+                                                'inline-flex cursor-pointer items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs font-semibold transition-all',
                                                 isEnabled
-                                                    ? 'bg-white dark:bg-zinc-800 border-primary text-primary shadow-xs ring-1 ring-primary/20'
-                                                    : 'bg-white/40 dark:bg-zinc-800/40 border-slate-200 dark:border-zinc-800 text-slate-400 dark:text-zinc-500 hover:border-slate-300'
+                                                    ? 'border-primary text-primary ring-primary/20 bg-white shadow-xs ring-1 dark:bg-zinc-800'
+                                                    : 'border-slate-200 bg-white/40 text-slate-400 hover:border-slate-300 dark:border-zinc-800 dark:bg-zinc-800/40 dark:text-zinc-500',
                                             )}
                                         >
-                                            <IconComponent className="w-3.5 h-3.5" />
+                                            <IconComponent className="h-3.5 w-3.5" />
                                             <span>{lvl.label}</span>
                                         </button>
                                     );
                                 })}
                             </div>
                         ) : (
-                            <div className="flex flex-wrap items-center justify-between gap-3 w-full">
+                            <div className="flex w-full flex-wrap items-center justify-between gap-3">
                                 {/* Seniority Tiers (for Jabatan mode) OR Simplified Chips (for Role mode: Role, Divisi, Personil) */}
                                 <div className="flex flex-wrap items-center gap-1.5">
                                     {groupByMode === 'role' ? (
                                         <>
-                                            <span className="text-xs font-bold text-slate-700 dark:text-slate-300 mr-1.5 flex items-center gap-1">
-                                                <Shield className="w-3.5 h-3.5 text-violet-500" />
+                                            <span className="mr-1.5 flex items-center gap-1 text-xs font-bold text-slate-700 dark:text-slate-300">
+                                                <Shield className="h-3.5 w-3.5 text-violet-500" />
                                                 <span>Hierarki Alur:</span>
                                             </span>
-                                            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-violet-100 text-violet-800 dark:bg-violet-950/80 dark:text-violet-300 border border-violet-300 dark:border-violet-800 shadow-xs">
-                                                <Shield className="w-3.5 h-3.5 text-violet-600 dark:text-violet-400" />
+                                            <div className="inline-flex items-center gap-1.5 rounded-xl border border-violet-300 bg-violet-100 px-3 py-1 text-xs font-bold text-violet-800 shadow-xs dark:border-violet-800 dark:bg-violet-950/80 dark:text-violet-300">
+                                                <Shield className="h-3.5 w-3.5 text-violet-600 dark:text-violet-400" />
                                                 <span>1. Role Akses</span>
                                             </div>
-                                            <span className="text-slate-400 dark:text-zinc-600 font-bold">→</span>
-                                            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-purple-100 text-purple-800 dark:bg-purple-950/80 dark:text-purple-300 border border-purple-300 dark:border-purple-800 shadow-xs">
-                                                <Network className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                                            <span className="font-bold text-slate-400 dark:text-zinc-600">→</span>
+                                            <div className="inline-flex items-center gap-1.5 rounded-xl border border-purple-300 bg-purple-100 px-3 py-1 text-xs font-bold text-purple-800 shadow-xs dark:border-purple-800 dark:bg-purple-950/80 dark:text-purple-300">
+                                                <Network className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
                                                 <span>2. Divisi / Unit</span>
                                             </div>
-                                            <span className="text-slate-400 dark:text-zinc-600 font-bold">→</span>
-                                            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-sky-100 text-sky-800 dark:bg-sky-950/80 dark:text-sky-300 border border-sky-300 dark:border-sky-800 shadow-xs">
-                                                <Users className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
+                                            <span className="font-bold text-slate-400 dark:text-zinc-600">→</span>
+                                            <div className="inline-flex items-center gap-1.5 rounded-xl border border-sky-300 bg-sky-100 px-3 py-1 text-xs font-bold text-sky-800 shadow-xs dark:border-sky-800 dark:bg-sky-950/80 dark:text-sky-300">
+                                                <Users className="h-3.5 w-3.5 text-sky-600 dark:text-sky-400" />
                                                 <span>3. Personil / Anggota ({filteredCount})</span>
                                             </div>
                                         </>
                                     ) : (
                                         <>
-                                            <span className="text-xs font-bold text-slate-700 dark:text-slate-300 mr-1.5 flex items-center gap-1">
-                                                <Briefcase className="w-3.5 h-3.5 text-cyan-500" />
+                                            <span className="mr-1.5 flex items-center gap-1 text-xs font-bold text-slate-700 dark:text-slate-300">
+                                                <Briefcase className="h-3.5 w-3.5 text-cyan-500" />
                                                 <span>Jenjang Senioritas:</span>
                                             </span>
                                             {SENIORITY_TIERS.map((tier) => {
@@ -692,14 +697,16 @@ function MembersViewOrchestrator({
                                                             }))
                                                         }
                                                         className={cn(
-                                                            'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-semibold border transition-all cursor-pointer',
+                                                            'inline-flex cursor-pointer items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs font-semibold transition-all',
                                                             isVisible
-                                                                ? 'bg-white dark:bg-zinc-800 border-primary text-primary shadow-xs ring-1 ring-primary/20'
-                                                                : 'bg-white/40 dark:bg-zinc-800/40 border-slate-200 dark:border-zinc-800 text-slate-400 dark:text-zinc-500 hover:border-slate-300'
+                                                                ? 'border-primary text-primary ring-primary/20 bg-white shadow-xs ring-1 dark:bg-zinc-800'
+                                                                : 'border-slate-200 bg-white/40 text-slate-400 hover:border-slate-300 dark:border-zinc-800 dark:bg-zinc-800/40 dark:text-zinc-500',
                                                         )}
                                                     >
-                                                        <IconComponent className="w-3.5 h-3.5" />
-                                                        <span>{tier.title.split(' ')[0]} {tier.title.split(' ')[1] || ''}</span>
+                                                        <IconComponent className="h-3.5 w-3.5" />
+                                                        <span>
+                                                            {tier.title.split(' ')[0]} {tier.title.split(' ')[1] || ''}
+                                                        </span>
                                                     </button>
                                                 );
                                             })}
@@ -708,34 +715,32 @@ function MembersViewOrchestrator({
                                 </div>
 
                                 {/* Card Utama Group By Mode: Jabatan vs Role Akses */}
-                                <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-zinc-800/80 p-1 rounded-xl border border-slate-200 dark:border-zinc-700 shrink-0">
-                                    <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 px-1.5">
-                                        Kartu Utama:
-                                    </span>
+                                <div className="flex shrink-0 items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-100 p-1 dark:border-zinc-700 dark:bg-zinc-800/80">
+                                    <span className="px-1.5 text-[11px] font-bold text-slate-500 dark:text-slate-400">Kartu Utama:</span>
                                     <button
                                         type="button"
                                         onClick={() => setGroupByMode('job_title')}
                                         className={cn(
-                                            'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer',
+                                            'inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition-all',
                                             groupByMode === 'job_title'
-                                                ? 'bg-white dark:bg-zinc-900 text-cyan-600 dark:text-cyan-400 shadow-xs border border-slate-200/80 dark:border-zinc-700'
-                                                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                                                ? 'border border-slate-200/80 bg-white text-cyan-600 shadow-xs dark:border-zinc-700 dark:bg-zinc-900 dark:text-cyan-400'
+                                                : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200',
                                         )}
                                     >
-                                        <Briefcase className="w-3.5 h-3.5" />
+                                        <Briefcase className="h-3.5 w-3.5" />
                                         <span>Jabatan / Posisi</span>
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => setGroupByMode('role')}
                                         className={cn(
-                                            'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer',
+                                            'inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition-all',
                                             groupByMode === 'role'
-                                                ? 'bg-white dark:bg-zinc-900 text-violet-600 dark:text-violet-400 shadow-xs border border-slate-200/80 dark:border-zinc-700'
-                                                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                                                ? 'border border-slate-200/80 bg-white text-violet-600 shadow-xs dark:border-zinc-700 dark:bg-zinc-900 dark:text-violet-400'
+                                                : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200',
                                         )}
                                     >
-                                        <Shield className="w-3.5 h-3.5" />
+                                        <Shield className="h-3.5 w-3.5" />
                                         <span>Role Akses</span>
                                     </button>
                                 </div>
@@ -746,7 +751,7 @@ function MembersViewOrchestrator({
             )}
 
             {/* Visualizer Content (pure canvas taking 100% remaining vertical space) */}
-            <div className="flex-1 min-h-0 w-full overflow-hidden relative">
+            <div className="relative min-h-0 w-full flex-1 overflow-hidden">
                 {membersTab === 'org' ? (
                     <OrgHierarchyFlow
                         users={usersList}
@@ -906,7 +911,18 @@ export default function AdminIndex({
     organizationGroups,
     filters = {},
     counts,
-}: Readonly<Props & { locations?: any; divisions?: any; subdepartments?: any; sections?: any; jobTitles?: any; jobLevels?: any; jobLevelGroups?: any; organizationGroups?: any }>) {
+}: Readonly<
+    Props & {
+        locations?: any;
+        divisions?: any;
+        subdepartments?: any;
+        sections?: any;
+        jobTitles?: any;
+        jobLevels?: any;
+        jobLevelGroups?: any;
+        organizationGroups?: any;
+    }
+>) {
     const [membersTab, setMembersTab] = useState<'org' | 'job'>(() => {
         if (typeof window !== 'undefined') {
             const urlParams = new URLSearchParams(window.location.search);
@@ -1003,11 +1019,11 @@ export default function AdminIndex({
         <ToastProvider>
             <Head title={`Admin - ${viewTitle}`} />
 
-            <div className="flex min-h-0 flex-1 flex-col overflow-hidden h-full">
-                <div className="flex-1 min-h-0 flex flex-col h-full">
+            <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
+                <div className="flex h-full min-h-0 flex-1 flex-col">
                     <Suspense
                         fallback={
-                            <div className="flex flex-1 items-center justify-center min-h-[400px] w-full p-6">
+                            <div className="flex min-h-[400px] w-full flex-1 items-center justify-center p-6">
                                 <LoadingLottie width={120} height={120} />
                             </div>
                         }

@@ -1,64 +1,44 @@
-import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { cn } from '@/lib/utils';
+import { router } from '@inertiajs/react';
 import {
-    ReactFlow,
-    Background,
-    Controls,
-    MiniMap,
-    Handle,
-    Position,
-    Node,
-    Edge,
-    BackgroundVariant,
-    NodeProps,
-    MarkerType,
-    ReactFlowInstance,
-    applyNodeChanges,
     applyEdgeChanges,
-    OnNodesChange,
+    applyNodeChanges,
+    Background,
+    BackgroundVariant,
+    Controls,
+    Edge,
+    Handle,
+    MarkerType,
+    MiniMap,
+    Node,
+    NodeProps,
     OnEdgesChange,
+    OnNodesChange,
+    Position,
+    ReactFlow,
+    ReactFlowInstance,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import {
-    Building2,
-    MapPin,
-    Building,
-    Briefcase,
-    Users,
-    ChevronRight,
-    Search,
-    SlidersHorizontal,
-    Layers,
-    UserCheck,
-    Mail,
-    IdCard,
-    X,
-    Filter,
-    Check,
-    User as UserIcon,
-    UserX,
-    ChevronDown,
-    RotateCcw,
-    ChevronUp,
-    Crosshair,
-    Navigation,
-    Network,
-    Shield,
-    FolderClosed,
-    FolderTree,
-    GitBranch,
-    Tags,
-    Sparkles,
-    RefreshCw,
     Award,
+    Briefcase,
+    Building,
+    ChevronDown,
+    ChevronUp,
     Crown,
-    Flame,
+    IdCard,
+    Layers,
+    Mail,
+    Network,
+    Search,
+    Shield,
+    UserCheck,
+    Users,
     Workflow,
-    ArrowDown,
-    ExternalLink,
+    X,
 } from 'lucide-react';
-import { router } from '@inertiajs/react';
-import { cn } from '@/lib/utils';
-import { HierarchyUser, MultiSelectDropdown } from './OrgHierarchyFlow';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { HierarchyUser } from './OrgHierarchyFlow';
 
 const JOB_STORAGE_KEY = 'job_hierarchy_view_settings_v3';
 
@@ -433,18 +413,12 @@ function classifyUserTier(u: HierarchyUser, mode: 'job_title' | 'role' = 'job_ti
     const searchString = `${u.job_level_name || ''} ${(u as any).job_level_code || ''} ${u.job_title_name || ''}`.toUpperCase();
 
     // 1. Check Job Title First for VP (e.g. VP FINANCE, VP HR, EVP, SVP, AVP)
-    if (
-        /\b(VP|VICE PRESIDENT|EVP|SVP|AVP)\b/.test(titleStr) ||
-        [76, 51, 52].includes(rank)
-    ) {
+    if (/\b(VP|VICE PRESIDENT|EVP|SVP|AVP)\b/.test(titleStr) || [76, 51, 52].includes(rank)) {
         return 'tier_2_vp';
     }
 
     // 2. Check Job Title First for Head (e.g. BUSINESS DEVELOPMENT HEAD, TAX HEAD, DIV HEAD, DEPT HEAD)
-    if (
-        /\b(HEAD|DIV HEAD|DEPT HEAD|SECTION HEAD|HEAD OF)\b/.test(titleStr) ||
-        [44, 45, 46, 47].includes(rank)
-    ) {
+    if (/\b(HEAD|DIV HEAD|DEPT HEAD|SECTION HEAD|HEAD OF)\b/.test(titleStr) || [44, 45, 46, 47].includes(rank)) {
         return 'tier_3_head';
     }
 
@@ -468,18 +442,12 @@ function classifyUserTier(u: HierarchyUser, mode: 'job_title' | 'role' = 'job_ti
     }
 
     // 4. C-Level / Direksi / President / Director / CEO / MD / DMD
-    if (
-        [74, 73, 65, 66, 48, 49, 50].includes(rank) ||
-        /\b(DIRECTOR|CHIEF|CEO|MD|DMD|MANAGEMENT|PRESIDENT|DIREKSI|KOMISARIS)\b/.test(searchString)
-    ) {
+    if ([74, 73, 65, 66, 48, 49, 50].includes(rank) || /\b(DIRECTOR|CHIEF|CEO|MD|DMD|MANAGEMENT|PRESIDENT|DIREKSI|KOMISARIS)\b/.test(searchString)) {
         return 'tier_1_c_level';
     }
 
     // 4. Senior Manager & General Manager
-    if (
-        [72, 71, 43, 42, 41, 40].includes(rank) ||
-        /\b(GM|GENERAL MANAGER|SENIOR MANAGER|SR\. MANAGER|GROUP MANAGER)\b/.test(searchString)
-    ) {
+    if ([72, 71, 43, 42, 41, 40].includes(rank) || /\b(GM|GENERAL MANAGER|SENIOR MANAGER|SR\. MANAGER|GROUP MANAGER)\b/.test(searchString)) {
         return 'tier_4_gm';
     }
 
@@ -505,10 +473,7 @@ function classifyUserTier(u: HierarchyUser, mode: 'job_title' | 'role' = 'job_ti
     }
 
     // 7. Supervisor & Senior Officer
-    if (
-        [58, 57, 56, 55, 54, 53, 29, 28].includes(rank) ||
-        /\b(SUPERVISOR|SENIOR OFFICER|SENIOR ASSISTAN|SR\. OFFICER|SPV)\b/.test(searchString)
-    ) {
+    if ([58, 57, 56, 55, 54, 53, 29, 28].includes(rank) || /\b(SUPERVISOR|SENIOR OFFICER|SENIOR ASSISTAN|SR\. OFFICER|SPV)\b/.test(searchString)) {
         return 'tier_7_supervisor';
     }
 
@@ -554,14 +519,14 @@ const JobTierNode = ({ data }: NodeProps<Node<JobTreeNodeData>>) => {
     return (
         <div
             className={cn(
-                'relative px-5 py-4 rounded-2xl border-2 shadow-xl transition-all w-[380px] cursor-grab active:cursor-grabbing backdrop-blur-md select-none',
+                'relative w-[380px] cursor-grab rounded-2xl border-2 px-5 py-4 shadow-xl backdrop-blur-md transition-all select-none active:cursor-grabbing',
                 isRoleMode
                     ? isDark
-                        ? 'bg-gradient-to-br from-slate-900/95 via-zinc-900/90 to-zinc-950/95 border-violet-500/40 text-slate-100 shadow-violet-950/30'
-                        : 'bg-gradient-to-br from-white via-violet-50/25 to-white border-violet-300/70 text-slate-900 shadow-violet-100/60'
+                        ? 'border-violet-500/40 bg-gradient-to-br from-slate-900/95 via-zinc-900/90 to-zinc-950/95 text-slate-100 shadow-violet-950/30'
+                        : 'border-violet-300/70 bg-gradient-to-br from-white via-violet-50/25 to-white text-slate-900 shadow-violet-100/60'
                     : isDark
-                        ? 'bg-gradient-to-br from-slate-900/95 via-slate-900/90 to-slate-950/95 border-amber-500/40 text-slate-100 shadow-amber-950/30'
-                        : 'bg-gradient-to-br from-white via-amber-50/25 to-white border-amber-300/70 text-slate-900 shadow-amber-100/60'
+                      ? 'border-amber-500/40 bg-gradient-to-br from-slate-900/95 via-slate-900/90 to-slate-950/95 text-slate-100 shadow-amber-950/30'
+                      : 'border-amber-300/70 bg-gradient-to-br from-white via-amber-50/25 to-white text-slate-900 shadow-amber-100/60',
             )}
             onClick={() => {
                 if (typeof data.onSelect === 'function') data.onSelect(data);
@@ -572,54 +537,53 @@ const JobTierNode = ({ data }: NodeProps<Node<JobTreeNodeData>>) => {
                 id="tier-top"
                 type="target"
                 position={Position.Top}
-                className={cn(
-                    '!w-3.5 !h-3.5 !-top-2 border-2 border-white dark:border-slate-900',
-                    isRoleMode ? '!bg-violet-500' : '!bg-amber-500'
-                )}
+                className={cn('!-top-2 !h-3.5 !w-3.5 border-2 border-white dark:border-slate-900', isRoleMode ? '!bg-violet-500' : '!bg-amber-500')}
             />
 
             <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
                     <div
                         className={cn(
-                            'p-2.5 rounded-xl border shrink-0',
+                            'shrink-0 rounded-xl border p-2.5',
                             isRoleMode
-                                ? 'bg-violet-500/10 border-violet-500/20 text-violet-600 dark:text-violet-400'
-                                : 'bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400'
+                                ? 'border-violet-500/20 bg-violet-500/10 text-violet-600 dark:text-violet-400'
+                                : 'border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400',
                         )}
                     >
-                        {isRoleMode ? <Shield className="w-5 h-5" /> : <Crown className="w-5 h-5" />}
+                        {isRoleMode ? <Shield className="h-5 w-5" /> : <Crown className="h-5 w-5" />}
                     </div>
                     <div>
-                        <span className={cn('text-[10px] font-extrabold tracking-wider uppercase px-2 py-0.5 rounded-md border', data.badgeBg || (isRoleMode ? 'bg-violet-100 text-violet-800 border-violet-300' : 'bg-amber-100 text-amber-800 border-amber-300'))}>
+                        <span
+                            className={cn(
+                                'rounded-md border px-2 py-0.5 text-[10px] font-extrabold tracking-wider uppercase',
+                                data.badgeBg ||
+                                    (isRoleMode ? 'border-violet-300 bg-violet-100 text-violet-800' : 'border-amber-300 bg-amber-100 text-amber-800'),
+                            )}
+                        >
                             {data.levelLabel || (isRoleMode ? 'JENJANG ROLE' : 'JENJANG JABATAN')}
                         </span>
-                        <h4 className="font-extrabold text-sm tracking-tight mt-1 line-clamp-1">
+                        <h4 className="mt-1 line-clamp-1 text-sm font-extrabold tracking-tight">
                             {String(data.title || data.label || 'Jenjang Jabatan')}
                         </h4>
-                        {data.subtitle && (
-                            <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5">
-                                {data.subtitle}
-                            </p>
-                        )}
+                        {data.subtitle && <p className="mt-0.5 line-clamp-1 text-[11px] text-slate-500 dark:text-slate-400">{data.subtitle}</p>}
                     </div>
                 </div>
             </div>
 
-            <div className="mt-3 pt-2.5 border-t border-slate-200/70 dark:border-slate-800 flex items-center justify-between text-xs">
+            <div className="mt-3 flex items-center justify-between border-t border-slate-200/70 pt-2.5 text-xs dark:border-slate-800">
                 <span className="flex items-center gap-1.5 font-semibold text-slate-600 dark:text-slate-300">
-                    {isRoleMode ? <Shield className="w-3.5 h-3.5 text-violet-500" /> : <Briefcase className="w-3.5 h-3.5 text-amber-500" />}
+                    {isRoleMode ? <Shield className="h-3.5 w-3.5 text-violet-500" /> : <Briefcase className="h-3.5 w-3.5 text-amber-500" />}
                     {Number(data.subItemsCount || 0)} {isRoleMode ? 'Role Akses' : 'Posisi Jabatan'}
                 </span>
                 <span
                     className={cn(
-                        'flex items-center gap-1.5 font-extrabold px-2 py-0.5 rounded-full border',
+                        'flex items-center gap-1.5 rounded-full border px-2 py-0.5 font-extrabold',
                         isRoleMode
-                            ? 'text-violet-600 dark:text-violet-400 bg-violet-500/10 border-violet-500/20'
-                            : 'text-amber-600 dark:text-amber-400 bg-amber-500/10 border-amber-500/20'
+                            ? 'border-violet-500/20 bg-violet-500/10 text-violet-600 dark:text-violet-400'
+                            : 'border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400',
                     )}
                 >
-                    <Users className="w-3.5 h-3.5" />
+                    <Users className="h-3.5 w-3.5" />
                     {Number(data.totalUsers || 0)} Karyawan
                 </span>
             </div>
@@ -632,12 +596,12 @@ const JobTierNode = ({ data }: NodeProps<Node<JobTreeNodeData>>) => {
                         if (typeof data.onToggle === 'function') (data.onToggle as () => void)();
                     }}
                     className={cn(
-                        'absolute -bottom-3 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full text-white shadow-md transition-colors z-10 cursor-pointer flex items-center gap-1 text-[10px] font-bold',
-                        isRoleMode ? 'bg-violet-600 hover:bg-violet-500' : 'bg-amber-600 hover:bg-amber-500'
+                        'absolute -bottom-3 left-1/2 z-10 flex -translate-x-1/2 cursor-pointer items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold text-white shadow-md transition-colors',
+                        isRoleMode ? 'bg-violet-600 hover:bg-violet-500' : 'bg-amber-600 hover:bg-amber-500',
                     )}
-                    title={isExpanded ? (isRoleMode ? 'Sembunyikan Role' : 'Sembunyikan Posisi') : (isRoleMode ? 'Buka Role' : 'Tampilkan Posisi')}
+                    title={isExpanded ? (isRoleMode ? 'Sembunyikan Role' : 'Sembunyikan Posisi') : isRoleMode ? 'Buka Role' : 'Tampilkan Posisi'}
                 >
-                    {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                    {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                     <span>{isExpanded ? 'Sembunyikan' : isRoleMode ? 'Buka Role' : 'Buka Posisi'}</span>
                 </button>
             )}
@@ -648,8 +612,8 @@ const JobTierNode = ({ data }: NodeProps<Node<JobTreeNodeData>>) => {
                 type="source"
                 position={Position.Bottom}
                 className={cn(
-                    '!w-3.5 !h-3.5 !-bottom-2 border-2 border-white dark:border-slate-900',
-                    isRoleMode ? '!bg-violet-500' : '!bg-amber-500'
+                    '!-bottom-2 !h-3.5 !w-3.5 border-2 border-white dark:border-slate-900',
+                    isRoleMode ? '!bg-violet-500' : '!bg-amber-500',
                 )}
             />
 
@@ -658,10 +622,7 @@ const JobTierNode = ({ data }: NodeProps<Node<JobTreeNodeData>>) => {
                 id="tier-right"
                 type="source"
                 position={Position.Right}
-                className={cn(
-                    '!w-3.5 !h-3.5 !-right-2 border-2 border-white dark:border-slate-900',
-                    isRoleMode ? '!bg-violet-500' : '!bg-cyan-500'
-                )}
+                className={cn('!-right-2 !h-3.5 !w-3.5 border-2 border-white dark:border-slate-900', isRoleMode ? '!bg-violet-500' : '!bg-cyan-500')}
             />
         </div>
     );
@@ -675,10 +636,10 @@ const RoleHeaderCard = ({ data }: NodeProps<Node<JobTreeNodeData>>) => {
     return (
         <div
             className={cn(
-                'w-[260px] rounded-2xl border-2 shadow-lg transition-all text-left relative cursor-grab active:cursor-grabbing backdrop-blur-md p-3.5 select-none',
+                'relative w-[260px] cursor-grab rounded-2xl border-2 p-3.5 text-left shadow-lg backdrop-blur-md transition-all select-none active:cursor-grabbing',
                 isDark
-                    ? 'bg-gradient-to-br from-slate-900/95 via-zinc-900/90 to-zinc-950/95 border-violet-500/40 text-slate-100 shadow-violet-950/40'
-                    : 'bg-gradient-to-br from-white via-violet-50/40 to-white border-violet-300 text-slate-900 shadow-violet-100/70'
+                    ? 'border-violet-500/40 bg-gradient-to-br from-slate-900/95 via-zinc-900/90 to-zinc-950/95 text-slate-100 shadow-violet-950/40'
+                    : 'border-violet-300 bg-gradient-to-br from-white via-violet-50/40 to-white text-slate-900 shadow-violet-100/70',
             )}
             onClick={() => {
                 if (typeof onSelect === 'function') onSelect(data);
@@ -689,32 +650,32 @@ const RoleHeaderCard = ({ data }: NodeProps<Node<JobTreeNodeData>>) => {
                 id="role-left"
                 type="target"
                 position={Position.Left}
-                className="!w-3.5 !h-3.5 !bg-violet-500 border-2 border-white dark:border-zinc-900 !-left-2"
+                className="!-left-2 !h-3.5 !w-3.5 border-2 border-white !bg-violet-500 dark:border-zinc-900"
             />
 
             <div className="flex items-start justify-between gap-2">
-                <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="p-2 rounded-xl bg-violet-500/15 border border-violet-500/25 text-violet-600 dark:text-violet-400 shrink-0">
-                        <Shield className="w-4 h-4" />
+                <div className="flex min-w-0 items-center gap-2.5">
+                    <div className="shrink-0 rounded-xl border border-violet-500/25 bg-violet-500/15 p-2 text-violet-600 dark:text-violet-400">
+                        <Shield className="h-4 w-4" />
                     </div>
                     <div className="min-w-0 flex-1">
-                        <span className="text-[9px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded border bg-violet-500/15 text-violet-700 dark:text-violet-300 border-violet-500/25">
+                        <span className="rounded border border-violet-500/25 bg-violet-500/15 px-1.5 py-0.5 text-[9px] font-extrabold tracking-wider text-violet-700 uppercase dark:text-violet-300">
                             ROLE AKSES
                         </span>
-                        <h4 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 truncate mt-1 leading-tight" title={title}>
+                        <h4 className="mt-1 truncate text-sm leading-tight font-extrabold text-slate-900 dark:text-slate-100" title={title}>
                             {title}
                         </h4>
                     </div>
                 </div>
             </div>
 
-            <div className="mt-2.5 pt-2 border-t border-violet-200/60 dark:border-violet-800/60 flex items-center justify-between text-[11px]">
+            <div className="mt-2.5 flex items-center justify-between border-t border-violet-200/60 pt-2 text-[11px] dark:border-violet-800/60">
                 <span className="flex items-center gap-1 font-semibold text-slate-600 dark:text-slate-300">
-                    <Network className="w-3 h-3 text-violet-500" />
+                    <Network className="h-3 w-3 text-violet-500" />
                     {subItemsCount || 0} Divisi
                 </span>
-                <span className="flex items-center gap-1 font-extrabold text-violet-700 dark:text-violet-300 bg-violet-100 dark:bg-violet-950/80 px-2 py-0.5 rounded-full border border-violet-300 dark:border-violet-800 text-[10px]">
-                    <Users className="w-3 h-3" />
+                <span className="flex items-center gap-1 rounded-full border border-violet-300 bg-violet-100 px-2 py-0.5 text-[10px] font-extrabold text-violet-700 dark:border-violet-800 dark:bg-violet-950/80 dark:text-violet-300">
+                    <Users className="h-3 w-3" />
                     {totalUsers || 0} Orang
                 </span>
             </div>
@@ -724,7 +685,7 @@ const RoleHeaderCard = ({ data }: NodeProps<Node<JobTreeNodeData>>) => {
                 id="role-right"
                 type="source"
                 position={Position.Right}
-                className="!w-3.5 !h-3.5 !bg-violet-500 border-2 border-white dark:border-zinc-900 !-right-2"
+                className="!-right-2 !h-3.5 !w-3.5 border-2 border-white !bg-violet-500 dark:border-zinc-900"
             />
         </div>
     );
@@ -745,7 +706,7 @@ const DivisionUnifiedCard = ({ data }: NodeProps<Node<JobTreeNodeData>>) => {
                     u.name?.toLowerCase().includes(q) ||
                     u.nik?.toLowerCase().includes(q) ||
                     u.department_name?.toLowerCase().includes(q) ||
-                    u.job_title_name?.toLowerCase().includes(q)
+                    u.job_title_name?.toLowerCase().includes(q),
             )
             .slice(0, 50);
     }, [users, filterText]);
@@ -753,10 +714,10 @@ const DivisionUnifiedCard = ({ data }: NodeProps<Node<JobTreeNodeData>>) => {
     return (
         <div
             className={cn(
-                'w-[320px] rounded-2xl border-2 shadow-lg transition-all text-left relative cursor-grab active:cursor-grabbing backdrop-blur-md overflow-hidden',
+                'relative w-[320px] cursor-grab overflow-hidden rounded-2xl border-2 text-left shadow-lg backdrop-blur-md transition-all active:cursor-grabbing',
                 isDark
-                    ? 'bg-gradient-to-b from-slate-900 via-zinc-900 to-zinc-950 border-purple-500/30 text-slate-100 shadow-purple-950/40'
-                    : 'bg-gradient-to-b from-white via-purple-50/20 to-white border-purple-200 text-slate-900 shadow-slate-200/80'
+                    ? 'border-purple-500/30 bg-gradient-to-b from-slate-900 via-zinc-900 to-zinc-950 text-slate-100 shadow-purple-950/40'
+                    : 'border-purple-200 bg-gradient-to-b from-white via-purple-50/20 to-white text-slate-900 shadow-slate-200/80',
             )}
         >
             {/* Left handle connects from Role Header Card */}
@@ -764,37 +725,33 @@ const DivisionUnifiedCard = ({ data }: NodeProps<Node<JobTreeNodeData>>) => {
                 id="div-left"
                 type="target"
                 position={Position.Left}
-                className="!w-3.5 !h-3.5 !bg-purple-500 border-2 border-white dark:border-zinc-900 !-left-2"
+                className="!-left-2 !h-3.5 !w-3.5 border-2 border-white !bg-purple-500 dark:border-zinc-900"
             />
 
             {/* Division Header */}
             <div
-                className="p-3 border-b border-purple-500/15 bg-gradient-to-r from-purple-500/10 via-violet-500/5 to-transparent cursor-pointer transition-colors hover:bg-purple-500/15"
+                className="cursor-pointer border-b border-purple-500/15 bg-gradient-to-r from-purple-500/10 via-violet-500/5 to-transparent p-3 transition-colors hover:bg-purple-500/15"
                 onClick={() => {
                     if (typeof onSelect === 'function') onSelect(data);
                 }}
             >
                 <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                        <div className="p-1.5 rounded-lg border bg-purple-500/15 border-purple-500/25 text-purple-600 dark:text-purple-400 shrink-0">
-                            <Network className="w-3.5 h-3.5" />
+                    <div className="flex min-w-0 items-center gap-2">
+                        <div className="shrink-0 rounded-lg border border-purple-500/25 bg-purple-500/15 p-1.5 text-purple-600 dark:text-purple-400">
+                            <Network className="h-3.5 w-3.5" />
                         </div>
                         <div className="min-w-0 flex-1">
-                            <span className="text-[9px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded border bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/25">
+                            <span className="rounded border border-purple-500/25 bg-purple-500/15 px-1.5 py-0.5 text-[9px] font-extrabold tracking-wider text-purple-700 uppercase dark:text-purple-300">
                                 DIVISI / UNIT
                             </span>
-                            <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate mt-0.5 leading-tight" title={title}>
+                            <h4 className="mt-0.5 truncate text-xs leading-tight font-bold text-slate-900 dark:text-slate-100" title={title}>
                                 {title}
                             </h4>
-                            {subtitle && (
-                                <p className="text-[9.5px] text-slate-500 dark:text-slate-400 truncate">
-                                    {subtitle}
-                                </p>
-                            )}
+                            {subtitle && <p className="truncate text-[9.5px] text-slate-500 dark:text-slate-400">{subtitle}</p>}
                         </div>
                     </div>
-                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full shrink-0 flex items-center gap-1 border text-purple-700 dark:text-purple-300 bg-purple-100/80 dark:bg-purple-950/70 border-purple-300/80 dark:border-purple-800">
-                        <Users className="w-3 h-3" />
+                    <span className="flex shrink-0 items-center gap-1 rounded-full border border-purple-300/80 bg-purple-100/80 px-2 py-0.5 text-[10px] font-extrabold text-purple-700 dark:border-purple-800 dark:bg-purple-950/70 dark:text-purple-300">
+                        <Users className="h-3 w-3" />
                         {totalUsers} orang
                     </span>
                 </div>
@@ -802,26 +759,24 @@ const DivisionUnifiedCard = ({ data }: NodeProps<Node<JobTreeNodeData>>) => {
 
             {/* In-Card Search (shown if > 2 people) */}
             {totalUsers > 2 && (
-                <div className="px-3 pt-2 pb-1 bg-slate-50/50 dark:bg-zinc-900/50 border-b border-slate-100 dark:border-zinc-800/80">
+                <div className="border-b border-slate-100 bg-slate-50/50 px-3 pt-2 pb-1 dark:border-zinc-800/80 dark:bg-zinc-900/50">
                     <div className="relative">
-                        <Search size={11} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <Search size={11} className="absolute top-1/2 left-2.5 -translate-y-1/2 text-slate-400" />
                         <input
                             type="text"
                             placeholder={`Cari ${totalUsers} orang...`}
                             value={filterText}
                             onChange={(e) => setFilterText(e.target.value)}
-                            className="h-6 w-full rounded-lg border border-slate-200/80 bg-white pl-7 pr-2 text-[10px] text-slate-900 focus:border-purple-500 focus:outline-none dark:border-zinc-800 dark:bg-zinc-800 dark:text-slate-100"
+                            className="h-6 w-full rounded-lg border border-slate-200/80 bg-white pr-2 pl-7 text-[10px] text-slate-900 focus:border-purple-500 focus:outline-none dark:border-zinc-800 dark:bg-zinc-800 dark:text-slate-100"
                         />
                     </div>
                 </div>
             )}
 
             {/* Employee List inside the Division Card */}
-            <div className="p-2 max-h-[250px] overflow-y-auto space-y-1.5 [scrollbar-width:thin]">
+            <div className="max-h-[250px] [scrollbar-width:thin] space-y-1.5 overflow-y-auto p-2">
                 {displayed.length === 0 ? (
-                    <div className="py-4 text-center text-xs text-slate-400">
-                        Tidak ada orang ditemukan.
-                    </div>
+                    <div className="py-4 text-center text-xs text-slate-400">Tidak ada orang ditemukan.</div>
                 ) : (
                     displayed.map((u) => (
                         <div
@@ -834,24 +789,24 @@ const DivisionUnifiedCard = ({ data }: NodeProps<Node<JobTreeNodeData>>) => {
                                     onSelect(data);
                                 }
                             }}
-                            className="p-1.5 rounded-xl bg-slate-50/80 dark:bg-zinc-800/50 border border-transparent flex items-center gap-2 cursor-pointer transition-all hover:bg-purple-500/10 dark:hover:bg-purple-950/40 hover:border-purple-500/20 group"
+                            className="group flex cursor-pointer items-center gap-2 rounded-xl border border-transparent bg-slate-50/80 p-1.5 transition-all hover:border-purple-500/20 hover:bg-purple-500/10 dark:bg-zinc-800/50 dark:hover:bg-purple-950/40"
                         >
-                            <div className="h-6 w-6 rounded-full flex items-center justify-center font-extrabold text-[10px] shrink-0 border bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/25 group-hover:scale-105 transition-transform">
+                            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-purple-500/25 bg-purple-500/15 text-[10px] font-extrabold text-purple-700 transition-transform group-hover:scale-105 dark:text-purple-300">
                                 {u.name.charAt(0).toUpperCase()}
                             </div>
                             <div className="min-w-0 flex-1">
-                                <div className="text-[11px] font-bold text-slate-900 dark:text-slate-100 truncate transition-colors group-hover:text-purple-600 dark:group-hover:text-purple-400">
+                                <div className="truncate text-[11px] font-bold text-slate-900 transition-colors group-hover:text-purple-600 dark:text-slate-100 dark:group-hover:text-purple-400">
                                     {u.name}
                                 </div>
-                                <div className="text-[9px] text-slate-500 dark:text-slate-400 truncate flex items-center gap-1">
-                                    <span className="font-medium text-slate-600 dark:text-slate-300 truncate">
+                                <div className="flex items-center gap-1 truncate text-[9px] text-slate-500 dark:text-slate-400">
+                                    <span className="truncate font-medium text-slate-600 dark:text-slate-300">
                                         {u.job_title_name || u.department_name || 'Staff'}
                                     </span>
                                     <span>·</span>
                                     <span className="font-mono text-[9px] text-slate-400">{u.nik}</span>
                                 </div>
                                 {u.reporting_to && (
-                                    <div className="text-[8.5px] text-amber-600 dark:text-amber-400 truncate font-semibold flex items-center gap-1 mt-0.5">
+                                    <div className="mt-0.5 flex items-center gap-1 truncate text-[8.5px] font-semibold text-amber-600 dark:text-amber-400">
                                         <UserCheck size={9} className="shrink-0" />
                                         <span>Atasan: {u.reporting_to}</span>
                                     </div>
@@ -867,7 +822,7 @@ const DivisionUnifiedCard = ({ data }: NodeProps<Node<JobTreeNodeData>>) => {
                             e.stopPropagation();
                             if (typeof onSelect === 'function') onSelect(data);
                         }}
-                        className="text-center py-1.5 text-[10px] font-bold hover:underline cursor-pointer text-purple-600 dark:text-purple-400"
+                        className="cursor-pointer py-1.5 text-center text-[10px] font-bold text-purple-600 hover:underline dark:text-purple-400"
                     >
                         + Buka {totalUsers - 50} orang lainnya di panel...
                     </div>
@@ -887,12 +842,7 @@ const UnifiedJobPositionCard = ({ data }: NodeProps<Node<JobTreeNodeData>>) => {
         if (!filterText.trim()) return users.slice(0, 50);
         const q = filterText.toLowerCase();
         return users
-            .filter(
-                (u) =>
-                    u.name?.toLowerCase().includes(q) ||
-                    u.nik?.toLowerCase().includes(q) ||
-                    u.department_name?.toLowerCase().includes(q)
-            )
+            .filter((u) => u.name?.toLowerCase().includes(q) || u.nik?.toLowerCase().includes(q) || u.department_name?.toLowerCase().includes(q))
             .slice(0, 50);
     }, [users, filterText]);
 
@@ -901,10 +851,10 @@ const UnifiedJobPositionCard = ({ data }: NodeProps<Node<JobTreeNodeData>>) => {
     return (
         <div
             className={cn(
-                'w-[350px] rounded-2xl border-2 shadow-lg transition-all text-left relative cursor-grab active:cursor-grabbing backdrop-blur-md overflow-hidden',
+                'relative w-[350px] cursor-grab overflow-hidden rounded-2xl border-2 text-left shadow-lg backdrop-blur-md transition-all active:cursor-grabbing',
                 isDark
-                    ? 'bg-gradient-to-b from-slate-900 via-zinc-900 to-zinc-950 border-cyan-500/30 text-slate-100 shadow-cyan-950/40'
-                    : 'bg-gradient-to-b from-white via-slate-50/50 to-white border-cyan-200 text-slate-900 shadow-slate-200/80'
+                    ? 'border-cyan-500/30 bg-gradient-to-b from-slate-900 via-zinc-900 to-zinc-950 text-slate-100 shadow-cyan-950/40'
+                    : 'border-cyan-200 bg-gradient-to-b from-white via-slate-50/50 to-white text-slate-900 shadow-slate-200/80',
             )}
         >
             {/* Left Handle connects from Tier Header on the left */}
@@ -912,39 +862,39 @@ const UnifiedJobPositionCard = ({ data }: NodeProps<Node<JobTreeNodeData>>) => {
                 id="pos-left"
                 type="target"
                 position={Position.Left}
-                className="!w-3.5 !h-3.5 border-2 border-white dark:border-zinc-900 !-left-2 !bg-cyan-500"
+                className="!-left-2 !h-3.5 !w-3.5 border-2 border-white !bg-cyan-500 dark:border-zinc-900"
             />
             {/* Top Handle for vertical fallback */}
             <Handle
                 id="pos-top"
                 type="target"
                 position={Position.Top}
-                className="!w-3 !h-3 border-2 border-white dark:border-zinc-900 !-top-1.5 opacity-0 pointer-events-none !bg-cyan-500"
+                className="pointer-events-none !-top-1.5 !h-3 !w-3 border-2 border-white !bg-cyan-500 opacity-0 dark:border-zinc-900"
             />
 
             {/* Position Header */}
             <div
-                className="p-3.5 border-b cursor-pointer transition-colors bg-gradient-to-r from-cyan-500/10 via-sky-500/5 to-transparent border-cyan-500/15 hover:bg-cyan-500/15"
+                className="cursor-pointer border-b border-cyan-500/15 bg-gradient-to-r from-cyan-500/10 via-sky-500/5 to-transparent p-3.5 transition-colors hover:bg-cyan-500/15"
                 onClick={() => {
                     if (typeof onSelect === 'function') onSelect(data);
                 }}
             >
                 <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                        <div className="p-1.5 rounded-lg border shrink-0 bg-cyan-500/15 border-cyan-500/25 text-cyan-600 dark:text-cyan-400">
-                            <Briefcase className="w-3.5 h-3.5" />
+                    <div className="flex min-w-0 items-center gap-2">
+                        <div className="shrink-0 rounded-lg border border-cyan-500/25 bg-cyan-500/15 p-1.5 text-cyan-600 dark:text-cyan-400">
+                            <Briefcase className="h-3.5 w-3.5" />
                         </div>
                         <div className="min-w-0 flex-1">
-                            <span className="text-[9px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded border bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/25">
+                            <span className="rounded border border-cyan-500/25 bg-cyan-500/15 px-1.5 py-0.5 text-[9px] font-extrabold tracking-wider text-cyan-700 uppercase dark:text-cyan-300">
                                 {gradeLabel}
                             </span>
-                            <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate mt-1 leading-tight" title={title}>
+                            <h4 className="mt-1 truncate text-xs leading-tight font-bold text-slate-900 dark:text-slate-100" title={title}>
                                 {title}
                             </h4>
                         </div>
                     </div>
-                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full shrink-0 flex items-center gap-1 border text-cyan-700 dark:text-cyan-300 bg-cyan-100/80 dark:bg-cyan-950/70 border-cyan-300/80 dark:border-cyan-800">
-                        <Users className="w-3 h-3" />
+                    <span className="flex shrink-0 items-center gap-1 rounded-full border border-cyan-300/80 bg-cyan-100/80 px-2 py-0.5 text-[10px] font-extrabold text-cyan-700 dark:border-cyan-800 dark:bg-cyan-950/70 dark:text-cyan-300">
+                        <Users className="h-3 w-3" />
                         {totalUsers} orang
                     </span>
                 </div>
@@ -952,26 +902,24 @@ const UnifiedJobPositionCard = ({ data }: NodeProps<Node<JobTreeNodeData>>) => {
 
             {/* In-Card Search (shown if > 2 people) */}
             {totalUsers > 2 && (
-                <div className="px-3 pt-2.5 pb-1 bg-slate-50/50 dark:bg-zinc-900/50 border-b border-slate-100 dark:border-zinc-800/80">
+                <div className="border-b border-slate-100 bg-slate-50/50 px-3 pt-2.5 pb-1 dark:border-zinc-800/80 dark:bg-zinc-900/50">
                     <div className="relative">
-                        <Search size={11} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <Search size={11} className="absolute top-1/2 left-2.5 -translate-y-1/2 text-slate-400" />
                         <input
                             type="text"
                             placeholder={`Cari di ${totalUsers} orang...`}
                             value={filterText}
                             onChange={(e) => setFilterText(e.target.value)}
-                            className="h-6 w-full rounded-lg border border-slate-200/80 bg-white pl-7 pr-2 text-[10px] text-slate-900 focus:border-cyan-500 focus:outline-none dark:border-zinc-800 dark:bg-zinc-800 dark:text-slate-100"
+                            className="h-6 w-full rounded-lg border border-slate-200/80 bg-white pr-2 pl-7 text-[10px] text-slate-900 focus:border-cyan-500 focus:outline-none dark:border-zinc-800 dark:bg-zinc-800 dark:text-slate-100"
                         />
                     </div>
                 </div>
             )}
 
             {/* Employee List inside the Unified Card */}
-            <div className="p-2 max-h-[260px] overflow-y-auto space-y-1.5 [scrollbar-width:thin]">
+            <div className="max-h-[260px] [scrollbar-width:thin] space-y-1.5 overflow-y-auto p-2">
                 {displayed.length === 0 ? (
-                    <div className="py-5 text-center text-xs text-slate-400">
-                        Tidak ada orang ditemukan.
-                    </div>
+                    <div className="py-5 text-center text-xs text-slate-400">Tidak ada orang ditemukan.</div>
                 ) : (
                     displayed.map((u) => (
                         <div
@@ -984,24 +932,24 @@ const UnifiedJobPositionCard = ({ data }: NodeProps<Node<JobTreeNodeData>>) => {
                                     onSelect(data);
                                 }
                             }}
-                            className="p-1.5 rounded-xl bg-slate-50/80 dark:bg-zinc-800/50 border border-transparent flex items-center gap-2 cursor-pointer transition-all hover:bg-cyan-500/10 dark:hover:bg-cyan-950/40 hover:border-cyan-500/20 group"
+                            className="group flex cursor-pointer items-center gap-2 rounded-xl border border-transparent bg-slate-50/80 p-1.5 transition-all hover:border-cyan-500/20 hover:bg-cyan-500/10 dark:bg-zinc-800/50 dark:hover:bg-cyan-950/40"
                         >
-                            <div className="h-6 w-6 rounded-full flex items-center justify-center font-extrabold text-[10px] shrink-0 border bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/25 group-hover:scale-105 transition-transform">
+                            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-cyan-500/25 bg-cyan-500/15 text-[10px] font-extrabold text-cyan-700 transition-transform group-hover:scale-105 dark:text-cyan-300">
                                 {u.name.charAt(0).toUpperCase()}
                             </div>
                             <div className="min-w-0 flex-1">
-                                <div className="text-[11px] font-bold text-slate-900 dark:text-slate-100 truncate transition-colors group-hover:text-cyan-600 dark:group-hover:text-cyan-400">
+                                <div className="truncate text-[11px] font-bold text-slate-900 transition-colors group-hover:text-cyan-600 dark:text-slate-100 dark:group-hover:text-cyan-400">
                                     {u.name}
                                 </div>
-                                <div className="text-[9px] text-slate-500 dark:text-slate-400 truncate flex items-center gap-1">
-                                    <span className="font-medium text-slate-600 dark:text-slate-300 truncate">
+                                <div className="flex items-center gap-1 truncate text-[9px] text-slate-500 dark:text-slate-400">
+                                    <span className="truncate font-medium text-slate-600 dark:text-slate-300">
                                         {u.department_name || u.division_name}
                                     </span>
                                     <span>·</span>
                                     <span className="font-mono text-[9px] text-slate-400">{u.nik}</span>
                                 </div>
                                 {u.reporting_to && (
-                                    <div className="text-[8.5px] text-amber-600 dark:text-amber-400 truncate font-semibold flex items-center gap-1 mt-0.5">
+                                    <div className="mt-0.5 flex items-center gap-1 truncate text-[8.5px] font-semibold text-amber-600 dark:text-amber-400">
                                         <UserCheck size={9} className="shrink-0" />
                                         <span>Atasan: {u.reporting_to}</span>
                                     </div>
@@ -1017,7 +965,7 @@ const UnifiedJobPositionCard = ({ data }: NodeProps<Node<JobTreeNodeData>>) => {
                             e.stopPropagation();
                             if (typeof onSelect === 'function') onSelect(data);
                         }}
-                        className="text-center py-1.5 text-[10px] font-bold hover:underline cursor-pointer text-cyan-600 dark:text-cyan-400"
+                        className="cursor-pointer py-1.5 text-center text-[10px] font-bold text-cyan-600 hover:underline dark:text-cyan-400"
                     >
                         + Buka {totalUsers - 50} orang lainnya di panel...
                     </div>
@@ -1027,7 +975,7 @@ const UnifiedJobPositionCard = ({ data }: NodeProps<Node<JobTreeNodeData>>) => {
             <Handle
                 type="source"
                 position={Position.Bottom}
-                className="!w-3 !h-3 !bg-cyan-500 border-2 border-white dark:border-zinc-900 !-bottom-1.5 opacity-0 pointer-events-none"
+                className="pointer-events-none !-bottom-1.5 !h-3 !w-3 border-2 border-white !bg-cyan-500 opacity-0 dark:border-zinc-900"
             />
         </div>
     );
@@ -1105,7 +1053,9 @@ export function JobHierarchyFlow({
 
     // Multi-select state filters
     const [internalSelectedGroups, setInternalSelectedGroups] = useState<string[]>(() => savedInitial.selectedGroups || []);
-    const [internalSelectedOrganizationGroups, setInternalSelectedOrganizationGroups] = useState<string[]>(() => savedInitial.selectedOrganizationGroups || []);
+    const [internalSelectedOrganizationGroups, setInternalSelectedOrganizationGroups] = useState<string[]>(
+        () => savedInitial.selectedOrganizationGroups || [],
+    );
     const [internalSelectedRegions, setInternalSelectedRegions] = useState<string[]>(() => savedInitial.selectedRegions || []);
     const [internalSelectedLocations, setInternalSelectedLocations] = useState<string[]>(() => savedInitial.selectedLocations || []);
     const [internalSelectedCompanies, setInternalSelectedCompanies] = useState<string[]>(() => savedInitial.selectedCompanies || []);
@@ -1275,7 +1225,7 @@ export function JobHierarchyFlow({
                 preserveState: false,
                 preserveScroll: true,
                 onFinish: () => setIsSyncing(false),
-            }
+            },
         );
     };
 
@@ -1292,7 +1242,10 @@ export function JobHierarchyFlow({
                 return false;
             }
             // Organization Group Filter
-            if (selectedOrganizationGroups.length > 0 && !selectedOrganizationGroups.some((og) => og.toLowerCase() === (u.org_group_name || '').toLowerCase())) {
+            if (
+                selectedOrganizationGroups.length > 0 &&
+                !selectedOrganizationGroups.some((og) => og.toLowerCase() === (u.org_group_name || '').toLowerCase())
+            ) {
                 return false;
             }
             // Region Filter
@@ -1316,7 +1269,10 @@ export function JobHierarchyFlow({
                 return false;
             }
             // Subdepartment Filter
-            if (selectedSubdepartments.length > 0 && !selectedSubdepartments.some((sub) => sub.toLowerCase() === (u.subdepartment_name || '').toLowerCase())) {
+            if (
+                selectedSubdepartments.length > 0 &&
+                !selectedSubdepartments.some((sub) => sub.toLowerCase() === (u.subdepartment_name || '').toLowerCase())
+            ) {
                 return false;
             }
             // Section Filter
@@ -1324,7 +1280,10 @@ export function JobHierarchyFlow({
                 return false;
             }
             // Job Level Group Filter
-            if (selectedJobLevelGroups.length > 0 && !selectedJobLevelGroups.some((jlg) => jlg.toLowerCase() === ((u as any).job_level_group_name || '').toLowerCase())) {
+            if (
+                selectedJobLevelGroups.length > 0 &&
+                !selectedJobLevelGroups.some((jlg) => jlg.toLowerCase() === ((u as any).job_level_group_name || '').toLowerCase())
+            ) {
                 return false;
             }
             // Job Level Filter
@@ -1427,9 +1386,7 @@ export function JobHierarchyFlow({
             // Group users in this tier by either Job Title or Role Akses based on groupByMode
             const groupMap = new Map<string, HierarchyUser[]>();
             tierUsers.forEach((u) => {
-                const groupKey = groupByMode === 'role'
-                    ? (u.role_name || 'Member')
-                    : (u.job_title_name || 'Tanpa Posisi');
+                const groupKey = groupByMode === 'role' ? u.role_name || 'Member' : u.job_title_name || 'Tanpa Posisi';
                 if (!groupMap.has(groupKey)) groupMap.set(groupKey, []);
                 groupMap.get(groupKey)!.push(u);
             });
@@ -1448,9 +1405,10 @@ export function JobHierarchyFlow({
                     label: tierDef.title,
                     subtitle: tierDef.subtitle,
                     levelKey: tierDef.key,
-                    levelLabel: groupByMode === 'role'
-                        ? `JENJANG ROLE ${tierDef.rank} · ${tierDef.title.split(' ')[0]}`
-                        : `LEVEL ${tierDef.rank} · ${tierDef.title.split(' ')[0]}`,
+                    levelLabel:
+                        groupByMode === 'role'
+                            ? `JENJANG ROLE ${tierDef.rank} · ${tierDef.title.split(' ')[0]}`
+                            : `LEVEL ${tierDef.rank} · ${tierDef.title.split(' ')[0]}`,
                     badgeBg: tierDef.badgeBg,
                     users: tierUsers,
                     totalUsers: tierUsers.length,
@@ -1670,7 +1628,7 @@ export function JobHierarchyFlow({
                     });
 
                     // Calculate height spacing so the next tier node has clean vertical clearance
-                    const tierRowHeight = (!isTierCollapsed && distinctGroupKeys.length > 0) ? 380 : 180;
+                    const tierRowHeight = !isTierCollapsed && distinctGroupKeys.length > 0 ? 380 : 180;
                     currentY += tierRowHeight;
                 }
             } else {
@@ -1690,15 +1648,9 @@ export function JobHierarchyFlow({
         setEdges(computedFlow.edges);
     }, [computedFlow]);
 
-    const onNodesChange: OnNodesChange = useCallback(
-        (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
-        []
-    );
+    const onNodesChange: OnNodesChange = useCallback((changes) => setNodes((nds) => applyNodeChanges(changes, nds)), []);
 
-    const onEdgesChange: OnEdgesChange = useCallback(
-        (changes) => setEdges((eds) => applyEdgeChanges(changes, eds)),
-        []
-    );
+    const onEdgesChange: OnEdgesChange = useCallback((changes) => setEdges((eds) => applyEdgeChanges(changes, eds)), []);
 
     // Filter people list in the open drawer
     const displayedUsersInDrawer = useMemo(() => {
@@ -1711,14 +1663,14 @@ export function JobHierarchyFlow({
                 u.nik?.toLowerCase().includes(q) ||
                 u.email?.toLowerCase().includes(q) ||
                 u.department_name?.toLowerCase().includes(q) ||
-                u.job_title_name?.toLowerCase().includes(q)
+                u.job_title_name?.toLowerCase().includes(q),
         );
     }, [selectedNode, userSearchText]);
 
     return (
-        <div className="flex h-full w-full flex-col bg-slate-50 dark:bg-zinc-950 relative overflow-hidden">
+        <div className="relative flex h-full w-full flex-col overflow-hidden bg-slate-50 dark:bg-zinc-950">
             {/* Flow Canvas with Drag & Drop */}
-            <div className="flex-1 w-full h-full min-h-[500px] relative">
+            <div className="relative h-full min-h-[500px] w-full flex-1">
                 <ReactFlow
                     nodes={nodes}
                     edges={edges}
@@ -1734,57 +1686,63 @@ export function JobHierarchyFlow({
                     attributionPosition="bottom-left"
                 >
                     <Background variant={BackgroundVariant.Dots} gap={20} size={1.2} />
-                    <Controls position="bottom-right" className="!bg-white dark:!bg-slate-900 !border-slate-200 dark:!border-slate-800 !rounded-lg !shadow-md" />
+                    <Controls
+                        position="bottom-right"
+                        className="!rounded-lg !border-slate-200 !bg-white !shadow-md dark:!border-slate-800 dark:!bg-slate-900"
+                    />
                     <MiniMap
                         position="bottom-left"
                         nodeColor={(n) => {
                             if (n.type === 'job_tier_node') return '#f59e0b';
                             return '#06b6d4';
                         }}
-                        className="!bg-white/80 dark:!bg-slate-900/80 !border-slate-200 dark:!border-slate-800 !rounded-lg !shadow-md"
+                        className="!rounded-lg !border-slate-200 !bg-white/80 !shadow-md dark:!border-slate-800 dark:!bg-slate-900/80"
                     />
                 </ReactFlow>
             </div>
 
             {/* Right Side Drawer for Detailed People List when Node Clicked */}
             {selectedNode && (
-                <div className="absolute inset-y-0 right-0 w-96 max-w-full bg-white dark:bg-zinc-900 border-l border-slate-200 dark:border-zinc-800 shadow-2xl z-40 flex flex-col animate-in slide-in-from-right duration-200">
+                <div className="animate-in slide-in-from-right absolute inset-y-0 right-0 z-40 flex w-96 max-w-full flex-col border-l border-slate-200 bg-white shadow-2xl duration-200 dark:border-zinc-800 dark:bg-zinc-900">
                     {/* Drawer Header */}
-                    <div className="p-4 border-b border-slate-200 dark:border-zinc-800 flex items-start justify-between bg-slate-50 dark:bg-zinc-900">
+                    <div className="flex items-start justify-between border-b border-slate-200 bg-slate-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
                         <div>
-                            <span className={cn('text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border', selectedNode.badgeBg || 'bg-amber-100 text-amber-800 border-amber-300')}>
+                            <span
+                                className={cn(
+                                    'rounded-md border px-2 py-0.5 text-[9px] font-bold tracking-wider uppercase',
+                                    selectedNode.badgeBg || 'border-amber-300 bg-amber-100 text-amber-800',
+                                )}
+                            >
                                 {selectedNode.levelLabel}
                             </span>
-                            <h2 className="text-sm font-bold text-slate-900 dark:text-white mt-1 break-words">
-                                {selectedNode.title}
-                            </h2>
-                            <p className="text-[11px] text-slate-500 mt-0.5">
+                            <h2 className="mt-1 text-sm font-bold break-words text-slate-900 dark:text-white">{selectedNode.title}</h2>
+                            <p className="mt-0.5 text-[11px] text-slate-500">
                                 Total <strong>{selectedNode.totalUsers}</strong> orang terdaftar di hierarki ini
                             </p>
                         </div>
                         <button
                             onClick={() => setSelectedNode(null)}
-                            className="p-1.5 rounded-xl hover:bg-slate-200 dark:hover:bg-zinc-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                            className="cursor-pointer rounded-xl p-1.5 text-slate-400 transition-colors hover:bg-slate-200 hover:text-slate-700 dark:hover:bg-zinc-800 dark:hover:text-slate-200"
                         >
                             <X size={16} />
                         </button>
                     </div>
 
                     {/* Search inside Drawer */}
-                    <div className="p-3 border-b border-slate-100 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+                    <div className="border-b border-slate-100 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900">
                         <div className="relative">
-                            <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                            <Search size={13} className="absolute top-1/2 left-2.5 -translate-y-1/2 text-slate-400" />
                             <input
                                 type="text"
                                 placeholder="Filter nama atau NIK di list ini..."
                                 value={userSearchText}
                                 onChange={(e) => setUserSearchText(e.target.value)}
-                                className="h-8 w-full rounded-xl border border-slate-200 bg-slate-50 pl-8 pr-3 text-xs text-slate-900 focus:border-primary focus:bg-white focus:outline-none dark:border-zinc-800 dark:bg-zinc-800 dark:text-slate-100"
+                                className="focus:border-primary h-8 w-full rounded-xl border border-slate-200 bg-slate-50 pr-3 pl-8 text-xs text-slate-900 focus:bg-white focus:outline-none dark:border-zinc-800 dark:bg-zinc-800 dark:text-slate-100"
                             />
                             {userSearchText && (
                                 <button
                                     onClick={() => setUserSearchText('')}
-                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                                    className="absolute top-1/2 right-2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-slate-600"
                                 >
                                     <X size={12} />
                                 </button>
@@ -1793,51 +1751,47 @@ export function JobHierarchyFlow({
                     </div>
 
                     {/* List of People */}
-                    <div className="flex-1 overflow-y-auto p-4 space-y-2.5 divide-y divide-slate-100 dark:divide-zinc-800/60 [scrollbar-width:thin]">
+                    <div className="flex-1 [scrollbar-width:thin] space-y-2.5 divide-y divide-slate-100 overflow-y-auto p-4 dark:divide-zinc-800/60">
                         {displayedUsersInDrawer.length === 0 ? (
-                            <div className="text-center py-10 text-xs text-slate-400">
-                                Tidak ada orang ditemukan dengan filter pencarian ini.
-                            </div>
+                            <div className="py-10 text-center text-xs text-slate-400">Tidak ada orang ditemukan dengan filter pencarian ini.</div>
                         ) : (
                             displayedUsersInDrawer.map((u) => (
-                                <div key={u.id} className="pt-2.5 first:pt-0 flex items-start gap-3">
-                                    <div className="h-8 w-8 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold text-xs shrink-0 border border-amber-500/20">
+                                <div key={u.id} className="flex items-start gap-3 pt-2.5 first:pt-0">
+                                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-amber-500/20 bg-amber-500/10 text-xs font-bold text-amber-600 dark:text-amber-400">
                                         {u.name.charAt(0).toUpperCase()}
                                     </div>
                                     <div className="min-w-0 flex-1">
                                         <div className="flex items-center justify-between gap-1">
-                                            <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate" title={u.name}>
+                                            <h4 className="truncate text-xs font-bold text-slate-900 dark:text-slate-100" title={u.name}>
                                                 {u.name}
                                             </h4>
-                                            <span className="text-[10px] font-semibold px-1.5 py-0.2 bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300 rounded">
+                                            <span className="py-0.2 rounded bg-slate-100 px-1.5 text-[10px] font-semibold text-slate-600 dark:bg-zinc-800 dark:text-slate-300">
                                                 {u.role_name || 'Staff'}
                                             </span>
                                         </div>
 
-                                        <div className="flex items-center gap-1.5 mt-0.5">
-                                            <p className="text-[11px] font-medium text-amber-600 dark:text-amber-400 truncate">
-                                                {u.job_title_name}
-                                            </p>
+                                        <div className="mt-0.5 flex items-center gap-1.5">
+                                            <p className="truncate text-[11px] font-medium text-amber-600 dark:text-amber-400">{u.job_title_name}</p>
                                             {u.job_level_name && (
-                                                <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-purple-50 border border-purple-200 text-purple-700 dark:bg-purple-950/40 dark:border-purple-800 dark:text-purple-300 shrink-0">
+                                                <span className="shrink-0 rounded border border-purple-200 bg-purple-50 px-1.5 py-0.5 text-[9px] font-semibold text-purple-700 dark:border-purple-800 dark:bg-purple-950/40 dark:text-purple-300">
                                                     {u.job_level_name}
                                                 </span>
                                             )}
                                         </div>
 
-                                        <div className="mt-1 space-y-0.5 text-[10px] text-slate-500 dark:text-slate-400 font-mono">
+                                        <div className="mt-1 space-y-0.5 font-mono text-[10px] text-slate-500 dark:text-slate-400">
                                             {u.reporting_to && (
-                                                <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-sans font-semibold">
+                                                <div className="flex items-center gap-1.5 font-sans font-semibold text-amber-600 dark:text-amber-400">
                                                     <UserCheck size={11} className="shrink-0" />
                                                     <span className="truncate">Atasan Langsung: {u.reporting_to}</span>
                                                 </div>
                                             )}
                                             <div className="flex items-center gap-1.5">
-                                                <IdCard size={11} className="text-slate-400 shrink-0" />
+                                                <IdCard size={11} className="shrink-0 text-slate-400" />
                                                 <span>NIK: {u.nik}</span>
                                             </div>
                                             <div className="flex items-center gap-1.5 truncate">
-                                                <Mail size={11} className="text-slate-400 shrink-0" />
+                                                <Mail size={11} className="shrink-0 text-slate-400" />
                                                 <a href={`mailto:${u.email}`} className="hover:text-primary truncate">
                                                     {u.email}
                                                 </a>
@@ -1861,10 +1815,10 @@ export function JobHierarchyFlow({
                     </div>
 
                     {/* Drawer Footer */}
-                    <div className="p-3 border-t border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900 text-right">
+                    <div className="border-t border-slate-200 bg-slate-50 p-3 text-right dark:border-zinc-800 dark:bg-zinc-900">
                         <button
                             onClick={() => setSelectedNode(null)}
-                            className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-zinc-800 cursor-pointer"
+                            className="cursor-pointer rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 dark:border-zinc-700 dark:text-slate-200 dark:hover:bg-zinc-800"
                         >
                             Tutup Panel
                         </button>

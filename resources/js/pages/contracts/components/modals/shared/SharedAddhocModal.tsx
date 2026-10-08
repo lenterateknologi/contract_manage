@@ -2,9 +2,9 @@ import { Button } from '@/components/ui/buttons/Button';
 import { Modal } from '@/components/ui/dialogs/Modal';
 import { StatusBadge } from '@/components/ui/feedback/StatusBadge';
 import { SearchableMultiSelect } from '@/components/ui/selection/SearchableMultiSelect';
+import { parseApiErrorMessage } from '@/lib/utils';
 import { contractApi } from '@/pages/contracts/utils';
 import { matchUserAgainstWorkflowPool } from '@/pages/workflows/workflow-filter';
-import { parseApiErrorMessage } from '@/lib/utils';
 import { CheckCircle2, Loader2, UserPlus, Users, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -36,13 +36,14 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
         const steps = contractData?.workflow?.steps || [];
 
         // 1. Find explicit adhoc step configured in the workflow
-        const explicitAdhocStep = steps.find((s: any) =>
-            s.approver_type === 'adhoc' ||
-            s.step_category === 'adhoc' ||
-            s.step_category === 'adhoc_review' ||
-            (s.approver_authorities || s.approverAuthorities || s.authorities || []).some((auth: any) =>
-                auth.authority_type === 'adhoc_approvers' || auth.authority_type === 'adhoc' || auth.user_id === 'adhoc_approvers'
-            )
+        const explicitAdhocStep = steps.find(
+            (s: any) =>
+                s.approver_type === 'adhoc' ||
+                s.step_category === 'adhoc' ||
+                s.step_category === 'adhoc_review' ||
+                (s.approver_authorities || s.approverAuthorities || s.authorities || []).some(
+                    (auth: any) => auth.authority_type === 'adhoc_approvers' || auth.authority_type === 'adhoc' || auth.user_id === 'adhoc_approvers',
+                ),
         );
 
         if (explicitAdhocStep) {
@@ -53,15 +54,20 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
         const customActions: any[] =
             contractData?.workflow?.meta?.custom_actions ||
             contractData?.origin_workflow?.meta?.custom_actions ||
-            contractData?.workflow_step?.workflow?.meta?.custom_actions || [];
+            contractData?.workflow_step?.workflow?.meta?.custom_actions ||
+            [];
         const customAction = customActions.find((ca: any) =>
-            actCode ? (ca.action_code === actCode || ca.id === actCode) : (ca.id === 'action_adhoc' || ca.action_code === 'add_adhoc' || ca.execution_type === 'adhoc_internal')
+            actCode
+                ? ca.action_code === actCode || ca.id === actCode
+                : ca.id === 'action_adhoc' || ca.action_code === 'add_adhoc' || ca.execution_type === 'adhoc_internal',
         );
 
         if (customAction && (customAction.target_step_mode || customAction.target_step_position || customAction.target_step_id)) {
             let anchorStep = currentStep;
             if (customAction.target_step_mode === 'specific_step' && customAction.target_step_id) {
-                const foundAnchor = steps.find((s: any) => String(s.id) === String(customAction.target_step_id) || Number(s.step) === Number(customAction.target_step_id));
+                const foundAnchor = steps.find(
+                    (s: any) => String(s.id) === String(customAction.target_step_id) || Number(s.step) === Number(customAction.target_step_id),
+                );
                 if (foundAnchor) anchorStep = foundAnchor;
             }
 
@@ -77,15 +83,18 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                 const matched = steps.find((s: any) => Number(s.step) === targetSeq);
                 if (matched) return String(matched.id);
             } else if (position === 'at' && customAction.target_step_id) {
-                const matched = steps.find((s: any) => String(s.id) === String(customAction.target_step_id) || Number(s.step) === Number(customAction.target_step_id));
+                const matched = steps.find(
+                    (s: any) => String(s.id) === String(customAction.target_step_id) || Number(s.step) === Number(customAction.target_step_id),
+                );
                 if (matched) return String(matched.id);
             }
         }
 
         // 3. Fallback: check if current step has adhoc authority
-        const currentStepHasAdhoc = (currentStep?.approver_authorities || currentStep?.approverAuthorities || currentStep?.authorities || []).some((auth: any) =>
-            auth.authority_type === 'adhoc_approvers' || auth.authority_type === 'adhoc' || auth.user_id === 'adhoc_approvers'
-        ) || currentStep?.approver_type === 'adhoc';
+        const currentStepHasAdhoc =
+            (currentStep?.approver_authorities || currentStep?.approverAuthorities || currentStep?.authorities || []).some(
+                (auth: any) => auth.authority_type === 'adhoc_approvers' || auth.authority_type === 'adhoc' || auth.user_id === 'adhoc_approvers',
+            ) || currentStep?.approver_type === 'adhoc';
 
         if (currentStepHasAdhoc) {
             return String(currentStep.id);
@@ -137,29 +146,31 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
 
             // 1. Check custom action configuration from workflow meta (e.g. action_adhoc or add_adhoc action)
             const customActions: any[] = contract?.workflow?.meta?.custom_actions || contract?.workflow_step?.workflow?.meta?.custom_actions || [];
-            const customAction = customActions.find((ca: any) =>
-                (actionCode && (ca.action_code === actionCode || ca.id === actionCode)) ||
-                ca.id === 'action_adhoc' ||
-                ca.action_code === 'add_adhoc' ||
-                ca.execution_type === 'adhoc_internal'
+            const customAction = customActions.find(
+                (ca: any) =>
+                    (actionCode && (ca.action_code === actionCode || ca.id === actionCode)) ||
+                    ca.id === 'action_adhoc' ||
+                    ca.action_code === 'add_adhoc' ||
+                    ca.execution_type === 'adhoc_internal',
             );
 
             // 2. Check step action configuration
-            const hasAssigneeConfig = activeAction?.assignee_config && (
-                (activeAction.assignee_config.custom && activeAction.assignee_config.custom.length > 0) ||
-                (activeAction.assignee_config.users && activeAction.assignee_config.users.length > 0) ||
-                (activeAction.assignee_config.roles && activeAction.assignee_config.roles.length > 0) ||
-                (activeAction.assignee_config.departments && activeAction.assignee_config.departments.length > 0) ||
-                (activeAction.assignee_config.divisions && activeAction.assignee_config.divisions.length > 0) ||
-                (activeAction.assignee_config.company_groups && activeAction.assignee_config.company_groups.length > 0) ||
-                (activeAction.assignee_config.regions && activeAction.assignee_config.regions.length > 0) ||
-                (activeAction.assignee_config.authorities && activeAction.assignee_config.authorities.length > 0) ||
-                activeAction.assignee_config.is_initiator_role ||
-                activeAction.assignee_config.is_initiator_department ||
-                activeAction.assignee_config.is_initiator_user
-            );
+            const hasAssigneeConfig =
+                activeAction?.assignee_config &&
+                ((activeAction.assignee_config.custom && activeAction.assignee_config.custom.length > 0) ||
+                    (activeAction.assignee_config.users && activeAction.assignee_config.users.length > 0) ||
+                    (activeAction.assignee_config.roles && activeAction.assignee_config.roles.length > 0) ||
+                    (activeAction.assignee_config.departments && activeAction.assignee_config.departments.length > 0) ||
+                    (activeAction.assignee_config.divisions && activeAction.assignee_config.divisions.length > 0) ||
+                    (activeAction.assignee_config.company_groups && activeAction.assignee_config.company_groups.length > 0) ||
+                    (activeAction.assignee_config.regions && activeAction.assignee_config.regions.length > 0) ||
+                    (activeAction.assignee_config.authorities && activeAction.assignee_config.authorities.length > 0) ||
+                    activeAction.assignee_config.is_initiator_role ||
+                    activeAction.assignee_config.is_initiator_department ||
+                    activeAction.assignee_config.is_initiator_user);
 
-            const hasCustomPersonnel = customAction?.eligible_personnel && Array.isArray(customAction.eligible_personnel) && customAction.eligible_personnel.length > 0;
+            const hasCustomPersonnel =
+                customAction?.eligible_personnel && Array.isArray(customAction.eligible_personnel) && customAction.eligible_personnel.length > 0;
 
             let config: any = null;
             if (hasCustomPersonnel) {
@@ -169,20 +180,19 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
             }
 
             const finalTargetStepId = targetStepIdVal || contract?.workflow_step_id;
-            const targetStep = (contract?.workflow?.steps || []).find((s: any) => String(s.id) === String(finalTargetStepId))
-                || contract?.workflow_step;
+            const targetStep =
+                (contract?.workflow?.steps || []).find((s: any) => String(s.id) === String(finalTargetStepId)) || contract?.workflow_step;
 
             // Only currently active (pending/waiting) ad-hoc approvers for this target step should be pre-selected
-            const activeAdhocApprovals = (contract?.approvals || [])
-                .filter(
-                    (a: any) =>
-                        String(a.workflow_step_id) === String(finalTargetStepId) &&
-                        a.role === 'Persetujuan Tambahan' &&
-                        (a.status === 'pending' || a.status === 'waiting') &&
-                        a.user_id != null &&
-                        String(a.user_id) !== 'null' &&
-                        String(a.user_id) !== 'undefined',
-                );
+            const activeAdhocApprovals = (contract?.approvals || []).filter(
+                (a: any) =>
+                    String(a.workflow_step_id) === String(finalTargetStepId) &&
+                    a.role === 'Persetujuan Tambahan' &&
+                    (a.status === 'pending' || a.status === 'waiting') &&
+                    a.user_id != null &&
+                    String(a.user_id) !== 'null' &&
+                    String(a.user_id) !== 'undefined',
+            );
             const activeAdhocUserIds = activeAdhocApprovals.map((a: any) => String(a.user_id));
 
             let availableUsers: any[] = [];
@@ -291,14 +301,14 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                         variant="ghost"
                         onClick={onClose}
                         disabled={loading}
-                        className="h-8 px-3 text-xs bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-700 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-900/50 border border-rose-200 dark:border-rose-800/50 font-medium"
+                        className="h-8 border border-rose-200 bg-rose-50 px-3 text-xs font-medium text-rose-600 hover:bg-rose-100 hover:text-rose-700 dark:border-rose-800/50 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-900/50"
                     >
                         Batal
                     </Button>
                     <Button
                         onClick={handleSubmit}
                         disabled={loading || selectedUserIds.length === 0}
-                        className="min-w-[130px] h-8 px-3 text-xs font-semibold"
+                        className="h-8 min-w-[130px] px-3 text-xs font-semibold"
                     >
                         {loading ? <Loader2 size={14} className="mr-1.5 animate-spin" /> : <CheckCircle2 size={14} className="mr-1.5" />}
                         Simpan Approver
@@ -310,7 +320,7 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                 {/* --- EXISTING APPROVERS (IF ANY) --- */}
                 {currentStepDelegates.length > 0 && (
                     <div className="rounded-lg border border-slate-200/80 bg-slate-50/70 p-2.5 dark:border-slate-800 dark:bg-slate-900/40">
-                        <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                        <div className="mb-2 flex items-center justify-between text-[10px] font-bold tracking-wider text-slate-500 uppercase">
                             <span className="flex items-center gap-1">
                                 <Users size={12} className="text-indigo-500" />
                                 Approver Terdaftar ({currentStepDelegates.length})
@@ -339,7 +349,7 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                                                 }
                                             }
                                         }}
-                                        className="ml-0.5 text-slate-400 hover:text-rose-600 transition-colors"
+                                        className="ml-0.5 text-slate-400 transition-colors hover:text-rose-600"
                                         title="Hapus"
                                     >
                                         <X size={12} />
@@ -353,7 +363,7 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                 {/* --- TARGET STEP INFO (COMPACT INLINE) --- */}
                 <div className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 px-3 py-1.5 text-xs text-slate-600 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-400">
                     <span className="text-[11px] font-medium text-slate-500">Tahap Penelaahan:</span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200 text-[11px]">
+                    <span className="text-[11px] font-semibold text-slate-800 dark:text-slate-200">
                         {(() => {
                             const targetStepId = resolveTargetStepId(contract, actionCode);
                             if (targetStepId && String(targetStepId) === String(contract?.workflow_step_id)) {
@@ -378,7 +388,7 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                             <Loader2 size={13} className="animate-spin text-indigo-500" /> Memuat daftar karyawan...
                         </div>
                     ) : users.length === 0 ? (
-                        <p className="text-xs text-rose-500 font-medium">Tidak ada karyawan yang tersedia.</p>
+                        <p className="text-xs font-medium text-rose-500">Tidak ada karyawan yang tersedia.</p>
                     ) : (
                         <SearchableMultiSelect
                             values={selectedUserIds}
@@ -397,17 +407,18 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                 <div className="space-y-2.5 rounded-lg border border-slate-200 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-slate-900/30">
                     {/* 1. Urutan Persetujuan */}
                     <div className="space-y-1">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                        <label className="text-[10px] font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
                             Urutan Persetujuan
                         </label>
                         <div className="grid grid-cols-2 gap-2">
                             <button
                                 type="button"
                                 onClick={() => setIsSequential(false)}
-                                className={`flex items-center justify-between rounded-md border px-2.5 py-1.5 text-left text-xs font-medium transition-all ${!isSequential
-                                        ? 'border-indigo-600 bg-indigo-50/80 text-indigo-900 font-semibold dark:border-indigo-500 dark:bg-indigo-950/40 dark:text-indigo-200'
+                                className={`flex items-center justify-between rounded-md border px-2.5 py-1.5 text-left text-xs font-medium transition-all ${
+                                    !isSequential
+                                        ? 'border-indigo-600 bg-indigo-50/80 font-semibold text-indigo-900 dark:border-indigo-500 dark:bg-indigo-950/40 dark:text-indigo-200'
                                         : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400'
-                                    }`}
+                                }`}
                             >
                                 <span>Serentak (Bersamaan)</span>
                                 {!isSequential && <CheckCircle2 size={13} className="text-indigo-600 dark:text-indigo-400" />}
@@ -417,12 +428,13 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                                 type="button"
                                 disabled={selectedUserIds.length <= 1}
                                 onClick={() => setIsSequential(true)}
-                                className={`flex items-center justify-between rounded-md border px-2.5 py-1.5 text-left text-xs font-medium transition-all ${selectedUserIds.length <= 1
-                                        ? 'cursor-not-allowed opacity-50 border-slate-200 bg-slate-100 text-slate-400 dark:border-slate-800 dark:bg-slate-900/20'
+                                className={`flex items-center justify-between rounded-md border px-2.5 py-1.5 text-left text-xs font-medium transition-all ${
+                                    selectedUserIds.length <= 1
+                                        ? 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400 opacity-50 dark:border-slate-800 dark:bg-slate-900/20'
                                         : isSequential
-                                            ? 'border-indigo-600 bg-indigo-50/80 text-indigo-900 font-semibold dark:border-indigo-500 dark:bg-indigo-950/40 dark:text-indigo-200'
-                                            : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400'
-                                    }`}
+                                          ? 'border-indigo-600 bg-indigo-50/80 font-semibold text-indigo-900 dark:border-indigo-500 dark:bg-indigo-950/40 dark:text-indigo-200'
+                                          : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400'
+                                }`}
                             >
                                 <span>Berurutan (Satu per satu)</span>
                                 {isSequential && <CheckCircle2 size={13} className="text-indigo-600 dark:text-indigo-400" />}
@@ -431,18 +443,19 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                     </div>
 
                     {/* 2. Syarat Selesai */}
-                    <div className="space-y-1 pt-1 border-t border-slate-200/60 dark:border-slate-800/60">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    <div className="space-y-1 border-t border-slate-200/60 pt-1 dark:border-slate-800/60">
+                        <label className="text-[10px] font-bold tracking-wider text-slate-500 uppercase dark:text-slate-400">
                             Syarat Penyelesaian
                         </label>
                         <div className="grid grid-cols-3 gap-1.5">
                             <button
                                 type="button"
                                 onClick={() => setApprovalRule('all')}
-                                className={`rounded-md border px-2 py-1.5 text-center text-xs font-medium transition-all ${approvalRule === 'all'
-                                        ? 'border-indigo-600 bg-indigo-50/80 text-indigo-900 font-semibold dark:border-indigo-500 dark:bg-indigo-950/40 dark:text-indigo-200'
+                                className={`rounded-md border px-2 py-1.5 text-center text-xs font-medium transition-all ${
+                                    approvalRule === 'all'
+                                        ? 'border-indigo-600 bg-indigo-50/80 font-semibold text-indigo-900 dark:border-indigo-500 dark:bg-indigo-950/40 dark:text-indigo-200'
                                         : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400'
-                                    }`}
+                                }`}
                             >
                                 Semua Wajib Setuju
                             </button>
@@ -450,10 +463,11 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                             <button
                                 type="button"
                                 onClick={() => setApprovalRule('any')}
-                                className={`rounded-md border px-2 py-1.5 text-center text-xs font-medium transition-all ${approvalRule === 'any'
-                                        ? 'border-indigo-600 bg-indigo-50/80 text-indigo-900 font-semibold dark:border-indigo-500 dark:bg-indigo-950/40 dark:text-indigo-200'
+                                className={`rounded-md border px-2 py-1.5 text-center text-xs font-medium transition-all ${
+                                    approvalRule === 'any'
+                                        ? 'border-indigo-600 bg-indigo-50/80 font-semibold text-indigo-900 dark:border-indigo-500 dark:bg-indigo-950/40 dark:text-indigo-200'
                                         : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400'
-                                    }`}
+                                }`}
                             >
                                 Cukup 1 Orang
                             </button>
@@ -461,29 +475,30 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                             <button
                                 type="button"
                                 onClick={() => setApprovalRule('quorum')}
-                                className={`rounded-md border px-2 py-1.5 text-center text-xs font-medium transition-all ${approvalRule === 'quorum'
-                                        ? 'border-indigo-600 bg-indigo-50/80 text-indigo-900 font-semibold dark:border-indigo-500 dark:bg-indigo-950/40 dark:text-indigo-200'
+                                className={`rounded-md border px-2 py-1.5 text-center text-xs font-medium transition-all ${
+                                    approvalRule === 'quorum'
+                                        ? 'border-indigo-600 bg-indigo-50/80 font-semibold text-indigo-900 dark:border-indigo-500 dark:bg-indigo-950/40 dark:text-indigo-200'
                                         : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400'
-                                    }`}
+                                }`}
                             >
                                 Minimal N Orang
                             </button>
                         </div>
 
                         {approvalRule === 'quorum' && (
-                            <div className="flex items-center gap-2 pt-1 px-0.5 animate-in fade-in">
+                            <div className="animate-in fade-in flex items-center gap-2 px-0.5 pt-1">
                                 <span className="text-xs text-slate-600 dark:text-slate-400">Minimal persetujuan:</span>
                                 <input
                                     type="number"
                                     min={1}
                                     max={Math.max(1, selectedUserIds.length)}
                                     value={minApprovals}
-                                    onChange={(e) => setMinApprovals(Math.max(1, Math.min(selectedUserIds.length || 99, parseInt(e.target.value) || 1)))}
-                                    className="w-16 rounded border border-slate-300 bg-white px-2 py-0.5 text-xs font-bold text-center text-slate-800 focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                                    onChange={(e) =>
+                                        setMinApprovals(Math.max(1, Math.min(selectedUserIds.length || 99, parseInt(e.target.value) || 1)))
+                                    }
+                                    className="w-16 rounded border border-slate-300 bg-white px-2 py-0.5 text-center text-xs font-bold text-slate-800 focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                                 />
-                                <span className="text-xs text-slate-400 font-normal">
-                                    dari {selectedUserIds.length || 1} orang
-                                </span>
+                                <span className="text-xs font-normal text-slate-400">dari {selectedUserIds.length || 1} orang</span>
                             </div>
                         )}
                     </div>
@@ -492,14 +507,14 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                 {/* --- NOTE (COMPACT) --- */}
                 <div className="space-y-1">
                     <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
-                        Catatan / Instruksi <span className="text-slate-400 font-normal">(Opsional)</span>
+                        Catatan / Instruksi <span className="font-normal text-slate-400">(Opsional)</span>
                     </label>
                     <textarea
                         value={note}
                         onChange={(e) => setNote(e.target.value)}
                         rows={2}
                         placeholder="Tuliskan catatan atau alasan penambahan approver..."
-                        className="w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 resize-none"
+                        className="w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                     />
                 </div>
             </div>

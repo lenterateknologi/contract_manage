@@ -2,8 +2,10 @@
 
 namespace App\Http\Actions\Workflow;
 
-use App\Models\Workflow;
-use App\Models\WorkflowStep;
+use App\Models\Master\Workflow;
+use App\Models\Master\WorkflowStep;
+use App\Models\Transaction\Contract;
+use App\Services\Workflow\ContractWorkflowService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -76,7 +78,7 @@ class UpdateWorkflowStepsAction
                         'filter_company' => $stepData['filter_company'] ?? false,
                     ];
 
-                    /** @var WorkflowStep $step */
+                    /* @var WorkflowStep $step */
                     if ($stepId && in_array($stepId, $existingStepIds)) {
                         $step = WorkflowStep::find($stepId);
                         $step->update($attributes);
@@ -164,12 +166,12 @@ class UpdateWorkflowStepsAction
             }
 
             // Re-sync active in-progress contracts for this workflow so new actors get their pending tasks
-            $activeContracts = \App\Models\Contract::where('workflow_id', $workflow->id)
+            $activeContracts = Contract::where('workflow_id', $workflow->id)
                 ->where('status', 'in_review')
                 ->with(['initiator.department', 'initiator.company', 'creator'])
                 ->get();
 
-            $workflowService = app(\App\Services\Workflow\ContractWorkflowService::class);
+            $workflowService = app(ContractWorkflowService::class);
             foreach ($activeContracts as $contract) {
                 if ($contract->workflow_step_id) {
                     $currentStep = WorkflowStep::find($contract->workflow_step_id);

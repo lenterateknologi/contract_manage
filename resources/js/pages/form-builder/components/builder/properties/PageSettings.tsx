@@ -1,6 +1,6 @@
-import { Input } from '@/components/ui/inputs/Input';
 import { Label } from '@/components/ui/forms/Label';
-import { Layout, Move, Palette } from 'lucide-react';
+import { Input } from '@/components/ui/inputs/Input';
+import { Layout } from 'lucide-react';
 import React from 'react';
 import { parseMargin } from './utils';
 
@@ -11,9 +11,9 @@ interface PageSettingsProps {
 
 export const PageSettings: React.FC<PageSettingsProps> = ({ templateData, setTemplateData }) => {
     return (
-        <div className="space-y-3.5 border-t border-border/50 pt-3">
+        <div className="border-border/50 space-y-3.5 border-t pt-3">
             {/* Title & Description Inputs */}
-            <div className="space-y-2.5 pb-2 border-b border-border/50">
+            <div className="border-border/50 space-y-2.5 border-b pb-2">
                 <div className="space-y-1">
                     <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Nama / Judul Template</Label>
                     <Input
@@ -29,7 +29,7 @@ export const PageSettings: React.FC<PageSettingsProps> = ({ templateData, setTem
                         value={templateData.description || ''}
                         onChange={(e) => setTemplateData('description', e.target.value)}
                         rows={2}
-                        className="w-full rounded-md border border-input bg-background px-2 py-1.5 font-sans text-[10px] font-normal shadow-xs focus:ring-1 focus:ring-primary outline-none resize-y"
+                        className="border-input bg-background focus:ring-primary w-full resize-y rounded-md border px-2 py-1.5 font-sans text-[10px] font-normal shadow-xs outline-none focus:ring-1"
                         placeholder="Deskripsi atau catatan template..."
                     />
                 </div>
@@ -55,7 +55,9 @@ export const PageSettings: React.FC<PageSettingsProps> = ({ templateData, setTem
                             <span className="text-muted-foreground block text-center font-sans text-[7px] uppercase">{m.label}</span>
                             <Input
                                 type="number"
-                                value={templateData.letterhead_json?.margins?.[m.key] !== undefined ? templateData.letterhead_json.margins[m.key] : m.def}
+                                value={
+                                    templateData.letterhead_json?.margins?.[m.key] !== undefined ? templateData.letterhead_json.margins[m.key] : m.def
+                                }
                                 onChange={(e) =>
                                     setTemplateData('letterhead_json', {
                                         ...templateData.letterhead_json,
@@ -65,7 +67,7 @@ export const PageSettings: React.FC<PageSettingsProps> = ({ templateData, setTem
                                         },
                                     })
                                 }
-                                className="h-6 text-center font-sans text-[10px] px-1"
+                                className="h-6 px-1 text-center font-sans text-[10px]"
                             />
                         </div>
                     ))}
@@ -81,8 +83,8 @@ export const PageSettings: React.FC<PageSettingsProps> = ({ templateData, setTem
                         { key: 'secondary', label: 'Secondary', def: '#475569' },
                         { key: 'accent', label: 'Accent', def: '#3b82f6' },
                     ].map((c) => (
-                        <div key={c.key} className="flex items-center gap-1 bg-background rounded-md border border-input p-1 h-7">
-                            <span className="text-[7px] font-bold uppercase text-muted-foreground px-0.5">{c.label[0]}</span>
+                        <div key={c.key} className="bg-background border-input flex h-7 items-center gap-1 rounded-md border p-1">
+                            <span className="text-muted-foreground px-0.5 text-[7px] font-bold uppercase">{c.label[0]}</span>
                             <Input
                                 type="color"
                                 value={templateData.letterhead_json?.palette?.[c.key] || c.def}
@@ -99,7 +101,7 @@ export const PageSettings: React.FC<PageSettingsProps> = ({ templateData, setTem
                                         },
                                     })
                                 }
-                                className="h-5 w-full p-0 border-0 cursor-pointer"
+                                className="h-5 w-full cursor-pointer border-0 p-0"
                                 title={c.label}
                             />
                         </div>

@@ -2,11 +2,11 @@
 
 namespace App\Http\Actions\Role;
 
-use App\Models\AccessModule;
-use App\Models\Module;
-use App\Models\ModuleGroup;
-use App\Models\Role;
-use App\Models\RoleModuleGroup;
+use App\Models\Master\AccessModule;
+use App\Models\Master\Module;
+use App\Models\Master\ModuleGroup;
+use App\Models\Master\Role;
+use App\Models\Master\RoleModuleGroup;
 use Illuminate\Support\Facades\DB;
 
 class RoleAccessAction

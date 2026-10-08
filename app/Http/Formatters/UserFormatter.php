@@ -2,7 +2,7 @@
 
 namespace App\Http\Formatters;
 
-use App\Models\User;
+use App\Models\Master\User;
 
 class UserFormatter
 {
@@ -15,18 +15,16 @@ class UserFormatter
             return null;
         }
 
-        $attributes = $user->getAttributes();
-
         $manager = null;
         if ($withManager) {
-            if ($user->relationLoaded('supervisor') && array_key_exists('spv_id', $attributes) && $user->getRelation('supervisor')) {
-                $manager = self::format($user->getRelation('supervisor'), false);
-            } elseif ($user->relationLoaded('reportingTo') && array_key_exists('idreporting_to', $attributes) && $user->getRelation('reportingTo')) {
-                $manager = self::format($user->getRelation('reportingTo'), false);
-            } elseif (! empty($attributes['reporting_to'])) {
+            if ($user->relationLoaded('supervisor') && $user->spv_id && $user->supervisor) {
+                $manager = self::format($user->supervisor, false);
+            } elseif ($user->relationLoaded('reportingTo') && $user->idreporting_to && $user->reportingTo) {
+                $manager = self::format($user->reportingTo, false);
+            } elseif (! empty($user->reporting_to)) {
                 $manager = [
                     'id' => null,
-                    'name' => $attributes['reporting_to'],
+                    'name' => $user->reporting_to,
                     'initials' => '',
                     'role' => 'Atasan Langsung',
                     'email' => null,
@@ -37,56 +35,53 @@ class UserFormatter
             }
         }
 
-        $dept = $user->relationLoaded('department') ? $user->getRelation('department') : null;
+        $dept = $user->relationLoaded('department') ? $user->department : null;
+        $comp = $user->relationLoaded('company') ? $user->company : null;
+        $div = $user->relationLoaded('division') ? $user->division : null;
+        $loc = $user->relationLoaded('location') ? $user->location : null;
+
         $deptAttrs = $dept ? $dept->getAttributes() : [];
-
-        $comp = $user->relationLoaded('company') ? $user->getRelation('company') : null;
+        $userAttrs = $user->getAttributes();
         $compAttrs = $comp ? $comp->getAttributes() : [];
-
-        $div = $user->relationLoaded('division') ? $user->getRelation('division') : null;
-        $divAttrs = $div ? $div->getAttributes() : [];
-
-        $loc = $user->relationLoaded('location') ? $user->getRelation('location') : null;
-        $locAttrs = $loc ? $loc->getAttributes() : [];
 
         return [
             'id' => $user->id,
-            'name' => $attributes['name'] ?? null,
-            'nik' => $attributes['nik'] ?? null,
-            'jobtitle_name' => $attributes['jobtitle_name'] ?? null,
-            'initials' => $user->initials ?? '',
-            'role' => $user->role,
-            'role_id' => $attributes['role_id'] ?? null,
-            'department_id' => $attributes['division_id'] ?? ($attributes['department_id'] ?? null),
-            'division_id' => $attributes['division_id'] ?? null,
+            'name' => $userAttrs['name'] ?? null,
+            'nik' => $userAttrs['nik'] ?? null,
+            'jobtitle_name' => $userAttrs['jobtitle_name'] ?? null,
+            'initials' => $userAttrs['initials'] ?? '',
+            'role' => $userAttrs['role'] ?? ($user->relationLoaded('roleRelation') ? $user->roleRelation?->name : null),
+            'role_id' => $userAttrs['role_id'] ?? null,
+            'department_id' => $userAttrs['division_id'] ?? ($userAttrs['department_id'] ?? null),
+            'division_id' => $userAttrs['division_id'] ?? null,
             'department_name' => $deptAttrs['name'] ?? null,
-            'division_name' => $divAttrs['name'] ?? null,
+            'division_name' => $div?->name,
             'department' => $dept ? [
-                'id' => $deptAttrs['id'] ?? null,
+                'id' => $dept->id,
                 'name' => $deptAttrs['name'] ?? null,
                 'code' => $deptAttrs['code'] ?? null,
                 'idorg_group' => $deptAttrs['idorg_group'] ?? null,
                 'org_group_name' => $deptAttrs['org_group_name'] ?? null,
             ] : null,
             'organization_group_id' => $deptAttrs['idorg_group'] ?? null,
-            'idorg_group' => $deptAttrs['idorg_group'] ?? ($attributes['idorg_group'] ?? null),
-            'org_group_name' => $deptAttrs['org_group_name'] ?? ($attributes['org_name'] ?? null),
-            'company_id' => $attributes['company_id'] ?? null,
+            'idorg_group' => $deptAttrs['idorg_group'] ?? ($userAttrs['idorg_group'] ?? null),
+            'org_group_name' => $deptAttrs['org_group_name'] ?? ($userAttrs['org_name'] ?? null),
+            'company_id' => $userAttrs['company_id'] ?? null,
             'company_name' => $compAttrs['name'] ?? null,
-            'company_group_id' => $attributes['company_group_id'] ?? ($compAttrs['company_group_id'] ?? null),
-            'company_group_name' => $comp && $comp->relationLoaded('companyGroup') && $comp->getRelation('companyGroup') ? ($comp->getRelation('companyGroup')->getAttributes()['name'] ?? null) : null,
-            'region_id' => $attributes['region_id'] ?? ($compAttrs['region_id'] ?? null),
-            'region_name' => $comp && $comp->relationLoaded('region') && $comp->getRelation('region') ? ($comp->getRelation('region')->getAttributes()['name'] ?? null) : null,
-            'location_id' => $attributes['location_id'] ?? null,
-            'idlocation' => $attributes['idlocation'] ?? null,
-            'location_name' => $attributes['location_name'] ?? ($locAttrs['name'] ?? null),
-            'email' => $attributes['email'] ?? null,
-            'phone_number' => $attributes['phone_number'] ?? ($attributes['mobile_no'] ?? null),
-            'mobile_no' => $attributes['mobile_no'] ?? null,
-            'reporting_to' => $attributes['reporting_to'] ?? null,
+            'company_group_id' => $userAttrs['company_group_id'] ?? ($compAttrs['company_group_id'] ?? null),
+            'company_group_name' => $comp?->relationLoaded('companyGroup') ? $comp->companyGroup?->name : null,
+            'region_id' => $userAttrs['region_id'] ?? ($compAttrs['region_id'] ?? null),
+            'region_name' => $comp?->relationLoaded('region') ? $comp->region?->name : null,
+            'location_id' => $userAttrs['location_id'] ?? null,
+            'idlocation' => $userAttrs['idlocation'] ?? null,
+            'location_name' => $userAttrs['location_name'] ?? ($loc?->name ?? null),
+            'email' => $userAttrs['email'] ?? null,
+            'phone_number' => $userAttrs['phone_number'] ?? ($userAttrs['mobile_no'] ?? null),
+            'mobile_no' => $userAttrs['mobile_no'] ?? null,
+            'reporting_to' => $userAttrs['reporting_to'] ?? null,
             'manager' => $manager,
-            'is_used' => isset($attributes['is_used']) ? (bool) $attributes['is_used'] : true,
-            'is_active' => isset($attributes['is_active']) ? (bool) $attributes['is_active'] : true,
+            'is_used' => (bool) ($userAttrs['is_used'] ?? true),
+            'is_active' => (bool) ($userAttrs['is_active'] ?? true),
         ];
     }
 }

@@ -2,10 +2,10 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Company;
-use App\Models\CompanyGroup;
-use App\Models\Region;
-use App\Models\User;
+use App\Models\Master\Company;
+use App\Models\Master\CompanyGroup;
+use App\Models\Master\Region;
+use App\Models\Master\User;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;

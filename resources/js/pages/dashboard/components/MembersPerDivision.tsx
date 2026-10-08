@@ -115,7 +115,7 @@ export function MembersPerDivision({ users: propUsers, departments: propDepts, d
                                         </span>
                                     </div>
                                 </div>
-                                <span className="bg-primary text-white border-transparent shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase shadow-none">
+                                <span className="bg-primary shrink-0 rounded-full border-transparent px-2 py-0.5 text-[10px] font-bold text-white uppercase shadow-none">
                                     {deptMembers.length}
                                 </span>
                             </div>

@@ -2,9 +2,10 @@
 
 namespace App\Imports;
 
-use App\Models\Department;
-use App\Models\Role;
-use App\Models\User;
+use App\Models\Master\Department;
+use App\Models\Master\Division;
+use App\Models\Master\Role;
+use App\Models\Master\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Concerns\ToCollection;
@@ -65,11 +66,11 @@ class UsersImport implements ToCollection, WithHeadingRow
             $division = null;
 
             if (! empty($divId) && Str::isUuid($divId)) {
-                $division = \App\Models\Division::find($divId);
+                $division = Division::find($divId);
             }
 
             if (! $division && ! empty($divName)) {
-                $division = \App\Models\Division::whereRaw('lower(name) = ?', [strtolower($divName)])->first();
+                $division = Division::whereRaw('lower(name) = ?', [strtolower($divName)])->first();
             }
 
             // Resolve Department

@@ -2,8 +2,8 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\AccessModule;
-use App\Models\Role;
+use App\Models\Master\AccessModule;
+use App\Models\Master\Role;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;

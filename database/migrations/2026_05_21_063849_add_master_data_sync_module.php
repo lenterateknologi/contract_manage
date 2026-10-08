@@ -1,10 +1,10 @@
 <?php
 
-use App\Models\AccessModule;
-use App\Models\Module;
-use App\Models\ModuleGroup;
-use App\Models\Role;
-use App\Models\User;
+use App\Models\Master\AccessModule;
+use App\Models\Master\Module;
+use App\Models\Master\ModuleGroup;
+use App\Models\Master\Role;
+use App\Models\Master\User;
 use Illuminate\Database\Migrations\Migration;
 
 return new class extends Migration

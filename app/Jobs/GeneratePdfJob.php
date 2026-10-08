@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Services\Utils\PdfService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -10,7 +11,6 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use Spatie\Browsershot\Browsershot;
 
 class GeneratePdfJob implements ShouldQueue
 {
@@ -42,28 +42,8 @@ class GeneratePdfJob implements ShouldQueue
         try {
             Cache::put('pdf_status_'.$this->jobId, ['status' => 'processing', 'progress' => 30], 1800);
 
-            // ponytail: always use Browsershot for 100% identical output to the React UI
-            $chromePath = file_exists('/Applications/Brave Browser.app/Contents/MacOS/Brave Browser')
-                ? '/Applications/Brave Browser.app/Contents/MacOS/Brave Browser'
-                : '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-
-            $pdfContent = Browsershot::url($this->printUrl)
-                ->setNodeBinary('/opt/homebrew/bin/node')
-                ->setNpmBinary('/opt/homebrew/bin/npm')
-                ->setChromePath($chromePath)
-                ->noSandbox()
-                ->addChromiumArguments([
-                    'disable-gpu',
-                    'disable-dev-shm-usage',
-                    'disable-setuid-sandbox',
-                    'no-first-run',
-                ])
-                ->timeout(300)
-                ->paperSize(210, 297, 'mm')
-                ->margins(0, 0, 0, 0)
-                ->showBackground()
+            $pdfContent = PdfService::browsershotUrl($this->printUrl, 300)
                 ->waitForSelector('#pdf-render-complete')
-                ->setDelay(1000)
                 ->preventUnsuccessfulResponse()
                 ->pdf();
 

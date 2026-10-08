@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Search, ChevronsUpDown, Check, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Check, ChevronsUpDown, Search, X } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 // ponytail: Unified lightweight searchable multi-select with an optional 'Sesuai Inisiator' checkbox
 interface AuthoritySelectorProps {
@@ -49,7 +49,6 @@ export default function AuthoritySelector({
         // NOTE: do NOT call onValuesChange here — parent's onIsInitiatorChange already handles it
     };
 
-
     const toggleOption = (val: string) => {
         if (values.includes(val)) {
             onValuesChange(values.filter((v) => v !== val));
@@ -86,38 +85,32 @@ export default function AuthoritySelector({
     const isListDisabled = disabled || (showCheckbox && internalIsInitiator);
 
     return (
-        <div ref={containerRef} className="space-y-1.5 w-full">
+        <div ref={containerRef} className="w-full space-y-1.5">
             <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                    {label}
-                </span>
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{label}</span>
                 {showCheckbox && onIsInitiatorChange && (
                     <div
-                        className="flex items-center gap-1.5 cursor-pointer select-none"
+                        className="flex cursor-pointer items-center gap-1.5 select-none"
                         onClick={handleInitiatorToggle}
                         title={internalIsInitiator ? 'Klik untuk pilih manual' : 'Klik untuk sesuai inisiator'}
                     >
                         <div
                             className={cn(
-                                'h-3.5 w-3.5 rounded border flex items-center justify-center shrink-0 transition-colors',
+                                'flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border transition-colors',
                                 internalIsInitiator
-                                    ? 'bg-slate-900 border-slate-900 dark:bg-slate-100 dark:border-slate-100'
-                                    : 'bg-white border-slate-300 dark:bg-slate-900 dark:border-slate-600',
-                                disabled && 'opacity-50 cursor-not-allowed',
+                                    ? 'border-slate-900 bg-slate-900 dark:border-slate-100 dark:bg-slate-100'
+                                    : 'border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-900',
+                                disabled && 'cursor-not-allowed opacity-50',
                             )}
                         >
-                            {internalIsInitiator && (
-                                <Check size={9} className="text-white dark:text-slate-900 stroke-[3]" />
-                            )}
+                            {internalIsInitiator && <Check size={9} className="stroke-[3] text-white dark:text-slate-900" />}
                         </div>
-                        <span className="text-[10px] font-semibold text-slate-700 dark:text-slate-300">
-                            Sesuai Inisiator
-                        </span>
+                        <span className="text-[10px] font-semibold text-slate-700 dark:text-slate-300">Sesuai Inisiator</span>
                     </div>
                 )}
             </div>
 
-            <div className={cn("relative w-full", isListDisabled && "opacity-60 cursor-not-allowed", open && "z-50")}>
+            <div className={cn('relative w-full', isListDisabled && 'cursor-not-allowed opacity-60', open && 'z-50')}>
                 <div
                     onClick={(e) => {
                         if (isListDisabled) e.preventDefault();
@@ -127,29 +120,29 @@ export default function AuthoritySelector({
                         }
                     }}
                     className={cn(
-                        'flex min-h-[40px] w-full items-center justify-between rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-left text-xs font-semibold text-foreground transition-all outline-none',
-                        !isListDisabled && 'cursor-pointer hover:border-primary/50 focus:border-primary focus:ring-1 focus:ring-primary',
+                        'text-foreground flex min-h-[40px] w-full items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2 text-left text-xs font-semibold transition-all outline-none dark:border-slate-800 dark:bg-slate-900',
+                        !isListDisabled && 'hover:border-primary/50 focus:border-primary focus:ring-primary cursor-pointer focus:ring-1',
                         open && 'border-black dark:border-slate-100',
-                        isListDisabled && 'bg-slate-50 border-slate-100 dark:bg-slate-950 dark:border-slate-900 dark:text-slate-500',
+                        isListDisabled && 'border-slate-100 bg-slate-50 dark:border-slate-900 dark:bg-slate-950 dark:text-slate-500',
                     )}
                 >
                     <div className="flex flex-wrap gap-1.5 pr-2">
                         {internalIsInitiator ? (
-                            <span className="text-slate-400 dark:text-slate-500 py-0.5 text-xs font-medium">Diisi otomatis dari initiator</span>
+                            <span className="py-0.5 text-xs font-medium text-slate-400 dark:text-slate-500">Diisi otomatis dari initiator</span>
                         ) : values.length === 0 ? (
-                            <span className="text-slate-400 dark:text-slate-500 py-0.5 text-xs font-medium">{placeholder}</span>
+                            <span className="py-0.5 text-xs font-medium text-slate-400 dark:text-slate-500">{placeholder}</span>
                         ) : (
                             values.map((val) => (
                                 <span
                                     key={val}
                                     onClick={(e) => e.stopPropagation()}
-                                    className="inline-flex items-center gap-1 bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 px-2 py-0.5 rounded text-[10px] hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors"
+                                    className="inline-flex items-center gap-1 rounded bg-slate-900 px-2 py-0.5 text-[10px] text-white transition-colors hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"
                                 >
                                     {getLabel(val)}
                                     <button
                                         type="button"
                                         onClick={(e) => removeOption(e, val)}
-                                        className="text-white/70 hover:text-white dark:text-slate-900/70 dark:hover:text-slate-900 focus:outline-none"
+                                        className="text-white/70 hover:text-white focus:outline-none dark:text-slate-900/70 dark:hover:text-slate-900"
                                     >
                                         <X size={10} />
                                     </button>
@@ -157,29 +150,24 @@ export default function AuthoritySelector({
                             ))
                         )}
                     </div>
-                    <ChevronsUpDown size={13} className="text-slate-400 shrink-0 ml-2" />
+                    <ChevronsUpDown size={13} className="ml-2 shrink-0 text-slate-400" />
                 </div>
 
                 {open && (
-                    <div className="absolute left-0 right-0 top-full z-[9999] mt-1 border border-slate-200 bg-white shadow-xl rounded-lg overflow-hidden dark:border-slate-800 dark:bg-slate-950">
-                        <div 
-                            className="relative border-b border-slate-100 dark:border-slate-800"
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <div className="absolute top-full right-0 left-0 z-[9999] mt-1 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-950">
+                        <div className="relative border-b border-slate-100 dark:border-slate-800" onClick={(e) => e.stopPropagation()}>
+                            <Search size={12} className="absolute top-1/2 left-3 -translate-y-1/2 text-slate-400" />
                             <input
                                 autoFocus
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                                 placeholder="Cari..."
-                                className="h-10 w-full bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100 pl-8 pr-3 text-xs font-medium outline-none"
+                                className="h-10 w-full bg-white pr-3 pl-8 text-xs font-medium text-slate-900 outline-none dark:bg-slate-950 dark:text-slate-100"
                             />
                         </div>
 
                         <div className="max-h-52 overflow-y-auto bg-white dark:bg-slate-950">
-                            {filtered.length === 0 && (
-                                <div className="py-6 text-center text-xs text-slate-400 italic">Tidak ada data ditemukan</div>
-                            )}
+                            {filtered.length === 0 && <div className="py-6 text-center text-xs text-slate-400 italic">Tidak ada data ditemukan</div>}
                             {filtered.map((opt) => {
                                 const isSelected = values.includes(opt.value);
                                 return (

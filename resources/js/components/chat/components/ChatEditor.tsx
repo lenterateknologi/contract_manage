@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { cn } from '@/lib/utils';
+import { MentionDropdown } from '@/pages/contracts/components/parts/MentionDropdown';
 import {
     Bold,
     Code,
@@ -18,8 +19,7 @@ import {
     Table,
     X,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { MentionDropdown } from '@/pages/contracts/components/parts/MentionDropdown';
+import React, { useState } from 'react';
 import { EmojiPickerPopover } from './EmojiPickerPopover';
 
 interface ChatEditorProps {
@@ -97,7 +97,7 @@ export function ChatEditor({
     };
 
     return (
-        <div className="p-3 border-t border-border bg-background relative">
+        <div className="border-border bg-background relative border-t p-3">
             {/* Mention Auto-Suggest Dropdown */}
             <div className="relative">
                 <MentionDropdown
@@ -110,22 +110,22 @@ export function ChatEditor({
             </div>
 
             {/* Single Unified Card Container */}
-            <div className="rounded-2xl border border-border bg-muted/30 transition-all duration-200 focus-within:border-primary/50 focus-within:bg-background focus-within:ring-2 focus-within:ring-primary/10 overflow-hidden shadow-2xs">
+            <div className="border-border bg-muted/30 focus-within:border-primary/50 focus-within:bg-background focus-within:ring-primary/10 overflow-hidden rounded-2xl border shadow-2xs transition-all duration-200 focus-within:ring-2">
                 {/* Selected File Chips Preview (inside card) */}
                 {selectedFiles.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 p-2.5 border-b border-border/50 bg-muted/20">
+                    <div className="border-border/50 bg-muted/20 flex flex-wrap gap-1.5 border-b p-2.5">
                         {selectedFiles.map((file, idx) => (
                             <div
                                 key={idx}
-                                className="flex items-center gap-2 px-2.5 py-1 rounded-xl bg-primary/10 border border-primary/20 text-foreground text-xs animate-in fade-in duration-150"
+                                className="bg-primary/10 border-primary/20 text-foreground animate-in fade-in flex items-center gap-2 rounded-xl border px-2.5 py-1 text-xs duration-150"
                             >
                                 <FileIcon size={13} className="text-primary shrink-0" />
-                                <span className="truncate max-w-[150px] font-medium text-[11px]">{file.name}</span>
-                                <span className="text-[10px] text-muted-foreground">({(file.size / 1024).toFixed(0)} KB)</span>
+                                <span className="max-w-[150px] truncate text-[11px] font-medium">{file.name}</span>
+                                <span className="text-muted-foreground text-[10px]">({(file.size / 1024).toFixed(0)} KB)</span>
                                 <button
                                     type="button"
                                     onClick={() => onRemoveFile(idx)}
-                                    className="text-muted-foreground hover:text-rose-500 transition-colors p-0.5 cursor-pointer"
+                                    className="text-muted-foreground cursor-pointer p-0.5 transition-colors hover:text-rose-500"
                                 >
                                     <X size={12} />
                                 </button>
@@ -136,25 +136,18 @@ export function ChatEditor({
 
                 {/* Extended Tools Panel (Revealed inside card when + is clicked) */}
                 {showTools && (
-                    <div className="flex flex-wrap items-center gap-1 px-2.5 py-1.5 border-b border-border/50 bg-muted/20 text-muted-foreground animate-in fade-in slide-in-from-top-1 duration-150">
-                        <input
-                            type="file"
-                            ref={fileInputRef}
-                            onChange={onFileSelect}
-                            multiple
-                            className="hidden"
-                            accept="*/*"
-                        />
+                    <div className="border-border/50 bg-muted/20 text-muted-foreground animate-in fade-in slide-in-from-top-1 flex flex-wrap items-center gap-1 border-b px-2.5 py-1.5 duration-150">
+                        <input type="file" ref={fileInputRef} onChange={onFileSelect} multiple className="hidden" accept="*/*" />
 
                         {/* File Attachment Button */}
                         <button
                             type="button"
                             title="Lampirkan Berkas / Dokumen"
                             onClick={() => fileInputRef.current?.click()}
-                            className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs hover:bg-muted text-foreground transition-all cursor-pointer"
+                            className="hover:bg-muted text-foreground flex cursor-pointer items-center gap-1 rounded-lg px-2 py-1 text-xs transition-all"
                         >
                             <Paperclip size={14} className="text-primary" />
-                            <span className="font-medium text-[11px]">Berkas</span>
+                            <span className="text-[11px] font-medium">Berkas</span>
                         </button>
 
                         {/* Emoji Button */}
@@ -164,14 +157,12 @@ export function ChatEditor({
                                 title="Pilih Emoji"
                                 onClick={() => setShowEmojiPicker((prev) => !prev)}
                                 className={cn(
-                                    "flex items-center gap-1 px-2 py-1 rounded-lg text-xs transition-all cursor-pointer",
-                                    showEmojiPicker
-                                        ? "bg-primary/20 text-primary font-semibold"
-                                        : "hover:bg-muted text-foreground"
+                                    'flex cursor-pointer items-center gap-1 rounded-lg px-2 py-1 text-xs transition-all',
+                                    showEmojiPicker ? 'bg-primary/20 text-primary font-semibold' : 'hover:bg-muted text-foreground',
                                 )}
                             >
                                 <Smile size={14} className="text-amber-500" />
-                                <span className="font-medium text-[11px]">Emoji</span>
+                                <span className="text-[11px] font-medium">Emoji</span>
                             </button>
 
                             <EmojiPickerPopover
@@ -181,7 +172,7 @@ export function ChatEditor({
                             />
                         </div>
 
-                        <div className="h-3.5 w-px bg-border/60 mx-1" />
+                        <div className="bg-border/60 mx-1 h-3.5 w-px" />
 
                         {/* Text Formatting Toolbar */}
                         <div className="flex items-center gap-0.5">
@@ -190,8 +181,10 @@ export function ChatEditor({
                                 title="Tebal (Ctrl+B)"
                                 onClick={() => execFormat('bold')}
                                 className={cn(
-                                    "p-1.5 rounded-lg text-xs transition-all cursor-pointer",
-                                    activeFormats.bold ? "bg-primary text-primary-foreground font-bold" : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                                    'cursor-pointer rounded-lg p-1.5 text-xs transition-all',
+                                    activeFormats.bold
+                                        ? 'bg-primary text-primary-foreground font-bold'
+                                        : 'hover:bg-muted text-muted-foreground hover:text-foreground',
                                 )}
                             >
                                 <Bold size={13} />
@@ -201,8 +194,10 @@ export function ChatEditor({
                                 title="Miring (Ctrl+I)"
                                 onClick={() => execFormat('italic')}
                                 className={cn(
-                                    "p-1.5 rounded-lg text-xs transition-all cursor-pointer",
-                                    activeFormats.italic ? "bg-primary text-primary-foreground font-bold" : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                                    'cursor-pointer rounded-lg p-1.5 text-xs transition-all',
+                                    activeFormats.italic
+                                        ? 'bg-primary text-primary-foreground font-bold'
+                                        : 'hover:bg-muted text-muted-foreground hover:text-foreground',
                                 )}
                             >
                                 <Italic size={13} />
@@ -212,8 +207,10 @@ export function ChatEditor({
                                 title="Coret Teks"
                                 onClick={() => execFormat('strikeThrough')}
                                 className={cn(
-                                    "p-1.5 rounded-lg text-xs transition-all cursor-pointer",
-                                    activeFormats.strikethrough ? "bg-primary text-primary-foreground font-bold" : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                                    'cursor-pointer rounded-lg p-1.5 text-xs transition-all',
+                                    activeFormats.strikethrough
+                                        ? 'bg-primary text-primary-foreground font-bold'
+                                        : 'hover:bg-muted text-muted-foreground hover:text-foreground',
                                 )}
                             >
                                 <Strikethrough size={13} />
@@ -223,8 +220,10 @@ export function ChatEditor({
                                 title="Heading 1"
                                 onClick={() => execFormat('formatBlock', '<h1>')}
                                 className={cn(
-                                    "p-1.5 rounded-lg text-xs transition-all cursor-pointer",
-                                    activeFormats.h1 ? "bg-primary text-primary-foreground font-bold" : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                                    'cursor-pointer rounded-lg p-1.5 text-xs transition-all',
+                                    activeFormats.h1
+                                        ? 'bg-primary text-primary-foreground font-bold'
+                                        : 'hover:bg-muted text-muted-foreground hover:text-foreground',
                                 )}
                             >
                                 <Heading1 size={13} />
@@ -234,8 +233,10 @@ export function ChatEditor({
                                 title="Heading 2"
                                 onClick={() => execFormat('formatBlock', '<h2>')}
                                 className={cn(
-                                    "p-1.5 rounded-lg text-xs transition-all cursor-pointer",
-                                    activeFormats.h2 ? "bg-primary text-primary-foreground font-bold" : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                                    'cursor-pointer rounded-lg p-1.5 text-xs transition-all',
+                                    activeFormats.h2
+                                        ? 'bg-primary text-primary-foreground font-bold'
+                                        : 'hover:bg-muted text-muted-foreground hover:text-foreground',
                                 )}
                             >
                                 <Heading2 size={13} />
@@ -245,8 +246,10 @@ export function ChatEditor({
                                 title="Daftar Poin"
                                 onClick={() => execFormat('insertUnorderedList')}
                                 className={cn(
-                                    "p-1.5 rounded-lg text-xs transition-all cursor-pointer",
-                                    activeFormats.unorderedList ? "bg-primary text-primary-foreground font-bold" : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                                    'cursor-pointer rounded-lg p-1.5 text-xs transition-all',
+                                    activeFormats.unorderedList
+                                        ? 'bg-primary text-primary-foreground font-bold'
+                                        : 'hover:bg-muted text-muted-foreground hover:text-foreground',
                                 )}
                             >
                                 <List size={13} />
@@ -256,8 +259,10 @@ export function ChatEditor({
                                 title="Daftar Angka"
                                 onClick={() => execFormat('insertOrderedList')}
                                 className={cn(
-                                    "p-1.5 rounded-lg text-xs transition-all cursor-pointer",
-                                    activeFormats.orderedList ? "bg-primary text-primary-foreground font-bold" : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                                    'cursor-pointer rounded-lg p-1.5 text-xs transition-all',
+                                    activeFormats.orderedList
+                                        ? 'bg-primary text-primary-foreground font-bold'
+                                        : 'hover:bg-muted text-muted-foreground hover:text-foreground',
                                 )}
                             >
                                 <ListOrdered size={13} />
@@ -266,7 +271,7 @@ export function ChatEditor({
                                 type="button"
                                 title="Kutipan"
                                 onClick={() => execFormat('formatBlock', '<blockquote>')}
-                                className="p-1.5 rounded-lg text-xs hover:bg-muted text-muted-foreground hover:text-foreground transition-all cursor-pointer"
+                                className="hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer rounded-lg p-1.5 text-xs transition-all"
                             >
                                 <Quote size={13} />
                             </button>
@@ -274,7 +279,7 @@ export function ChatEditor({
                                 type="button"
                                 title="Blok Kode"
                                 onClick={() => execFormat('formatBlock', '<pre>')}
-                                className="p-1.5 rounded-lg text-xs hover:bg-muted text-muted-foreground hover:text-foreground transition-all cursor-pointer"
+                                className="hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer rounded-lg p-1.5 text-xs transition-all"
                             >
                                 <Code size={13} />
                             </button>
@@ -282,11 +287,12 @@ export function ChatEditor({
                                 type="button"
                                 title="Tabel Sederhana"
                                 onClick={() => {
-                                    const tableHtml = '<table border="1" style="border-collapse:collapse;width:100%;margin:4px 0;"><tr><td>Kolom 1</td><td>Kolom 2</td></tr><tr><td>Data 1</td><td>Data 2</td></tr></table><p></p>';
+                                    const tableHtml =
+                                        '<table border="1" style="border-collapse:collapse;width:100%;margin:4px 0;"><tr><td>Kolom 1</td><td>Kolom 2</td></tr><tr><td>Data 1</td><td>Data 2</td></tr></table><p></p>';
                                     document.execCommand('insertHTML', false, tableHtml);
                                     handleEditorInput();
                                 }}
-                                className="p-1.5 rounded-lg text-xs hover:bg-muted text-muted-foreground hover:text-foreground transition-all cursor-pointer"
+                                className="hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer rounded-lg p-1.5 text-xs transition-all"
                             >
                                 <Table size={13} />
                             </button>
@@ -299,13 +305,13 @@ export function ChatEditor({
                     {/* Plus (+) Toggle Button */}
                     <button
                         type="button"
-                        title={showTools ? "Tutup menu alat" : "Buka lampiran, format teks & emoji"}
+                        title={showTools ? 'Tutup menu alat' : 'Buka lampiran, format teks & emoji'}
                         onClick={() => setShowTools((prev) => !prev)}
                         className={cn(
-                            "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-all duration-200 cursor-pointer",
+                            'flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-xl transition-all duration-200',
                             showTools
-                                ? "bg-primary text-primary-foreground rotate-45 shadow-xs"
-                                : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                                ? 'bg-primary text-primary-foreground rotate-45 shadow-xs'
+                                : 'hover:bg-muted text-muted-foreground hover:text-foreground',
                         )}
                     >
                         <Plus size={18} strokeWidth={2.5} />
@@ -321,27 +327,23 @@ export function ChatEditor({
                         onMouseUp={updateActiveFormats}
                         onPaste={handlePaste}
                         data-placeholder="Ketik pesan... (Ketik @ untuk tag pengguna)"
-                        className="flex-1 min-h-[36px] max-h-[140px] overflow-y-auto px-2.5 py-2 text-sm text-foreground focus:outline-none leading-relaxed empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground/60 empty:before:pointer-events-none select-text [&_h1]:text-base [&_h1]:font-bold [&_h2]:text-sm [&_h2]:font-bold [&_blockquote]:border-l-2 [&_blockquote]:border-primary [&_blockquote]:pl-2 [&_blockquote]:italic [&_pre]:bg-muted [&_pre]:p-2 [&_pre]:rounded [&_pre]:text-xs [&_pre]:font-mono [&_table]:w-full [&_table]:text-xs [&_td]:border [&_td]:border-border [&_td]:p-1.5"
+                        className="text-foreground empty:before:text-muted-foreground/60 [&_blockquote]:border-primary [&_pre]:bg-muted [&_td]:border-border max-h-[140px] min-h-[36px] flex-1 overflow-y-auto px-2.5 py-2 text-sm leading-relaxed select-text empty:before:pointer-events-none empty:before:content-[attr(data-placeholder)] focus:outline-none [&_blockquote]:border-l-2 [&_blockquote]:pl-2 [&_blockquote]:italic [&_h1]:text-base [&_h1]:font-bold [&_h2]:text-sm [&_h2]:font-bold [&_pre]:rounded [&_pre]:p-2 [&_pre]:font-mono [&_pre]:text-xs [&_table]:w-full [&_table]:text-xs [&_td]:border [&_td]:p-1.5"
                     />
 
                     {/* Send Button */}
                     <button
                         type="button"
                         className={cn(
-                            'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-all duration-200 cursor-pointer',
+                            'flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-xl transition-all duration-200',
                             input.trim() || selectedFiles.length > 0
-                                ? 'bg-primary hover:bg-primary/90 text-primary-foreground active:scale-95 shadow-xs'
+                                ? 'bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs active:scale-95'
                                 : 'text-muted-foreground/30 hover:bg-muted/40 cursor-not-allowed',
                         )}
                         onClick={onSend}
                         disabled={(!input.trim() && selectedFiles.length === 0) || sending}
                         title="Kirim Pesan (Enter)"
                     >
-                        {sending ? (
-                            <RefreshCw size={14} className="animate-spin" />
-                        ) : (
-                            <Send size={15} />
-                        )}
+                        {sending ? <RefreshCw size={14} className="animate-spin" /> : <Send size={15} />}
                     </button>
                 </div>
             </div>

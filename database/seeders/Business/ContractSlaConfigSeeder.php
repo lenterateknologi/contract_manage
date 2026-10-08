@@ -2,10 +2,9 @@
 
 namespace Database\Seeders\Business;
 
-use App\Models\ContractSlaConfig;
-use App\Models\ContractType;
+use App\Models\Master\ContractSlaConfig;
+use App\Models\Master\ContractType;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Str;
 
 class ContractSlaConfigSeeder extends Seeder
 {

@@ -40,7 +40,7 @@ export default function FormPrint({ template, formData, printedBy }: Props) {
     const marginBottom = template?.letterhead_json?.margins?.bottom ?? 15;
 
     return (
-        <div className="min-h-screen bg-white flex flex-col justify-between">
+        <div className="flex min-h-screen flex-col justify-between bg-white">
             <Head>
                 <title>{`Print: ${template.name}`}</title>
                 <link rel="preconnect" href="https://fonts.bunny.net" />
@@ -57,17 +57,28 @@ export default function FormPrint({ template, formData, printedBy }: Props) {
 
             {/* Audit / User Remark Footer */}
             {printedBy && (
-                <div className="form-print-footer mx-auto w-[210mm] px-6 py-3 text-[9px] text-slate-400 flex items-center justify-between border-t border-slate-200/80 font-mono">
+                <div className="form-print-footer mx-auto flex w-[210mm] items-center justify-between border-t border-slate-200/80 px-6 py-3 font-mono text-[9px] text-slate-400">
                     <span>
                         Dokumen dicetak / diunduh oleh: <strong className="text-slate-600">{printedBy.name || 'System'}</strong>
-                        {printedBy.id && printedBy.id !== '-' && <span> (User ID: <strong className="text-slate-600">{printedBy.id}</strong>)</span>}
+                        {printedBy.id && printedBy.id !== '-' && (
+                            <span>
+                                {' '}
+                                (User ID: <strong className="text-slate-600">{printedBy.id}</strong>)
+                            </span>
+                        )}
                     </span>
                     <span>{printedBy.timestamp || new Date().toLocaleString('id-ID')}</span>
                 </div>
             )}
 
             {/* Signal for Browsershot that React has finished mounting and rendering */}
-            {ready && <div id="pdf-render-complete" style={{ width: 1, height: 1, opacity: 0, position: 'absolute', pointerEvents: 'none' }} aria-hidden="true" />}
+            {ready && (
+                <div
+                    id="pdf-render-complete"
+                    style={{ width: 1, height: 1, opacity: 0, position: 'absolute', pointerEvents: 'none' }}
+                    aria-hidden="true"
+                />
+            )}
 
             {/* Print-specific style to ensure no backgrounds are lost and margins are handled */}
             <style

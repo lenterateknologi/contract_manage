@@ -1,8 +1,8 @@
-import React, { useEffect } from 'react';
 import AppLayoutTemplate from '@/layouts/app/app-sidebar-layout';
+import { cleanupStorage } from '@/lib/clientStorage';
 import { type SharedData } from '@/types';
 import { usePage } from '@inertiajs/react';
-import { cleanupStorage } from '@/lib/clientStorage';
+import React, { useEffect } from 'react';
 
 interface AppLayoutProps {
     children: React.ReactNode;

@@ -2,7 +2,7 @@
 
 namespace App\Http\Actions\File;
 
-use App\Models\Contract;
+use App\Models\Transaction\Contract;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;

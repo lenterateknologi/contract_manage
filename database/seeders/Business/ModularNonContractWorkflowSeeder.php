@@ -3,12 +3,11 @@
 namespace Database\Seeders\Business;
 
 use App\Enums\WorkflowAction;
-use App\Models\Authority;
-use App\Models\ContractType;
-use App\Models\Role;
-use App\Models\Workflow;
-use App\Models\WorkflowStep;
-use App\Models\WorkflowStepAction;
+use App\Models\Master\Authority;
+use App\Models\Master\Role;
+use App\Models\Master\Workflow;
+use App\Models\Master\WorkflowStep;
+use App\Models\Master\WorkflowStepAction;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -32,7 +31,7 @@ class ModularNonContractWorkflowSeeder extends Seeder
             '[SUB-WF 3] PENGAJUAN NON KONTRAK - FINALISASI & PENERBITAN F2',
         ])->pluck('id')->toArray();
 
-        if (!empty($existingWfIds)) {
+        if (! empty($existingWfIds)) {
             Authority::where('context_type', Authority::CONTEXT_WORKFLOW_STEP)
                 ->whereIn('context_id', function ($q) use ($existingWfIds) {
                     $q->select('id')->from('m_workflow_steps')->whereIn('workflow_id', $existingWfIds);
@@ -161,7 +160,6 @@ class ModularNonContractWorkflowSeeder extends Seeder
             'transition_config' => ['type' => 'initial_step'],
             'is_active' => true,
         ]);
-
 
         // ----------------------------------------------------
         // SUB-WORKFLOW 2: TELAAH & PENUGASAN LEGAL
@@ -299,7 +297,6 @@ class ModularNonContractWorkflowSeeder extends Seeder
             'is_active' => true,
         ]);
 
-
         // ----------------------------------------------------
         // SUB-WORKFLOW 3: FINALISASI & PENERBITAN F2
         // ----------------------------------------------------
@@ -411,7 +408,6 @@ class ModularNonContractWorkflowSeeder extends Seeder
             'description' => 'Tahapan penutupan pengajuan dan penyimpanan arsip digital.',
             'is_active' => true,
         ]);
-
 
         // ----------------------------------------------------
         // 4. MASTER WORKFLOW: ORKESTRATOR (PENGHUBUNG SEMUA FLOW)

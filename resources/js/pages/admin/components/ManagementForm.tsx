@@ -35,21 +35,26 @@ export function ManagementForm({
     return (
         <div
             className={cn(
-                "animate-in fade-in slide-in-from-right-5 bg-surface-base text-text-main flex flex-col overflow-hidden font-sans antialiased",
-                flat ? "h-full w-full" : "border-surface-border m-5 rounded-2xl border shadow-sm"
+                'animate-in fade-in slide-in-from-right-5 bg-surface-base text-text-main flex flex-col overflow-hidden font-sans antialiased',
+                flat ? 'h-full w-full' : 'border-surface-border m-5 rounded-2xl border shadow-sm',
             )}
             style={{ maxHeight: flat ? '100%' : 'calc(100svh - 2.5rem)' }}
         >
             {/* COMPACT STICKY HEADER */}
-            <div className="border-surface-border bg-background sticky top-0 z-50 flex h-16 min-h-[64px] max-h-[64px] shrink-0 items-center justify-between border-b px-6 box-border">
+            <div className="border-surface-border bg-background sticky top-0 z-50 box-border flex h-16 max-h-[64px] min-h-[64px] shrink-0 items-center justify-between border-b px-6">
                 <div className="flex items-center gap-3">
-                    <div className="flex shrink-0 items-center justify-center rounded-xl border border-surface-border bg-surface-muted/60 p-1 shadow-2xs">
-                        <Button variant="ghost" size="icon" className="hover:bg-surface-muted h-8 w-8 rounded-lg text-text-main transition-all" onClick={onClose}>
+                    <div className="border-surface-border bg-surface-muted/60 flex shrink-0 items-center justify-center rounded-xl border p-1 shadow-2xs">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="hover:bg-surface-muted text-text-main h-8 w-8 rounded-lg transition-all"
+                            onClick={onClose}
+                        >
                             <ArrowLeft size={16} />
                         </Button>
                     </div>
 
-                    <div className="flex flex-col gap-0.5 justify-center">
+                    <div className="flex flex-col justify-center gap-0.5">
                         <div className="flex items-center gap-2">
                             <h1 className="text-text-main text-[13.5px] font-bold tracking-tight">{title}</h1>
                             {isEdit && <div className="bg-primary h-1.5 w-1.5 animate-pulse rounded-full" />}
@@ -75,7 +80,7 @@ export function ManagementForm({
                         variant="primary"
                         onClick={onSave}
                         disabled={processing || (!isDirty && isEdit)}
-                        className="h-9 rounded-xl px-5 text-sm font-semibold  shadow-sm"
+                        className="h-9 rounded-xl px-5 text-sm font-semibold shadow-sm"
                     >
                         {processing ? (
                             <Loader2 size={14} className="animate-spin" />
@@ -91,9 +96,7 @@ export function ManagementForm({
 
             {/* SUB-HEADER TABS ROW */}
             {tabs && (
-                <div className="border-b border-primary/20 bg-primary/5 dark:bg-primary/[0.05] dark:border-primary/30 px-6 py-2 shrink-0">
-                    {tabs}
-                </div>
+                <div className="border-primary/20 bg-primary/5 dark:bg-primary/[0.05] dark:border-primary/30 shrink-0 border-b px-6 py-2">{tabs}</div>
             )}
 
             {/* COMPACT FORM BODY */}
@@ -122,8 +125,8 @@ export function FormSection({
             {(title || subtitle || headerAction) && (
                 <div className="flex items-center justify-between gap-4 border-b border-black/[0.03] pb-4 dark:border-white/[0.03]">
                     <div className="space-y-1">
-                        {title && <h3 className="text-text-main text-xs font-semibold  ">{title}</h3>}
-                        {subtitle && <p className="text-text-desc text-sm leading-relaxed font-medium ">{subtitle}</p>}
+                        {title && <h3 className="text-text-main text-xs font-semibold">{title}</h3>}
+                        {subtitle && <p className="text-text-desc text-sm leading-relaxed font-medium">{subtitle}</p>}
                     </div>
                     {headerAction}
                 </div>

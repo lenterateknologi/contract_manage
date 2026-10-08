@@ -12,10 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('m_workflows', function (Blueprint $table) {
-            if (!Schema::hasColumn('m_workflows', 'workflow_type')) {
+            if (! Schema::hasColumn('m_workflows', 'workflow_type')) {
                 $table->string('workflow_type')->default('standalone')->nullable()->after('workflow_category');
             }
-            if (!Schema::hasColumn('m_workflows', 'parent_workflow_id')) {
+            if (! Schema::hasColumn('m_workflows', 'parent_workflow_id')) {
                 $table->uuid('parent_workflow_id')->nullable()->after('workflow_type')->index();
             }
         });

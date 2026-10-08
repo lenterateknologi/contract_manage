@@ -1,4 +1,4 @@
-import { Columns, FileText, Heading1, Image as ImageIcon, Layout, List, Scissors, Type } from 'lucide-react';
+import { Columns, Heading1, Image as ImageIcon, Layout, List, Scissors, Type } from 'lucide-react';
 
 export const FIELD_TYPES: any[] = [
     {

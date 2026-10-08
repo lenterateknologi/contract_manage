@@ -2,8 +2,8 @@
 
 namespace App\Imports;
 
-use App\Models\JobLevel;
-use App\Models\JobTitle;
+use App\Models\Master\JobLevel;
+use App\Models\Master\JobTitle;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;

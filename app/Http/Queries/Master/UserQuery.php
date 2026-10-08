@@ -2,7 +2,7 @@
 
 namespace App\Http\Queries\Master;
 
-use App\Models\User;
+use App\Models\Master\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;

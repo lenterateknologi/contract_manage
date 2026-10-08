@@ -26,20 +26,29 @@ use App\Core\Crud\Resources\UserResource;
 use App\Core\Crud\Resources\VendorResource;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Common\ImportFileRequest;
-use App\Models\Authority;
-use App\Models\CompanyGroup;
+use App\Models\Master\Authority;
+use App\Models\Master\Company;
+use App\Models\Master\CompanyGroup;
+use App\Models\Master\ContractSlaConfig;
+use App\Models\Master\DashboardType;
+use App\Models\Master\Department;
+use App\Models\Master\Division;
+use App\Models\Master\Location;
+use App\Models\Master\OrganizationGroup;
+use App\Models\Master\Region;
+use App\Models\Master\Role;
+use App\Models\Master\User;
 use App\Services\Crud\ResourceQueryBuilderService;
 use App\Services\MasterData\MasterAuthoritySyncService;
 use App\Services\PortalSyncService;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\Mime\MimeTypes;
 
 class ResourceController extends Controller
 {
@@ -162,19 +171,19 @@ class ResourceController extends Controller
         $extraProps = [];
         if ($resourceSlug === 'dashboard-types' || $resourceSlug === 'contract-sla-configs') {
             $extraProps = [
-                'roles' => \App\Models\Role::select('id', 'name')->orderBy('name')->get(),
-                'departments' => \App\Models\Department::select('id', 'name', 'code', 'idorg_group', 'org_group_name')->where('is_used', true)->orderBy('name')->get(),
-                'divisions' => \App\Models\Division::select('id', 'name', 'code', 'department_id')->orderBy('name')->get(),
-                'locations' => \App\Models\Location::select('id', 'name', 'code')->where('is_used', true)->orderBy('name')->get(),
-                'users' => \App\Models\User::select('id', 'name', 'nik', 'role_id', 'department_id', 'division_id', 'company_name', 'org_name', 'is_used')
+                'roles' => Role::select('id', 'name')->orderBy('name')->get(),
+                'departments' => Department::select('id', 'name', 'code', 'idorg_group', 'org_group_name')->where('is_used', true)->orderBy('name')->get(),
+                'divisions' => Division::select('id', 'name', 'code', 'department_id')->orderBy('name')->get(),
+                'locations' => Location::select('id', 'name', 'code')->where('is_used', true)->orderBy('name')->get(),
+                'users' => User::select('id', 'name', 'nik', 'role_id', 'department_id', 'division_id', 'company_name', 'org_name', 'is_used')
                     ->where('is_used', true)
                     ->orderBy('name')
                     ->get()
                     ->each->setAppends([]),
-                'companyGroups' => \App\Models\CompanyGroup::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
-                'organizationGroups' => \App\Models\OrganizationGroup::select('id', 'name', 'code', 'idorg_group')->where('is_used', true)->orderBy('name')->get(),
-                'regions' => \App\Models\Region::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
-                'companies' => \App\Models\Company::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
+                'companyGroups' => CompanyGroup::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
+                'organizationGroups' => OrganizationGroup::select('id', 'name', 'code', 'idorg_group')->where('is_used', true)->orderBy('name')->get(),
+                'regions' => Region::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
+                'companies' => Company::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
             ];
         }
 
@@ -232,14 +241,30 @@ class ResourceController extends Controller
                 if (($auth['authority_type'] ?? '') === 'user' && ! empty($auth['user_id'])) {
                     $userIds[] = (string) $auth['user_id'];
                 } elseif (($auth['authority_type'] ?? '') === 'group') {
-                    if (! empty($auth['role_id'])) $roleIds[] = (string) $auth['role_id'];
-                    if (! empty($auth['division_id'])) $divIds[] = (string) $auth['division_id'];
-                    if (! empty($auth['department_id'])) $deptIds[] = (string) $auth['department_id'];
-                    if (! empty($auth['location_id'])) $locIds[] = (string) $auth['location_id'];
-                    if (! empty($auth['company_group_id'])) $compGroupIds[] = (string) $auth['company_group_id'];
-                    if (! empty($auth['company_id'])) $compIds[] = (string) $auth['company_id'];
-                    if (! empty($auth['region_id'])) $regIds[] = (string) $auth['region_id'];
-                    if (! empty($auth['organization_group_id'])) $orgGroupIds[] = (string) $auth['organization_group_id'];
+                    if (! empty($auth['role_id'])) {
+                        $roleIds[] = (string) $auth['role_id'];
+                    }
+                    if (! empty($auth['division_id'])) {
+                        $divIds[] = (string) $auth['division_id'];
+                    }
+                    if (! empty($auth['department_id'])) {
+                        $deptIds[] = (string) $auth['department_id'];
+                    }
+                    if (! empty($auth['location_id'])) {
+                        $locIds[] = (string) $auth['location_id'];
+                    }
+                    if (! empty($auth['company_group_id'])) {
+                        $compGroupIds[] = (string) $auth['company_group_id'];
+                    }
+                    if (! empty($auth['company_id'])) {
+                        $compIds[] = (string) $auth['company_id'];
+                    }
+                    if (! empty($auth['region_id'])) {
+                        $regIds[] = (string) $auth['region_id'];
+                    }
+                    if (! empty($auth['organization_group_id'])) {
+                        $orgGroupIds[] = (string) $auth['organization_group_id'];
+                    }
                 }
             }
 
@@ -287,40 +312,40 @@ class ResourceController extends Controller
 
         $extraProps = [];
 
-        if ($resourceSlug === 'dashboard-types' && $record instanceof \App\Models\DashboardType) {
+        if ($resourceSlug === 'dashboard-types' && $record instanceof DashboardType) {
             $authorities = $this->authoritySyncService->getForContext(Authority::CONTEXT_DASHBOARD_TYPE, $record->id);
             if ($authorities->isEmpty()) {
                 $constructed = [];
-                $userIds = \App\Models\DashboardType::normalizeIds($record->user_ids);
-                $userMap = ! empty($userIds) ? \App\Models\User::select('id', 'name', 'email', 'nik', 'username', 'role_id', 'department_id', 'division_id', 'job_level_id', 'job_position_id')->whereIn('id', $userIds)->get()->keyBy('id') : collect();
+                $userIds = DashboardType::normalizeIds($record->user_ids);
+                $userMap = ! empty($userIds) ? User::select('id', 'name', 'email', 'nik', 'username', 'role_id', 'department_id', 'division_id', 'job_level_id', 'job_position_id')->whereIn('id', $userIds)->get()->keyBy('id') : collect();
                 foreach ($userIds as $uid) {
                     $constructed[] = [
-                        'id' => (string) \Illuminate\Support\Str::uuid(),
+                        'id' => (string) Str::uuid(),
                         'authority_type' => 'user',
                         'user_id' => $uid,
                         'user' => $userMap->get($uid),
                     ];
                 }
 
-                $roleIds = \App\Models\DashboardType::normalizeIds($record->role_ids);
-                $divIds = \App\Models\DashboardType::normalizeIds($record->division_ids);
-                $deptIds = \App\Models\DashboardType::normalizeIds($record->department_ids);
-                $locIds = \App\Models\DashboardType::normalizeIds($record->location_ids);
-                $compGroupIds = \App\Models\DashboardType::normalizeIds($record->company_group_ids);
-                $compIds = \App\Models\DashboardType::normalizeIds($record->company_ids);
-                $regIds = \App\Models\DashboardType::normalizeIds($record->region_ids);
-                $orgGroupIds = \App\Models\DashboardType::normalizeIds($record->org_group_ids);
+                $roleIds = DashboardType::normalizeIds($record->role_ids);
+                $divIds = DashboardType::normalizeIds($record->division_ids);
+                $deptIds = DashboardType::normalizeIds($record->department_ids);
+                $locIds = DashboardType::normalizeIds($record->location_ids);
+                $compGroupIds = DashboardType::normalizeIds($record->company_group_ids);
+                $compIds = DashboardType::normalizeIds($record->company_ids);
+                $regIds = DashboardType::normalizeIds($record->region_ids);
+                $orgGroupIds = DashboardType::normalizeIds($record->org_group_ids);
 
                 $hasGroupDims = ! empty($roleIds) || ! empty($divIds) || ! empty($deptIds) || ! empty($locIds) || ! empty($compGroupIds) || ! empty($compIds) || ! empty($regIds) || ! empty($orgGroupIds);
                 if ($hasGroupDims) {
-                    $roleMap = ! empty($roleIds) ? \App\Models\Role::select('id', 'name')->whereIn('id', $roleIds)->get()->keyBy('id') : collect();
-                    $deptMap = ! empty($deptIds) ? \App\Models\Department::select('id', 'name', 'code')->whereIn('id', $deptIds)->get()->keyBy('id') : collect();
-                    $divMap = ! empty($divIds) ? \App\Models\Division::select('id', 'name', 'code')->whereIn('id', $divIds)->get()->keyBy('id') : collect();
-                    $locMap = ! empty($locIds) ? \App\Models\Location::select('id', 'name', 'code')->whereIn('id', $locIds)->get()->keyBy('id') : collect();
-                    $cgMap = ! empty($compGroupIds) ? \App\Models\CompanyGroup::select('id', 'name')->whereIn('id', $compGroupIds)->get()->keyBy('id') : collect();
-                    $compMap = ! empty($compIds) ? \App\Models\Company::select('id', 'name')->whereIn('id', $compIds)->get()->keyBy('id') : collect();
-                    $regMap = ! empty($regIds) ? \App\Models\Region::select('id', 'name')->whereIn('id', $regIds)->get()->keyBy('id') : collect();
-                    $ogMap = ! empty($orgGroupIds) ? \App\Models\OrganizationGroup::select('id', 'name', 'code')->whereIn('id', $orgGroupIds)->get()->keyBy('id') : collect();
+                    $roleMap = ! empty($roleIds) ? Role::select('id', 'name')->whereIn('id', $roleIds)->get()->keyBy('id') : collect();
+                    $deptMap = ! empty($deptIds) ? Department::select('id', 'name', 'code')->whereIn('id', $deptIds)->get()->keyBy('id') : collect();
+                    $divMap = ! empty($divIds) ? Division::select('id', 'name', 'code')->whereIn('id', $divIds)->get()->keyBy('id') : collect();
+                    $locMap = ! empty($locIds) ? Location::select('id', 'name', 'code')->whereIn('id', $locIds)->get()->keyBy('id') : collect();
+                    $cgMap = ! empty($compGroupIds) ? CompanyGroup::select('id', 'name')->whereIn('id', $compGroupIds)->get()->keyBy('id') : collect();
+                    $compMap = ! empty($compIds) ? Company::select('id', 'name')->whereIn('id', $compIds)->get()->keyBy('id') : collect();
+                    $regMap = ! empty($regIds) ? Region::select('id', 'name')->whereIn('id', $regIds)->get()->keyBy('id') : collect();
+                    $ogMap = ! empty($orgGroupIds) ? OrganizationGroup::select('id', 'name', 'code')->whereIn('id', $orgGroupIds)->get()->keyBy('id') : collect();
 
                     $rList = ! empty($roleIds) ? $roleIds : [null];
                     $dList = ! empty($deptIds) ? $deptIds : [null];
@@ -340,7 +365,7 @@ class ResourceController extends Controller
                                             foreach ($rgList as $rg) {
                                                 foreach ($ogList as $og) {
                                                     $constructed[] = [
-                                                        'id' => (string) \Illuminate\Support\Str::uuid(),
+                                                        'id' => (string) Str::uuid(),
                                                         'authority_type' => 'group',
                                                         'role_id' => $r,
                                                         'department_id' => $d,
@@ -377,45 +402,45 @@ class ResourceController extends Controller
             $record->setAttribute('on_behalf_authorities', $onBehalfAuthorities);
 
             $extraProps = [
-                'roles' => \App\Models\Role::select('id', 'name')->orderBy('name')->get(),
-                'departments' => \App\Models\Department::select('id', 'name', 'code', 'idorg_group', 'org_group_name')->where('is_used', true)->orderBy('name')->get(),
-                'divisions' => \App\Models\Division::select('id', 'name', 'code', 'department_id')->orderBy('name')->get(),
-                'locations' => \App\Models\Location::select('id', 'name', 'code')->where('is_used', true)->orderBy('name')->get(),
-                'users' => \App\Models\User::select('id', 'name', 'nik', 'role_id', 'department_id', 'division_id', 'company_name', 'org_name', 'is_used')
+                'roles' => Role::select('id', 'name')->orderBy('name')->get(),
+                'departments' => Department::select('id', 'name', 'code', 'idorg_group', 'org_group_name')->where('is_used', true)->orderBy('name')->get(),
+                'divisions' => Division::select('id', 'name', 'code', 'department_id')->orderBy('name')->get(),
+                'locations' => Location::select('id', 'name', 'code')->where('is_used', true)->orderBy('name')->get(),
+                'users' => User::select('id', 'name', 'nik', 'role_id', 'department_id', 'division_id', 'company_name', 'org_name', 'is_used')
                     ->where('is_used', true)
                     ->orderBy('name')
                     ->get()
                     ->each->setAppends([]),
-                'companyGroups' => \App\Models\CompanyGroup::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
-                'organizationGroups' => \App\Models\OrganizationGroup::select('id', 'name', 'code', 'idorg_group')->where('is_used', true)->orderBy('name')->get(),
-                'regions' => \App\Models\Region::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
-                'companies' => \App\Models\Company::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
+                'companyGroups' => CompanyGroup::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
+                'organizationGroups' => OrganizationGroup::select('id', 'name', 'code', 'idorg_group')->where('is_used', true)->orderBy('name')->get(),
+                'regions' => Region::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
+                'companies' => Company::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
             ];
         }
 
-        if ($resourceSlug === 'contract-sla-configs' && $record instanceof \App\Models\ContractSlaConfig) {
+        if ($resourceSlug === 'contract-sla-configs' && $record instanceof ContractSlaConfig) {
             $authorities = $this->authoritySyncService->getForContext(Authority::CONTEXT_SLA_OVERDUE, $record->id);
             $record->setAttribute('authorities', $authorities);
 
             $extraProps = [
-                'roles' => \App\Models\Role::select('id', 'name')->orderBy('name')->get(),
-                'departments' => \App\Models\Department::select('id', 'name', 'code', 'idorg_group', 'org_group_name')->where('is_used', true)->orderBy('name')->get(),
-                'divisions' => \App\Models\Division::select('id', 'name', 'code', 'department_id')->orderBy('name')->get(),
-                'locations' => \App\Models\Location::select('id', 'name', 'code')->where('is_used', true)->orderBy('name')->get(),
-                'users' => \App\Models\User::select('id', 'name', 'nik', 'role_id', 'department_id', 'division_id', 'company_name', 'org_name', 'is_used')
+                'roles' => Role::select('id', 'name')->orderBy('name')->get(),
+                'departments' => Department::select('id', 'name', 'code', 'idorg_group', 'org_group_name')->where('is_used', true)->orderBy('name')->get(),
+                'divisions' => Division::select('id', 'name', 'code', 'department_id')->orderBy('name')->get(),
+                'locations' => Location::select('id', 'name', 'code')->where('is_used', true)->orderBy('name')->get(),
+                'users' => User::select('id', 'name', 'nik', 'role_id', 'department_id', 'division_id', 'company_name', 'org_name', 'is_used')
                     ->where('is_used', true)
                     ->orderBy('name')
                     ->get()
                     ->each->setAppends([]),
-                'companyGroups' => \App\Models\CompanyGroup::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
-                'organizationGroups' => \App\Models\OrganizationGroup::select('id', 'name', 'code', 'idorg_group')->where('is_used', true)->orderBy('name')->get(),
-                'regions' => \App\Models\Region::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
-                'companies' => \App\Models\Company::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
+                'companyGroups' => CompanyGroup::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
+                'organizationGroups' => OrganizationGroup::select('id', 'name', 'code', 'idorg_group')->where('is_used', true)->orderBy('name')->get(),
+                'regions' => Region::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
+                'companies' => Company::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
             ];
         }
 
-        if ($resourceSlug === 'users' && $record instanceof \App\Models\User) {
-            $resolvedType = \App\Models\DashboardType::resolveForUser($record);
+        if ($resourceSlug === 'users' && $record instanceof User) {
+            $resolvedType = DashboardType::resolveForUser($record);
             $filterSettings = $record->getContractFilterSettings();
             $record->setAttribute('resolved_policy', [
                 'dashboard_type_name' => $resolvedType?->name ?? 'Default (Fallback)',
@@ -467,12 +492,13 @@ class ResourceController extends Controller
         }
 
         $baseUrl = rtrim(config('services.coma.base_url'), '/');
-        
+
         $token = Cache::remember('coma_api_token', 300, function () use ($baseUrl) {
             $resp = Http::timeout(15)->post("{$baseUrl}/api/Authentication/authenticate", [
                 'username' => config('services.coma.username'),
                 'password' => config('services.coma.password'),
             ]);
+
             return ($resp->successful() && $resp->json('status') === 'success') ? $resp->json('data') : null;
         });
 
@@ -493,7 +519,7 @@ class ResourceController extends Controller
         $binaryData = $rawBase64 ? base64_decode($rawBase64) : $fileResp->body();
 
         $ext = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
-        $contentType = \Symfony\Component\Mime\MimeTypes::getDefault()->getMimeTypes($ext)[0] ?? 'application/octet-stream';
+        $contentType = MimeTypes::getDefault()->getMimeTypes($ext)[0] ?? 'application/octet-stream';
 
         return response($binaryData, 200, [
             'Content-Type' => $contentType,
@@ -546,14 +572,30 @@ class ResourceController extends Controller
                 if (($auth['authority_type'] ?? '') === 'user' && ! empty($auth['user_id'])) {
                     $userIds[] = (string) $auth['user_id'];
                 } elseif (($auth['authority_type'] ?? '') === 'group') {
-                    if (! empty($auth['role_id'])) $roleIds[] = (string) $auth['role_id'];
-                    if (! empty($auth['division_id'])) $divIds[] = (string) $auth['division_id'];
-                    if (! empty($auth['department_id'])) $deptIds[] = (string) $auth['department_id'];
-                    if (! empty($auth['location_id'])) $locIds[] = (string) $auth['location_id'];
-                    if (! empty($auth['company_group_id'])) $compGroupIds[] = (string) $auth['company_group_id'];
-                    if (! empty($auth['company_id'])) $compIds[] = (string) $auth['company_id'];
-                    if (! empty($auth['region_id'])) $regIds[] = (string) $auth['region_id'];
-                    if (! empty($auth['organization_group_id'])) $orgGroupIds[] = (string) $auth['organization_group_id'];
+                    if (! empty($auth['role_id'])) {
+                        $roleIds[] = (string) $auth['role_id'];
+                    }
+                    if (! empty($auth['division_id'])) {
+                        $divIds[] = (string) $auth['division_id'];
+                    }
+                    if (! empty($auth['department_id'])) {
+                        $deptIds[] = (string) $auth['department_id'];
+                    }
+                    if (! empty($auth['location_id'])) {
+                        $locIds[] = (string) $auth['location_id'];
+                    }
+                    if (! empty($auth['company_group_id'])) {
+                        $compGroupIds[] = (string) $auth['company_group_id'];
+                    }
+                    if (! empty($auth['company_id'])) {
+                        $compIds[] = (string) $auth['company_id'];
+                    }
+                    if (! empty($auth['region_id'])) {
+                        $regIds[] = (string) $auth['region_id'];
+                    }
+                    if (! empty($auth['organization_group_id'])) {
+                        $orgGroupIds[] = (string) $auth['organization_group_id'];
+                    }
                 }
             }
 

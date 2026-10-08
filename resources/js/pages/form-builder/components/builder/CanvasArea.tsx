@@ -1,6 +1,4 @@
 import { ScrollArea } from '@/components/ui/utilities/ScrollArea';
-import { cn } from '@/lib/utils';
-import { Edit3, Eye, Play } from 'lucide-react';
 import React from 'react';
 import { UnifiedFormViewer } from '../renderer/UnifiedFormViewer';
 
@@ -37,7 +35,7 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
         <section className="bg-muted/10 relative flex flex-1 flex-col overflow-hidden">
             <ScrollArea className="bg-muted/30 flex-1">
                 <div
-                    className="flex min-h-full cursor-default items-start justify-center px-12 py-16 transition-transform duration-200 origin-top"
+                    className="flex min-h-full origin-top cursor-default items-start justify-center px-12 py-16 transition-transform duration-200"
                     style={{
                         backgroundImage: 'radial-gradient(hsl(var(--border)) 1px, transparent 1px)',
                         backgroundSize: '30px 30px',

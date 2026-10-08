@@ -9,11 +9,11 @@ use App\Core\Crud\Fields\SelectInput;
 use App\Core\Crud\Fields\TextInput;
 use App\Core\Crud\Fields\ToggleInput;
 use App\Core\Crud\Fields\TreeSelectInput;
-use App\Core\Crud\Filters\Filter;
+use App\Core\Crud\Filter;
 use App\Core\Crud\Resource;
-use App\Models\ContractSlaConfig;
-use App\Models\ContractType;
-use App\Models\Workflow;
+use App\Models\Master\ContractSlaConfig;
+use App\Models\Master\ContractType;
+use App\Models\Master\Workflow;
 use Illuminate\Support\Facades\Cache;
 
 class ContractSlaConfigResource extends Resource

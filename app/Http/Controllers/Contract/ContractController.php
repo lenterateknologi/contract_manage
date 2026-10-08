@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Contract;
 
-use App\Exports\ContractExport;
+use App\Exports\Transaction\ContractExport;
 use App\Http\Actions\Contract\StoreContractAction;
 use App\Http\Actions\Contract\UpdateContractAction;
 use App\Http\Controllers\Controller;
@@ -14,15 +14,17 @@ use App\Http\Queries\Contract\ContractOptionsQuery;
 use App\Http\Requests\Contract\StoreContractRequest;
 use App\Http\Requests\Contract\UpdateContractRequest;
 use App\Imports\ContractImport;
-use App\Models\AccessModule;
-use App\Models\Contract;
-use App\Models\DashboardType;
-use App\Models\Role;
-use App\Models\User;
+use App\Models\Master\AccessModule;
+use App\Models\Master\DashboardType;
+use App\Models\Master\Role;
+use App\Models\Master\User;
+use App\Models\Transaction\Contract;
+use App\Models\Transaction\SubmissionReview;
 use App\Services\ContractFilterScopeService;
 use App\Services\Workflow\ContractWorkflowService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
@@ -95,7 +97,7 @@ class ContractController extends Controller
     /**
      * Generalized method for Inertia contract views
      */
-    public function contractsView(Request $request, string $view = 'contracts', ?string $tab = null): Response|JsonResponse|\Illuminate\Http\RedirectResponse
+    public function contractsView(Request $request, string $view = 'contracts', ?string $tab = null): Response|JsonResponse|RedirectResponse
     {
         if ($view === 'contracts' || $view === 'all') {
             $user = Auth::user();
@@ -219,7 +221,7 @@ class ContractController extends Controller
             };
 
             $roots = $allTypes->whereNull('parent_id');
-            
+
             // Map every root dynamically to its descendant subtree
             $rootDescendantMap = [];
             foreach ($roots as $root) {
@@ -227,7 +229,7 @@ class ContractController extends Controller
             }
 
             // Scoped base query respecting user organization permissions (no eager loading needed for counts)
-            $scopedAllQuery = $this->contractListQuery->build(new Request(), 'all', false);
+            $scopedAllQuery = $this->contractListQuery->build(new Request, 'all', false);
             $activeContractsQuery = (clone $scopedAllQuery)->whereRaw('UPPER(status) != ?', ['ARCHIVED'])->whereNull('closed_at');
 
             // Dynamic counts per root category
@@ -254,7 +256,7 @@ class ContractController extends Controller
             ], $dynamicParentCounts);
 
             // Org Group Counts
-            $scopedOrgQuery = $this->contractListQuery->build(new Request(), 'organization', false);
+            $scopedOrgQuery = $this->contractListQuery->build(new Request, 'organization', false);
             $activeOrgQuery = (clone $scopedOrgQuery)->whereRaw('UPPER(status) != ?', ['ARCHIVED'])->whereNull('closed_at');
             $dynamicOrgCounts = [];
             foreach ($rootDescendantMap as $rootId => $descendantIds) {
@@ -270,7 +272,7 @@ class ContractController extends Controller
                 'archived' => (clone $scopedOrgQuery)->where(fn ($q) => $q->whereRaw('UPPER(status) = ?', ['ARCHIVED'])->orWhereNotNull('closed_at'))->count(),
             ], $dynamicOrgCounts);
 
-            $scopedMineQuery = $this->contractListQuery->build(new Request(), 'mine', false);
+            $scopedMineQuery = $this->contractListQuery->build(new Request, 'mine', false);
             $myActiveQuery = (clone $scopedMineQuery)->whereRaw('UPPER(status) != ?', ['ARCHIVED'])->whereNull('closed_at');
             $dynamicMineCounts = [];
             foreach ($rootDescendantMap as $rootId => $descendantIds) {
@@ -582,7 +584,6 @@ class ContractController extends Controller
         return $this->successResponse($loaders['roles'](), 'Roles retrieved successfully');
     }
 
-   
     public function store(StoreContractRequest $request): JsonResponse
     {
         $contract = $this->storeAction->execute($request->validated());
@@ -643,10 +644,19 @@ class ContractController extends Controller
             $authorities = $contract->workflowStep->approverAuthorities;
             if ($authorities && $authorities->isNotEmpty()) {
                 $isAuthorityMatch = $authorities->contains(function ($auth) use ($user) {
-                    if ($auth->authority_type === 'user' && $auth->user_id === $user?->id) return true;
-                    if ($auth->authority_type === 'role' && $auth->role_id === $user?->role_id) return true;
-                    if ($auth->authority_type === 'department' && $auth->department_id === $user?->department_id) return true;
-                    if ($auth->authority_type === 'division' && $auth->division_id === $user?->division_id) return true;
+                    if ($auth->authority_type === 'user' && $auth->user_id === $user?->id) {
+                        return true;
+                    }
+                    if ($auth->authority_type === 'role' && $auth->role_id === $user?->role_id) {
+                        return true;
+                    }
+                    if ($auth->authority_type === 'department' && $auth->department_id === $user?->department_id) {
+                        return true;
+                    }
+                    if ($auth->authority_type === 'division' && $auth->division_id === $user?->division_id) {
+                        return true;
+                    }
+
                     return false;
                 });
             }
@@ -657,21 +667,21 @@ class ContractController extends Controller
         // Only save official review record if user is an eligible reviewer for this step
         if ($isEligibleReviewer) {
             // 1. Save to relational table t_submission_reviews
-            \App\Models\SubmissionReview::updateOrCreate(
+            SubmissionReview::updateOrCreate(
                 [
                     'submission_id' => $contract->id,
-                    'submission_type' => \App\Models\SubmissionReview::TYPE_CONTRACT,
+                    'submission_type' => SubmissionReview::TYPE_CONTRACT,
                     'workflow_step_id' => $contract->workflow_step_id,
                     'step_number' => $contract->workflow_step?->step ?? $contract->current_step_number,
                     'workflow_iteration' => $contract->workflow_iteration ?? 1,
-                    'context_type' => \App\Models\SubmissionReview::CONTEXT_DOCUMENT_REVIEW,
+                    'context_type' => SubmissionReview::CONTEXT_DOCUMENT_REVIEW,
                     'item_key' => $doc,
                     'document_type' => $doc,
                     'user_id' => $user?->id,
                 ],
                 [
                     'contract_id' => $contract->id,
-                    'status' => \App\Models\SubmissionReview::STATUS_REVIEWED,
+                    'status' => SubmissionReview::STATUS_REVIEWED,
                     'user_name' => $user?->name,
                     'user_role' => $user?->role ?? $user?->role_name,
                     'reviewed_at' => now(),

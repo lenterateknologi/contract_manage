@@ -2,22 +2,21 @@
 
 namespace App\Http\Queries\Contract;
 
-use App\Http\Formatters\ContractFormatter;
-use App\Models\Company;
-use App\Models\CompanyGroup;
-use App\Models\ContractStatus;
-use App\Models\ContractType;
-use App\Models\Department;
-use App\Models\Division;
-use App\Models\FormTemplate;
-use App\Models\Location;
-use App\Models\OrganizationGroup;
-use App\Models\Region;
-use App\Models\Role;
-use App\Models\SubmissionType;
-use App\Models\User;
-use App\Models\Vendor;
-use App\Models\Workflow;
+use App\Models\Master\Company;
+use App\Models\Master\CompanyGroup;
+use App\Models\Master\ContractStatus;
+use App\Models\Master\ContractType;
+use App\Models\Master\Department;
+use App\Models\Master\Division;
+use App\Models\Master\FormTemplate;
+use App\Models\Master\Location;
+use App\Models\Master\OrganizationGroup;
+use App\Models\Master\Region;
+use App\Models\Master\Role;
+use App\Models\Master\SubmissionType;
+use App\Models\Master\User;
+use App\Models\Master\Vendor;
+use App\Models\Master\Workflow;
 use App\Services\ContractFilterScopeService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;

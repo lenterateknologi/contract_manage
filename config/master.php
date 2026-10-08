@@ -19,6 +19,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | SLA Monitoring Defaults (Days)
+    |--------------------------------------------------------------------------
+    | 1. Durasi Total Pengajuan (Lead Time): default 3 hari
+    | 2. Durasi Pengerjaan PIC (Processing Time): default 10 hari
+    |--------------------------------------------------------------------------
+    */
+    'sla' => [
+        'default_lead_time_days' => (int) env('SLA_DEFAULT_LEAD_TIME_DAYS', 3),
+        'default_processing_time_days' => (int) env('SLA_DEFAULT_PROCESSING_TIME_DAYS', 10),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Workflow Step Defaults
     |--------------------------------------------------------------------------
     */

@@ -11,7 +11,10 @@ interface AgreementTabProps {
 }
 
 export const AgreementTab = ({ contract, formTemplates, vendors, meUser, onUpdate }: AgreementTabProps) => {
-    const isInteractive = (contract as any)?.contract_mode === 'interactive' || (contract as any)?.agreement_mode === 'interactive' || (contract as any)?.modes?.contract === 'interactive';
+    const isInteractive =
+        (contract as any)?.contract_mode === 'interactive' ||
+        (contract as any)?.agreement_mode === 'interactive' ||
+        (contract as any)?.modes?.contract === 'interactive';
     if (isInteractive) {
         return (
             <FormSubmissionTab

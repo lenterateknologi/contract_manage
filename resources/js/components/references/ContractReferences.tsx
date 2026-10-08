@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/buttons/Button';
 import { SearchInput } from '@/components/ui/inputs/SearchInput';
 import { useDebounce } from '@/hooks/use-debounce';
 import { cn, formatDateLong } from '@/lib/utils';
 import { Contract } from '@/pages/contracts/types';
 import { contractApi } from '@/pages/contracts/utils';
-import { ExternalLink, Link as LinkIcon, Loader2, Plus, Search, Trash2, X, FileText } from 'lucide-react';
+import { ExternalLink, FileText, Link as LinkIcon, Loader2, Plus, Search, Trash2, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface ContractReferencesProps {
     contract: Contract;
@@ -15,19 +15,10 @@ interface ContractReferencesProps {
     meId?: string;
 }
 
-export default function ContractReferences({
-    contract,
-    canUpdate,
-    onUpdate,
-    processing,
-    meId,
-}: ContractReferencesProps) {
+export default function ContractReferences({ contract, canUpdate, onUpdate, processing, meId }: ContractReferencesProps) {
     const parent = contract.parent;
     // ponytail: workflow configuration is the strict source of truth for references
-    const allowReference =
-        contract.allow?.reference ??
-        (contract as any).allow_reference ??
-        (contract.workflow_step as any)?.meta?.allow_reference;
+    const allowReference = contract.allow?.reference ?? (contract as any).allow_reference ?? (contract.workflow_step as any)?.meta?.allow_reference;
     const isActor =
         (contract as any).can_approve ||
         (contract as any).is_current_actor ||
@@ -91,17 +82,15 @@ export default function ContractReferences({
     };
 
     return (
-        <div className="bg-surface-base flex flex-1 flex-col overflow-hidden p-3 lg:p-4 gap-3">
+        <div className="bg-surface-base flex flex-1 flex-col gap-3 overflow-hidden p-3 lg:p-4">
             {/* Compact Primary Header */}
-            <div className="bg-primary text-primary-foreground shrink-0 flex h-9.5 min-h-[38px] max-h-[38px] items-center justify-between px-4 rounded-xl shadow-xs">
+            <div className="bg-primary text-primary-foreground flex h-9.5 max-h-[38px] min-h-[38px] shrink-0 items-center justify-between rounded-xl px-4 shadow-xs">
                 <div className="flex items-center gap-3">
                     <div className="flex items-center gap-2">
                         <LinkIcon size={15} className="text-primary-foreground/90" />
-                        <h4 className="text-xs font-semibold tracking-tight text-primary-foreground uppercase">
-                            Referensi Dokumen & Kontrak Induk
-                        </h4>
+                        <h4 className="text-primary-foreground text-xs font-semibold tracking-tight uppercase">Referensi Dokumen & Kontrak Induk</h4>
                         {parent && (
-                            <span className="rounded bg-white/20 border border-white/30 px-1.5 py-0.5 text-[9px] font-bold text-white">
+                            <span className="rounded border border-white/30 bg-white/20 px-1.5 py-0.5 text-[9px] font-bold text-white">
                                 1 Terhubung
                             </span>
                         )}
@@ -113,7 +102,7 @@ export default function ContractReferences({
                         <button
                             type="button"
                             onClick={() => setIsEditing(true)}
-                            className="bg-white text-primary hover:bg-white/90 h-7 px-3 text-xs font-bold rounded-lg shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                            className="text-primary flex h-7 cursor-pointer items-center gap-1.5 rounded-lg bg-white px-3 text-xs font-bold shadow-xs transition-all hover:bg-white/90"
                         >
                             <Plus size={13} />
                             <span>Hubungkan Kontrak</span>
@@ -122,10 +111,10 @@ export default function ContractReferences({
                 </div>
             </div>
 
-            <div className={cn('p-6 custom-scrollbar flex-1 overflow-y-auto flex flex-col gap-5', !parent && 'justify-center')}>
+            <div className={cn('custom-scrollbar flex flex-1 flex-col gap-5 overflow-y-auto p-6', !parent && 'justify-center')}>
                 <div className="relative">
                     {parent ? (
-                        <div className="group relative overflow-hidden rounded-2xl border border-border/80 bg-gradient-to-br from-card to-muted/20 p-6 shadow-2xs transition-all duration-300 hover:shadow-xs">
+                        <div className="group border-border/80 from-card to-muted/20 relative overflow-hidden rounded-2xl border bg-gradient-to-br p-6 shadow-2xs transition-all duration-300 hover:shadow-xs">
                             <div className="flex flex-col justify-between gap-6 md:flex-row">
                                 <div className="flex flex-1 gap-4">
                                     <div className="bg-primary/10 text-primary flex h-12 w-12 shrink-0 items-center justify-center rounded-xl">
@@ -136,7 +125,7 @@ export default function ContractReferences({
                                             <span className="text-muted-foreground font-mono text-[10px] font-bold uppercase">
                                                 {parent.contract_no || parent.form_no || 'DRAFT'}
                                             </span>
-                                            <span className="h-1 w-1 rounded-full bg-border" />
+                                            <span className="bg-border h-1 w-1 rounded-full" />
                                             <span className="bg-primary/10 text-primary rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase shadow-2xs">
                                                 {parent.status}
                                             </span>
@@ -155,14 +144,14 @@ export default function ContractReferences({
                                         <Button
                                             onClick={() => setIsEditing(true)}
                                             variant="outline"
-                                            className="h-9 gap-1.5 rounded-xl border border-border text-foreground px-4 text-[11px] font-bold shadow-2xs"
+                                            className="border-border text-foreground h-9 gap-1.5 rounded-xl border px-4 text-[11px] font-bold shadow-2xs"
                                         >
                                             GANTI
                                         </Button>
                                     )}
                                     <Button
                                         onClick={handleRedirect}
-                                        className="bg-primary hover:bg-primary/90 h-9 gap-1.5 rounded-xl px-4 text-[11px] font-bold text-primary-foreground shadow-xs cursor-pointer"
+                                        className="bg-primary hover:bg-primary/90 text-primary-foreground h-9 cursor-pointer gap-1.5 rounded-xl px-4 text-[11px] font-bold shadow-xs"
                                     >
                                         <ExternalLink size={13} strokeWidth={2.5} /> LIHAT DETAIL
                                     </Button>
@@ -170,7 +159,7 @@ export default function ContractReferences({
                                         <Button
                                             onClick={handleRemove}
                                             variant="ghost"
-                                            className="h-9 w-9 rounded-xl p-0 text-muted-foreground hover:bg-rose-500/10 hover:text-rose-600 transition-colors"
+                                            className="text-muted-foreground h-9 w-9 rounded-xl p-0 transition-colors hover:bg-rose-500/10 hover:text-rose-600"
                                             title="Hapus Referensi"
                                         >
                                             <Trash2 size={16} strokeWidth={2.5} />
@@ -181,7 +170,7 @@ export default function ContractReferences({
                         </div>
                     ) : (
                         <div className="animate-in zoom-in-95 flex flex-col items-center justify-center rounded-2xl px-6 py-10 text-center duration-300">
-                            <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
+                            <div className="bg-muted text-muted-foreground mb-3 flex h-14 w-14 items-center justify-center rounded-2xl">
                                 <LinkIcon size={24} />
                             </div>
                             <h4 className="text-foreground text-[12px] font-bold uppercase">Tidak Ada Referensi</h4>
@@ -192,7 +181,7 @@ export default function ContractReferences({
                                 <Button
                                     size="sm"
                                     onClick={() => setIsEditing(true)}
-                                    className="bg-primary hover:bg-primary/90 mt-4 h-8.5 rounded-xl px-4 text-xs font-bold text-primary-foreground uppercase shadow-xs cursor-pointer"
+                                    className="bg-primary hover:bg-primary/90 text-primary-foreground mt-4 h-8.5 cursor-pointer rounded-xl px-4 text-xs font-bold uppercase shadow-xs"
                                 >
                                     Cari & Hubungkan Kontrak
                                 </Button>
@@ -209,8 +198,8 @@ export default function ContractReferences({
                             onClick={() => setIsEditing(false)}
                         />
 
-                        <div className="animate-in zoom-in-95 relative flex max-h-[80vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl duration-200">
-                            <div className="flex items-center justify-between border-b border-border bg-card px-5 py-4">
+                        <div className="animate-in zoom-in-95 border-border bg-card relative flex max-h-[80vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border shadow-2xl duration-200">
+                            <div className="border-border bg-card flex items-center justify-between border-b px-5 py-4">
                                 <div className="flex items-center gap-3">
                                     <Search size={16} className="text-primary" strokeWidth={3} />
                                     <h3 className="text-foreground text-xs font-bold tracking-wide uppercase">Hubungkan Kontrak Referensi</h3>
@@ -219,13 +208,13 @@ export default function ContractReferences({
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => setIsEditing(false)}
-                                    className="text-muted-foreground hover:text-foreground h-8 w-8 rounded-xl p-0 hover:bg-muted"
+                                    className="text-muted-foreground hover:text-foreground hover:bg-muted h-8 w-8 rounded-xl p-0"
                                 >
                                     <X size={16} strokeWidth={3} />
                                 </Button>
                             </div>
 
-                            <div className="border-b border-border p-4 bg-muted/20">
+                            <div className="border-border bg-muted/20 border-b p-4">
                                 <SearchInput
                                     autoFocus
                                     value={search}
@@ -235,7 +224,7 @@ export default function ContractReferences({
                                 />
                             </div>
 
-                            <div className="min-h-[280px] flex-1 overflow-y-auto p-4 custom-scrollbar">
+                            <div className="custom-scrollbar min-h-[280px] flex-1 overflow-y-auto p-4">
                                 {isSearching ? (
                                     <div className="flex flex-col items-center justify-center py-16">
                                         <Loader2 className="text-primary mb-3 h-6 w-6 animate-spin" />
@@ -248,7 +237,7 @@ export default function ContractReferences({
                                                 key={c.id}
                                                 type="button"
                                                 onClick={() => handleSelect(c)}
-                                                className="group hover:border-primary/40 hover:bg-primary/5 flex w-full items-center justify-between gap-4 rounded-xl border border-border/80 bg-card p-3.5 text-left transition-all hover:shadow-2xs cursor-pointer"
+                                                className="group hover:border-primary/40 hover:bg-primary/5 border-border/80 bg-card flex w-full cursor-pointer items-center justify-between gap-4 rounded-xl border p-3.5 text-left transition-all hover:shadow-2xs"
                                             >
                                                 <div className="min-w-0 flex-1">
                                                     <div className="text-muted-foreground mb-0.5 font-mono text-[9px] font-bold tracking-tight uppercase">
@@ -260,17 +249,17 @@ export default function ContractReferences({
                                                     <div className="mt-1.5 flex items-center gap-2">
                                                         <span
                                                             className={cn(
-                                                                'rounded px-2 py-0.2 text-[8.5px] font-bold uppercase',
+                                                                'py-0.2 rounded px-2 text-[8.5px] font-bold uppercase',
                                                                 c.status === 'approved'
-                                                                    ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
-                                                                    : 'text-muted-foreground bg-muted border border-border',
+                                                                    ? 'border border-emerald-500/20 bg-emerald-500/10 text-emerald-600'
+                                                                    : 'text-muted-foreground bg-muted border-border border',
                                                             )}
                                                         >
                                                             {c.status}
                                                         </span>
                                                     </div>
                                                 </div>
-                                                <div className="text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-muted transition-all">
+                                                <div className="text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground bg-muted flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-all">
                                                     <Plus size={13} strokeWidth={3} />
                                                 </div>
                                             </button>

@@ -2,8 +2,10 @@
 
 namespace App\Http\Actions\Contract;
 
-use App\Models\Contract;
-use App\Models\ContractStatus;
+use App\Enums\ContractHistoryAction;
+use App\Enums\WorkflowAction;
+use App\Models\Master\ContractStatus;
+use App\Models\Transaction\Contract;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -48,33 +50,38 @@ class GetAuditTrailAction
             }
 
             $matchedAction = $allStepActions->first(function ($act) use ($action, $customLabel) {
-                if ($customLabel && strcasecmp($act->alias ?? '', $customLabel) === 0) return true;
-                $actCode = $act->action_code instanceof \App\Enums\WorkflowAction ? $act->action_code->value : ($act->action_code ?? '');
-                if (!empty($actCode) && strcasecmp((string)$actCode, $action) === 0) return true;
+                if ($customLabel && strcasecmp($act->alias ?? '', $customLabel) === 0) {
+                    return true;
+                }
+                $actCode = $act->action_code instanceof WorkflowAction ? $act->action_code->value : ($act->action_code ?? '');
+                if (! empty($actCode) && strcasecmp((string) $actCode, $action) === 0) {
+                    return true;
+                }
+
                 return false;
             });
 
             // 3. Resolve status or target_status from master data
             $targetStatusCode = $matchedAction?->target_status;
-            $statusModel = ($targetStatusCode && isset($allStatuses[$targetStatusCode])) 
-                ? $allStatuses[$targetStatusCode] 
+            $statusModel = ($targetStatusCode && isset($allStatuses[$targetStatusCode]))
+                ? $allStatuses[$targetStatusCode]
                 : ($allStatuses->get(strtolower($action)) ?: null);
 
             // Fallback icon and color based on standard semantic themes if statusModel doesn't have them
-            $historyEnum = \App\Enums\ContractHistoryAction::tryFrom($action);
+            $historyEnum = ContractHistoryAction::tryFrom($action);
             $historyLabel = $historyEnum ? $historyEnum->label() : null;
 
-            $label = $customLabel 
-                ?: ($matchedAction?->alias 
-                    ?: ($statusModel?->label 
-                        ?: ($historyLabel 
+            $label = $customLabel
+                ?: ($matchedAction?->alias
+                    ?: ($statusModel?->label
+                        ?: ($historyLabel
                             ?: ucwords(str_replace('_', ' ', strtolower($action))))));
 
             $color = $statusModel?->color;
             $bgColor = $statusModel?->bg_color;
             $icon = $statusModel?->icon;
 
-            if (!$color) {
+            if (! $color) {
                 $actLower = strtolower($action);
                 if (str_contains($actLower, 'approved') || str_contains($actLower, 'completed')) {
                     $color = '#10b981';
@@ -131,4 +138,3 @@ class GetAuditTrailAction
         ]);
     }
 }
-

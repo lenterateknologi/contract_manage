@@ -1,12 +1,12 @@
+import { Icons } from '@/components/ui';
 import { Button } from '@/components/ui/buttons/Button';
 import { useToast } from '@/components/ui/feedback/Toast';
-import { MasterPageLayout } from '@/components/ui/navigation/MasterPageLayout';
 import { FloatingPanel } from '@/components/ui/navigation/FloatingPanel';
+import { MasterPageLayout } from '@/components/ui/navigation/MasterPageLayout';
 import { PageHeader } from '@/components/ui/navigation/PageHeader';
 import AuthorityTableManager from '@/pages/workflows/components/AuthorityTableManager';
 import { Head, router } from '@inertiajs/react';
-import { Icons } from '@/components/ui';
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 const { Save, RefreshCw, UserCheck } = Icons;
 
@@ -79,7 +79,7 @@ export default function OnBehalfAuthorityIndex({
                     const msg = Object.values(errors)[0] || 'Gagal menyimpan konfigurasi otoritas.';
                     showToast(String(msg), 'error');
                 },
-            }
+            },
         );
     };
 
@@ -87,7 +87,7 @@ export default function OnBehalfAuthorityIndex({
         <>
             <Head title="Otoritas Buat Pengajuan (On-Behalf)" />
             <MasterPageLayout padded={false}>
-                <FloatingPanel className="flex-1 min-w-0 flex flex-col h-full rounded-none border-0 overflow-hidden bg-background">
+                <FloatingPanel className="bg-background flex h-full min-w-0 flex-1 flex-col overflow-hidden rounded-none border-0">
                     <PageHeader
                         title="Otoritas Buat Pengajuan (On-Behalf)"
                         subtitle="Tentukan personil, role, atau unit kerja yang berhak membuatkan pengajuan kontrak atas nama orang lain (inisiator)"
@@ -97,7 +97,7 @@ export default function OnBehalfAuthorityIndex({
                                 onClick={handleSave}
                                 disabled={isSaving}
                                 variant="primary"
-                                className="cursor-pointer h-9 px-4 text-xs font-bold shadow-md shadow-primary/20 flex items-center gap-2"
+                                className="shadow-primary/20 flex h-9 cursor-pointer items-center gap-2 px-4 text-xs font-bold shadow-md"
                             >
                                 {isSaving ? (
                                     <>
@@ -114,7 +114,7 @@ export default function OnBehalfAuthorityIndex({
                         }
                     />
 
-                    <div className="flex-1 min-h-0 w-full overflow-y-auto p-4 custom-scrollbar">
+                    <div className="custom-scrollbar min-h-0 w-full flex-1 overflow-y-auto p-4">
                         <AuthorityTableManager
                             title="Daftar Otoritas Pembuat Pengajuan Atas Nama"
                             authorities={authorities}

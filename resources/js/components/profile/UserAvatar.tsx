@@ -47,25 +47,11 @@ export function UserAvatarIcon({
 
     return (
         <AvatarPrimitive.Root
-            className={cn(
-                'relative flex shrink-0 overflow-hidden rounded-full shadow-xs select-none',
-                sizeClasses.root,
-                className,
-            )}
+            className={cn('relative flex shrink-0 overflow-hidden rounded-full shadow-xs select-none', sizeClasses.root, className)}
         >
-            {avatarUrl && (
-                <AvatarPrimitive.Image
-                    src={avatarUrl}
-                    alt={name}
-                    className="aspect-square h-full w-full object-cover"
-                />
-            )}
+            {avatarUrl && <AvatarPrimitive.Image src={avatarUrl} alt={name} className="aspect-square h-full w-full object-cover" />}
             <AvatarPrimitive.Fallback
-                className={cn(
-                    'flex h-full w-full items-center justify-center font-bold tracking-tight uppercase',
-                    sizeClasses.text,
-                    colorClass,
-                )}
+                className={cn('flex h-full w-full items-center justify-center font-bold tracking-tight uppercase', sizeClasses.text, colorClass)}
             >
                 {initials}
             </AvatarPrimitive.Fallback>
@@ -97,17 +83,9 @@ export function UserAvatarWithName({
     const displayName = nameProp || data.name;
 
     return (
-        <div className={cn('inline-flex items-center gap-2 min-w-0', className)}>
-            <UserAvatarIcon
-                user={user}
-                name={displayName}
-                avatarUrl={avatarUrl}
-                size={size}
-                className={avatarClassName}
-            />
-            <span className={cn('truncate text-xs font-semibold text-text-main', nameClassName)}>
-                {displayName}
-            </span>
+        <div className={cn('inline-flex min-w-0 items-center gap-2', className)}>
+            <UserAvatarIcon user={user} name={displayName} avatarUrl={avatarUrl} size={size} className={avatarClassName} />
+            <span className={cn('text-text-main truncate text-xs font-semibold', nameClassName)}>{displayName}</span>
         </div>
     );
 }
@@ -145,21 +123,11 @@ export function UserAvatarWithRole({
     const subtitle = [roleText, deptText].filter(Boolean).join(' • ') || 'Staff';
 
     return (
-        <div className={cn('inline-flex items-center gap-2.5 min-w-0', className)}>
-            <UserAvatarIcon
-                user={user}
-                name={displayName}
-                avatarUrl={avatarUrl}
-                size={size}
-                className={avatarClassName}
-            />
-            <div className="flex flex-col min-w-0 text-left leading-tight">
-                <span className={cn('truncate text-xs font-semibold text-text-main', nameClassName)}>
-                    {displayName}
-                </span>
-                <span className={cn('truncate text-[10px] font-medium text-text-desc mt-0.5', roleClassName)}>
-                    {subtitle}
-                </span>
+        <div className={cn('inline-flex min-w-0 items-center gap-2.5', className)}>
+            <UserAvatarIcon user={user} name={displayName} avatarUrl={avatarUrl} size={size} className={avatarClassName} />
+            <div className="flex min-w-0 flex-col text-left leading-tight">
+                <span className={cn('text-text-main truncate text-xs font-semibold', nameClassName)}>{displayName}</span>
+                <span className={cn('text-text-desc mt-0.5 truncate text-[10px] font-medium', roleClassName)}>{subtitle}</span>
             </div>
         </div>
     );
@@ -218,15 +186,7 @@ export function UserAvatar({
         );
     }
 
-    return (
-        <UserAvatarIcon
-            user={user}
-            name={name}
-            avatarUrl={avatarUrl}
-            size={size}
-            className={cn(className, avatarClassName)}
-        />
-    );
+    return <UserAvatarIcon user={user} name={name} avatarUrl={avatarUrl} size={size} className={cn(className, avatarClassName)} />;
 }
 
 export default UserAvatar;

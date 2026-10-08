@@ -1,11 +1,11 @@
-import { useState } from 'react';
-import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/selection/DropdownMenu';
+import { UserSwitchModal } from '@/components/impersonation/UserSwitchModal';
 import { UserInfo } from '@/components/profile/UserInfo';
+import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/selection/DropdownMenu';
 import { useMobileNavigation } from '@/hooks/use-mobile-navigation';
 import { type SharedData, type User } from '@/types';
 import { Link, router, usePage } from '@inertiajs/react';
-import { LogOut, ArrowRightLeft, CornerDownLeft } from 'lucide-react';
-import { UserSwitchModal } from '@/components/impersonation/UserSwitchModal';
+import { ArrowRightLeft, CornerDownLeft, LogOut } from 'lucide-react';
+import { useState } from 'react';
 
 interface UserMenuContentProps {
     user: User | null;
@@ -47,7 +47,7 @@ export function UserMenuContent({ user }: UserMenuContentProps) {
                     {isImpersonating && (
                         <DropdownMenuItem
                             onClick={handleLeave}
-                            className="text-amber-600 dark:text-amber-400 font-semibold cursor-pointer flex items-center"
+                            className="flex cursor-pointer items-center font-semibold text-amber-600 dark:text-amber-400"
                         >
                             <CornerDownLeft className="mr-2 h-4 w-4" />
                             Kembali ke Akun Admin
@@ -58,9 +58,9 @@ export function UserMenuContent({ user }: UserMenuContentProps) {
                             cleanup();
                             setIsSwitchModalOpen(true);
                         }}
-                        className="cursor-pointer flex items-center"
+                        className="flex cursor-pointer items-center"
                     >
-                        <ArrowRightLeft className="mr-2 h-4 w-4 text-primary" />
+                        <ArrowRightLeft className="text-primary mr-2 h-4 w-4" />
                         Ganti User Login (Switch User)
                     </DropdownMenuItem>
                 </>
@@ -81,10 +81,7 @@ export function UserMenuContent({ user }: UserMenuContentProps) {
                 </Link>
             </DropdownMenuItem>
 
-            <UserSwitchModal
-                open={isSwitchModalOpen}
-                onOpenChange={setIsSwitchModalOpen}
-            />
+            <UserSwitchModal open={isSwitchModalOpen} onOpenChange={setIsSwitchModalOpen} />
         </>
     );
 }

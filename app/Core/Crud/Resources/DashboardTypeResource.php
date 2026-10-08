@@ -5,27 +5,15 @@ namespace App\Core\Crud\Resources;
 use App\Core\Crud\Columns\BooleanColumn;
 use App\Core\Crud\Columns\TextColumn;
 use App\Core\Crud\Fields\Section;
-use App\Core\Crud\Fields\SelectInput;
 use App\Core\Crud\Fields\TextareaInput;
 use App\Core\Crud\Fields\TextInput;
 use App\Core\Crud\Fields\ToggleInput;
-use App\Core\Crud\Fields\TreeSelectInput;
-use App\Core\Crud\Filters\Filter;
+use App\Core\Crud\Filter;
 use App\Core\Crud\Resource;
-use App\Models\BusinessUnit;
-use App\Models\Company;
-use App\Models\CompanyGroup;
-use App\Models\ContractType;
-use App\Models\DashboardType;
-use App\Models\Department;
-use App\Models\Division;
-use App\Models\JobLevel;
-use App\Models\JobTitle;
-use App\Models\Location;
-use App\Models\OrganizationGroup;
-use App\Models\Region;
-use App\Models\Role;
-use App\Models\User;
+use App\Models\Master\DashboardType;
+use App\Models\Master\Department;
+use App\Models\Master\Division;
+use App\Models\Master\Role;
 
 class DashboardTypeResource extends Resource
 {

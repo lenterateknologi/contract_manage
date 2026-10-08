@@ -45,7 +45,7 @@ export const SelectField: React.FC<FieldProps> = ({ field, value, onChange, read
             <div className="relative w-full">
                 {field.label && (
                     <Label
-                        className="text-slate-700 mb-1 block text-[10px] font-semibold tracking-tight"
+                        className="mb-1 block text-[10px] font-semibold tracking-tight text-slate-700"
                         style={getTypographyStyle(field, 0.8, true)}
                     >
                         {field.label}
@@ -57,34 +57,34 @@ export const SelectField: React.FC<FieldProps> = ({ field, value, onChange, read
                         type="button"
                         onClick={() => setIsOpen(!isOpen)}
                         className={cn(
-                            'border-slate-300 bg-white hover:bg-slate-50 text-slate-900 focus:ring-primary/20 flex h-9 w-full items-center justify-between rounded-lg border px-3 transition-all focus:ring-1 focus:outline-none shadow-2xs',
+                            'focus:ring-primary/20 flex h-9 w-full items-center justify-between rounded-lg border border-slate-300 bg-white px-3 text-slate-900 shadow-2xs transition-all hover:bg-slate-50 focus:ring-1 focus:outline-none',
                             !value && 'opacity-80',
                         )}
                         style={getTypographyStyle(field)}
                     >
-                        <span className={cn('truncate text-left', selectedLabel ? 'text-slate-900 font-semibold' : 'text-slate-400 dark:text-zinc-500 font-normal')}>
+                        <span
+                            className={cn(
+                                'truncate text-left',
+                                selectedLabel ? 'font-semibold text-slate-900' : 'font-normal text-slate-400 dark:text-zinc-500',
+                            )}
+                        >
                             {selectedLabel || field.placeholder || 'Pilih...'}
                         </span>
-                        <i
-                            className={cn(
-                                'fa-solid fa-chevron-down text-slate-400 text-[10px] transition-transform',
-                                isOpen && 'rotate-180',
-                            )}
-                        />
+                        <i className={cn('fa-solid fa-chevron-down text-[10px] text-slate-400 transition-transform', isOpen && 'rotate-180')} />
                     </button>
                     {isOpen && (
                         <>
                             <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-                            <div className="border-slate-200 bg-white text-slate-900 animate-in fade-in zoom-in-95 absolute top-full right-0 z-50 mt-1 flex max-h-60 w-full min-w-[240px] flex-col overflow-hidden rounded-xl border shadow-2xl duration-200">
-                                <div className="bg-white border-slate-200 sticky top-0 z-10 border-b p-2">
+                            <div className="animate-in fade-in zoom-in-95 absolute top-full right-0 z-50 mt-1 flex max-h-60 w-full min-w-[240px] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white text-slate-900 shadow-2xl duration-200">
+                                <div className="sticky top-0 z-10 border-b border-slate-200 bg-white p-2">
                                     <div className="relative">
-                                        <i className="fa-solid fa-magnifying-glass text-slate-400 absolute top-1/2 left-3 -translate-y-1/2 text-[10px]" />
+                                        <i className="fa-solid fa-magnifying-glass absolute top-1/2 left-3 -translate-y-1/2 text-[10px] text-slate-400" />
                                         <input
                                             autoFocus
                                             placeholder="Cari..."
                                             value={searchQuery}
                                             onChange={(e) => setSearchQuery(e.target.value)}
-                                            className="bg-slate-50 border-slate-200 text-slate-900 focus:border-primary w-full rounded-md border py-1.5 pr-3 pl-8 text-[11px] font-semibold outline-none"
+                                            className="focus:border-primary w-full rounded-md border border-slate-200 bg-slate-50 py-1.5 pr-3 pl-8 text-[11px] font-semibold text-slate-900 outline-none"
                                             style={getTypographyStyle(field)}
                                             onClick={(e) => e.stopPropagation()}
                                         />
@@ -101,7 +101,7 @@ export const SelectField: React.FC<FieldProps> = ({ field, value, onChange, read
                                                 setSearchQuery('');
                                             }}
                                             className={cn(
-                                                'flex w-full items-center justify-between px-3 py-1.5 text-left text-[11px] font-semibold transition-all cursor-pointer',
+                                                'flex w-full cursor-pointer items-center justify-between px-3 py-1.5 text-left text-[11px] font-semibold transition-all',
                                                 value === opt.value ? 'bg-primary/10 text-primary font-bold' : 'text-slate-700 hover:bg-slate-100',
                                             )}
                                             style={getTypographyStyle(field)}
@@ -122,10 +122,7 @@ export const SelectField: React.FC<FieldProps> = ({ field, value, onChange, read
     return (
         <div className="relative w-full">
             {field.label && (
-                <Label
-                    className="text-slate-700 mb-1 block text-[10px] font-semibold tracking-tight"
-                    style={getTypographyStyle(field, 0.8, true)}
-                >
+                <Label className="mb-1 block text-[10px] font-semibold tracking-tight text-slate-700" style={getTypographyStyle(field, 0.8, true)}>
                     {field.label}
                     {field.is_required && <span className="text-destructive ml-0.5 font-semibold">*</span>}
                 </Label>
@@ -133,10 +130,12 @@ export const SelectField: React.FC<FieldProps> = ({ field, value, onChange, read
             <select
                 value={value || ''}
                 onChange={(e) => onChange?.(e.target.value)}
-                className="border-slate-300 bg-white text-slate-900 focus:border-primary focus:ring-primary/20 flex h-9 w-full rounded-lg border px-3 text-[11px] font-semibold transition-all focus:ring-1 shadow-2xs"
+                className="focus:border-primary focus:ring-primary/20 flex h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-[11px] font-semibold text-slate-900 shadow-2xs transition-all focus:ring-1"
                 style={getTypographyStyle(field)}
             >
-                <option value="" className="bg-white text-slate-900">{field.placeholder || 'Select option...'}</option>
+                <option value="" className="bg-white text-slate-900">
+                    {field.placeholder || 'Select option...'}
+                </option>
                 {selectOptions.map((opt: any) => (
                     <option key={opt.value} value={opt.value} className="bg-white text-slate-900" style={getTypographyStyle(field)}>
                         {opt.label}

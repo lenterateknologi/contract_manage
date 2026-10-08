@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Contract;
 
 use App\Http\Controllers\Controller;
-use App\Models\Contract;
+use App\Models\Transaction\Contract;
 use App\Services\Contract\ContractMemberService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;

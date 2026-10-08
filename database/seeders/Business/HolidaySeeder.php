@@ -2,7 +2,7 @@
 
 namespace Database\Seeders\Business;
 
-use App\Models\Holiday;
+use App\Models\Master\Holiday;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Http;
@@ -47,6 +47,7 @@ class HolidaySeeder extends Seeder
                             );
                         }
                     }
+
                     return;
                 }
             }

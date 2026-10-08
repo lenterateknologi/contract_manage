@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Template;
 
 use App\Http\Controllers\Controller;
-use App\Models\ContractTemplate;
-use App\Models\DashboardType;
-use App\Models\TemplateFolder;
+use App\Models\Master\ContractTemplate;
+use App\Models\Master\DashboardType;
+use App\Models\Master\TemplateFolder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -438,7 +438,7 @@ class TemplateController extends Controller
         $templateIds = $request->input('template_ids', []);
 
         // ponytail: bulk destroy templates and clean up files
-        if (!empty($templateIds)) {
+        if (! empty($templateIds)) {
             $templates = ContractTemplate::whereIn('id', $templateIds)->get();
             foreach ($templates as $template) {
                 if (Storage::disk('public')->exists($template->file_path)) {
@@ -451,7 +451,7 @@ class TemplateController extends Controller
         }
 
         // ponytail: bulk destroy folders (cascade deletes related templates & child folders)
-        if (!empty($folderIds)) {
+        if (! empty($folderIds)) {
             $folders = TemplateFolder::whereIn('id', $folderIds)->get();
             foreach ($folders as $folder) {
                 $this->deleteFolderRecursively($folder);
@@ -481,16 +481,16 @@ class TemplateController extends Controller
         $templateIds = $request->input('template_ids', []);
 
         // Move templates
-        if (!empty($templateIds)) {
+        if (! empty($templateIds)) {
             ContractTemplate::whereIn('id', $templateIds)->update([
                 'template_folder_id' => $targetFolderId,
             ]);
         }
 
         // Move folders (prevent moving a folder into itself)
-        if (!empty($folderIds)) {
-            $filteredFolderIds = array_filter($folderIds, fn($id) => $id !== $targetFolderId);
-            if (!empty($filteredFolderIds)) {
+        if (! empty($folderIds)) {
+            $filteredFolderIds = array_filter($folderIds, fn ($id) => $id !== $targetFolderId);
+            if (! empty($filteredFolderIds)) {
                 TemplateFolder::whereIn('id', $filteredFolderIds)->update([
                     'parent_id' => $targetFolderId,
                 ]);

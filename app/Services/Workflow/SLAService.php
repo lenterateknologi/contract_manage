@@ -2,10 +2,10 @@
 
 namespace App\Services\Workflow;
 
-use App\Models\Contract;
-use App\Models\ContractSlaConfig;
-use App\Models\ContractType;
-use App\Models\Holiday;
+use App\Models\Master\ContractSlaConfig;
+use App\Models\Master\ContractType;
+use App\Models\Master\Holiday;
+use App\Models\Transaction\Contract;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\Cache;
@@ -16,6 +16,7 @@ class SLAService
      * The hour at which a submission is considered to start the next business day.
      */
     const CUTOFF_HOUR = 16;
+
     const START_HOUR = 8;
 
     /**

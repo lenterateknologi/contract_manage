@@ -41,7 +41,7 @@ export default function PreviewModal({ open, onClose, title, url, hasFile }: Pro
                         <div className="truncate text-[13px] font-semibold" title={title}>
                             {title}
                         </div>
-                        <div className="text-[10px]  text-gray-400 uppercase">Adobe PDF Render v2.0</div>
+                        <div className="text-[10px] text-gray-400 uppercase">Adobe PDF Render v2.0</div>
                     </div>
                 </div>
                 <div className="flex items-center gap-4">

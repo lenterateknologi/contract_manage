@@ -1,5 +1,6 @@
-import { useSyncExternalStore } from 'react';
 import { type LucideIcon } from 'lucide-react';
+import { useSyncExternalStore } from 'react';
+import { type Contract } from '@/pages/contracts/types';
 
 export interface DetailSidebarTabChild {
     id: string;
@@ -19,7 +20,7 @@ export interface DetailSidebarTabItem {
 
 export interface DetailSidebarState {
     isActive: boolean;
-    contract?: any;
+    contract?: Contract | null;
     contractTitle?: string;
     contractNumber?: string;
     activeTab: string;
@@ -49,9 +50,5 @@ export const detailSidebarStore = {
 };
 
 export function useDetailSidebar() {
-    return useSyncExternalStore(
-        detailSidebarStore.subscribe,
-        detailSidebarStore.getState,
-        detailSidebarStore.getState,
-    );
+    return useSyncExternalStore(detailSidebarStore.subscribe, detailSidebarStore.getState, detailSidebarStore.getState);
 }

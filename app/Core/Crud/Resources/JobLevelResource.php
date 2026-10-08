@@ -7,11 +7,11 @@ use App\Core\Crud\Columns\TextColumn;
 use App\Core\Crud\Fields\SelectInput;
 use App\Core\Crud\Fields\TextInput;
 use App\Core\Crud\Fields\ToggleInput;
-use App\Core\Crud\Filters\Filter;
+use App\Core\Crud\Filter;
 use App\Core\Crud\Resource;
-use App\Exports\JobLevelsExport;
+use App\Exports\Master\JobLevelsExport;
 use App\Imports\JobLevelsImport;
-use App\Models\JobLevel;
+use App\Models\Master\JobLevel;
 
 class JobLevelResource extends Resource
 {

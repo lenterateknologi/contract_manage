@@ -2,8 +2,8 @@
 
 namespace App\Http\Actions\File;
 
-use App\Models\Contract;
-use App\Models\ContractVersion;
+use App\Models\Transaction\Contract;
+use App\Models\Transaction\ContractVersion;
 use App\Services\Utils\PdfMetadataService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;

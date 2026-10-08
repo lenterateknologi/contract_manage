@@ -1,7 +1,6 @@
-import { Button } from '@/components/ui/buttons/Button';
-import { Input } from '@/components/ui/inputs/Input';
 import { Label } from '@/components/ui/forms/Label';
-import { ChevronDown, ChevronRight, Columns, Layout, Maximize2, Ruler } from 'lucide-react';
+import { Input } from '@/components/ui/inputs/Input';
+import { Columns, Layout, Ruler } from 'lucide-react';
 import React from 'react';
 import { parseNumber, parseNumberOrUndefined } from './utils';
 
@@ -96,8 +95,6 @@ export const LayoutSettings: React.FC<LayoutSettingsProps> = ({ selectedField, s
                             ))}
                         </select>
                     </div>
-
-
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1.5">
@@ -314,7 +311,7 @@ export const LayoutSettings: React.FC<LayoutSettingsProps> = ({ selectedField, s
                                             [p.key]: parseNumber(e.target.value, 0),
                                         })
                                     }
-                                    className="h-6 text-center font-sans text-[10px] px-1"
+                                    className="h-6 px-1 text-center font-sans text-[10px]"
                                 />
                             </div>
                         ))}
@@ -341,7 +338,7 @@ export const LayoutSettings: React.FC<LayoutSettingsProps> = ({ selectedField, s
                                             [m.key]: parseNumber(e.target.value, 0),
                                         })
                                     }
-                                    className="h-6 text-center font-sans text-[10px] px-1"
+                                    className="h-6 px-1 text-center font-sans text-[10px]"
                                 />
                             </div>
                         ))}
@@ -352,7 +349,7 @@ export const LayoutSettings: React.FC<LayoutSettingsProps> = ({ selectedField, s
                 {['group', 'grid_x', 'grid_y', 'static_text', 'labeled_value'].includes(selectedField.type) && (
                     <div className="space-y-1.5 pt-1">
                         <Label className="text-muted-foreground font-sans text-[7px] font-medium uppercase">Border Style & Color</Label>
-                        <div className="grid grid-cols-3 gap-1.5 items-center">
+                        <div className="grid grid-cols-3 items-center gap-1.5">
                             <select
                                 value={selectedField.options?.border_style || 'none'}
                                 onChange={(e) =>
@@ -375,7 +372,7 @@ export const LayoutSettings: React.FC<LayoutSettingsProps> = ({ selectedField, s
                                         border_width: parseNumber(e.target.value, 0),
                                     })
                                 }
-                                className="h-7 text-center font-sans text-[10px] px-1"
+                                className="h-7 px-1 text-center font-sans text-[10px]"
                                 placeholder="Width px"
                             />
                             <Input
@@ -386,7 +383,7 @@ export const LayoutSettings: React.FC<LayoutSettingsProps> = ({ selectedField, s
                                         border_color: e.target.value,
                                     })
                                 }
-                                className="h-7 w-full p-0.5 cursor-pointer rounded-md border"
+                                className="h-7 w-full cursor-pointer rounded-md border p-0.5"
                                 title="Border Color"
                             />
                         </div>

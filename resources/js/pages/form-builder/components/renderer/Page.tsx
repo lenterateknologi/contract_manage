@@ -30,7 +30,7 @@ export const Page: React.FC<PageProps> = ({
     return (
         <div
             className={cn(
-                'relative print:m-0 w-full last:mb-0',
+                'relative w-full last:mb-0 print:m-0',
                 isContinuous ? 'mt-4 mb-6' : 'mt-10 mb-20',
                 pageNumber > 1 && 'print:break-before-page',
             )}
@@ -42,15 +42,16 @@ export const Page: React.FC<PageProps> = ({
                     Halaman {pageNumber}
                 </div>
                 <div className="text-muted-foreground/40 text-[9px] font-semibold tracking-tight uppercase">
-                    A4 (210mm x 297mm) • Margins: {margins.top}mm {margins.right}mm {margins.bottom}mm {margins.left}mm {isContinuous && '• View: Memanjang Kebawah'}
+                    A4 (210mm x 297mm) • Margins: {margins.top}mm {margins.right}mm {margins.bottom}mm {margins.left}mm{' '}
+                    {isContinuous && '• View: Memanjang Kebawah'}
                 </div>
             </div>
 
             {/* The A4 Paper Container */}
             <div
                 className={cn(
-                    'bg-white text-slate-900 force-light relative mx-auto flex flex-col transition-all print:m-0 print:shadow-none print:ring-0 print:border-none w-[210mm]',
-                    'border-slate-300 border shadow-md my-4 rounded-none shrink-0',
+                    'force-light relative mx-auto flex w-[210mm] flex-col bg-white text-slate-900 transition-all print:m-0 print:border-none print:shadow-none print:ring-0',
+                    'my-4 shrink-0 rounded-none border border-slate-300 shadow-md',
                     isBuilder && !isContinuous ? 'h-[297mm] max-h-[297mm] overflow-hidden' : 'min-h-[297mm]',
                     className,
                 )}
@@ -84,7 +85,7 @@ export const Page: React.FC<PageProps> = ({
                             className="pointer-events-none absolute h-4 w-4 border-r border-b border-blue-400/30 print:hidden"
                             style={{ bottom: `${margins.bottom}mm`, right: `${margins.right}mm` }}
                         />
- 
+
                         {/* Dashed Margin Lines */}
                         <div
                             className="pointer-events-none absolute inset-0 border border-dashed border-blue-200/20 print:hidden"
@@ -97,10 +98,10 @@ export const Page: React.FC<PageProps> = ({
                         />
                     </>
                 )}
- 
+
                 <div className="relative z-10 flex-1">{children}</div>
             </div>
- 
+
             {/* Page Separator Shadow */}
             {isBuilder && (
                 <div className="via-border pointer-events-none absolute right-[10%] -bottom-10 left-[10%] h-px bg-gradient-to-r from-transparent to-transparent print:hidden" />

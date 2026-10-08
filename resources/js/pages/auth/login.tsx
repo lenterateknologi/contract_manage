@@ -3,10 +3,10 @@ import { LoaderCircle } from 'lucide-react';
 import { FormEventHandler } from 'react';
 
 import { Button } from '@/components/ui/buttons/Button';
-import { Checkbox } from '@/components/ui/selection/Checkbox';
 import { Label } from '@/components/ui/forms/Label';
-import TextLink from '@/components/ui/navigation/TextLink';
 import { FormInput } from '@/components/ui/inputs/FormInput';
+import TextLink from '@/components/ui/navigation/TextLink';
+import { Checkbox } from '@/components/ui/selection/Checkbox';
 import AuthSplitLayout from '@/layouts/auth/auth-split-layout';
 import { AuthErrorAlert } from './components/AuthErrorAlert';
 import { PasswordField } from './components/PasswordField';
@@ -76,7 +76,7 @@ export default function Login({ status, canResetPassword }: Readonly<LoginProps>
                                 checked={data.remember}
                                 onCheckedChange={(checked) => setData('remember', !!checked)}
                             />
-                            <Label htmlFor="remember" className="cursor-pointer text-sm font-medium text-text-desc select-none">
+                            <Label htmlFor="remember" className="text-text-desc cursor-pointer text-sm font-medium select-none">
                                 Ingat saya
                             </Label>
                         </div>

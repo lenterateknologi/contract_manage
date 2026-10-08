@@ -56,7 +56,8 @@ export const API_ENDPOINTS = {
 
     // 4. Sub-Resources (Requirements, Actions, PO, Members, References, Forms, Files, Document Types)
     SUBRESOURCES: {
-        DOCUMENT_TYPES: (id: string, type?: string) => type ? `/api/contracts/${id}/document-types?type=${type}` : `/api/contracts/${id}/document-types`,
+        DOCUMENT_TYPES: (id: string, type?: string) =>
+            type ? `/api/contracts/${id}/document-types?type=${type}` : `/api/contracts/${id}/document-types`,
         REQUIREMENTS: (id: string) => `/api/contracts/${id}/requirements`,
         ACTIONS: (id: string) => `/api/contracts/${id}/actions`,
         MEMBERS: (id: string) => `/api/contracts/${id}/members`,

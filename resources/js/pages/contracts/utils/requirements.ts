@@ -20,11 +20,13 @@ export function checkDocFulfillment(contract: any, type: string): boolean {
     const iteration = contract?.workflow_iteration || 1;
 
     // 1. Check version in contract (by iteration or general presence)
-    const hasVersionMatch = contract?.versions && contract.versions.some((v: any) => {
-        if (!types.includes(v.document_type)) return false;
-        if (v.workflow_iteration && v.workflow_iteration === iteration) return true;
-        return (v.version_no ?? 0) > 0 || !!v.id || !!v.file_path;
-    });
+    const hasVersionMatch =
+        contract?.versions &&
+        contract.versions.some((v: any) => {
+            if (!types.includes(v.document_type)) return false;
+            if (v.workflow_iteration && v.workflow_iteration === iteration) return true;
+            return (v.version_no ?? 0) > 0 || !!v.id || !!v.file_path;
+        });
     if (hasVersionMatch) return true;
 
     // 2. Check form submission in contract (by iteration or general presence)
@@ -36,9 +38,17 @@ export function checkDocFulfillment(contract: any, type: string): boolean {
     if (hasFormMatch) return true;
 
     // 3. Fallback direct attributes on contract
-    if (type === 'f1' && (contract?.f1_file || contract?.metadata?.f1_file || contract?.metadata?.f1_form_data || (contract?.f1_items && contract.f1_items.length > 0))) return true;
+    if (
+        type === 'f1' &&
+        (contract?.f1_file || contract?.metadata?.f1_file || contract?.metadata?.f1_form_data || (contract?.f1_items && contract.f1_items.length > 0))
+    )
+        return true;
     if (type === 'f2' && (contract?.f2_file || contract?.metadata?.f2_file || contract?.metadata?.f2_form_data)) return true;
-    if ((type === 'agreement' || type === 'contract') && (contract?.agreement_file || contract?.metadata?.agreement_file || contract?.metadata?.agreement_content || contract?.agreement_content)) return true;
+    if (
+        (type === 'agreement' || type === 'contract') &&
+        (contract?.agreement_file || contract?.metadata?.agreement_file || contract?.metadata?.agreement_content || contract?.agreement_content)
+    )
+        return true;
 
     return false;
 }
@@ -58,7 +68,8 @@ const REQUIREMENT_RESOLVERS: Record<string, RequirementResolver> = {
     f1: (c) => ({
         id: 'f1',
         label: 'Sub-dokumen F1 (Permohonan)',
-        isFilled: checkDocFulfillment(c, 'f1') || !!(c.f1_file || c.metadata?.f1_file || c.metadata?.f1_form_data || (c.f1_items && c.f1_items.length > 0)),
+        isFilled:
+            checkDocFulfillment(c, 'f1') || !!(c.f1_file || c.metadata?.f1_file || c.metadata?.f1_form_data || (c.f1_items && c.f1_items.length > 0)),
         type: 'doc',
         targetTab: 'documents',
         targetSubTab: 'f1',
@@ -76,7 +87,9 @@ const REQUIREMENT_RESOLVERS: Record<string, RequirementResolver> = {
     agreement: (c) => ({
         id: 'agreement',
         label: 'Sub-dokumen Draft Perjanjian',
-        isFilled: checkDocFulfillment(c, 'agreement') || !!(c.agreement_file || c.metadata?.agreement_file || c.metadata?.agreement_content || c.agreement_content),
+        isFilled:
+            checkDocFulfillment(c, 'agreement') ||
+            !!(c.agreement_file || c.metadata?.agreement_file || c.metadata?.agreement_content || c.agreement_content),
         type: 'doc',
         targetTab: 'documents',
         targetSubTab: 'agreement',
@@ -93,7 +106,15 @@ const REQUIREMENT_RESOLVERS: Record<string, RequirementResolver> = {
     first_party: (c) => ({
         id: 'first_party',
         label: 'Pihak Pertama',
-        isFilled: !!(c.company_id || c.first_party_id || c.p1_entity || c.metadata?.first_party_id || c.metadata?.meta_p1_entity || c.initiator?.company?.name || c.initiator?.company_name),
+        isFilled: !!(
+            c.company_id ||
+            c.first_party_id ||
+            c.p1_entity ||
+            c.metadata?.first_party_id ||
+            c.metadata?.meta_p1_entity ||
+            c.initiator?.company?.name ||
+            c.initiator?.company_name
+        ),
         type: 'field',
         targetTab: 'overview',
     }),
@@ -182,9 +203,8 @@ const REQUIREMENT_RESOLVERS: Record<string, RequirementResolver> = {
         const hasF2 = meta.show_tab_f2 !== false && (c?.f2_mode || 'upload') !== 'none';
         const hasAgreement = meta.show_tab_agreement !== false && (c?.contract_mode || 'upload') !== 'none';
 
-        const allReviewed = (!hasF1 || !!reqReviews.f1?.reviewed) &&
-                            (!hasF2 || !!reqReviews.f2?.reviewed) &&
-                            (!hasAgreement || !!reqReviews.agreement?.reviewed);
+        const allReviewed =
+            (!hasF1 || !!reqReviews.f1?.reviewed) && (!hasF2 || !!reqReviews.f2?.reviewed) && (!hasAgreement || !!reqReviews.agreement?.reviewed);
 
         return {
             id: 'review_all_docs',
@@ -250,7 +270,10 @@ export function resolveContractRequirements(contract: any, activeAction?: any): 
 
     // Extract doc review context
     const reqStepKey = contract?.workflow_step_id ? `step_${contract.workflow_step_id}` : 'general';
-    const reqReviews = (contract?.doc_reviews?.[reqStepKey] || contract?.metadata?.doc_reviews?.[reqStepKey] || contract?.metadata?.[`doc_reviews_${reqStepKey}`] || {}) as Record<string, any>;
+    const reqReviews = (contract?.doc_reviews?.[reqStepKey] ||
+        contract?.metadata?.doc_reviews?.[reqStepKey] ||
+        contract?.metadata?.[`doc_reviews_${reqStepKey}`] ||
+        {}) as Record<string, any>;
 
     // Resolve requirements declaratively using the Registry Map
     const seenIds = new Set<string>();
@@ -268,7 +291,7 @@ export function resolveContractRequirements(contract: any, activeAction?: any): 
     }
 
     const totalCount = items.length;
-    const filledCount = items.filter(i => i.isFilled).length;
+    const filledCount = items.filter((i) => i.isFilled).length;
     const allFilled = totalCount === 0 || filledCount === totalCount;
 
     return {

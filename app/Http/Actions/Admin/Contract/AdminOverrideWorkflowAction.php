@@ -3,11 +3,11 @@
 namespace App\Http\Actions\Admin\Contract;
 
 use App\Http\Formatters\ContractFormatter;
-use App\Models\Contract;
-use App\Models\ContractStatus;
-use App\Models\User;
-use App\Models\Workflow;
-use App\Models\WorkflowStep;
+use App\Http\Queries\Contract\ContractDetailQuery;
+use App\Models\Master\ContractStatus;
+use App\Models\Master\User;
+use App\Models\Master\Workflow;
+use App\Models\Transaction\Contract;
 use App\Services\Workflow\SLAService;
 use App\Services\Workflow\StepApprovalLifecycleService;
 use App\Services\Workflow\WorkflowQueryService;
@@ -19,7 +19,7 @@ class AdminOverrideWorkflowAction
         protected SLAService $slaService,
         protected WorkflowQueryService $queryService,
         protected StepApprovalLifecycleService $approvalLifecycleService,
-        protected \App\Http\Queries\Contract\ContractDetailQuery $contractDetailQuery,
+        protected ContractDetailQuery $contractDetailQuery,
     ) {}
 
     /**

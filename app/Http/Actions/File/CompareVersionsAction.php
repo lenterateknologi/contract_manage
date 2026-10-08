@@ -3,8 +3,8 @@
 namespace App\Http\Actions\File;
 
 use App\Http\Formatters\ContractFormatter;
-use App\Models\Contract;
-use App\Models\ContractVersion;
+use App\Models\Transaction\Contract;
+use App\Models\Transaction\ContractVersion;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Inertia\Inertia;

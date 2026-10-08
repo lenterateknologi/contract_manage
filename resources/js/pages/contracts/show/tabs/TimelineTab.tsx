@@ -9,10 +9,8 @@ interface TimelineTabProps {
 }
 
 export const TimelineTab = ({ contract, meId, onApprove }: TimelineTabProps) => {
-
-
     return (
-        <div className="flex flex-col flex-1 min-h-0 h-full overflow-hidden">
+        <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
             <ApprovalSteps
                 contract={contract}
                 approvals={Array.isArray(contract.approvals) ? contract.approvals : []}

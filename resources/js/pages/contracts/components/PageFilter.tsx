@@ -1,16 +1,10 @@
-import React, { useMemo } from 'react';
-import { cn, formatDateRange } from '@/lib/utils';
-import { AppIcon, Icons } from '@/components/ui';
-
-const {
-    Calendar,
-    ChevronDown,
-    RotateCcw,
-    SlidersHorizontal,
-    X,
-} = Icons;
+import { Icons } from '@/components/ui';
 import { DateRangePicker } from '@/components/ui/inputs/DateRangePicker';
 import { SearchableMultiSelect } from '@/components/ui/selection/SearchableMultiSelect';
+import { cn } from '@/lib/utils';
+import React, { useMemo } from 'react';
+
+const { Calendar, ChevronDown, RotateCcw, SlidersHorizontal, X } = Icons;
 
 export interface FilterOption {
     label: string;
@@ -39,7 +33,10 @@ export interface PageFilterProps {
 const ensureArray = (val: any): string[] => {
     if (val === undefined || val === null || val === '') return [];
     if (typeof val === 'string' && val.includes(',')) {
-        return val.split(',').map((v) => v.trim()).filter(Boolean);
+        return val
+            .split(',')
+            .map((v) => v.trim())
+            .filter(Boolean);
     }
     const arr = Array.isArray(val) ? val : [val];
     return arr.filter((v) => v !== undefined && v !== null && v !== '').map(String);
@@ -60,9 +57,9 @@ function DateRangeField({
     const toVal = typeof activeFilters[toKey] === 'string' ? activeFilters[toKey].split('T')[0] : '';
 
     return (
-        <div className="space-y-1.5 w-full">
+        <div className="w-full space-y-1.5">
             <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold text-text-desc block truncate">{category.label}</label>
+                <label className="text-text-desc block truncate text-xs font-semibold">{category.label}</label>
             </div>
             <DateRangePicker
                 from={fromVal}
@@ -77,14 +74,7 @@ function DateRangeField({
     );
 }
 
-export function PageFilter({
-    categories,
-    activeFilters,
-    onFilterChange,
-    onReset,
-    totalResults,
-    className,
-}: PageFilterProps) {
+export function PageFilter({ categories, activeFilters, onFilterChange, onReset, totalResults, className }: PageFilterProps) {
     const activeCount = useMemo(() => {
         let count = 0;
         categories.forEach((cat) => {
@@ -101,23 +91,24 @@ export function PageFilter({
     }, [activeFilters, categories]);
 
     return (
-        <div className={cn('border-b border-surface-border bg-surface-card/70 dark:bg-zinc-900/70 backdrop-blur-sm p-4 animate-in fade-in slide-in-from-top-2 duration-200 shrink-0', className)}>
-            <div className="flex items-center justify-between gap-3 mb-3">
+        <div
+            className={cn(
+                'border-surface-border bg-surface-card/70 animate-in fade-in slide-in-from-top-2 shrink-0 border-b p-4 backdrop-blur-sm duration-200 dark:bg-zinc-900/70',
+                className,
+            )}
+        >
+            <div className="mb-3 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                     <SlidersHorizontal size={14} className="text-primary" />
-                    <span className="text-xs font-bold text-text-main tracking-tight uppercase">Filter Data Kontrak</span>
-                    {totalResults !== undefined && (
-                        <span className="text-[11px] text-text-desc font-medium">
-                            ({totalResults} hasil ditemukan)
-                        </span>
-                    )}
+                    <span className="text-text-main text-xs font-bold tracking-tight uppercase">Filter Data Kontrak</span>
+                    {totalResults !== undefined && <span className="text-text-desc text-[11px] font-medium">({totalResults} hasil ditemukan)</span>}
                 </div>
 
                 {activeCount > 0 && (
                     <button
                         type="button"
                         onClick={onReset}
-                        className="inline-flex items-center gap-1.5 text-xs text-danger hover:text-danger/80 transition-colors font-semibold cursor-pointer"
+                        className="text-danger hover:text-danger/80 inline-flex cursor-pointer items-center gap-1.5 text-xs font-semibold transition-colors"
                     >
                         <RotateCcw size={12} />
                         <span>Reset Semua Filter ({activeCount})</span>
@@ -126,16 +117,11 @@ export function PageFilter({
             </div>
 
             {/* Filter Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                 {categories.map((category) => {
                     if (category.type === 'date-range') {
                         return (
-                            <DateRangeField
-                                key={category.key}
-                                category={category}
-                                activeFilters={activeFilters}
-                                onFilterChange={onFilterChange}
-                            />
+                            <DateRangeField key={category.key} category={category} activeFilters={activeFilters} onFilterChange={onFilterChange} />
                         );
                     }
 
@@ -147,9 +133,7 @@ export function PageFilter({
 
                     return (
                         <div key={category.key} className="space-y-1.5">
-                            <label className="text-xs font-semibold text-text-desc block truncate">
-                                {category.label}
-                            </label>
+                            <label className="text-text-desc block truncate text-xs font-semibold">{category.label}</label>
                             <SearchableMultiSelect
                                 values={activeValues}
                                 onValuesChange={(vals) => onFilterChange(category.key, vals)}

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Traits\ApiResponse;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -30,7 +31,7 @@ class AuthenticatedSessionController extends Controller
     /**
      * Handle an incoming authentication request.
      */
-    public function store(LoginRequest $request): RedirectResponse|\Illuminate\Http\JsonResponse
+    public function store(LoginRequest $request): RedirectResponse|JsonResponse
     {
         $request->authenticate();
 
@@ -46,7 +47,7 @@ class AuthenticatedSessionController extends Controller
                 }
             } catch (\Throwable $e) {
                 // Fallback token string if personal_access_tokens table is not yet migrated
-                $token = base64_encode($user->id . ':' . $user->email . ':' . now()->timestamp);
+                $token = base64_encode($user->id.':'.$user->email.':'.now()->timestamp);
             }
 
             return $this->successResponse([
@@ -62,7 +63,7 @@ class AuthenticatedSessionController extends Controller
     /**
      * Destroy an authenticated session.
      */
-    public function destroy(Request $request): RedirectResponse|\Illuminate\Http\JsonResponse
+    public function destroy(Request $request): RedirectResponse|JsonResponse
     {
         Auth::guard('web')->logout();
 

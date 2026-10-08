@@ -2,7 +2,7 @@
 
 namespace App\Imports;
 
-use App\Models\Region;
+use App\Models\Master\Region;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;

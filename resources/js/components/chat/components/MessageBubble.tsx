@@ -1,3 +1,4 @@
+import { discussionsApi } from '@/api';
 import { UserAvatarIcon } from '@/components/profile/UserAvatar';
 import {
     Bubble,
@@ -11,7 +12,6 @@ import {
 } from '@/components/ui/user/Message';
 import { cn } from '@/lib/utils';
 import { ContractMessage } from '@/pages/contracts/types';
-import { discussionsApi } from '@/api';
 import { usePage } from '@inertiajs/react';
 import { Check, Copy, Download, Eye, File as FileIcon, Smile } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
@@ -207,8 +207,10 @@ export function MessageBubble({ msg, isMe, highlight, onPreview, knownUsers, isF
 
     const authUser = (pageProps.auth as any)?.user;
     const isCurrentUser = isMe || (currentUserId && String(msg.user_id || (msg.user as any)?.id || '') === String(currentUserId));
-    const effectiveUser = msg.user && msg.user.initials !== 'ME' ? msg.user : (isCurrentUser ? authUser : msg.user);
-    const effectiveInitials = effectiveUser?.initials || (msg.user?.initials && msg.user.initials !== 'ME' ? msg.user.initials : (isCurrentUser ? authUser?.initials : undefined));
+    const effectiveUser = msg.user && msg.user.initials !== 'ME' ? msg.user : isCurrentUser ? authUser : msg.user;
+    const effectiveInitials =
+        effectiveUser?.initials ||
+        (msg.user?.initials && msg.user.initials !== 'ME' ? msg.user.initials : isCurrentUser ? authUser?.initials : undefined);
     const effectiveAvatar = msg.user?.avatar || (isCurrentUser ? authUser?.avatar || authUser?.avatar_url || authUser?.image_src : '');
     const activeReactions = Object.entries(computedReactions).filter(([_, count]) => count > 0);
 
@@ -219,7 +221,7 @@ export function MessageBubble({ msg, isMe, highlight, onPreview, knownUsers, isF
                     <UserAvatarIcon
                         user={effectiveUser}
                         src={effectiveAvatar}
-                        name={isCurrentUser ? (authUser?.name || name) : name}
+                        name={isCurrentUser ? authUser?.name || name : name}
                         initials={effectiveInitials}
                         className="h-7 w-7 text-[10px]"
                     />

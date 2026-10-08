@@ -2,7 +2,7 @@
 
 namespace App\Services\MasterData;
 
-use App\Models\Authority;
+use App\Models\Master\Authority;
 use Illuminate\Support\Facades\DB;
 
 class MasterAuthoritySyncService
@@ -10,10 +10,9 @@ class MasterAuthoritySyncService
     /**
      * Sync authority rules for any given context.
      *
-     * @param string $contextType e.g., Authority::CONTEXT_DASHBOARD_TYPE, Authority::CONTEXT_ON_BEHALF_CREATE, etc.
-     * @param string|null $contextId Context ID (e.g. DashboardType ID, Workflow ID, WorkflowStep ID), or null for global contexts
-     * @param array $items Array of authority rule data
-     * @return void
+     * @param  string  $contextType  e.g., Authority::CONTEXT_DASHBOARD_TYPE, Authority::CONTEXT_ON_BEHALF_CREATE, etc.
+     * @param  string|null  $contextId  Context ID (e.g. DashboardType ID, Workflow ID, WorkflowStep ID), or null for global contexts
+     * @param  array  $items  Array of authority rule data
      */
     public function sync(string $contextType, ?string $contextId, array $items): void
     {

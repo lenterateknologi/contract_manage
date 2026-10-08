@@ -1,5 +1,5 @@
-import { InteractiveForm } from '@/pages/form-builder/components/renderer/InteractiveForm';
 import { cn } from '@/lib/utils';
+import { InteractiveForm } from '@/pages/form-builder/components/renderer/InteractiveForm';
 import { Head } from '@inertiajs/react';
 import { ArrowLeftRight, CalendarDays, User } from 'lucide-react';
 import React, { useState } from 'react';
@@ -105,10 +105,10 @@ export default function CompareForms({ contract, docType, template, versions, in
 
     const templateForRenderer = template
         ? {
-            ...template,
-            has_letterhead: true,
-            letterhead_json: template.letterhead_json || { margins: { top: 10, bottom: 10, left: 15, right: 15 } },
-        }
+              ...template,
+              has_letterhead: true,
+              letterhead_json: template.letterhead_json || { margins: { top: 10, bottom: 10, left: 15, right: 15 } },
+          }
         : null;
 
     if (!template) {
@@ -160,30 +160,30 @@ export default function CompareForms({ contract, docType, template, versions, in
                     </div>
 
                     <div className="flex items-center gap-4">
-                    <div className="mr-2 flex items-center gap-3">
-                        <span className="text-[10px] font-bold text-black">Sinkronisasi Scroll</span>
-                        <button
-                            onClick={() => setSyncScroll(!syncScroll)}
-                            className={cn(
-                                'relative inline-flex h-5 w-10 shrink-0 cursor-pointer items-center rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-black focus-visible:outline-none',
-                                syncScroll ? 'bg-black' : 'bg-black/10',
-                            )}
-                        >
-                            <span
+                        <div className="mr-2 flex items-center gap-3">
+                            <span className="text-[10px] font-bold text-black">Sinkronisasi Scroll</span>
+                            <button
+                                onClick={() => setSyncScroll(!syncScroll)}
                                 className={cn(
-                                    'pointer-events-none block h-4 w-4 rounded-full bg-white shadow-lg transition-transform',
-                                    syncScroll ? 'translate-x-5' : 'translate-x-1',
+                                    'relative inline-flex h-5 w-10 shrink-0 cursor-pointer items-center rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-black focus-visible:outline-none',
+                                    syncScroll ? 'bg-black' : 'bg-black/10',
                                 )}
-                            />
+                            >
+                                <span
+                                    className={cn(
+                                        'pointer-events-none block h-4 w-4 rounded-full bg-white shadow-lg transition-transform',
+                                        syncScroll ? 'translate-x-5' : 'translate-x-1',
+                                    )}
+                                />
+                            </button>
+                        </div>
+                        <button
+                            onClick={() => window.close()}
+                            className="rounded-lg bg-black px-6 py-2 text-xs font-bold text-white shadow-lg transition-all hover:opacity-90 active:scale-95"
+                        >
+                            Tutup
                         </button>
                     </div>
-                    <button
-                        onClick={() => window.close()}
-                        className="rounded-lg bg-black px-6 py-2 text-xs font-bold text-white shadow-lg transition-all hover:opacity-90 active:scale-95"
-                    >
-                        Tutup
-                    </button>
-                </div>
                 </div>
             </div>
 

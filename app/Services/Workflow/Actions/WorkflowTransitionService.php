@@ -2,15 +2,17 @@
 
 namespace App\Services\Workflow\Actions;
 
-use App\Models\Approval;
-use App\Models\Contract;
-use App\Models\ContractStatus;
-use App\Models\WorkflowStep;
-use App\Models\WorkflowStepAction;
+use App\Models\Master\ContractStatus;
+use App\Models\Master\WorkflowStep;
+use App\Models\Master\WorkflowStepAction;
+use App\Models\Transaction\Approval;
+use App\Models\Transaction\Contract;
 use App\Services\Workflow\Concerns\EvaluatesWorkflowSteps;
+use App\Services\Workflow\ContractWorkflowService;
 use App\Services\Workflow\SLAService;
 use App\Services\Workflow\WorkflowQueryService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class WorkflowTransitionService
 {
@@ -31,7 +33,7 @@ class WorkflowTransitionService
         $stepAction = null;
 
         // 1. Check if matching specific action by UUID in step actions
-        if ($requestActionId && \Illuminate\Support\Str::isUuid($requestActionId) && $approval->workflowStep) {
+        if ($requestActionId && Str::isUuid($requestActionId) && $approval->workflowStep) {
             $stepAction = $approval->workflowStep->actions()->where('id', $requestActionId)->first();
         }
 
@@ -46,7 +48,7 @@ class WorkflowTransitionService
                     foreach ($customActions as $cAct) {
                         $cId = $cAct['id'] ?? '';
                         if ($cId && $cId === $requestActionId) {
-                            $stepAction = new WorkflowStepAction();
+                            $stepAction = new WorkflowStepAction;
                             $stepAction->forceFill([
                                 'id' => $cId,
                                 'action_code' => $cAct['action_code'] ?? $actionCode,
@@ -69,7 +71,7 @@ class WorkflowTransitionService
                         $cId = $cAct['id'] ?? '';
                         $cCode = $cAct['action_code'] ?? '';
                         if ($cCode === $actionCode) {
-                            $stepAction = new WorkflowStepAction();
+                            $stepAction = new WorkflowStepAction;
                             $stepAction->forceFill([
                                 'id' => $cId ?: $cCode,
                                 'action_code' => $cCode,
@@ -113,7 +115,7 @@ class WorkflowTransitionService
      */
     public function executeTransition(Contract $contract, Approval $approval, string $actionCode, ?string $actionId = null): void
     {
-        $workflowService = app(\App\Services\Workflow\ContractWorkflowService::class);
+        $workflowService = app(ContractWorkflowService::class);
 
         if (str_contains(strtolower($approval->role), 'legal') || str_contains(strtolower($approval->workflowStep?->description ?? ''), 'legal')) {
             $metadata = $contract->metadata ?? [];
@@ -198,17 +200,17 @@ class WorkflowTransitionService
                     $targetStepLabel = $targetStep->label ?: $targetStep->name ?: $targetStep->description ?: "Tahap {$targetStep->step}";
                     $this->queryService->logHistory($contract, 'WORKFLOW_RETURNED', "Sub-alur kerja selesai. Kembali ke alur kerja utama pada Tahap {$targetStep->step}: {$targetStepLabel}", Auth::id());
                 }
-            } else if ($approval->workflowStep) {
+            } elseif ($approval->workflowStep) {
                 $nextStep = $this->findNextValidStep($contract, $approval->workflowStep);
             }
         }
 
         if ($nextStep) {
             $statusStr = $statusStr ?? ($stepAction?->target_status
-                ?: ($nextStep->id === $approval->workflow_step_id 
-                    ? $contract->status 
-                    : ($nextStep->meta['target_status'] 
-                        ?? $nextStep->actions()->where('action_code', 'approve')->value('target_status') 
+                ?: ($nextStep->id === $approval->workflow_step_id
+                    ? $contract->status
+                    : ($nextStep->meta['target_status']
+                        ?? $nextStep->actions()->where('action_code', 'approve')->value('target_status')
                         ?? ($contract->status === 'draft' ? 'in_review' : $contract->status))));
             $nextStatus = ContractStatus::where('code', $statusStr)->first();
 

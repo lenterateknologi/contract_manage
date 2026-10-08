@@ -2,12 +2,13 @@
 
 namespace App\Services\Workflow;
 
-use App\Models\Approval;
-use App\Models\Contract;
-use App\Models\ContractType;
-use App\Models\User;
-use App\Models\Workflow;
-use App\Models\WorkflowStep;
+use App\Models\Master\Authority;
+use App\Models\Master\ContractType;
+use App\Models\Master\User;
+use App\Models\Master\Workflow;
+use App\Models\Master\WorkflowStep;
+use App\Models\Transaction\Approval;
+use App\Models\Transaction\Contract;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -136,7 +137,7 @@ class WorkflowQueryService
             // 3. Check specific user or universal matching rules
             if (! $isEligible) {
                 foreach ($otherRules as $rule) {
-                    if (\App\Models\Authority::ruleMatchesUser($rule, $user)) {
+                    if (Authority::ruleMatchesUser($rule, $user)) {
                         $isEligible = true;
                         break;
                     }

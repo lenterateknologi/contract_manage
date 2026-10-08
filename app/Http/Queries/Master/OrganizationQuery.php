@@ -2,13 +2,13 @@
 
 namespace App\Http\Queries\Master;
 
-use App\Models\Company;
-use App\Models\CompanyGroup;
-use App\Models\Contract;
-use App\Models\ContractStatus;
-use App\Models\ContractType;
-use App\Models\Department;
-use App\Models\Region;
+use App\Models\Master\Company;
+use App\Models\Master\CompanyGroup;
+use App\Models\Master\ContractStatus;
+use App\Models\Master\ContractType;
+use App\Models\Master\Department;
+use App\Models\Master\Region;
+use App\Models\Transaction\Contract;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -141,39 +141,39 @@ class OrganizationQuery
     /**
      * Get department traffic statistics.
      */
-     public function getDepartmentTraffic(): array
-     {
-         $incomingCounts = DB::table('t_contracts as c')
-             ->leftJoin('m_users as init', 'c.initiated_by_id', '=', 'init.id')
-             ->leftJoin('m_users as creator', 'c.created_by', '=', 'creator.id')
-             ->whereIn('c.status', ['in_review', 'revision'])
-             ->whereNull('c.deleted_at')
-             ->select(DB::raw('COALESCE(init.department_id, creator.department_id) as dept_id'), DB::raw('count(*) as count'))
-             ->groupBy('dept_id')
-             ->pluck('count', 'dept_id');
+    public function getDepartmentTraffic(): array
+    {
+        $incomingCounts = DB::table('t_contracts as c')
+            ->leftJoin('m_users as init', 'c.initiated_by_id', '=', 'init.id')
+            ->leftJoin('m_users as creator', 'c.created_by', '=', 'creator.id')
+            ->whereIn('c.status', ['in_review', 'revision'])
+            ->whereNull('c.deleted_at')
+            ->select(DB::raw('COALESCE(init.department_id, creator.department_id) as dept_id'), DB::raw('count(*) as count'))
+            ->groupBy('dept_id')
+            ->pluck('count', 'dept_id');
 
-         $outgoingCounts = DB::table('t_contracts as c')
-             ->leftJoin('m_users as init', 'c.initiated_by_id', '=', 'init.id')
-             ->leftJoin('m_users as creator', 'c.created_by', '=', 'creator.id')
-             ->whereIn('c.status', ['approved', 'locked', 'archived'])
-             ->whereNull('c.deleted_at')
-             ->select(DB::raw('COALESCE(init.department_id, creator.department_id) as dept_id'), DB::raw('count(*) as count'))
-             ->groupBy('dept_id')
-             ->pluck('count', 'dept_id');
+        $outgoingCounts = DB::table('t_contracts as c')
+            ->leftJoin('m_users as init', 'c.initiated_by_id', '=', 'init.id')
+            ->leftJoin('m_users as creator', 'c.created_by', '=', 'creator.id')
+            ->whereIn('c.status', ['approved', 'locked', 'archived'])
+            ->whereNull('c.deleted_at')
+            ->select(DB::raw('COALESCE(init.department_id, creator.department_id) as dept_id'), DB::raw('count(*) as count'))
+            ->groupBy('dept_id')
+            ->pluck('count', 'dept_id');
 
-         return Department::orderBy('name')
-             ->withCount(['users as member_count'])
-             ->get()
-             ->map(function ($dept) use ($incomingCounts, $outgoingCounts) {
-                 return [
-                     'department_id' => $dept->id,
-                     'department_name' => $dept->name,
-                     'incoming_count' => (int) $incomingCounts->get($dept->id, 0),
-                     'outgoing_count' => (int) $outgoingCounts->get($dept->id, 0),
-                     'member_count' => (int) $dept->member_count,
-                 ];
-             })
-             ->values()
-             ->all();
-     }
+        return Department::orderBy('name')
+            ->withCount(['users as member_count'])
+            ->get()
+            ->map(function ($dept) use ($incomingCounts, $outgoingCounts) {
+                return [
+                    'department_id' => $dept->id,
+                    'department_name' => $dept->name,
+                    'incoming_count' => (int) $incomingCounts->get($dept->id, 0),
+                    'outgoing_count' => (int) $outgoingCounts->get($dept->id, 0),
+                    'member_count' => (int) $dept->member_count,
+                ];
+            })
+            ->values()
+            ->all();
+    }
 }

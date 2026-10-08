@@ -1,10 +1,24 @@
-import { Archive, ArrowUpRight, Calendar, CheckCircle2, ChevronRight, Clock, FilePlus, FileText, Layers, RotateCcw, Shield, Sparkles, Timer, User } from 'lucide-react';
-import { useEffect, useState, useMemo } from 'react';
-import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/cards/Card';
 import { ChipIcon } from '@/components/ui/feedback/ChipIcon';
 import { cn } from '@/lib/utils';
 import { router } from '@inertiajs/react';
+import {
+    Archive,
+    ArrowUpRight,
+    Calendar,
+    CheckCircle2,
+    ChevronRight,
+    Clock,
+    FilePlus,
+    FileText,
+    Layers,
+    RotateCcw,
+    Shield,
+    Timer,
+    User,
+} from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { CartesianGrid, Cell, Line, LineChart, Pie, PieChart, Tooltip as RechartsTooltip, ResponsiveContainer, XAxis, YAxis } from 'recharts';
 
 interface OverviewTabProps {
     data: any;
@@ -26,32 +40,36 @@ export function OverviewTab({ data, onNavigate, meUser, onCreateContract, scope 
 
     const parentTab = scope === 'contract' ? 'kontrak' : scope === 'non_contract' ? 'non_kontrak' : scope === 'nda' ? 'nda' : undefined;
     const scopeLabel = scope === 'contract' ? 'Kontrak' : scope === 'non_contract' ? 'Non Kontrak' : scope === 'nda' ? 'NDA' : 'Dokumen';
-    const scopeSubtitle = scope === 'contract'
-        ? 'Ringkasan operasional dan prioritas tugas dokumen Kontrak'
-        : scope === 'non_contract'
-            ? 'Ringkasan operasional dan prioritas tugas dokumen Non Kontrak'
-            : scope === 'nda'
+    const scopeSubtitle =
+        scope === 'contract'
+            ? 'Ringkasan operasional dan prioritas tugas dokumen Kontrak'
+            : scope === 'non_contract'
+              ? 'Ringkasan operasional dan prioritas tugas dokumen Non Kontrak'
+              : scope === 'nda'
                 ? 'Ringkasan operasional dan prioritas tugas dokumen NDA'
                 : 'Ringkasan operasional dan prioritas tugas dokumen Anda';
 
     const m = useMemo(() => {
-        const raw = scope === 'contract'
-            ? data?.contractData?.summary
-            : scope === 'non_contract'
-                ? data?.nonContractData?.summary
-                : scope === 'nda'
+        const raw =
+            scope === 'contract'
+                ? data?.contractData?.summary
+                : scope === 'non_contract'
+                  ? data?.nonContractData?.summary
+                  : scope === 'nda'
                     ? data?.ndaData?.summary
                     : data?.summary;
-        return raw || {
-            total: 0,
-            in_process: 0,
-            completed: 0,
-            rejected: 0,
-            approved: 0,
-            my_total: 0,
-            archived_total: 0,
-            pending_for_me: 0,
-        };
+        return (
+            raw || {
+                total: 0,
+                in_process: 0,
+                completed: 0,
+                rejected: 0,
+                approved: 0,
+                my_total: 0,
+                archived_total: 0,
+                pending_for_me: 0,
+            }
+        );
     }, [data, scope]);
 
     const overviewDailyTrend = useMemo(() => {
@@ -89,7 +107,9 @@ export function OverviewTab({ data, onNavigate, meUser, onCreateContract, scope 
             const year = now.getFullYear();
             const month = String(now.getMonth() + 1).padStart(2, '0');
             const thisMonthKey = `${year}-${month}`;
-            return overviewDailyTrend.filter((item: any) => item.month_key === thisMonthKey || (item.raw_date && item.raw_date.startsWith(thisMonthKey)));
+            return overviewDailyTrend.filter(
+                (item: any) => item.month_key === thisMonthKey || (item.raw_date && item.raw_date.startsWith(thisMonthKey)),
+            );
         }
         if (datePreset === 'last_month') {
             const now = new Date();
@@ -97,7 +117,9 @@ export function OverviewTab({ data, onNavigate, meUser, onCreateContract, scope 
             const year = now.getFullYear();
             const month = String(now.getMonth() + 1).padStart(2, '0');
             const lastMonthKey = `${year}-${month}`;
-            return overviewDailyTrend.filter((item: any) => item.month_key === lastMonthKey || (item.raw_date && item.raw_date.startsWith(lastMonthKey)));
+            return overviewDailyTrend.filter(
+                (item: any) => item.month_key === lastMonthKey || (item.raw_date && item.raw_date.startsWith(lastMonthKey)),
+            );
         }
         if (datePreset === 'custom') {
             if (!startDate && !endDate) return overviewDailyTrend;
@@ -120,9 +142,22 @@ export function OverviewTab({ data, onNavigate, meUser, onCreateContract, scope 
     }, [overviewDailyTrend, datePreset, startDate, endDate]);
 
     const CHART_COLORS = [
-        '#0284c7', '#8b5cf6', '#10b981', '#f59e0b', '#ec4899', '#06b6d4',
-        '#6366f1', '#14b8a6', '#f97316', '#84cc16', '#a855f7', '#3b82f6',
-        '#ef4444', '#0d9488', '#eab308', '#64748b'
+        '#0284c7',
+        '#8b5cf6',
+        '#10b981',
+        '#f59e0b',
+        '#ec4899',
+        '#06b6d4',
+        '#6366f1',
+        '#14b8a6',
+        '#f97316',
+        '#84cc16',
+        '#a855f7',
+        '#3b82f6',
+        '#ef4444',
+        '#0d9488',
+        '#eab308',
+        '#64748b',
     ];
 
     const categoriesList = useMemo(() => {
@@ -207,18 +242,16 @@ export function OverviewTab({ data, onNavigate, meUser, onCreateContract, scope 
     return (
         <div className="animate-in fade-in slide-in-from-bottom-4 space-y-4 duration-700">
             {/* 1. Contextual Welcome & Quick Action Hero */}
-            <div className="relative overflow-hidden rounded-lg border border-surface-border bg-surface-base p-4 shadow-none">
+            <div className="border-surface-border bg-surface-base relative overflow-hidden rounded-lg border p-4 shadow-none">
                 <div className="flex flex-col gap-3.5 md:flex-row md:items-center md:justify-between">
                     <div className="space-y-1">
                         <div className="flex flex-wrap items-center gap-2">
-                            <h2 className="text-sm font-bold text-text-main">
-                                Halo, {meUser?.name || 'Rekan Kerja'}
-                            </h2>
-                            <span className="rounded-md border border-surface-border bg-surface-muted px-2 py-0.5 text-[10px] font-semibold text-text-main">
+                            <h2 className="text-text-main text-sm font-bold">Halo, {meUser?.name || 'Rekan Kerja'}</h2>
+                            <span className="border-surface-border bg-surface-muted text-text-main rounded-md border px-2 py-0.5 text-[10px] font-semibold">
                                 {meUser?.role || 'Pengguna'}
                             </span>
                         </div>
-                        <p className="text-[11px] text-text-soft">
+                        <p className="text-text-soft text-[11px]">
                             {todayFormatted} • {scopeSubtitle}
                         </p>
                         <div className="pt-0.5">
@@ -254,7 +287,7 @@ export function OverviewTab({ data, onNavigate, meUser, onCreateContract, scope 
                             <button
                                 type="button"
                                 onClick={onCreateContract}
-                                className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-xs font-bold text-primary-foreground shadow-none transition-all hover:opacity-90 active:scale-95"
+                                className="bg-primary text-primary-foreground inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-bold shadow-none transition-all hover:opacity-90 active:scale-95"
                             >
                                 <FilePlus size={14} strokeWidth={2.2} />
                                 <span>Buat Pengajuan</span>
@@ -263,7 +296,7 @@ export function OverviewTab({ data, onNavigate, meUser, onCreateContract, scope 
                         <button
                             type="button"
                             onClick={() => onNavigate('pending', parentTab ? { parent_tab: parentTab } : {})}
-                            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-surface-border bg-surface-base px-3.5 py-2 text-xs font-bold text-text-main shadow-none transition-all hover:bg-surface-muted active:scale-95"
+                            className="border-surface-border bg-surface-base text-text-main hover:bg-surface-muted inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-3.5 py-2 text-xs font-bold shadow-none transition-all active:scale-95"
                         >
                             <span>Daftar Persetujuan</span>
                         </button>
@@ -290,9 +323,7 @@ export function OverviewTab({ data, onNavigate, meUser, onCreateContract, scope 
                         icon: Clock,
                         color: pendingCount > 0 ? 'bg-amber-600 text-white border-transparent' : 'bg-slate-700 text-white border-transparent',
                         badge: pendingCount > 0 ? 'Perlu Tindakan' : 'Selesai',
-                        badgeColor: pendingCount > 0
-                            ? 'bg-amber-600 text-white border-transparent'
-                            : 'bg-slate-700 text-white border-transparent',
+                        badgeColor: pendingCount > 0 ? 'bg-amber-600 text-white border-transparent' : 'bg-slate-700 text-white border-transparent',
                         description: `${scopeLabel} butuh review Anda`,
                         nav: () => onNavigate('pending', parentTab ? { parent_tab: parentTab } : {}),
                     },
@@ -332,28 +363,27 @@ export function OverviewTab({ data, onNavigate, meUser, onCreateContract, scope 
                         <div
                             key={idx}
                             onClick={kpi.nav}
-                            className="group relative flex cursor-pointer flex-col justify-between overflow-hidden rounded-lg border border-surface-border bg-surface-base p-3.5 shadow-none transition-all duration-150 hover:border-primary active:scale-[0.99]"
+                            className="group border-surface-border bg-surface-base hover:border-primary relative flex cursor-pointer flex-col justify-between overflow-hidden rounded-lg border p-3.5 shadow-none transition-all duration-150 active:scale-[0.99]"
                             title="Klik untuk membuka daftar dokumen"
                         >
                             <div className="flex items-start justify-between gap-2">
-                                <span className="text-[10.5px] font-bold tracking-wider text-text-soft uppercase">
-                                    {kpi.label}
-                                </span>
+                                <span className="text-text-soft text-[10.5px] font-bold tracking-wider uppercase">{kpi.label}</span>
                                 <span className={cn('rounded border px-1.5 py-0.5 text-[9px] font-bold tracking-tight', kpi.badgeColor)}>
                                     {kpi.badge}
                                 </span>
                             </div>
 
                             <div className="mt-2.5 flex items-baseline justify-between">
-                                <span className="text-2xl font-black tracking-tight text-text-main">
-                                    {kpi.value}
-                                </span>
+                                <span className="text-text-main text-2xl font-black tracking-tight">{kpi.value}</span>
                                 <ChipIcon icon={Icon} size="md" bg={kpi.color} shape="rounded" />
                             </div>
 
-                            <div className="mt-2 flex items-center justify-between border-t border-surface-border pt-1.5 text-[10px] text-text-soft">
+                            <div className="border-surface-border text-text-soft mt-2 flex items-center justify-between border-t pt-1.5 text-[10px]">
                                 <span className="truncate">{kpi.description}</span>
-                                <ChevronRight size={11} className="shrink-0 opacity-40 transition-transform group-hover:translate-x-0.5 group-hover:opacity-100" />
+                                <ChevronRight
+                                    size={11}
+                                    className="shrink-0 opacity-40 transition-transform group-hover:translate-x-0.5 group-hover:opacity-100"
+                                />
                             </div>
                         </div>
                     );
@@ -363,20 +393,20 @@ export function OverviewTab({ data, onNavigate, meUser, onCreateContract, scope 
             {/* 3. Daily Trend Line Chart (65%) & Category Distribution (35%) */}
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-10">
                 {/* Line Chart Card (65%) */}
-                <Card className="flex flex-col justify-between rounded-lg border-surface-border bg-surface-base shadow-none lg:col-span-7">
-                    <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3 border-b border-surface-border p-4 pb-3 space-y-0">
-                        <div className="flex-1 min-w-[200px]">
-                            <CardTitle className="text-xs font-bold uppercase tracking-wider text-text-main">
+                <Card className="border-surface-border bg-surface-base flex flex-col justify-between rounded-lg shadow-none lg:col-span-7">
+                    <CardHeader className="border-surface-border flex flex-row flex-wrap items-center justify-between gap-3 space-y-0 border-b p-4 pb-3">
+                        <div className="min-w-[200px] flex-1">
+                            <CardTitle className="text-text-main text-xs font-bold tracking-wider uppercase">
                                 Tren Pembuatan {scope === 'all' ? 'Dokumen' : scopeLabel}
                             </CardTitle>
-                            <p className="text-[10px] text-text-soft">
+                            <p className="text-text-soft text-[10px]">
                                 Volume pembuatan {scopeLabel.toLowerCase()} per kategori dalam rentang waktu terpilih
                             </p>
                         </div>
 
                         {/* Filter Presets & Custom Date Selector */}
                         <div className="flex flex-wrap items-center gap-2">
-                            <div className="flex items-center gap-1 rounded-md border border-surface-border bg-surface-muted/50 p-0.5">
+                            <div className="border-surface-border bg-surface-muted/50 flex items-center gap-1 rounded-md border p-0.5">
                                 {[
                                     { id: '7d', label: '7 HARI' },
                                     { id: '14d', label: '14 HARI' },
@@ -389,9 +419,9 @@ export function OverviewTab({ data, onNavigate, meUser, onCreateContract, scope 
                                         type="button"
                                         onClick={() => setDatePreset(tab.id as any)}
                                         className={cn(
-                                            'rounded px-2 py-1 text-[9.5px] font-bold uppercase tracking-wider transition-all cursor-pointer shadow-none',
+                                            'cursor-pointer rounded px-2 py-1 text-[9.5px] font-bold tracking-wider uppercase shadow-none transition-all',
                                             datePreset === tab.id
-                                                ? 'bg-surface-base text-text-main font-extrabold shadow-none border border-surface-border'
+                                                ? 'bg-surface-base text-text-main border-surface-border border font-extrabold shadow-none'
                                                 : 'text-text-soft hover:text-text-main',
                                         )}
                                     >
@@ -401,25 +431,25 @@ export function OverviewTab({ data, onNavigate, meUser, onCreateContract, scope 
                             </div>
 
                             {datePreset === 'custom' && (
-                                <div className="flex items-center gap-1.5 animate-in fade-in duration-200">
+                                <div className="animate-in fade-in flex items-center gap-1.5 duration-200">
                                     <input
                                         type="date"
                                         value={startDate}
                                         onChange={(e) => setStartDate(e.target.value)}
-                                        className="h-7 rounded-md border border-surface-border bg-surface-base px-2 text-[10px] text-text-main font-medium shadow-none focus:outline-none focus:border-primary"
+                                        className="border-surface-border bg-surface-base text-text-main focus:border-primary h-7 rounded-md border px-2 text-[10px] font-medium shadow-none focus:outline-none"
                                     />
-                                    <span className="text-[10px] text-text-soft">-</span>
+                                    <span className="text-text-soft text-[10px]">-</span>
                                     <input
                                         type="date"
                                         value={endDate}
                                         onChange={(e) => setEndDate(e.target.value)}
-                                        className="h-7 rounded-md border border-surface-border bg-surface-base px-2 text-[10px] text-text-main font-medium shadow-none focus:outline-none focus:border-primary"
+                                        className="border-surface-border bg-surface-base text-text-main focus:border-primary h-7 rounded-md border px-2 text-[10px] font-medium shadow-none focus:outline-none"
                                     />
                                     {(startDate || endDate) && (
                                         <button
                                             type="button"
                                             onClick={handleResetDateFilter}
-                                            className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md border border-surface-border bg-surface-base text-text-soft hover:text-rose-500 transition-colors shadow-none"
+                                            className="border-surface-border bg-surface-base text-text-soft flex h-7 w-7 cursor-pointer items-center justify-center rounded-md border shadow-none transition-colors hover:text-rose-500"
                                             title="Reset Filter Tanggal"
                                         >
                                             <RotateCcw size={11} />
@@ -432,42 +462,37 @@ export function OverviewTab({ data, onNavigate, meUser, onCreateContract, scope 
                     <CardContent className="p-4 pt-3">
                         <div className="h-[340px] w-full">
                             {!isMounted || filteredDailyTrend.length === 0 ? (
-                                <div className="flex h-full flex-col items-center justify-center text-center text-xs font-semibold uppercase text-text-soft">
+                                <div className="text-text-soft flex h-full flex-col items-center justify-center text-center text-xs font-semibold uppercase">
                                     Tidak ada data tren harian untuk rentang tanggal ini
                                 </div>
                             ) : (
                                 <ResponsiveContainer width="100%" height="100%">
                                     <LineChart data={filteredDailyTrend} margin={{ top: 15, right: 15, left: -25, bottom: 5 }}>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(150,150,150,0.15)" />
-                                        <XAxis
-                                            dataKey="date"
-                                            stroke="#888888"
-                                            fontSize={10}
-                                            tickLine={false}
-                                            axisLine={false}
-                                        />
-                                        <YAxis
-                                            stroke="#888888"
-                                            fontSize={10}
-                                            tickLine={false}
-                                            axisLine={false}
-                                            allowDecimals={false}
-                                        />
+                                        <XAxis dataKey="date" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} />
+                                        <YAxis stroke="#888888" fontSize={10} tickLine={false} axisLine={false} allowDecimals={false} />
                                         <RechartsTooltip
                                             content={({ active, payload }: any) => {
                                                 if (active && payload && payload.length) {
                                                     const item = payload[0].payload;
                                                     return (
-                                                        <div className="rounded-md border border-surface-border bg-surface-base p-2.5 shadow-none text-xs space-y-1.5 min-w-[180px]">
-                                                            <p className="font-bold text-text-main border-b border-surface-border pb-1">{item.full_date || item.date}</p>
+                                                        <div className="border-surface-border bg-surface-base min-w-[180px] space-y-1.5 rounded-md border p-2.5 text-xs shadow-none">
+                                                            <p className="text-text-main border-surface-border border-b pb-1 font-bold">
+                                                                {item.full_date || item.date}
+                                                            </p>
                                                             <div className="space-y-1">
                                                                 {payload.map((p: any, idx: number) => (
-                                                                    <div key={idx} className="flex justify-between items-center gap-3">
+                                                                    <div key={idx} className="flex items-center justify-between gap-3">
                                                                         <span className="text-text-soft flex items-center gap-1.5 text-[10.5px]">
-                                                                            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />
+                                                                            <span
+                                                                                className="h-2 w-2 rounded-full"
+                                                                                style={{ backgroundColor: p.color }}
+                                                                            />
                                                                             {p.name}
                                                                         </span>
-                                                                        <span className="font-bold text-text-main text-[10.5px]">{p.value} Dokumen</span>
+                                                                        <span className="text-text-main text-[10.5px] font-bold">
+                                                                            {p.value} Dokumen
+                                                                        </span>
                                                                     </div>
                                                                 ))}
                                                             </div>
@@ -500,17 +525,15 @@ export function OverviewTab({ data, onNavigate, meUser, onCreateContract, scope 
                 </Card>
 
                 {/* Donut Chart & Category Breakdown (35%) */}
-                <Card className="flex flex-col justify-between rounded-lg border-surface-border bg-surface-base shadow-none lg:col-span-3">
+                <Card className="border-surface-border bg-surface-base flex flex-col justify-between rounded-lg shadow-none lg:col-span-3">
                     <div>
-                        <CardHeader className="border-b border-surface-border p-4 pb-3 space-y-0">
-                            <CardTitle className="text-xs font-bold tracking-wider uppercase text-text-main">
+                        <CardHeader className="border-surface-border space-y-0 border-b p-4 pb-3">
+                            <CardTitle className="text-text-main text-xs font-bold tracking-wider uppercase">
                                 {scope === 'all' ? 'Ringkasan Distribusi' : `Distribusi Tipe ${scopeLabel}`}
                             </CardTitle>
-                            <p className="text-[10px] text-text-soft">
-                                Proporsi seluruh {scopeLabel.toLowerCase()} berdasarkan kategori
-                            </p>
+                            <p className="text-text-soft text-[10px]">Proporsi seluruh {scopeLabel.toLowerCase()} berdasarkan kategori</p>
                         </CardHeader>
-                        <CardContent className="p-4 space-y-3">
+                        <CardContent className="space-y-3 p-4">
                             {/* Centered Donut Chart */}
                             <div className="relative flex h-36 w-full items-center justify-center">
                                 {isMounted && (
@@ -560,9 +583,11 @@ export function OverviewTab({ data, onNavigate, meUser, onCreateContract, scope 
                                                                     if (active && payload && payload.length) {
                                                                         const item = payload[0];
                                                                         return (
-                                                                            <div className="rounded-md border border-surface-border bg-surface-base p-2 shadow-none text-xs">
-                                                                                <p className="font-bold text-text-main text-[10px]">{item.name}</p>
-                                                                                <p className="font-extrabold text-primary text-[11px] mt-0.5">{item.value} Dokumen</p>
+                                                                            <div className="border-surface-border bg-surface-base rounded-md border p-2 text-xs shadow-none">
+                                                                                <p className="text-text-main text-[10px] font-bold">{item.name}</p>
+                                                                                <p className="text-primary mt-0.5 text-[11px] font-extrabold">
+                                                                                    {item.value} Dokumen
+                                                                                </p>
                                                                             </div>
                                                                         );
                                                                     }
@@ -577,24 +602,20 @@ export function OverviewTab({ data, onNavigate, meUser, onCreateContract, scope 
 
                                         {/* Center count overlay */}
                                         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-                                            <span className="text-sm font-black leading-none text-text-main">
-                                                {totalCategoryCount}
-                                            </span>
-                                            <span className="mt-0.5 text-[8px] font-extrabold uppercase tracking-widest text-text-soft">
-                                                Total
-                                            </span>
+                                            <span className="text-text-main text-sm leading-none font-black">{totalCategoryCount}</span>
+                                            <span className="text-text-soft mt-0.5 text-[8px] font-extrabold tracking-widest uppercase">Total</span>
                                         </div>
                                     </>
                                 )}
                             </div>
 
                             {/* Category Items List */}
-                            <div className="space-y-1.5 border-t border-surface-border pt-2 max-h-[190px] overflow-y-auto custom-scrollbar">
+                            <div className="border-surface-border custom-scrollbar max-h-[190px] space-y-1.5 overflow-y-auto border-t pt-2">
                                 {distributionItems.map((item: any, idx: number) => {
                                     const categoryIcons: Record<string, any> = {
-                                        'Kontrak': FileText,
+                                        Kontrak: FileText,
                                         'Non Kontrak': Layers,
-                                        'NDA': Shield,
+                                        NDA: Shield,
                                     };
                                     const CategoryIcon = categoryIcons[item.name] || FileText;
                                     const val = item.count || 0;
@@ -618,10 +639,10 @@ export function OverviewTab({ data, onNavigate, meUser, onCreateContract, scope 
                                         <div
                                             key={item.name + idx}
                                             onClick={handleCategoryClick}
-                                            className="flex cursor-pointer items-center justify-between gap-2 rounded-md border border-surface-border bg-surface-base p-1.5 px-2 transition-all hover:bg-surface-muted hover:border-primary active:scale-[0.99]"
+                                            className="border-surface-border bg-surface-base hover:bg-surface-muted hover:border-primary flex cursor-pointer items-center justify-between gap-2 rounded-md border p-1.5 px-2 transition-all active:scale-[0.99]"
                                             title={`Klik untuk membuka daftar ${item.name}`}
                                         >
-                                            <div className="flex items-center gap-2 min-w-0">
+                                            <div className="flex min-w-0 items-center gap-2">
                                                 <ChipIcon
                                                     icon={CategoryIcon}
                                                     size="xs"
@@ -629,15 +650,11 @@ export function OverviewTab({ data, onNavigate, meUser, onCreateContract, scope 
                                                     style={{ backgroundColor: CHART_COLORS[idx % CHART_COLORS.length] }}
                                                     className="border-transparent"
                                                 />
-                                                <span className="truncate text-[10px] font-semibold text-text-main">
-                                                    {item.name}
-                                                </span>
+                                                <span className="text-text-main truncate text-[10px] font-semibold">{item.name}</span>
                                             </div>
-                                            <div className="flex items-center gap-1.5 shrink-0">
-                                                <span className="text-[9px] text-text-soft">
-                                                    {pct}%
-                                                </span>
-                                                <span className="rounded border border-surface-border bg-surface-base px-1.5 py-0.5 text-[9px] font-bold text-text-main">
+                                            <div className="flex shrink-0 items-center gap-1.5">
+                                                <span className="text-text-soft text-[9px]">{pct}%</span>
+                                                <span className="border-surface-border bg-surface-base text-text-main rounded border px-1.5 py-0.5 text-[9px] font-bold">
                                                     {val}
                                                 </span>
                                                 <ChevronRight size={10} className="text-text-soft opacity-50" />
@@ -654,32 +671,32 @@ export function OverviewTab({ data, onNavigate, meUser, onCreateContract, scope 
             {/* 4. Action Center Grid: Priority Pending Approvals (50%) & Expiring Contracts (50%) */}
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                 {/* Column 1: Priority Pending Approvals */}
-                <Card className="flex flex-col justify-between rounded-lg border-surface-border bg-surface-base shadow-none">
+                <Card className="border-surface-border bg-surface-base flex flex-col justify-between rounded-lg shadow-none">
                     <div>
-                        <CardHeader className="flex flex-row items-center justify-between border-b border-surface-border p-4 pb-3 space-y-0">
+                        <CardHeader className="border-surface-border flex flex-row items-center justify-between space-y-0 border-b p-4 pb-3">
                             <div className="flex items-center gap-2">
                                 <ChipIcon icon={Clock} size="md" bg="bg-amber-600" shape="rounded" />
                                 <div>
-                                    <CardTitle className="text-xs font-bold text-text-main">Persetujuan Menunggu Aksi</CardTitle>
-                                    <p className="text-[10px] text-text-soft">Dokumen yang memerlukan tanda tangan / persetujuan Anda</p>
+                                    <CardTitle className="text-text-main text-xs font-bold">Persetujuan Menunggu Aksi</CardTitle>
+                                    <p className="text-text-soft text-[10px]">Dokumen yang memerlukan tanda tangan / persetujuan Anda</p>
                                 </div>
                             </div>
                             <button
                                 type="button"
                                 onClick={() => onNavigate('pending')}
-                                className="inline-flex cursor-pointer items-center gap-1 text-[11px] font-bold text-primary hover:underline shadow-none"
+                                className="text-primary inline-flex cursor-pointer items-center gap-1 text-[11px] font-bold shadow-none hover:underline"
                             >
                                 <span>Lihat Semua ({pendingCount})</span>
                                 <ArrowUpRight size={12} />
                             </button>
                         </CardHeader>
-                        <CardContent className="p-4 space-y-2">
+                        <CardContent className="space-y-2 p-4">
                             {pendingApprovalsList.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center py-7 text-center">
                                     <ChipIcon icon={CheckCircle2} size="lg" bg="bg-emerald-600" shape="circle" className="mb-2" />
-                                    <p className="text-xs font-bold text-text-main">Tidak Ada Persetujuan Tertunda</p>
-                                    <p className="text-[10px] text-text-soft max-w-xs mt-0.5">
-                                         Seluruh pengajuan yang ditujukan ke Anda telah diproses.
+                                    <p className="text-text-main text-xs font-bold">Tidak Ada Persetujuan Tertunda</p>
+                                    <p className="text-text-soft mt-0.5 max-w-xs text-[10px]">
+                                        Seluruh pengajuan yang ditujukan ke Anda telah diproses.
                                     </p>
                                 </div>
                             ) : (
@@ -689,15 +706,15 @@ export function OverviewTab({ data, onNavigate, meUser, onCreateContract, scope 
                                         <div
                                             key={item.id}
                                             onClick={() => router.get(`/contracts/${item.contract_id}`)}
-                                            className="group flex cursor-pointer items-center justify-between gap-3 rounded-md border border-surface-border bg-surface-base p-3 shadow-none transition-all duration-150 hover:border-amber-500 hover:bg-surface-muted"
+                                            className="group border-surface-border bg-surface-base hover:bg-surface-muted flex cursor-pointer items-center justify-between gap-3 rounded-md border p-3 shadow-none transition-all duration-150 hover:border-amber-500"
                                         >
-                                            <div className="space-y-1 min-w-0 flex-1">
+                                            <div className="min-w-0 flex-1 space-y-1">
                                                 <div className="flex items-center gap-1.5">
-                                                    <span className="rounded bg-surface-muted border border-surface-border px-1.5 py-0.5 text-[9px] font-bold text-text-main">
+                                                    <span className="bg-surface-muted border-surface-border text-text-main rounded border px-1.5 py-0.5 text-[9px] font-bold">
                                                         {item.form_no || item.contract_no || 'DOKUMEN'}
                                                     </span>
                                                     {item.type && (
-                                                        <span className="truncate rounded border border-surface-border bg-surface-base px-1.5 py-0.5 text-[9px] font-semibold text-text-soft">
+                                                        <span className="border-surface-border bg-surface-base text-text-soft truncate rounded border px-1.5 py-0.5 text-[9px] font-semibold">
                                                             {item.type}
                                                         </span>
                                                     )}
@@ -707,10 +724,10 @@ export function OverviewTab({ data, onNavigate, meUser, onCreateContract, scope 
                                                         </span>
                                                     )}
                                                 </div>
-                                                <h4 className="truncate text-xs font-bold text-text-main group-hover:text-primary transition-colors">
+                                                <h4 className="text-text-main group-hover:text-primary truncate text-xs font-bold transition-colors">
                                                     {item.title || 'Tanpa Judul'}
                                                 </h4>
-                                                <div className="flex items-center gap-2 text-[10px] text-text-soft">
+                                                <div className="text-text-soft flex items-center gap-2 text-[10px]">
                                                     <span className="flex items-center gap-1">
                                                         <User size={10} />
                                                         {item.creator || 'Pembuat'}
@@ -718,7 +735,9 @@ export function OverviewTab({ data, onNavigate, meUser, onCreateContract, scope 
                                                     {item.step_name && (
                                                         <>
                                                             <span>•</span>
-                                                            <span className="font-semibold text-amber-700 dark:text-amber-300">Tahap: {item.step_name}</span>
+                                                            <span className="font-semibold text-amber-700 dark:text-amber-300">
+                                                                Tahap: {item.step_name}
+                                                            </span>
                                                         </>
                                                     )}
                                                 </div>
@@ -740,32 +759,32 @@ export function OverviewTab({ data, onNavigate, meUser, onCreateContract, scope 
                 </Card>
 
                 {/* Column 2: Upcoming Expiring Contracts */}
-                <Card className="flex flex-col justify-between rounded-lg border-surface-border bg-surface-base shadow-none">
+                <Card className="border-surface-border bg-surface-base flex flex-col justify-between rounded-lg shadow-none">
                     <div>
-                        <CardHeader className="flex flex-row items-center justify-between border-b border-surface-border p-4 pb-3 space-y-0">
+                        <CardHeader className="border-surface-border flex flex-row items-center justify-between space-y-0 border-b p-4 pb-3">
                             <div className="flex items-center gap-2">
                                 <ChipIcon icon={Timer} size="md" bg="bg-rose-600" shape="rounded" />
                                 <div>
-                                    <CardTitle className="text-xs font-bold text-text-main">Mendekati Masa Berakhir</CardTitle>
-                                    <p className="text-[10px] text-text-soft">Kontrak yang akan segera jatuh tempo dalam waktu dekat</p>
+                                    <CardTitle className="text-text-main text-xs font-bold">Mendekati Masa Berakhir</CardTitle>
+                                    <p className="text-text-soft text-[10px]">Kontrak yang akan segera jatuh tempo dalam waktu dekat</p>
                                 </div>
                             </div>
                             <button
                                 type="button"
                                 onClick={() => onNavigate('expiry')}
-                                className="inline-flex cursor-pointer items-center gap-1 text-[11px] font-bold text-primary hover:underline shadow-none"
+                                className="text-primary inline-flex cursor-pointer items-center gap-1 text-[11px] font-bold shadow-none hover:underline"
                             >
                                 <span>Lihat Semua</span>
                                 <ArrowUpRight size={12} />
                             </button>
                         </CardHeader>
-                        <CardContent className="p-4 space-y-2">
+                        <CardContent className="space-y-2 p-4">
                             {upcomingRenewals.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center py-7 text-center">
                                     <ChipIcon icon={Calendar} size="lg" bg="bg-slate-600" shape="circle" className="mb-2" />
-                                    <p className="text-xs font-bold text-text-main">Tidak Ada Kontrak Mendekati Jatuh Tempo</p>
-                                    <p className="text-[10px] text-text-soft max-w-xs mt-0.5">
-                                         Seluruh kontrak aktif memiliki masa berlaku yang masih panjang.
+                                    <p className="text-text-main text-xs font-bold">Tidak Ada Kontrak Mendekati Jatuh Tempo</p>
+                                    <p className="text-text-soft mt-0.5 max-w-xs text-[10px]">
+                                        Seluruh kontrak aktif memiliki masa berlaku yang masih panjang.
                                     </p>
                                 </div>
                             ) : (
@@ -782,34 +801,34 @@ export function OverviewTab({ data, onNavigate, meUser, onCreateContract, scope 
                                         <div
                                             key={item.id}
                                             onClick={() => router.get(`/contracts/${item.id}`)}
-                                            className="group flex cursor-pointer items-center justify-between gap-3 rounded-md border border-surface-border bg-surface-base p-3 shadow-none transition-all duration-150 hover:border-primary hover:bg-surface-muted"
+                                            className="group border-surface-border bg-surface-base hover:border-primary hover:bg-surface-muted flex cursor-pointer items-center justify-between gap-3 rounded-md border p-3 shadow-none transition-all duration-150"
                                         >
-                                            <div className="space-y-1 min-w-0 flex-1">
+                                            <div className="min-w-0 flex-1 space-y-1">
                                                 <div className="flex items-center gap-1.5">
-                                                    <span className="rounded bg-surface-muted border border-surface-border px-1.5 py-0.5 text-[9px] font-bold text-text-main">
+                                                    <span className="bg-surface-muted border-surface-border text-text-main rounded border px-1.5 py-0.5 text-[9px] font-bold">
                                                         {item.contract_no || item.form_no || 'KONTRAK'}
                                                     </span>
                                                     {item.vendor_name && (
-                                                        <span className="truncate rounded border border-surface-border bg-surface-base px-1.5 py-0.5 text-[9px] font-semibold text-text-soft">
+                                                        <span className="border-surface-border bg-surface-base text-text-soft truncate rounded border px-1.5 py-0.5 text-[9px] font-semibold">
                                                             {item.vendor_name}
                                                         </span>
                                                     )}
                                                 </div>
-                                                <h4 className="truncate text-xs font-bold text-text-main group-hover:text-primary transition-colors">
+                                                <h4 className="text-text-main group-hover:text-primary truncate text-xs font-bold transition-colors">
                                                     {item.title || 'Tanpa Judul'}
                                                 </h4>
-                                                <div className="flex items-center gap-2 text-[10px] text-text-soft">
+                                                <div className="text-text-soft flex items-center gap-2 text-[10px]">
                                                     <span>Berakhir: {item.end_date ? new Date(item.end_date).toLocaleDateString('id-ID') : '-'}</span>
                                                 </div>
                                             </div>
 
-                                            <div className="flex flex-col items-end gap-1 shrink-0">
+                                            <div className="flex shrink-0 flex-col items-end gap-1">
                                                 {daysLeft !== null && (
                                                     <span className={cn('rounded px-1.5 py-0.5 text-[9px] font-bold shadow-none', badgeStyle)}>
                                                         {daysLeft <= 0 ? 'Hari Ini' : `Sisa ${daysLeft} Hari`}
                                                     </span>
                                                 )}
-                                                <span className="text-[10px] font-semibold text-primary opacity-0 transition-opacity group-hover:opacity-100 flex items-center gap-0.5">
+                                                <span className="text-primary flex items-center gap-0.5 text-[10px] font-semibold opacity-0 transition-opacity group-hover:opacity-100">
                                                     Lihat <ChevronRight size={10} />
                                                 </span>
                                             </div>
@@ -824,6 +843,3 @@ export function OverviewTab({ data, onNavigate, meUser, onCreateContract, scope 
         </div>
     );
 }
-
-
-

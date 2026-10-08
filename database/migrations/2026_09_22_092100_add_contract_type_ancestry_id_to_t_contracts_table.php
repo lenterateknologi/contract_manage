@@ -1,7 +1,10 @@
 <?php
 
+use App\Models\Master\ContractType;
+use App\Models\Transaction\Contract;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -20,8 +23,8 @@ return new class extends Migration
         }
 
         // Backfill existing contracts from m_contract_types ancestry_id
-        $contractTypes = \App\Models\ContractType::all()->keyBy('id');
-        $contracts = \App\Models\Contract::withoutEvents(fn () => \App\Models\Contract::all());
+        $contractTypes = ContractType::all()->keyBy('id');
+        $contracts = Contract::withoutEvents(fn () => Contract::all());
 
         foreach ($contracts as $contract) {
             $type = $contract->contract_type_id ? $contractTypes->get($contract->contract_type_id) : null;
@@ -43,7 +46,7 @@ return new class extends Migration
             }
 
             if ($contract->contract_type_ancestry_id !== $ancestryId) {
-                \Illuminate\Support\Facades\DB::table('t_contracts')
+                DB::table('t_contracts')
                     ->where('id', $contract->id)
                     ->update(['contract_type_ancestry_id' => $ancestryId]);
             }

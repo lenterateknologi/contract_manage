@@ -2,11 +2,10 @@
 
 namespace App\Services\Workflow;
 
-use App\Models\Approval;
-use App\Models\Authority;
-use App\Models\Contract;
-use App\Models\ContractSlaConfig;
-use App\Models\User;
+use App\Models\Master\Authority;
+use App\Models\Master\User;
+use App\Models\Transaction\Approval;
+use App\Models\Transaction\Contract;
 use Illuminate\Support\Collection;
 
 class SlaNotificationRecipientResolver
@@ -14,9 +13,7 @@ class SlaNotificationRecipientResolver
     /**
      * Resolve all recipient users who should receive SLA overdue or warning notification for a given contract.
      *
-     * @param Contract $contract
-     * @param Approval|null $approval
-     * @param string $alertType 'overdue' or 'warning'
+     * @param  string  $alertType  'overdue' or 'warning'
      * @return Collection<int, User>
      */
     public function resolveRecipients(Contract $contract, ?Approval $approval = null, string $alertType = 'overdue'): Collection
@@ -84,6 +81,7 @@ class SlaNotificationRecipientResolver
                 if ($user && $user->is_used) {
                     $recipients->push($user);
                 }
+
                 continue;
             }
 

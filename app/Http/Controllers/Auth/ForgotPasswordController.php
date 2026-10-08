@@ -4,10 +4,11 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Mail\ForgotPasswordResetMail;
-use App\Models\ForgotPassword;
-use App\Models\User;
+use App\Models\Master\User;
+use App\Models\Transaction\ForgotPassword;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -62,7 +63,7 @@ class ForgotPasswordController extends Controller
                     Mail::to($user->email)
                         ->send(new ForgotPasswordResetMail($user, $resetUrl, $expireAt));
                 } catch (\Throwable $e) {
-                    \Illuminate\Support\Facades\Log::error('Failed sending forgot password reset email: '.$e->getMessage());
+                    Log::error('Failed sending forgot password reset email: '.$e->getMessage());
                 }
             }
         }

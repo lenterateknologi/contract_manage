@@ -3,12 +3,12 @@
 namespace Database\Seeders\Business;
 
 use App\Enums\WorkflowAction;
-use App\Models\Authority;
-use App\Models\ContractType;
-use App\Models\Role;
-use App\Models\Workflow;
-use App\Models\WorkflowStep;
-use App\Models\WorkflowStepAction;
+use App\Models\Master\Authority;
+use App\Models\Master\ContractType;
+use App\Models\Master\Role;
+use App\Models\Master\Workflow;
+use App\Models\Master\WorkflowStep;
+use App\Models\Master\WorkflowStepAction;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 

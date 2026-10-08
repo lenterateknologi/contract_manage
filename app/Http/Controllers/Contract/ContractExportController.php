@@ -6,14 +6,12 @@ use App\Http\Actions\Contract\GetAuditTrailAction;
 use App\Http\Actions\Export\ExportApprovalTimelinePdfAction;
 use App\Http\Actions\Export\ExportAuditExcelAction;
 use App\Http\Actions\Export\ExportAuditPdfAction;
-use App\Http\Actions\Export\ExportAuditPdfQueueAction;
 use App\Http\Actions\Export\ExportFormSubmissionPdfAction;
-use App\Http\Actions\Export\ExportFormSubmissionPdfQueueAction;
 use App\Http\Controllers\Controller;
 use App\Http\Formatters\ContractFormatter;
 use App\Http\Queries\Contract\ContractDetailQuery;
-use App\Models\FormSubmission;
-use App\Models\FormTemplate;
+use App\Models\Master\FormTemplate;
+use App\Models\Transaction\FormSubmission;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -71,11 +69,11 @@ class ContractExportController extends Controller
         return $action->execute($contract, $request);
     }
 
-    public function exportAuditPdfQueue(string $id, Request $request, ExportAuditPdfQueueAction $action)
+    public function exportAuditPdfQueue(string $id, Request $request, ExportAuditPdfAction $action)
     {
         $contract = $this->contractDetailQuery->find($id);
 
-        return $action->execute($contract, $request);
+        return $action->queue($contract, $request);
     }
 
     public function exportAuditPdf(string $id, Request $request, ExportAuditPdfAction $action)
@@ -160,11 +158,11 @@ class ContractExportController extends Controller
         ]);
     }
 
-    public function exportFormSubmissionPdfQueue(Request $request, string $id, string $type, ExportFormSubmissionPdfQueueAction $action)
+    public function exportFormSubmissionPdfQueue(Request $request, string $id, string $type, ExportFormSubmissionPdfAction $action)
     {
         $contract = $this->contractDetailQuery->find($id);
 
-        return $action->execute($contract, $type, $request);
+        return $action->queue($contract, $type, $request);
     }
 
     public function exportFormSubmissionPdf(string $id, string $type, Request $request, ExportFormSubmissionPdfAction $action): mixed

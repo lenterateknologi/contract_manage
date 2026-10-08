@@ -1,7 +1,6 @@
-import React from 'react';
-import { useDraggable } from '@dnd-kit/core';
-import { Bookmark, PlusCircle, Trash2, GripVertical, Pencil } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useDraggable } from '@dnd-kit/core';
+import { Bookmark, GripVertical, Pencil, PlusCircle, Trash2 } from 'lucide-react';
 
 interface DraggablePresetCardProps {
     preset: any;
@@ -36,39 +35,33 @@ export function DraggablePresetCard({ preset, onApply, onEdit, onDelete }: Dragg
             {...attributes}
             {...listeners}
             className={cn(
-                'group relative flex flex-col gap-3 transition-all duration-300 bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 hover:border-primary/80 hover:bg-white dark:hover:bg-slate-900/60 rounded-lg p-3.5 cursor-grab active:cursor-grabbing select-none',
-                isDragging && 'opacity-60 border-primary ring-2 ring-primary/40 z-50'
+                'group hover:border-primary/80 relative flex cursor-grab flex-col gap-3 rounded-lg border border-slate-200 bg-white p-3.5 transition-all duration-300 select-none hover:bg-white active:cursor-grabbing dark:border-slate-800 dark:bg-slate-900/40 dark:hover:bg-slate-900/60',
+                isDragging && 'border-primary ring-primary/40 z-50 opacity-60 ring-2',
             )}
         >
             {/* Header Row */}
             <div className="flex items-start justify-between gap-2">
-                <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="text-slate-300 dark:text-slate-600 group-hover:text-slate-500 transition-colors">
+                <div className="flex min-w-0 items-center gap-2.5">
+                    <div className="text-slate-300 transition-colors group-hover:text-slate-500 dark:text-slate-600">
                         <GripVertical size={14} />
                     </div>
                     <div className="border-primary/20 bg-primary/10 text-primary dark:text-primary-400 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border font-bold">
                         <Bookmark size={14} />
                     </div>
-                    <div className="flex flex-col min-w-0">
-                        <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
-                            {preset.name}
-                        </span>
-                        {subtitle && (
-                            <span className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
-                                {subtitle}
-                            </span>
-                        )}
+                    <div className="flex min-w-0 flex-col">
+                        <span className="truncate text-xs font-bold text-slate-800 dark:text-slate-200">{preset.name}</span>
+                        {subtitle && <span className="truncate text-[10px] text-slate-500 dark:text-slate-400">{subtitle}</span>}
                     </div>
                 </div>
 
-                <div className="flex items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+                <div className="flex shrink-0 items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                     <button
                         type="button"
                         onClick={(e) => {
                             e.stopPropagation();
                             onApply(preset);
                         }}
-                        className="h-7 w-7 inline-flex items-center justify-center bg-primary hover:bg-primary/90 text-white rounded-lg transition-all shadow-2xs hover:scale-105 active:scale-95 cursor-pointer"
+                        className="bg-primary hover:bg-primary/90 inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-white shadow-2xs transition-all hover:scale-105 active:scale-95"
                         title="Gunakan Preset Ini"
                     >
                         <PlusCircle size={15} />
@@ -80,7 +73,7 @@ export function DraggablePresetCard({ preset, onApply, onEdit, onDelete }: Dragg
                                 e.stopPropagation();
                                 onEdit(preset);
                             }}
-                            className="h-7 w-7 inline-flex items-center justify-center text-slate-400 hover:text-primary hover:bg-primary/10 border border-slate-200 dark:border-slate-800 hover:border-primary/40 rounded-lg transition-colors cursor-pointer"
+                            className="hover:text-primary hover:bg-primary/10 hover:border-primary/40 inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg border border-slate-200 text-slate-400 transition-colors dark:border-slate-800"
                             title="Ubah Preset"
                         >
                             <Pencil size={12} />
@@ -92,7 +85,7 @@ export function DraggablePresetCard({ preset, onApply, onEdit, onDelete }: Dragg
                             e.stopPropagation();
                             onDelete(preset);
                         }}
-                        className="h-7 w-7 inline-flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-slate-200 dark:border-slate-800 hover:border-rose-300 dark:border-rose-800 rounded-lg transition-colors cursor-pointer"
+                        className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg border border-slate-200 text-slate-400 transition-colors hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600 dark:border-rose-800 dark:border-slate-800 dark:hover:bg-rose-950/40"
                         title="Hapus Preset"
                     >
                         <Trash2 size={13} />
@@ -102,13 +95,13 @@ export function DraggablePresetCard({ preset, onApply, onEdit, onDelete }: Dragg
 
             {/* Step Actions Preview */}
             {stepData.actions && stepData.actions.length > 0 && (
-                <div className="flex flex-wrap items-center gap-1.5 pt-1.5 border-t border-slate-100 dark:border-slate-800/60">
+                <div className="flex flex-wrap items-center gap-1.5 border-t border-slate-100 pt-1.5 dark:border-slate-800/60">
                     {stepData.actions.map((act: any, aIdx: number) => {
                         const label = act.label || act.master_action?.label || act.master_action?.code || 'Action';
                         return (
                             <span
                                 key={aIdx}
-                                className="inline-flex items-center gap-1 rounded bg-slate-100 dark:bg-slate-800/80 px-1.5 py-0.5 text-[9px] font-bold text-slate-600 dark:text-slate-300 uppercase border border-slate-200/60 dark:border-slate-700/60"
+                                className="inline-flex items-center gap-1 rounded border border-slate-200/60 bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold text-slate-600 uppercase dark:border-slate-700/60 dark:bg-slate-800/80 dark:text-slate-300"
                             >
                                 {label}
                             </span>

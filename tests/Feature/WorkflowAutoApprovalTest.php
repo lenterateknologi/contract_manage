@@ -1,14 +1,13 @@
 <?php
 
-use App\Models\Approval;
-use App\Models\Contract;
-use App\Models\ContractType;
-use App\Models\Role;
-use App\Models\User;
-use App\Models\Workflow;
-use App\Models\WorkflowStep;
+use App\Models\Master\ContractType;
+use App\Models\Master\Role;
+use App\Models\Master\User;
+use App\Models\Master\Workflow;
+use App\Models\Master\WorkflowStep;
+use App\Models\Transaction\Approval;
+use App\Models\Transaction\Contract;
 use App\Services\Workflow\ContractWorkflowService;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 

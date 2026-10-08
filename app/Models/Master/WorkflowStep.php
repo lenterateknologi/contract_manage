@@ -1,0 +1,185 @@
+<?php
+
+namespace App\Models\Master;
+
+use App\Models\Transaction\Approval;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+class WorkflowStep extends Model
+{
+    protected $table = 'm_workflow_steps';
+
+    use HasUuids, SoftDeletes;
+
+    protected static function booted()
+    {
+        static::addGlobalScope('order', function ($builder) {
+            $builder->orderBy('step', 'asc');
+        });
+    }
+
+    public $incrementing = false;
+
+    protected $keyType = 'string';
+
+    protected $fillable = [
+        'id',
+        'workflow_id',
+        'approver_type',
+        'step',
+        'step_category',
+        'is_optional',
+        'optional_label',
+        'condition_expression',
+        'description',
+        'phase',
+        'uploader_type',
+        'hierarchy_level',
+        'role_id',
+        'company_group_ids',
+        'region_ids',
+        'company_ids',
+        'label',
+        'allowed_actions',
+        'is_mandatory',
+        'created_by',
+        'updated_by',
+        'is_active',
+        'is_visible',
+        'meta',
+        'approver_config',
+        'filter_department',
+        'filter_company_group',
+        'filter_region',
+        'filter_company',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'step' => 'integer',
+            'is_active' => 'boolean',
+            'is_visible' => 'boolean',
+            'meta' => 'array',
+            'approver_config' => 'array',
+            'is_optional' => 'boolean',
+            'hierarchy_level' => 'integer',
+            'approver_type' => 'string',
+            'step_category' => 'string',
+            'company_group_ids' => 'array',
+            'region_ids' => 'array',
+            'company_ids' => 'array',
+            'allowed_actions' => 'array',
+            'is_mandatory' => 'boolean',
+            'filter_department' => 'boolean',
+            'filter_company_group' => 'boolean',
+            'filter_region' => 'boolean',
+            'filter_company' => 'boolean',
+        ];
+    }
+
+    protected $with = ['approverAuthorities.role', 'approverAuthorities.division', 'approverAuthorities.user', 'users', 'workflow'];
+
+    protected $appends = ['role', 'department_ids', 'department_names', 'division_ids', 'division_names', 'user_ids', 'name'];
+
+    public function getNameAttribute()
+    {
+        return ! empty($this->attributes['label']) ? $this->attributes['label'] : ($this->attributes['description'] ?? '');
+    }
+
+    /**
+     * @return HasMany<WorkflowStepAction, WorkflowStep>
+     */
+    public function actions(): HasMany
+    {
+        return $this->hasMany(WorkflowStepAction::class, 'workflow_step_id');
+    }
+
+    public function approverAuthorities(): HasMany
+    {
+        return $this->hasMany(Authority::class, 'context_id')
+            ->where('context_type', Authority::CONTEXT_WORKFLOW_STEP)
+            ->where('is_additional', false);
+    }
+
+    public function additionalAuthorities(): HasMany
+    {
+        return $this->hasMany(Authority::class, 'context_id')
+            ->where('context_type', Authority::CONTEXT_WORKFLOW_STEP)
+            ->where('is_additional', true);
+    }
+
+    public function getRoleAttribute()
+    {
+        return $this->approverAuthorities->pluck('role.name')->filter()->unique()->values()->toArray();
+    }
+
+    public function getDepartmentIdsAttribute()
+    {
+        return $this->approverAuthorities->pluck('division_id')->filter()->unique()->values()->toArray();
+    }
+
+    public function getDepartmentNamesAttribute()
+    {
+        return $this->approverAuthorities->map(function ($sd) {
+            return $sd->division?->name ?? 'All Divisions';
+        })->filter()->unique()->toArray();
+    }
+
+    public function getDivisionIdsAttribute()
+    {
+        return $this->approverAuthorities->pluck('division_id')->filter()->unique()->values()->toArray();
+    }
+
+    public function getDivisionNamesAttribute()
+    {
+        return $this->approverAuthorities->map(function ($sd) {
+            return $sd->division?->name ?? 'All Divisions';
+        })->filter()->unique()->toArray();
+    }
+
+    public function getUserIdsAttribute()
+    {
+        return $this->approverAuthorities->pluck('user_id')->filter()->unique()->values()->toArray();
+    }
+
+    public function workflow(): BelongsTo
+    {
+        return $this->belongsTo(Workflow::class);
+    }
+
+    public function approvals(): HasMany
+    {
+        return $this->hasMany(Approval::class);
+    }
+
+    public function getApproverConfigAttribute($value)
+    {
+        $config = $value ? (is_string($value) ? json_decode($value, true) : $value) : [];
+
+        $roleNames = $this->relationLoaded('approverAuthorities') ? $this->approverAuthorities->pluck('role.name')->filter()->toArray() : $this->approverAuthorities()->with('role')->get()->pluck('role.name')->filter()->toArray();
+        $userIds = $this->relationLoaded('approverAuthorities') ? $this->approverAuthorities->pluck('user_id')->filter()->toArray() : $this->approverAuthorities()->pluck('user_id')->filter()->toArray();
+        $departmentIds = $this->relationLoaded('approverAuthorities') ? $this->approverAuthorities->pluck('department_id')->filter()->toArray() : $this->approverAuthorities()->pluck('department_id')->filter()->toArray();
+
+        return array_merge([
+            'custom' => in_array($this->approver_type, ['initiator', 'assigned_pic', 'creator', 'atasan']) ? [$this->approver_type] : [],
+            'roles' => $this->approver_type === 'role' ? $roleNames : [],
+            'departments' => $this->approver_type === 'role' ? $departmentIds : [],
+            'users' => $this->approver_type === 'user' ? $userIds : [],
+            'is_default' => $this->approver_type === 'initiator',
+            'is_initiator_role' => $this->approver_type === 'role' && empty($roleNames),
+            'is_initiator_department' => $this->approver_type === 'role' && empty($departmentIds),
+        ], $config);
+    }
+
+    public function users(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'm_authorities', 'context_id', 'user_id')
+            ->where('context_type', Authority::CONTEXT_WORKFLOW_STEP);
+    }
+}

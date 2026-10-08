@@ -108,10 +108,7 @@ export default function Register() {
 
                 <div className="text-center text-sm font-medium">
                     Sudah punya akun?{' '}
-                    <TextLink
-                        href={route('login')}
-                        className="font-bold text-primary hover:text-primary/80 hover:underline"
-                    >
+                    <TextLink href={route('login')} className="text-primary hover:text-primary/80 font-bold hover:underline">
                         Masuk Disini
                     </TextLink>
                 </div>

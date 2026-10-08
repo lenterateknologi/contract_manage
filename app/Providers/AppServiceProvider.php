@@ -2,7 +2,7 @@
 
 namespace App\Providers;
 
-use App\Models\Contract;
+use App\Models\Transaction\Contract;
 use App\Policies\ContractPolicy;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
@@ -40,6 +40,7 @@ class AppServiceProvider extends ServiceProvider
             if (! isset($tableColumnsCache[$table])) {
                 $tableColumnsCache[$table] = array_flip(Schema::getColumnListing($table));
             }
+
             return isset($tableColumnsCache[$table][$column]);
         };
 

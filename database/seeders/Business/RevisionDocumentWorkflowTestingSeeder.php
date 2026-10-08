@@ -3,12 +3,12 @@
 namespace Database\Seeders\Business;
 
 use App\Enums\WorkflowAction;
-use App\Models\Authority;
-use App\Models\ContractType;
-use App\Models\Role;
-use App\Models\Workflow;
-use App\Models\WorkflowStep;
-use App\Models\WorkflowStepAction;
+use App\Models\Master\Authority;
+use App\Models\Master\ContractType;
+use App\Models\Master\Role;
+use App\Models\Master\Workflow;
+use App\Models\Master\WorkflowStep;
+use App\Models\Master\WorkflowStepAction;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -37,7 +37,7 @@ class RevisionDocumentWorkflowTestingSeeder extends Seeder
 
         // 1. Cleanup workflow lama jika ada
         $existingWfIds = Workflow::whereIn('name', [$mainWfName, $subWfName])->pluck('id')->toArray();
-        if (!empty($existingWfIds)) {
+        if (! empty($existingWfIds)) {
             Authority::where('context_type', Authority::CONTEXT_WORKFLOW_STEP)
                 ->whereIn('context_id', function ($q) use ($existingWfIds) {
                     $q->select('id')->from('m_workflow_steps')->whereIn('workflow_id', $existingWfIds);
@@ -202,12 +202,12 @@ class RevisionDocumentWorkflowTestingSeeder extends Seeder
             ],
         ]);
 
-        $this->command->info("Workflow & Sub-Workflow berhasil diupdate!");
+        $this->command->info('Workflow & Sub-Workflow berhasil diupdate!');
         $this->command->line("- Tipe Kontrak: {$contractTypeName} ({$contractTypeCode})");
         $this->command->line("- Workflow Utama: {$mainWfName} (ID: {$mainWfId})");
-        $this->command->line("    Step 1: Pengajuan Dokumen (Initiator -> Kirim Pengajuan)");
-        $this->command->line("    Step 2: Review & Approval (Setujui | Tolak -> Sub-Workflow Revisi)");
+        $this->command->line('    Step 1: Pengajuan Dokumen (Initiator -> Kirim Pengajuan)');
+        $this->command->line('    Step 2: Review & Approval (Setujui | Tolak -> Sub-Workflow Revisi)');
         $this->command->line("- Sub-Workflow: {$subWfName} (ID: {$subWfId})");
-        $this->command->line("    Step 1: Submit Revisi Dokumen (Inisiator -> Kirim Hasil Revisi -> Kembali ke Step 2)");
+        $this->command->line('    Step 1: Submit Revisi Dokumen (Inisiator -> Kirim Hasil Revisi -> Kembali ke Step 2)');
     }
 }

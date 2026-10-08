@@ -1,5 +1,3 @@
-import React from 'react';
-
 /**
  * Impersonation banner in content area is disabled as per design preference.
  * Impersonation management (Switch User & Kembali ke Admin) is handled exclusively

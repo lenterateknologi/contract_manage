@@ -2,7 +2,7 @@
 
 namespace App\Mail;
 
-use App\Models\Approval;
+use App\Models\Transaction\Approval;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;

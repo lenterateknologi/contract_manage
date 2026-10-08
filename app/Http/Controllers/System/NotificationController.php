@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\System;
 
 use App\Http\Controllers\Controller;
-use App\Models\Approval;
-use App\Models\Contract;
-use App\Models\ContractHistory;
-use App\Models\ContractMessage;
+use App\Models\Transaction\Approval;
+use App\Models\Transaction\Contract;
+use App\Models\Transaction\ContractHistory;
+use App\Models\Transaction\ContractMessage;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -56,10 +56,10 @@ class NotificationController extends Controller
                     })
                     ->orWhereHas('messages', function ($q) use ($user, $lowerName, $userIdStr) {
                         $q->where('user_id', $user->id)
-                          ->orWhere('message', 'LIKE', '%data-mention-id="'.$userIdStr.'"%');
+                            ->orWhere('message', 'LIKE', '%data-mention-id="'.$userIdStr.'"%');
                         if (! empty($lowerName)) {
                             $q->orWhereRaw('LOWER(message) LIKE ?', ['%@'.$lowerName.'%'])
-                              ->orWhereRaw('LOWER(message) LIKE ?', ['%data-name="'.strtolower($lowerName).'"%']);
+                                ->orWhereRaw('LOWER(message) LIKE ?', ['%data-name="'.strtolower($lowerName).'"%']);
                         }
                     });
             })
@@ -160,7 +160,7 @@ class NotificationController extends Controller
                 $query->orWhere('message', 'LIKE', '%data-mention-id="'.$userIdStr.'"%');
                 if (! empty($lowerName)) {
                     $query->orWhereRaw('LOWER(message) LIKE ?', ['%@'.$lowerName.'%'])
-                          ->orWhereRaw('LOWER(message) LIKE ?', ['%data-name="'.strtolower($lowerName).'"%']);
+                        ->orWhereRaw('LOWER(message) LIKE ?', ['%data-name="'.strtolower($lowerName).'"%']);
                 }
                 if (! empty($lowerFirst) && strlen($lowerFirst) >= 3) {
                     $query->orWhereRaw('LOWER(message) LIKE ?', ['%@'.$lowerFirst.'%']);
@@ -228,6 +228,7 @@ class NotificationController extends Controller
                 if ($typeFilter === 'mention') {
                     return $item['type'] === 'mention' || $item['category'] === 'MENTION';
                 }
+
                 return $item['type'] === $typeFilter;
             });
         }
@@ -294,20 +295,20 @@ class NotificationController extends Controller
 
         $unreadMessagesCount = ContractMessage::query()
             ->where('user_id', '!=', $user->id)
-            ->where(function ($q) use ($user, $userIdStr, $lowerName) {
+            ->where(function ($q) use ($user, $userIdStr) {
                 $q->whereJsonDoesntContain('read_by', $user->id)
-                  ->whereJsonDoesntContain('read_by', $userIdStr);
+                    ->whereJsonDoesntContain('read_by', $userIdStr);
             })
             ->whereHas('contract', function ($q) use ($user, $lowerName) {
                 $q->where('created_by', $user->id)
-                  ->orWhere('initiated_by_id', $user->id)
-                  ->orWhere('assigned_pic_id', $user->id)
-                  ->orWhereHas('approvals', function ($sq) use ($user, $lowerName) {
-                      $sq->where('user_id', $user->id);
-                      if (! empty($lowerName)) {
-                          $sq->orWhereRaw('LOWER(approver_name) LIKE ?', ['%'.$lowerName.'%']);
-                      }
-                  });
+                    ->orWhere('initiated_by_id', $user->id)
+                    ->orWhere('assigned_pic_id', $user->id)
+                    ->orWhereHas('approvals', function ($sq) use ($user, $lowerName) {
+                        $sq->where('user_id', $user->id);
+                        if (! empty($lowerName)) {
+                            $sq->orWhereRaw('LOWER(approver_name) LIKE ?', ['%'.$lowerName.'%']);
+                        }
+                    });
             })
             ->count();
 
@@ -351,10 +352,10 @@ class NotificationController extends Controller
                     })
                     ->orWhereHas('messages', function ($q) use ($user, $lowerName, $userIdStr) {
                         $q->where('user_id', $user->id)
-                          ->orWhere('message', 'LIKE', '%data-mention-id="'.$userIdStr.'"%');
+                            ->orWhere('message', 'LIKE', '%data-mention-id="'.$userIdStr.'"%');
                         if (! empty($lowerName)) {
                             $q->orWhereRaw('LOWER(message) LIKE ?', ['%@'.$lowerName.'%'])
-                              ->orWhereRaw('LOWER(message) LIKE ?', ['%data-name="'.strtolower($lowerName).'"%']);
+                                ->orWhereRaw('LOWER(message) LIKE ?', ['%data-name="'.strtolower($lowerName).'"%']);
                         }
                     });
             })
@@ -372,7 +373,7 @@ class NotificationController extends Controller
                 $query->orWhere('message', 'LIKE', '%data-mention-id="'.$userIdStr.'"%');
                 if (! empty($lowerName)) {
                     $query->orWhereRaw('LOWER(message) LIKE ?', ['%@'.$lowerName.'%'])
-                          ->orWhereRaw('LOWER(message) LIKE ?', ['%data-name="'.strtolower($lowerName).'"%']);
+                        ->orWhereRaw('LOWER(message) LIKE ?', ['%data-name="'.strtolower($lowerName).'"%']);
                 }
                 if (! empty($lowerFirst) && strlen($lowerFirst) >= 3) {
                     $query->orWhereRaw('LOWER(message) LIKE ?', ['%@'.$lowerFirst.'%']);

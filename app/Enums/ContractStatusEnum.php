@@ -4,7 +4,7 @@ namespace App\Enums;
 
 /**
  * Contract status values stored in t_contracts.status.
- * Note: Display labels are managed in the m_contract_statuses table (App\Models\ContractStatus).
+ * Note: Display labels are managed in the m_contract_statuses table (App\Models\Master\ContractStatus).
  */
 enum ContractStatusEnum: string
 {

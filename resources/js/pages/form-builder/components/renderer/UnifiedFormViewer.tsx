@@ -55,7 +55,7 @@ export const UnifiedFormViewer: React.FC<UnifiedFormViewerProps> = ({
             >
                 <div
                     className={cn(
-                        'bg-white text-slate-900 border-slate-300 force-light relative mx-auto mb-20 flex flex-col border shadow-md transition-all',
+                        'force-light relative mx-auto mb-20 flex flex-col border border-slate-300 bg-white text-slate-900 shadow-md transition-all',
                         'h-[297mm] w-[210mm] shrink-0 overflow-hidden rounded-sm',
                     )}
                 >

@@ -1,7 +1,9 @@
 <?php
 
+use App\Models\Master\ContractType;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -20,7 +22,7 @@ return new class extends Migration
         }
 
         // Backfill existing records: resolve root ancestor (level 0 / parent_id is null)
-        $allContractTypes = \App\Models\ContractType::all()->keyBy('id');
+        $allContractTypes = ContractType::all()->keyBy('id');
         foreach ($allContractTypes as $item) {
             if (! $item->parent_id) {
                 $ancestryId = null;
@@ -33,7 +35,7 @@ return new class extends Migration
             }
 
             if ($item->ancestry_id !== $ancestryId) {
-                \Illuminate\Support\Facades\DB::table('m_contract_types')
+                DB::table('m_contract_types')
                     ->where('id', $item->id)
                     ->update(['ancestry_id' => $ancestryId]);
             }

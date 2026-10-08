@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\JobLevel;
+use App\Models\Master\JobLevel;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -31,7 +31,7 @@ return new class extends Migration
         $jobLevels = JobLevel::all();
         foreach ($jobLevels as $level) {
             $rank = (int) $level->idjoblevel;
-            $nameStr = strtoupper(($level->name ?? '') . ' ' . ($level->code ?? ''));
+            $nameStr = strtoupper(($level->name ?? '').' '.($level->code ?? ''));
 
             $tier = 6;
             if (
@@ -47,11 +47,11 @@ return new class extends Migration
             } elseif (
                 in_array($rank, [70, 69, 68, 39, 38, 37, 36, 35]) ||
                 (str_contains($nameStr, 'MANAGER') &&
-                    !str_contains($nameStr, 'ASSISTANT') &&
-                    !str_contains($nameStr, 'ASST') &&
-                    !str_contains($nameStr, 'SENIOR') &&
-                    !str_contains($nameStr, 'GENERAL') &&
-                    !str_contains($nameStr, 'GROUP'))
+                    ! str_contains($nameStr, 'ASSISTANT') &&
+                    ! str_contains($nameStr, 'ASST') &&
+                    ! str_contains($nameStr, 'SENIOR') &&
+                    ! str_contains($nameStr, 'GENERAL') &&
+                    ! str_contains($nameStr, 'GROUP'))
             ) {
                 $tier = 3;
             } elseif (

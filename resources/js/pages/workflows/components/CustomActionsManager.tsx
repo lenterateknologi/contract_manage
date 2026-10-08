@@ -301,31 +301,32 @@ export function CustomActionsManager({
     const currentEditingPersonnelIndex = customActions.findIndex((a) => a.id === editingPersonnelActionId);
 
     return (
-        <div className="w-full min-w-0 bg-white dark:bg-zinc-900/90 border border-slate-200/80 dark:border-zinc-800 rounded-xl p-3.5 flex flex-col gap-3">
+        <div className="flex w-full min-w-0 flex-col gap-3 rounded-xl border border-slate-200/80 bg-white p-3.5 dark:border-zinc-800 dark:bg-zinc-900/90">
             {/* Header Section */}
-            <div className="flex flex-wrap items-center justify-between border-b border-slate-100 dark:border-zinc-800 pb-2.5 gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2.5 dark:border-zinc-800">
                 <div className="flex items-center gap-2">
-                    <div className="bg-primary/10 text-primary p-1.5 rounded-lg shrink-0">
+                    <div className="bg-primary/10 text-primary shrink-0 rounded-lg p-1.5">
                         <Sliders size={15} />
                     </div>
                     <div>
-                        <h3 className="text-xs font-bold uppercase tracking-wide text-slate-800 dark:text-zinc-100">
+                        <h3 className="text-xs font-bold tracking-wide text-slate-800 uppercase dark:text-zinc-100">
                             Konfigurasi Aksi Kustom (Custom Actions)
                         </h3>
                         <p className="text-[10px] text-slate-500 dark:text-zinc-400">
-                            Kelola tombol aksi dinamis alur kerja sesuai jenis Master Action (Setujui, Tolak, Tugaskan, Approval Tambahan, Pindah Workflow, Otomatis).
+                            Kelola tombol aksi dinamis alur kerja sesuai jenis Master Action (Setujui, Tolak, Tugaskan, Approval Tambahan, Pindah
+                            Workflow, Otomatis).
                         </p>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                    <span className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-[10px] font-semibold">
                         {customActions.length} Aksi Terpasang
                     </span>
                     <Button
                         type="button"
                         onClick={() => setAddModalOpen(true)}
-                        className="h-8 px-3 rounded-lg text-xs font-bold bg-primary text-white hover:bg-primary/90 flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                        className="bg-primary hover:bg-primary/90 flex h-8 cursor-pointer items-center gap-1.5 rounded-lg px-3 text-xs font-bold text-white shadow-2xs"
                     >
                         <PlusCircle size={14} />
                         <span>Tambah Aksi</span>
@@ -335,14 +336,12 @@ export function CustomActionsManager({
 
             {/* Empty State */}
             {customActions.length === 0 && (
-                <div className="rounded-xl border border-dashed border-slate-200 dark:border-zinc-800 p-8 text-center bg-slate-50/50 dark:bg-zinc-900/40 flex flex-col items-center justify-center gap-3">
-                    <div className="p-3 bg-primary/10 text-primary rounded-full">
+                <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-slate-200 bg-slate-50/50 p-8 text-center dark:border-zinc-800 dark:bg-zinc-900/40">
+                    <div className="bg-primary/10 text-primary rounded-full p-3">
                         <Sliders size={24} />
                     </div>
-                    <div className="space-y-1 max-w-md">
-                        <h4 className="text-xs font-bold text-slate-800 dark:text-zinc-100">
-                            Belum Ada Aksi Kustom Dikonfigurasi
-                        </h4>
+                    <div className="max-w-md space-y-1">
+                        <h4 className="text-xs font-bold text-slate-800 dark:text-zinc-100">Belum Ada Aksi Kustom Dikonfigurasi</h4>
                         <p className="text-[11px] text-slate-500 dark:text-zinc-400">
                             Pilih jenis Master Action di bawah untuk menambahkan tombol aksi kustom ke alur kerja ini:
                         </p>
@@ -356,7 +355,7 @@ export function CustomActionsManager({
                                     key={ma.id}
                                     type="button"
                                     onClick={() => handleAddFromMasterAction(ma.code)}
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-semibold text-slate-700 dark:text-zinc-200 hover:border-primary hover:text-primary transition-all shadow-2xs cursor-pointer"
+                                    className="hover:border-primary hover:text-primary inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs transition-all dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
                                 >
                                     <IconComp size={13} className="text-primary" />
                                     <span>+ {ma.name}</span>
@@ -379,37 +378,37 @@ export function CustomActionsManager({
                         approve: {
                             badgeBg: 'bg-emerald-600 text-white',
                             text: 'text-emerald-600 dark:text-emerald-400',
-                            icon: <Sparkles size={12} className="text-emerald-500 shrink-0" />,
+                            icon: <Sparkles size={12} className="shrink-0 text-emerald-500" />,
                             label: `#${actIdx + 1} Setujui`,
                         },
                         reject: {
                             badgeBg: 'bg-rose-600 text-white',
                             text: 'text-rose-600 dark:text-rose-400',
-                            icon: <Trash2 size={12} className="text-rose-500 shrink-0" />,
+                            icon: <Trash2 size={12} className="shrink-0 text-rose-500" />,
                             label: `#${actIdx + 1} Tolak`,
                         },
                         assign: {
                             badgeBg: 'bg-blue-600 text-white',
                             text: 'text-blue-600 dark:text-blue-400',
-                            icon: <UsersIcon size={12} className="text-blue-500 shrink-0" />,
+                            icon: <UsersIcon size={12} className="shrink-0 text-blue-500" />,
                             label: `#${actIdx + 1} Tugaskan`,
                         },
                         add_adhoc: {
                             badgeBg: 'bg-indigo-600 text-white',
                             text: 'text-indigo-600 dark:text-indigo-400',
-                            icon: <UserPlus size={12} className="text-indigo-500 shrink-0" />,
+                            icon: <UserPlus size={12} className="shrink-0 text-indigo-500" />,
                             label: `#${actIdx + 1} Tambahan`,
                         },
                         branch: {
                             badgeBg: 'bg-sky-600 text-white',
                             text: 'text-sky-600 dark:text-sky-400',
-                            icon: <GitBranch size={12} className="text-sky-500 shrink-0" />,
+                            icon: <GitBranch size={12} className="shrink-0 text-sky-500" />,
                             label: `#${actIdx + 1} Cabang`,
                         },
                         auto: {
                             badgeBg: 'bg-purple-600 text-white',
                             text: 'text-purple-600 dark:text-purple-400',
-                            icon: <Zap size={12} className="text-purple-500 shrink-0" />,
+                            icon: <Zap size={12} className="shrink-0 text-purple-500" />,
                             label: `#${actIdx + 1} Otomatis`,
                         },
                     };
@@ -446,16 +445,18 @@ export function CustomActionsManager({
                         <div
                             key={act.id || actIdx}
                             className={cn(
-                                "rounded-lg border bg-white dark:bg-zinc-900/90 transition-all p-3 shadow-2xs space-y-2.5",
+                                'space-y-2.5 rounded-lg border bg-white p-3 shadow-2xs transition-all dark:bg-zinc-900/90',
                                 act.is_active !== false
-                                    ? "border-slate-200/90 hover:border-slate-300 dark:border-zinc-800"
-                                    : "border-slate-200/50 bg-slate-50/50 dark:bg-zinc-900/40 opacity-60"
+                                    ? 'border-slate-200/90 hover:border-slate-300 dark:border-zinc-800'
+                                    : 'border-slate-200/50 bg-slate-50/50 opacity-60 dark:bg-zinc-900/40',
                             )}
                         >
                             {/* Row 1: Header (Badge, Master Action, Status Target, Buttons) */}
                             <div className="flex flex-wrap items-center justify-between gap-2.5">
-                                <div className="flex flex-wrap items-center gap-2 min-w-0">
-                                    <span className={cn("text-[10px] font-bold uppercase px-2 py-1 rounded-md tracking-wider shrink-0", theme.badgeBg)}>
+                                <div className="flex min-w-0 flex-wrap items-center gap-2">
+                                    <span
+                                        className={cn('shrink-0 rounded-md px-2 py-1 text-[10px] font-bold tracking-wider uppercase', theme.badgeBg)}
+                                    >
                                         {theme.label}
                                     </span>
 
@@ -474,7 +475,7 @@ export function CustomActionsManager({
                                                 });
                                             }}
                                         >
-                                            <SelectTrigger className="h-8.5 py-1.5 px-3 rounded-lg border-slate-200 bg-white text-xs font-semibold dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-2xs">
+                                            <SelectTrigger className="h-8.5 rounded-lg border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 shadow-2xs dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
                                                 <SelectValue placeholder="Pilih Master Action" />
                                             </SelectTrigger>
                                             <SelectContent className="rounded-lg border-slate-200 bg-white text-slate-800 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
@@ -497,21 +498,18 @@ export function CustomActionsManager({
                                                 });
                                             }}
                                         >
-                                            <SelectTrigger className="h-8.5 py-1.5 px-3 rounded-lg border-slate-200 bg-white text-xs font-medium dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-2xs">
+                                            <SelectTrigger className="h-8.5 rounded-lg border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-2xs dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
                                                 <SelectValue placeholder="Status Target" />
                                             </SelectTrigger>
-                                            <SelectContent className="rounded-lg border-slate-200 bg-white text-slate-800 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 max-h-72">
+                                            <SelectContent className="max-h-72 rounded-lg border-slate-200 bg-white text-slate-800 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
                                                 <SelectItem value="default" className="text-xs font-medium text-slate-500">
                                                     Status Tetap (Tidak Berubah)
                                                 </SelectItem>
                                                 {contractStatuses.map((status: any) => {
-                                                    const StatusIcon = status.icon && (LucideIcons as any)[status.icon] ? (LucideIcons as any)[status.icon] : null;
+                                                    const StatusIcon =
+                                                        status.icon && (LucideIcons as any)[status.icon] ? (LucideIcons as any)[status.icon] : null;
                                                     return (
-                                                        <SelectItem
-                                                            key={status.id}
-                                                            value={status.code}
-                                                            className="text-xs font-medium uppercase"
-                                                        >
+                                                        <SelectItem key={status.id} value={status.code} className="text-xs font-medium uppercase">
                                                             <div className="flex items-center gap-1.5">
                                                                 {StatusIcon ? (
                                                                     <StatusIcon
@@ -520,12 +518,13 @@ export function CustomActionsManager({
                                                                     />
                                                                 ) : (
                                                                     <div
-                                                                        className="h-2 w-2 rounded-full shrink-0"
+                                                                        className="h-2 w-2 shrink-0 rounded-full"
                                                                         style={{ backgroundColor: status.color || '#cbd5e1' }}
                                                                     />
                                                                 )}
                                                                 <span className="font-semibold">
-                                                                    {status.code?.toUpperCase()}{status.label ? ` • ${status.label}` : ''}
+                                                                    {status.code?.toUpperCase()}
+                                                                    {status.label ? ` • ${status.label}` : ''}
                                                                 </span>
                                                             </div>
                                                         </SelectItem>
@@ -537,25 +536,29 @@ export function CustomActionsManager({
                                 </div>
 
                                 {/* Right Side Header Controls */}
-                                <div className="flex items-center gap-1.5 shrink-0">
+                                <div className="flex shrink-0 items-center gap-1.5">
                                     {/* 1. Tombol Otoritas Akses Tombol */}
                                     <button
                                         type="button"
                                         title="Tentukan siapa yang berhak melihat dan mengklik tombol aksi ini"
                                         onClick={() => setEditingAuthorityActionId(act.id)}
                                         className={cn(
-                                            "inline-flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs font-bold shadow-2xs transition-colors cursor-pointer border",
+                                            'inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-lg border px-3 text-xs font-bold shadow-2xs transition-colors',
                                             authorityCount > 0
-                                                ? "bg-slate-800 text-white border-slate-800 hover:bg-slate-700 dark:bg-zinc-700 dark:border-zinc-600"
-                                                : "bg-white dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-zinc-300 hover:bg-slate-50"
+                                                ? 'border-slate-800 bg-slate-800 text-white hover:bg-slate-700 dark:border-zinc-600 dark:bg-zinc-700'
+                                                : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300',
                                         )}
                                     >
                                         <Key size={13} className="text-amber-400" />
                                         <span>Otoritas Tombol</span>
-                                        <span className={cn(
-                                            "ml-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none",
-                                            authorityCount > 0 ? "bg-white/20 text-white" : "bg-slate-200 dark:bg-zinc-700 text-slate-700 dark:text-zinc-300"
-                                        )}>
+                                        <span
+                                            className={cn(
+                                                'ml-0.5 rounded-full px-1.5 py-0.5 text-[10px] leading-none font-bold',
+                                                authorityCount > 0
+                                                    ? 'bg-white/20 text-white'
+                                                    : 'bg-slate-200 text-slate-700 dark:bg-zinc-700 dark:text-zinc-300',
+                                            )}
+                                        >
                                             {authorityCount}
                                         </span>
                                     </button>
@@ -564,21 +567,27 @@ export function CustomActionsManager({
                                     {isSelectionAction && !isCrossWorkflowMode && (
                                         <button
                                             type="button"
-                                            title={actionCode === 'add_adhoc' ? 'Tentukan lingkup reviewer tambahan' : 'Tentukan daftar personil yang bisa dipilih saat aksi digunakan'}
+                                            title={
+                                                actionCode === 'add_adhoc'
+                                                    ? 'Tentukan lingkup reviewer tambahan'
+                                                    : 'Tentukan daftar personil yang bisa dipilih saat aksi digunakan'
+                                            }
                                             onClick={() => setEditingPersonnelActionId(act.id)}
                                             className={cn(
-                                                "inline-flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs font-bold shadow-2xs transition-colors cursor-pointer border",
+                                                'inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-lg border px-3 text-xs font-bold shadow-2xs transition-colors',
                                                 personnelCount > 0
-                                                    ? "bg-primary text-white border-primary hover:bg-primary/90"
-                                                    : "bg-white dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-zinc-300 hover:bg-slate-50"
+                                                    ? 'bg-primary border-primary hover:bg-primary/90 text-white'
+                                                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300',
                                             )}
                                         >
                                             <UsersIcon size={13} className="text-blue-500" />
                                             <span>{actionCode === 'add_adhoc' ? 'Atur Reviewer' : 'Tentukan Personil'}</span>
-                                            <span className={cn(
-                                                "ml-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none",
-                                                personnelCount > 0 ? "bg-white/25 text-white" : "bg-primary text-white"
-                                            )}>
+                                            <span
+                                                className={cn(
+                                                    'ml-0.5 rounded-full px-1.5 py-0.5 text-[10px] leading-none font-bold',
+                                                    personnelCount > 0 ? 'bg-white/25 text-white' : 'bg-primary text-white',
+                                                )}
+                                            >
                                                 {personnelCount}
                                             </span>
                                         </button>
@@ -589,10 +598,10 @@ export function CustomActionsManager({
                                         type="button"
                                         onClick={() => updateAction(actIdx, { is_active: act.is_active !== false ? false : true })}
                                         className={cn(
-                                            'flex h-8 cursor-pointer items-center rounded-lg px-3 text-[10px] font-bold uppercase transition-all shadow-2xs ml-0.5',
+                                            'ml-0.5 flex h-8 cursor-pointer items-center rounded-lg px-3 text-[10px] font-bold uppercase shadow-2xs transition-all',
                                             act.is_active !== false
                                                 ? 'bg-emerald-600 text-white hover:bg-emerald-700'
-                                                : 'bg-slate-200 text-slate-600 dark:bg-zinc-800 dark:text-zinc-400 hover:bg-slate-300'
+                                                : 'bg-slate-200 text-slate-600 hover:bg-slate-300 dark:bg-zinc-800 dark:text-zinc-400',
                                         )}
                                     >
                                         {act.is_active !== false ? 'AKTIF' : 'NON-AKTIF'}
@@ -603,7 +612,7 @@ export function CustomActionsManager({
                                         type="button"
                                         title="Duplikasi Aksi Kustom Ini"
                                         onClick={() => handleDuplicateAction(actIdx)}
-                                        className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-700 transition-colors cursor-pointer"
+                                        className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
                                     >
                                         <Copy size={13} />
                                     </button>
@@ -613,7 +622,7 @@ export function CustomActionsManager({
                                         type="button"
                                         title="Hapus Aksi Kustom Ini"
                                         onClick={() => setActionToDelete({ index: actIdx, name: act.alias || act.name || 'Aksi' })}
-                                        className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/60 transition-colors cursor-pointer"
+                                        className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-600 transition-colors hover:bg-red-100 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-400 dark:hover:bg-red-900/60"
                                     >
                                         <Trash2 size={13} />
                                     </button>
@@ -622,38 +631,36 @@ export function CustomActionsManager({
 
                             {/* Row 2: Standardized Normalized Fields */}
                             {act.is_active !== false && (
-                                <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 pt-3 border-t border-slate-100 dark:border-zinc-800/80 text-xs">
+                                <div className="grid grid-cols-1 gap-3 border-t border-slate-100 pt-3 text-xs sm:grid-cols-12 dark:border-zinc-800/80">
                                     {/* Label Tombol (Alias) */}
-                                    <div className="sm:col-span-3 space-y-1">
-                                        <label className="text-[11px] font-semibold text-slate-700 dark:text-zinc-300 block">
+                                    <div className="space-y-1 sm:col-span-3">
+                                        <label className="block text-[11px] font-semibold text-slate-700 dark:text-zinc-300">
                                             Label Tombol (Alias):
                                         </label>
                                         <input
                                             type="text"
                                             value={act.alias || ''}
                                             onChange={(e) => updateAction(actIdx, { alias: e.target.value })}
-                                            className="h-8.5 w-full py-1.5 px-3 rounded-lg border border-slate-200 bg-white text-xs font-medium transition-all focus:border-primary focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-2xs placeholder:text-slate-400"
+                                            className="focus:border-primary h-8.5 w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-2xs transition-all placeholder:text-slate-400 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                                             placeholder="Label tombol..."
                                         />
                                     </div>
 
                                     {/* Deskripsi Aksi */}
-                                    <div className="sm:col-span-4 space-y-1">
-                                        <label className="text-[11px] font-semibold text-slate-700 dark:text-zinc-300 block">
-                                            Deskripsi Aksi:
-                                        </label>
+                                    <div className="space-y-1 sm:col-span-4">
+                                        <label className="block text-[11px] font-semibold text-slate-700 dark:text-zinc-300">Deskripsi Aksi:</label>
                                         <input
                                             type="text"
                                             value={act.description || ''}
                                             onChange={(e) => updateAction(actIdx, { description: e.target.value })}
-                                            className="h-8.5 w-full py-1.5 px-3 rounded-lg border border-slate-200 bg-white text-xs font-medium transition-all focus:border-primary focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-2xs placeholder:text-slate-400"
+                                            className="focus:border-primary h-8.5 w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-2xs transition-all placeholder:text-slate-400 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                                             placeholder="Keterangan / penjelasan aksi..."
                                         />
                                     </div>
 
                                     {/* Smart Visibility Dropdown */}
-                                    <div className="sm:col-span-3 space-y-1">
-                                        <label className="text-[11px] font-semibold text-slate-700 dark:text-zinc-300 block">
+                                    <div className="space-y-1 sm:col-span-3">
+                                        <label className="block text-[11px] font-semibold text-slate-700 dark:text-zinc-300">
                                             Kondisi Visibilitas:
                                         </label>
                                         <div className="w-full">
@@ -661,7 +668,7 @@ export function CustomActionsManager({
                                                 value={act.visibility_condition || 'always'}
                                                 onValueChange={(val) => updateAction(actIdx, { visibility_condition: val as any })}
                                             >
-                                                <SelectTrigger className="h-8.5 py-1.5 px-3 rounded-lg border-slate-200 bg-white text-xs font-medium dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-2xs">
+                                                <SelectTrigger className="h-8.5 rounded-lg border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-2xs dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
                                                     <SelectValue placeholder="Pilih Kondisi" />
                                                 </SelectTrigger>
                                                 <SelectContent className="rounded-lg border-slate-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
@@ -686,12 +693,12 @@ export function CustomActionsManager({
                                     </div>
 
                                     {/* Cakupan Tahap (All vs Specific) */}
-                                    <div className="sm:col-span-2 space-y-1 flex flex-col justify-end">
-                                        <label className="text-[11px] font-semibold text-slate-700 dark:text-zinc-300 block sm:text-right">
+                                    <div className="flex flex-col justify-end space-y-1 sm:col-span-2">
+                                        <label className="block text-[11px] font-semibold text-slate-700 sm:text-right dark:text-zinc-300">
                                             Cakupan Tahap:
                                         </label>
-                                        <div className="flex items-center justify-between sm:justify-end gap-2.5 h-8.5">
-                                            <label className="flex items-center gap-1 text-xs text-slate-700 dark:text-zinc-300 cursor-pointer font-medium whitespace-nowrap">
+                                        <div className="flex h-8.5 items-center justify-between gap-2.5 sm:justify-end">
+                                            <label className="flex cursor-pointer items-center gap-1 text-xs font-medium whitespace-nowrap text-slate-700 dark:text-zinc-300">
                                                 <input
                                                     type="radio"
                                                     name={`scope_${act.id}`}
@@ -701,7 +708,7 @@ export function CustomActionsManager({
                                                 />
                                                 Semua
                                             </label>
-                                            <label className="flex items-center gap-1 text-xs text-slate-700 dark:text-zinc-300 cursor-pointer font-medium whitespace-nowrap">
+                                            <label className="flex cursor-pointer items-center gap-1 text-xs font-medium whitespace-nowrap text-slate-700 dark:text-zinc-300">
                                                 <input
                                                     type="radio"
                                                     name={`scope_${act.id}`}
@@ -716,7 +723,7 @@ export function CustomActionsManager({
 
                                     {/* Specific Steps MultiSelect */}
                                     {act.scope === 'specific_steps' && (
-                                        <div className="sm:col-span-12 pt-1">
+                                        <div className="pt-1 sm:col-span-12">
                                             <SearchableMultiSelect
                                                 values={act.step_ids || []}
                                                 onValuesChange={(vals) => updateAction(actIdx, { step_ids: vals })}
@@ -727,9 +734,9 @@ export function CustomActionsManager({
                                     )}
 
                                     {/* Transition Options Selector (Mirrors StepActionConfigCard) */}
-                                    <div className="sm:col-span-12 pt-2 border-t border-dashed border-slate-200 dark:border-zinc-800 space-y-2">
+                                    <div className="space-y-2 border-t border-dashed border-slate-200 pt-2 sm:col-span-12 dark:border-zinc-800">
                                         <div className="flex flex-wrap items-center gap-2.5">
-                                            <span className="text-[11px] font-semibold text-slate-700 dark:text-zinc-300 shrink-0 flex items-center gap-1.5">
+                                            <span className="flex shrink-0 items-center gap-1.5 text-[11px] font-semibold text-slate-700 dark:text-zinc-300">
                                                 <Layers size={13} className="text-primary" />
                                                 <span>Transisi Alur Langkah:</span>
                                             </span>
@@ -789,7 +796,7 @@ export function CustomActionsManager({
                                                         }
                                                     }}
                                                 >
-                                                    <SelectTrigger className="h-8.5 py-1.5 px-3 rounded-lg border-slate-200 bg-white text-xs font-medium dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-2xs">
+                                                    <SelectTrigger className="h-8.5 rounded-lg border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-2xs dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
                                                         <SelectValue placeholder="Pilih Perilaku Transisi" />
                                                     </SelectTrigger>
                                                     <SelectContent className="rounded-lg border-slate-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
@@ -819,13 +826,14 @@ export function CustomActionsManager({
                                                             });
                                                         }}
                                                     >
-                                                        <SelectTrigger className="h-8.5 py-1.5 px-3 rounded-lg border-slate-200 bg-white text-xs font-medium dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-2xs">
+                                                        <SelectTrigger className="h-8.5 rounded-lg border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-2xs dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
                                                             <SelectValue placeholder="Pilih Tahap Target" />
                                                         </SelectTrigger>
                                                         <SelectContent className="rounded-lg border-slate-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
                                                             {steps.map((s: any, sIdx: number) => (
                                                                 <SelectItem key={s.id} value={String(s.id)} className="text-xs font-medium">
-                                                                    Tahap {s.step || sIdx + 1}: {s.label || s.name || s.description || `Langkah ${sIdx + 1}`}
+                                                                    Tahap {s.step || sIdx + 1}:{' '}
+                                                                    {s.label || s.name || s.description || `Langkah ${sIdx + 1}`}
                                                                 </SelectItem>
                                                             ))}
                                                         </SelectContent>
@@ -838,7 +846,10 @@ export function CustomActionsManager({
                                                 <>
                                                     <div className="w-52 sm:w-60">
                                                         <Select
-                                                            value={act.transition_config?.workflow_id || (allWorkflows[0]?.id ? String(allWorkflows[0].id) : '')}
+                                                            value={
+                                                                act.transition_config?.workflow_id ||
+                                                                (allWorkflows[0]?.id ? String(allWorkflows[0].id) : '')
+                                                            }
                                                             onValueChange={(val) => {
                                                                 const targetWf = allWorkflows.find((w: any) => String(w.id) === val);
                                                                 updateAction(actIdx, {
@@ -851,7 +862,7 @@ export function CustomActionsManager({
                                                                 });
                                                             }}
                                                         >
-                                                            <SelectTrigger className="h-8.5 py-1.5 px-3 rounded-lg border-slate-200 bg-white text-xs font-medium dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-2xs">
+                                                            <SelectTrigger className="h-8.5 rounded-lg border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-2xs dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
                                                                 <SelectValue placeholder="Pilih Target Workflow" />
                                                             </SelectTrigger>
                                                             <SelectContent className="z-[9999] rounded-lg border-slate-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
@@ -859,7 +870,10 @@ export function CustomActionsManager({
                                                                     <SelectItem key={w.id} value={String(w.id)} className="text-xs font-medium">
                                                                         <div className="flex items-center gap-1.5">
                                                                             <WorkflowIcon size={12} className="shrink-0 text-violet-500" />
-                                                                            <span>{w.name} {w.contract_type ? `[${w.contract_type.name}]` : '[SEMUA JENIS]'}</span>
+                                                                            <span>
+                                                                                {w.name}{' '}
+                                                                                {w.contract_type ? `[${w.contract_type.name}]` : '[SEMUA JENIS]'}
+                                                                            </span>
                                                                         </div>
                                                                     </SelectItem>
                                                                 ))}
@@ -880,16 +894,22 @@ export function CustomActionsManager({
                                                                 })
                                                             }
                                                         >
-                                                            <SelectTrigger className="h-8.5 py-1.5 px-3 rounded-lg border-slate-200 bg-white text-xs font-medium dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-2xs">
+                                                            <SelectTrigger className="h-8.5 rounded-lg border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-2xs dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
                                                                 <SelectValue placeholder="Pilih Tahap Target" />
                                                             </SelectTrigger>
                                                             <SelectContent className="rounded-lg border-slate-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
                                                                 {(
                                                                     allWorkflows.find(
-                                                                        (w: any) => String(w.id) === (act.transition_config?.workflow_id || allWorkflows[0]?.id),
+                                                                        (w: any) =>
+                                                                            String(w.id) ===
+                                                                            (act.transition_config?.workflow_id || allWorkflows[0]?.id),
                                                                     )?.steps || []
                                                                 ).map((s: any, sIdx: number) => (
-                                                                    <SelectItem key={s.id} value={String(s.step || sIdx + 1)} className="text-xs font-medium">
+                                                                    <SelectItem
+                                                                        key={s.id}
+                                                                        value={String(s.step || sIdx + 1)}
+                                                                        className="text-xs font-medium"
+                                                                    >
                                                                         Tahap {s.step || sIdx + 1}: {s.label || `Langkah ${sIdx + 1}`}
                                                                     </SelectItem>
                                                                 ))}
@@ -910,19 +930,31 @@ export function CustomActionsManager({
                                                                 });
                                                             }}
                                                         >
-                                                            <SelectTrigger className="h-8.5 py-1.5 px-3 rounded-lg border-slate-200 bg-white text-xs font-medium dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-2xs">
+                                                            <SelectTrigger className="h-8.5 rounded-lg border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-2xs dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
                                                                 <SelectValue placeholder="Titik Kembali" />
                                                             </SelectTrigger>
                                                             <SelectContent className="rounded-lg border-slate-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
-                                                                <SelectItem value="branch_next" className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                                                                <SelectItem
+                                                                    value="branch_next"
+                                                                    className="text-xs font-semibold text-emerald-600 dark:text-emerald-400"
+                                                                >
                                                                     <div className="flex items-center gap-1.5">
-                                                                        <Sparkles size={13} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
+                                                                        <Sparkles
+                                                                            size={13}
+                                                                            className="shrink-0 text-emerald-600 dark:text-emerald-400"
+                                                                        />
                                                                         <span>Lanjut ke Step Berikutnya (Origin + 1)</span>
                                                                     </div>
                                                                 </SelectItem>
-                                                                <SelectItem value="branch_origin" className="text-xs font-semibold text-amber-600 dark:text-amber-400">
+                                                                <SelectItem
+                                                                    value="branch_origin"
+                                                                    className="text-xs font-semibold text-amber-600 dark:text-amber-400"
+                                                                >
                                                                     <div className="flex items-center gap-1.5">
-                                                                        <CornerDownLeft size={13} className="shrink-0 text-amber-600 dark:text-amber-400" />
+                                                                        <CornerDownLeft
+                                                                            size={13}
+                                                                            className="shrink-0 text-amber-600 dark:text-amber-400"
+                                                                        />
                                                                         <span>Kembali ke Step Pemanggil (Origin Step)</span>
                                                                     </div>
                                                                 </SelectItem>
@@ -942,9 +974,9 @@ export function CustomActionsManager({
 
                                     {/* Dedicated Setting for Approval Tambahan (Position of Reviewer) */}
                                     {actionCode === 'add_adhoc' && (
-                                        <div className="sm:col-span-12 pt-2 border-t border-dashed border-slate-200 dark:border-zinc-800 space-y-1.5">
+                                        <div className="space-y-1.5 border-t border-dashed border-slate-200 pt-2 sm:col-span-12 dark:border-zinc-800">
                                             <div className="flex flex-wrap items-center gap-2.5">
-                                                <span className="text-[11px] font-semibold text-slate-700 dark:text-zinc-300 shrink-0 flex items-center gap-1.5">
+                                                <span className="flex shrink-0 items-center gap-1.5 text-[11px] font-semibold text-slate-700 dark:text-zinc-300">
                                                     <UserPlus size={13} className="text-indigo-500" />
                                                     <span>Posisi Penempatan Reviewer Tambahan:</span>
                                                 </span>
@@ -954,25 +986,25 @@ export function CustomActionsManager({
                                                         value={act.target_step_position || 'at'}
                                                         onValueChange={(val) => updateAction(actIdx, { target_step_position: val as any })}
                                                     >
-                                                        <SelectTrigger className="h-8.5 py-1.5 px-3 rounded-lg border-slate-200 bg-white text-xs font-medium dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-2xs">
+                                                        <SelectTrigger className="h-8.5 rounded-lg border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-2xs dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
                                                             <SelectValue placeholder="Pilih Posisi" />
                                                         </SelectTrigger>
                                                         <SelectContent className="rounded-lg border-slate-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
                                                             <SelectItem value="at" className="text-xs font-medium">
                                                                 <div className="flex items-center gap-1.5">
-                                                                    <Settings2 size={13} className="text-slate-400 shrink-0" />
+                                                                    <Settings2 size={13} className="shrink-0 text-slate-400" />
                                                                     <span>Pada Tahap (Saat Ini)</span>
                                                                 </div>
                                                             </SelectItem>
                                                             <SelectItem value="before" className="text-xs font-medium">
                                                                 <div className="flex items-center gap-1.5">
-                                                                    <CornerDownLeft size={13} className="text-amber-500 shrink-0" />
+                                                                    <CornerDownLeft size={13} className="shrink-0 text-amber-500" />
                                                                     <span>Sebelum Tahap</span>
                                                                 </div>
                                                             </SelectItem>
                                                             <SelectItem value="after" className="text-xs font-medium">
                                                                 <div className="flex items-center gap-1.5">
-                                                                    <ArrowRight size={13} className="text-emerald-500 shrink-0" />
+                                                                    <ArrowRight size={13} className="shrink-0 text-emerald-500" />
                                                                     <span>Setelah Tahap</span>
                                                                 </div>
                                                             </SelectItem>
@@ -984,9 +1016,9 @@ export function CustomActionsManager({
                                     )}
 
                                     {/* Kolom Wajib & Autofill / Reset Data Otomatis */}
-                                    <div className="sm:col-span-12 pt-2 border-t border-dashed border-slate-200 dark:border-zinc-800 grid grid-cols-1 sm:grid-cols-12 gap-3">
-                                        <div className="sm:col-span-6 space-y-1">
-                                            <label className="text-[11px] font-semibold text-slate-700 dark:text-zinc-300 block">
+                                    <div className="grid grid-cols-1 gap-3 border-t border-dashed border-slate-200 pt-2 sm:col-span-12 sm:grid-cols-12 dark:border-zinc-800">
+                                        <div className="space-y-1 sm:col-span-6">
+                                            <label className="block text-[11px] font-semibold text-slate-700 dark:text-zinc-300">
                                                 Kolom Wajib Diisi (Required):
                                             </label>
                                             <SearchableMultiSelectPortal
@@ -998,8 +1030,8 @@ export function CustomActionsManager({
                                             />
                                         </div>
 
-                                        <div className="sm:col-span-6 space-y-1">
-                                            <label className="text-[11px] font-semibold text-slate-700 dark:text-zinc-300 block">
+                                        <div className="space-y-1 sm:col-span-6">
+                                            <label className="block text-[11px] font-semibold text-slate-700 dark:text-zinc-300">
                                                 Aksi & Pengisian Data Otomatis (Autofill / Reset):
                                             </label>
                                             <SearchableMultiSelectPortal
@@ -1020,24 +1052,24 @@ export function CustomActionsManager({
 
             {/* Modal Tambah Master Action Baru */}
             <Dialog open={addModalOpen} onOpenChange={setAddModalOpen}>
-                <DialogContent className="sm:max-w-[550px] border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 rounded-xl p-0 shadow-2xl overflow-hidden">
-                    <div className="px-5 py-4 border-b border-slate-100 dark:border-zinc-800 bg-slate-50/70 dark:bg-zinc-800/40 flex items-center justify-between">
+                <DialogContent className="overflow-hidden rounded-xl border-slate-200 bg-white p-0 text-slate-800 shadow-2xl sm:max-w-[550px] dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100">
+                    <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/70 px-5 py-4 dark:border-zinc-800 dark:bg-zinc-800/40">
                         <div className="flex items-center gap-2.5">
-                            <div className="p-2 bg-primary/10 text-primary rounded-lg">
+                            <div className="bg-primary/10 text-primary rounded-lg p-2">
                                 <PlusCircle size={18} />
                             </div>
                             <div>
                                 <DialogTitle className="text-sm font-bold text-slate-800 dark:text-zinc-100">
                                     Tambah Aksi Kustom (Master Action)
                                 </DialogTitle>
-                                <DialogDescription className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
+                                <DialogDescription className="mt-0.5 text-xs text-slate-500 dark:text-zinc-400">
                                     Pilih jenis Master Action yang ingin ditambahkan ke tombol aksi alur kerja.
                                 </DialogDescription>
                             </div>
                         </div>
                     </div>
 
-                    <div className="p-5 space-y-2.5 max-h-[70vh] overflow-y-auto">
+                    <div className="max-h-[70vh] space-y-2.5 overflow-y-auto p-5">
                         {MASTER_ACTIONS.map((ma: any) => {
                             const tmpl = CUSTOM_ACTION_TEMPLATES.find((t) => t.action_code === ma.code) || CUSTOM_ACTION_TEMPLATES[0];
                             const IconComp = tmpl.icon || Sliders;
@@ -1046,37 +1078,30 @@ export function CustomActionsManager({
                                     key={ma.id || ma.code}
                                     type="button"
                                     onClick={() => handleAddFromMasterAction(ma.code)}
-                                    className="w-full text-left p-3 rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-primary hover:bg-primary/5 transition-all flex items-start gap-3 group cursor-pointer"
+                                    className="hover:border-primary hover:bg-primary/5 group flex w-full cursor-pointer items-start gap-3 rounded-xl border border-slate-200/90 bg-white p-3 text-left transition-all dark:border-zinc-800 dark:bg-zinc-900"
                                 >
-                                    <div className={cn("p-2 rounded-lg shrink-0 mt-0.5", tmpl.badgeBg)}>
+                                    <div className={cn('mt-0.5 shrink-0 rounded-lg p-2', tmpl.badgeBg)}>
                                         <IconComp size={16} className="text-white" />
                                     </div>
-                                    <div className="flex-1 min-w-0">
+                                    <div className="min-w-0 flex-1">
                                         <div className="flex items-center gap-2">
-                                            <h4 className="text-xs font-bold text-slate-800 dark:text-zinc-100 group-hover:text-primary transition-colors">
+                                            <h4 className="group-hover:text-primary text-xs font-bold text-slate-800 transition-colors dark:text-zinc-100">
                                                 {ma.name}
                                             </h4>
-                                            <span className="text-[10px] font-mono text-slate-400 uppercase bg-slate-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded">
+                                            <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] text-slate-400 uppercase dark:bg-zinc-800">
                                                 {ma.code}
                                             </span>
                                         </div>
-                                        <p className="text-[11px] text-slate-500 dark:text-zinc-400 mt-0.5 leading-relaxed">
-                                            {tmpl.description}
-                                        </p>
+                                        <p className="mt-0.5 text-[11px] leading-relaxed text-slate-500 dark:text-zinc-400">{tmpl.description}</p>
                                     </div>
-                                    <Plus size={15} className="text-slate-400 group-hover:text-primary shrink-0 mt-1" />
+                                    <Plus size={15} className="group-hover:text-primary mt-1 shrink-0 text-slate-400" />
                                 </button>
                             );
                         })}
                     </div>
 
-                    <DialogFooter className="p-3 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-800/50">
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            onClick={() => setAddModalOpen(false)}
-                            className="h-8.5 px-4 text-xs font-semibold"
-                        >
+                    <DialogFooter className="border-t border-slate-100 bg-slate-50/50 p-3 dark:border-zinc-800 dark:bg-zinc-800/50">
+                        <Button type="button" variant="ghost" onClick={() => setAddModalOpen(false)} className="h-8.5 px-4 text-xs font-semibold">
                             Batal
                         </Button>
                     </DialogFooter>
@@ -1084,34 +1109,32 @@ export function CustomActionsManager({
             </Dialog>
 
             {/* Modal Konfirmasi Hapus Aksi */}
-            <Dialog open={actionToDelete !== null} onOpenChange={(open) => { if (!open) setActionToDelete(null); }}>
-                <DialogContent className="sm:max-w-[420px] border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 rounded-xl p-5 shadow-2xl">
+            <Dialog
+                open={actionToDelete !== null}
+                onOpenChange={(open) => {
+                    if (!open) setActionToDelete(null);
+                }}
+            >
+                <DialogContent className="rounded-xl border-slate-200 bg-white p-5 text-slate-800 shadow-2xl sm:max-w-[420px] dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100">
                     <div className="flex items-start gap-3.5">
-                        <div className="p-2.5 bg-red-100 text-red-600 dark:bg-red-950/60 dark:text-red-400 rounded-full shrink-0">
+                        <div className="shrink-0 rounded-full bg-red-100 p-2.5 text-red-600 dark:bg-red-950/60 dark:text-red-400">
                             <Trash2 size={20} />
                         </div>
                         <div className="space-y-1.5">
-                            <DialogTitle className="text-sm font-bold text-slate-800 dark:text-zinc-100">
-                                Hapus Aksi Kustom?
-                            </DialogTitle>
-                            <DialogDescription className="text-xs text-slate-500 dark:text-zinc-400 leading-relaxed">
+                            <DialogTitle className="text-sm font-bold text-slate-800 dark:text-zinc-100">Hapus Aksi Kustom?</DialogTitle>
+                            <DialogDescription className="text-xs leading-relaxed text-slate-500 dark:text-zinc-400">
                                 Apakah Anda yakin ingin menghapus aksi <strong>"{actionToDelete?.name}"</strong> dari alur kerja ini?
                             </DialogDescription>
                         </div>
                     </div>
                     <DialogFooter className="mt-4 flex items-center justify-end gap-2">
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            onClick={() => setActionToDelete(null)}
-                            className="h-8.5 px-3.5 text-xs font-semibold"
-                        >
+                        <Button type="button" variant="ghost" onClick={() => setActionToDelete(null)} className="h-8.5 px-3.5 text-xs font-semibold">
                             Batal
                         </Button>
                         <Button
                             type="button"
                             onClick={handleConfirmDelete}
-                            className="h-8.5 px-4 text-xs font-bold bg-red-600 hover:bg-red-700 text-white"
+                            className="h-8.5 bg-red-600 px-4 text-xs font-bold text-white hover:bg-red-700"
                         >
                             Hapus Aksi
                         </Button>
@@ -1121,25 +1144,32 @@ export function CustomActionsManager({
 
             {/* Modal 1: Otoritas Akses Tombol */}
             {!!editingAuthorityActionId && (
-                <Dialog open={!!editingAuthorityActionId} onOpenChange={(open) => { if (!open) setEditingAuthorityActionId(null); }}>
-                    <DialogContent className="sm:max-w-[96vw] w-[96vw] max-w-[96vw] h-[90vh] max-h-[90vh] border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 rounded-[12px] border p-0 shadow-2xl overflow-hidden flex flex-col">
-                        <div className="px-6 py-4 border-b border-slate-700 bg-slate-800 text-white flex items-center justify-between rounded-t-[12px] shrink-0">
+                <Dialog
+                    open={!!editingAuthorityActionId}
+                    onOpenChange={(open) => {
+                        if (!open) setEditingAuthorityActionId(null);
+                    }}
+                >
+                    <DialogContent className="flex h-[90vh] max-h-[90vh] w-[96vw] max-w-[96vw] flex-col overflow-hidden rounded-[12px] border border-slate-200/80 bg-white p-0 text-slate-800 shadow-2xl sm:max-w-[96vw] dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100">
+                        <div className="flex shrink-0 items-center justify-between rounded-t-[12px] border-b border-slate-700 bg-slate-800 px-6 py-4 text-white">
                             <div className="flex items-center gap-3">
-                                <div className="bg-white/20 text-white border border-white/20 flex h-9 w-9 items-center justify-center rounded-lg">
+                                <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/20 bg-white/20 text-white">
                                     <Key size={18} className="text-amber-400" />
                                 </div>
                                 <div>
                                     <DialogTitle className="text-sm font-bold tracking-tight text-white">
-                                        Otoritas Akses Tombol — {currentEditingAuthorityAction?.alias || currentEditingAuthorityAction?.name || 'Aksi Kustom'}
+                                        Otoritas Akses Tombol —{' '}
+                                        {currentEditingAuthorityAction?.alias || currentEditingAuthorityAction?.name || 'Aksi Kustom'}
                                     </DialogTitle>
-                                    <DialogDescription className="text-white/80 text-xs font-medium mt-0.5">
-                                        Tentukan pengguna/role/departemen yang berhak <strong>melihat dan mengklik tombol</strong> ini di detail kontrak.
+                                    <DialogDescription className="mt-0.5 text-xs font-medium text-white/80">
+                                        Tentukan pengguna/role/departemen yang berhak <strong>melihat dan mengklik tombol</strong> ini di detail
+                                        kontrak.
                                     </DialogDescription>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="p-6 bg-white dark:bg-zinc-900 flex-1 overflow-y-auto space-y-4">
+                        <div className="flex-1 space-y-4 overflow-y-auto bg-white p-6 dark:bg-zinc-900">
                             {currentEditingAuthorityAction && currentEditingAuthorityIndex >= 0 && (
                                 <AuthorityTableManager
                                     title={`Otoritas Akses Tombol: ${currentEditingAuthorityAction.alias || currentEditingAuthorityAction.name}`}
@@ -1162,11 +1192,11 @@ export function CustomActionsManager({
                             )}
                         </div>
 
-                        <DialogFooter className="p-4 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-800/50 flex items-center justify-end">
+                        <DialogFooter className="flex items-center justify-end border-t border-slate-100 bg-slate-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-800/50">
                             <Button
                                 type="button"
                                 onClick={() => setEditingAuthorityActionId(null)}
-                                className="cursor-pointer h-8.5 px-4 text-xs font-bold"
+                                className="h-8.5 cursor-pointer px-4 text-xs font-bold"
                             >
                                 Selesai
                             </Button>
@@ -1177,25 +1207,32 @@ export function CustomActionsManager({
 
             {/* Modal 2: Tentukan Personil / Pool Reviewer */}
             {!!editingPersonnelActionId && (
-                <Dialog open={!!editingPersonnelActionId} onOpenChange={(open) => { if (!open) setEditingPersonnelActionId(null); }}>
-                    <DialogContent className="sm:max-w-[96vw] w-[96vw] max-w-[96vw] h-[90vh] max-h-[90vh] border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 rounded-[12px] border p-0 shadow-2xl overflow-hidden flex flex-col">
-                        <div className="px-6 py-4 border-b border-primary/20 bg-primary text-white flex items-center justify-between rounded-t-[12px] shrink-0">
+                <Dialog
+                    open={!!editingPersonnelActionId}
+                    onOpenChange={(open) => {
+                        if (!open) setEditingPersonnelActionId(null);
+                    }}
+                >
+                    <DialogContent className="flex h-[90vh] max-h-[90vh] w-[96vw] max-w-[96vw] flex-col overflow-hidden rounded-[12px] border border-slate-200/80 bg-white p-0 text-slate-800 shadow-2xl sm:max-w-[96vw] dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100">
+                        <div className="border-primary/20 bg-primary flex shrink-0 items-center justify-between rounded-t-[12px] border-b px-6 py-4 text-white">
                             <div className="flex items-center gap-3">
-                                <div className="bg-white/20 text-white border border-white/20 flex h-9 w-9 items-center justify-center rounded-lg">
+                                <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/20 bg-white/20 text-white">
                                     <UsersIcon size={18} />
                                 </div>
                                 <div>
                                     <DialogTitle className="text-sm font-bold tracking-tight text-white">
-                                        Daftar Personil Yang Dapat Dipilih — {currentEditingPersonnelAction?.alias || currentEditingPersonnelAction?.name || 'Aksi Kustom'}
+                                        Daftar Personil Yang Dapat Dipilih —{' '}
+                                        {currentEditingPersonnelAction?.alias || currentEditingPersonnelAction?.name || 'Aksi Kustom'}
                                     </DialogTitle>
-                                    <DialogDescription className="text-white/80 text-xs font-medium mt-0.5">
-                                        Tentukan daftar pengguna/role/departemen yang <strong>bisa dipilih</strong> di dalam modal (misal: calon PIC, Reviewer, atau Penandatangan).
+                                    <DialogDescription className="mt-0.5 text-xs font-medium text-white/80">
+                                        Tentukan daftar pengguna/role/departemen yang <strong>bisa dipilih</strong> di dalam modal (misal: calon PIC,
+                                        Reviewer, atau Penandatangan).
                                     </DialogDescription>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="p-6 bg-white dark:bg-zinc-900 flex-1 overflow-y-auto space-y-4">
+                        <div className="flex-1 space-y-4 overflow-y-auto bg-white p-6 dark:bg-zinc-900">
                             {currentEditingPersonnelAction && currentEditingPersonnelIndex >= 0 && (
                                 <AuthorityTableManager
                                     title={`Daftar Personil Yang Dapat Dipilih: ${currentEditingPersonnelAction.alias || currentEditingPersonnelAction.name}`}
@@ -1218,11 +1255,11 @@ export function CustomActionsManager({
                             )}
                         </div>
 
-                        <DialogFooter className="p-4 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-800/50 flex items-center justify-end">
+                        <DialogFooter className="flex items-center justify-end border-t border-slate-100 bg-slate-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-800/50">
                             <Button
                                 type="button"
                                 onClick={() => setEditingPersonnelActionId(null)}
-                                className="cursor-pointer h-8.5 px-4 text-xs font-bold"
+                                className="h-8.5 cursor-pointer px-4 text-xs font-bold"
                             >
                                 Selesai
                             </Button>

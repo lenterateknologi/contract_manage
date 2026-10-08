@@ -8,5 +8,3 @@ const LucideIcons: Record<string, LucideIcon> = new Proxy(Icons as Record<string
 });
 
 export default LucideIcons;
-
-

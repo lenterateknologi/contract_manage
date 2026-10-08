@@ -2,13 +2,7 @@ import { Button } from '@/components/ui/buttons/Button';
 import { useDebounce } from '@/hooks/use-debounce';
 import { cn } from '@/lib/utils';
 import { router, usePage } from '@inertiajs/react';
-import {
-    Building2,
-    ExternalLink,
-    Search,
-    UserCheck,
-    X,
-} from 'lucide-react';
+import { Building2, ExternalLink, Search, UserCheck, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 interface UserWorkload {
@@ -145,18 +139,18 @@ export function WorkloadTab({ data, onNavigate }: WorkloadTabProps) {
     };
 
     return (
-        <div className="animate-in fade-in duration-200 space-y-4">
+        <div className="animate-in fade-in space-y-4 duration-200">
             {/* Selected PIC Spotlight Banner (Clean & Subtle) */}
             {selectedUser && (
-                <div className="rounded-lg border border-surface-border bg-surface-base p-3.5 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 shadow-2xs">
+                <div className="border-surface-border bg-surface-base flex flex-col items-start justify-between gap-3 rounded-lg border p-3.5 shadow-2xs md:flex-row md:items-center">
                     <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-muted text-text-main font-semibold text-xs border border-surface-border">
+                        <div className="bg-surface-muted text-text-main border-surface-border flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-xs font-semibold">
                             {selectedUser.initials ?? selectedUser.name.substring(0, 2).toUpperCase()}
                         </div>
                         <div>
-                            <div className="flex items-center gap-2 flex-wrap">
-                                <h3 className="text-sm font-semibold text-text-main">{selectedUser.name}</h3>
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-surface-muted text-text-soft">
+                            <div className="flex flex-wrap items-center gap-2">
+                                <h3 className="text-text-main text-sm font-semibold">{selectedUser.name}</h3>
+                                <span className="bg-surface-muted text-text-soft inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-medium">
                                     <span
                                         className={cn(
                                             'h-1.5 w-1.5 rounded-full',
@@ -166,34 +160,37 @@ export function WorkloadTab({ data, onNavigate }: WorkloadTabProps) {
                                     {selectedUser.load_status}
                                 </span>
                             </div>
-                            <p className="text-[11px] text-text-soft mt-0.5">
-                                {selectedUser.position || selectedUser.role} • {selectedUser.division_name || selectedUser.department_name || 'Divisi -'}
-                                {(selectedUser.company_group_name || selectedUser.org_group_name) ? ` • ${selectedUser.company_group_name || selectedUser.org_group_name}` : ''}
+                            <p className="text-text-soft mt-0.5 text-[11px]">
+                                {selectedUser.position || selectedUser.role} •{' '}
+                                {selectedUser.division_name || selectedUser.department_name || 'Divisi -'}
+                                {selectedUser.company_group_name || selectedUser.org_group_name
+                                    ? ` • ${selectedUser.company_group_name || selectedUser.org_group_name}`
+                                    : ''}
                                 {selectedUser.location_name ? ` • ${selectedUser.location_name}` : ''}
                             </p>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2 w-full md:w-auto justify-end flex-wrap">
-                        <div className="flex items-center gap-3 bg-surface-muted/50 px-3 py-1.5 rounded-md border border-surface-border text-xs">
+                    <div className="flex w-full flex-wrap items-center justify-end gap-2 md:w-auto">
+                        <div className="bg-surface-muted/50 border-surface-border flex items-center gap-3 rounded-md border px-3 py-1.5 text-xs">
                             <div>
-                                <span className="text-[9.5px] uppercase font-medium text-text-soft block">Di Proses</span>
-                                <span className="font-semibold text-text-main">
+                                <span className="text-text-soft block text-[9.5px] font-medium uppercase">Di Proses</span>
+                                <span className="text-text-main font-semibold">
                                     {(selectedUser.stats_this_month?.active ?? selectedUser.active_contracts_count ?? 0) +
                                         (selectedUser.stats_this_month?.pending ?? selectedUser.pending_tasks_count ?? 0)}
                                 </span>
                             </div>
-                            <div className="h-4 w-px bg-surface-border" />
+                            <div className="bg-surface-border h-4 w-px" />
                             <div>
-                                <span className="text-[9.5px] uppercase font-medium text-text-soft block">Arsip</span>
-                                <span className="font-semibold text-text-main">{selectedUser.stats_this_month?.completed || 0}</span>
+                                <span className="text-text-soft block text-[9.5px] font-medium uppercase">Arsip</span>
+                                <span className="text-text-main font-semibold">{selectedUser.stats_this_month?.completed || 0}</span>
                             </div>
                         </div>
 
                         <Button
                             size="sm"
                             variant="outline"
-                            className="text-xs font-medium flex items-center gap-1.5 h-8 border-surface-border"
+                            className="border-surface-border flex h-8 items-center gap-1.5 text-xs font-medium"
                             onClick={() => handleNavigate('contracts', { search: selectedUser.name })}
                         >
                             <span>Lihat Kontrak</span>
@@ -203,7 +200,7 @@ export function WorkloadTab({ data, onNavigate }: WorkloadTabProps) {
                         <button
                             type="button"
                             onClick={() => setSelectedUserId(null)}
-                            className="h-8 w-8 flex items-center justify-center rounded-md border border-surface-border bg-surface-base text-text-soft hover:text-text-main transition-colors"
+                            className="border-surface-border bg-surface-base text-text-soft hover:text-text-main flex h-8 w-8 items-center justify-center rounded-md border transition-colors"
                             title="Tutup Sorotan"
                         >
                             <X size={14} />
@@ -213,11 +210,11 @@ export function WorkloadTab({ data, onNavigate }: WorkloadTabProps) {
             )}
 
             {/* Header: Title + Search & Sort (No Top Tabs) */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+            <div className="flex flex-col justify-between gap-2.5 sm:flex-row sm:items-center">
                 <div className="flex items-center gap-2">
                     <UserCheck size={16} className="text-text-soft" />
-                    <span className="text-sm font-semibold text-text-main">Beban Kerja PIC</span>
-                    <span className="inline-flex items-center justify-center rounded px-2 py-0.5 text-[10.5px] font-medium bg-surface-muted text-text-soft">
+                    <span className="text-text-main text-sm font-semibold">Beban Kerja PIC</span>
+                    <span className="bg-surface-muted text-text-soft inline-flex items-center justify-center rounded px-2 py-0.5 text-[10.5px] font-medium">
                         {filteredWorkloads.length} Personil
                     </span>
                 </div>
@@ -225,31 +222,31 @@ export function WorkloadTab({ data, onNavigate }: WorkloadTabProps) {
                 {/* Search Input & Sort Options */}
                 <div className="flex items-center gap-2">
                     <div className="relative w-full sm:w-64">
-                        <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-soft pointer-events-none" />
+                        <Search size={13} className="text-text-soft pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2" />
                         <input
                             type="text"
                             placeholder="Cari PIC, divisi, grup..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="h-8 w-full rounded-md border border-surface-border bg-surface-base pl-7 pr-3 text-[11px] text-text-main placeholder:text-text-soft focus:outline-none focus:border-text-soft/60 transition-all"
+                            className="border-surface-border bg-surface-base text-text-main placeholder:text-text-soft focus:border-text-soft/60 h-8 w-full rounded-md border pr-3 pl-7 text-[11px] transition-all focus:outline-none"
                         />
                         {searchQuery && (
                             <button
                                 type="button"
                                 onClick={() => setSearchQuery('')}
-                                className="absolute right-2 top-1/2 -translate-y-1/2 text-text-soft hover:text-text-main text-[10px]"
+                                className="text-text-soft hover:text-text-main absolute top-1/2 right-2 -translate-y-1/2 text-[10px]"
                             >
                                 <X size={11} />
                             </button>
                         )}
                     </div>
 
-                    <div className="flex items-center gap-1 shrink-0">
+                    <div className="flex shrink-0 items-center gap-1">
                         <button
                             type="button"
                             onClick={() => handleSort('load')}
                             className={cn(
-                                'h-8 px-2.5 rounded-md border text-[11px] font-medium transition-all cursor-pointer',
+                                'h-8 cursor-pointer rounded-md border px-2.5 text-[11px] font-medium transition-all',
                                 sortBy === 'load'
                                     ? 'border-surface-border bg-surface-muted text-text-main'
                                     : 'border-surface-border bg-surface-base text-text-soft hover:text-text-main',
@@ -262,7 +259,7 @@ export function WorkloadTab({ data, onNavigate }: WorkloadTabProps) {
                             type="button"
                             onClick={() => handleSort('name')}
                             className={cn(
-                                'h-8 px-2.5 rounded-md border text-[11px] font-medium transition-all cursor-pointer',
+                                'h-8 cursor-pointer rounded-md border px-2.5 text-[11px] font-medium transition-all',
                                 sortBy === 'name'
                                     ? 'border-surface-border bg-surface-muted text-text-main'
                                     : 'border-surface-border bg-surface-base text-text-soft hover:text-text-main',
@@ -277,11 +274,11 @@ export function WorkloadTab({ data, onNavigate }: WorkloadTabProps) {
 
             {/* PIC Cards Grid */}
             {filteredWorkloads.length === 0 ? (
-                <div className="py-16 text-center text-text-soft font-medium text-xs rounded-lg border border-dashed border-surface-border">
+                <div className="text-text-soft border-surface-border rounded-lg border border-dashed py-16 text-center text-xs font-medium">
                     PIC tidak ditemukan
                 </div>
             ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                     {filteredWorkloads.map((user) => {
                         const isBusy = user.load_status === 'Sibuk';
                         const isSelected = selectedUserId === user.id;
@@ -298,7 +295,7 @@ export function WorkloadTab({ data, onNavigate }: WorkloadTabProps) {
                                 key={user.id}
                                 onClick={() => setSelectedUserId(isSelected ? null : user.id)}
                                 className={cn(
-                                    'p-3 rounded-lg border transition-all cursor-pointer flex flex-col justify-between gap-2.5',
+                                    'flex cursor-pointer flex-col justify-between gap-2.5 rounded-lg border p-3 transition-all',
                                     isSelected
                                         ? 'border-text-main bg-surface-muted/30 shadow-2xs'
                                         : 'border-surface-border bg-surface-base hover:border-text-soft/40 hover:bg-surface-muted/20',
@@ -306,41 +303,39 @@ export function WorkloadTab({ data, onNavigate }: WorkloadTabProps) {
                             >
                                 {/* Header Card PIC */}
                                 <div className="flex items-start justify-between gap-2">
-                                    <div className="flex items-center gap-2.5 min-w-0">
-                                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface-muted text-text-main font-semibold text-[11px] border border-surface-border">
+                                    <div className="flex min-w-0 items-center gap-2.5">
+                                        <div className="bg-surface-muted text-text-main border-surface-border flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-[11px] font-semibold">
                                             {user.initials ?? user.name.substring(0, 2).toUpperCase()}
                                         </div>
                                         <div className="min-w-0">
-                                            <h4 className="text-xs font-semibold text-text-main truncate" title={user.name}>
+                                            <h4 className="text-text-main truncate text-xs font-semibold" title={user.name}>
                                                 {user.name}
                                             </h4>
-                                            <p className="text-[10px] text-text-soft truncate" title={`${user.position || user.role} • ${user.division_name || user.department_name || 'Divisi -'}`}>
+                                            <p
+                                                className="text-text-soft truncate text-[10px]"
+                                                title={`${user.position || user.role} • ${user.division_name || user.department_name || 'Divisi -'}`}
+                                            >
                                                 {user.position || user.role} • {user.division_name || user.department_name || 'Divisi -'}
                                             </p>
                                         </div>
                                     </div>
 
-                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-medium bg-surface-muted text-text-soft shrink-0">
-                                        <span
-                                            className={cn(
-                                                'h-1.5 w-1.5 rounded-full',
-                                                isBusy ? 'bg-amber-500' : 'bg-emerald-500',
-                                            )}
-                                        />
+                                    <span className="bg-surface-muted text-text-soft inline-flex shrink-0 items-center gap-1 rounded px-1.5 py-0.5 text-[9px] font-medium">
+                                        <span className={cn('h-1.5 w-1.5 rounded-full', isBusy ? 'bg-amber-500' : 'bg-emerald-500')} />
                                         {user.load_status || 'Ready'}
                                     </span>
                                 </div>
 
                                 {/* Group Organization Tag */}
                                 {userGroupName && (
-                                    <div className="flex items-center gap-1 text-[9.5px] text-text-soft bg-surface-muted/50 px-2 py-0.5 rounded border border-surface-border/50 w-fit">
-                                        <Building2 size={10} className="shrink-0 text-text-soft" />
-                                        <span className="truncate max-w-[180px]">{userGroupName}</span>
+                                    <div className="text-text-soft bg-surface-muted/50 border-surface-border/50 flex w-fit items-center gap-1 rounded border px-2 py-0.5 text-[9.5px]">
+                                        <Building2 size={10} className="text-text-soft shrink-0" />
+                                        <span className="max-w-[180px] truncate">{userGroupName}</span>
                                     </div>
                                 )}
 
                                 {/* Workload 2 Counters Grid: Di Proses & Arsip */}
-                                <div className="grid grid-cols-2 gap-2 pt-1 border-t border-surface-border text-center">
+                                <div className="border-surface-border grid grid-cols-2 gap-2 border-t pt-1 text-center">
                                     {/* Di Proses */}
                                     <div
                                         onClick={(e) => {
@@ -350,13 +345,13 @@ export function WorkloadTab({ data, onNavigate }: WorkloadTabProps) {
                                             }
                                         }}
                                         className={cn(
-                                            'p-1.5 rounded border border-surface-border/60 bg-surface-muted/40 transition-all',
+                                            'border-surface-border/60 bg-surface-muted/40 rounded border p-1.5 transition-all',
                                             inProgressCount > 0 && 'hover:bg-surface-muted cursor-pointer',
                                         )}
                                         title={`Sedang Diproses: ${inProgressCount}`}
                                     >
-                                        <span className="text-[8.5px] uppercase font-medium text-text-soft block">Di Proses</span>
-                                        <span className="text-xs font-semibold text-text-main">{inProgressCount}</span>
+                                        <span className="text-text-soft block text-[8.5px] font-medium uppercase">Di Proses</span>
+                                        <span className="text-text-main text-xs font-semibold">{inProgressCount}</span>
                                     </div>
 
                                     {/* Arsip */}
@@ -368,13 +363,13 @@ export function WorkloadTab({ data, onNavigate }: WorkloadTabProps) {
                                             }
                                         }}
                                         className={cn(
-                                            'p-1.5 rounded border border-surface-border/60 bg-surface-muted/40 transition-all',
+                                            'border-surface-border/60 bg-surface-muted/40 rounded border p-1.5 transition-all',
                                             completedCount > 0 && 'hover:bg-surface-muted cursor-pointer',
                                         )}
                                         title={`Selesai & Arsip: ${completedCount}`}
                                     >
-                                        <span className="text-[8.5px] uppercase font-medium text-text-soft block">Arsip</span>
-                                        <span className="text-xs font-semibold text-text-main">{completedCount}</span>
+                                        <span className="text-text-soft block text-[8.5px] font-medium uppercase">Arsip</span>
+                                        <span className="text-text-main text-xs font-semibold">{completedCount}</span>
                                     </div>
                                 </div>
                             </div>

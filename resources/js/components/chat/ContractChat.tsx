@@ -1,9 +1,9 @@
+import { discussionsApi } from '@/api';
 import { useToast } from '@/components/ui/feedback/Toast';
 import { cn } from '@/lib/utils';
 import DocumentPreviewModal from '@/pages/contracts/components/modals/DocumentPreviewModal';
 import { Contract, ContractMessage } from '@/pages/contracts/types';
 import { contractApi } from '@/pages/contracts/utils';
-import { discussionsApi } from '@/api';
 import { usePage } from '@inertiajs/react';
 import { ArrowDown, MessageSquare, RefreshCw, Search, X } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -28,9 +28,7 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
         let initials = authUser?.initials || '';
         if (!initials && name) {
             const words = name.trim().split(/\s+/);
-            initials = words.length >= 2
-                ? (words[0][0] + words[1][0]).toUpperCase()
-                : name.substring(0, 2).toUpperCase();
+            initials = words.length >= 2 ? (words[0][0] + words[1][0]).toUpperCase() : name.substring(0, 2).toUpperCase();
         }
         return {
             id: uid,
@@ -67,11 +65,11 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
         try {
             setLoadingMessages(true);
             const res: any = await contractApi.discussions.detail(contract.id);
-            const fetched = Array.isArray(res) ? res : res?.messages ?? [];
+            const fetched = Array.isArray(res) ? res : (res?.messages ?? []);
             setMessages(fetched);
         } catch {
             const fallback: any = await contractApi.messages.list(contract.id).catch(() => []);
-            setMessages(Array.isArray(fallback) ? fallback : fallback?.messages ?? []);
+            setMessages(Array.isArray(fallback) ? fallback : (fallback?.messages ?? []));
         } finally {
             setLoadingMessages(false);
         }
@@ -535,44 +533,40 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
-            className="flex flex-col h-full bg-background relative overflow-hidden select-none"
+            className="bg-background relative flex h-full flex-col overflow-hidden select-none"
         >
             {/* Drag & Drop Backdrop Overlay */}
             {isDragging && (
-                <div className="absolute inset-0 z-50 bg-primary/10 backdrop-blur-xs border-2 border-dashed border-primary flex flex-col items-center justify-center pointer-events-none animate-in fade-in duration-150">
-                    <div className="p-4 rounded-2xl bg-background shadow-2xl border border-border flex flex-col items-center gap-2">
-                        <MessageSquare className="h-10 w-10 text-primary animate-bounce" />
-                        <span className="text-sm font-bold text-foreground">Lepaskan Berkas untuk Mengunggah</span>
-                        <span className="text-xs text-muted-foreground">Mendukung semua format dokumen & gambar</span>
+                <div className="bg-primary/10 border-primary animate-in fade-in pointer-events-none absolute inset-0 z-50 flex flex-col items-center justify-center border-2 border-dashed backdrop-blur-xs duration-150">
+                    <div className="bg-background border-border flex flex-col items-center gap-2 rounded-2xl border p-4 shadow-2xl">
+                        <MessageSquare className="text-primary h-10 w-10 animate-bounce" />
+                        <span className="text-foreground text-sm font-bold">Lepaskan Berkas untuk Mengunggah</span>
+                        <span className="text-muted-foreground text-xs">Mendukung semua format dokumen & gambar</span>
                     </div>
                 </div>
             )}
 
             {/* Discussion Header */}
-            <div className="px-4 py-3 border-b border-border flex items-center justify-between bg-muted/20">
-                <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="p-2 rounded-xl bg-primary/10 text-primary shrink-0">
+            <div className="border-border bg-muted/20 flex items-center justify-between border-b px-4 py-3">
+                <div className="flex min-w-0 items-center gap-2.5">
+                    <div className="bg-primary/10 text-primary shrink-0 rounded-xl p-2">
                         <MessageSquare size={16} />
                     </div>
-                    <div className="flex flex-col min-w-0">
+                    <div className="flex min-w-0 flex-col">
                         <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-foreground truncate max-w-[280px] md:max-w-[400px]">
-                                {contract.title}
-                            </span>
-                            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-muted text-muted-foreground font-semibold">
+                            <span className="text-foreground max-w-[280px] truncate text-xs font-bold md:max-w-[400px]">{contract.title}</span>
+                            <span className="py-0.2 bg-muted text-muted-foreground rounded px-1.5 font-mono text-[10px] font-semibold">
                                 {contract.contract_no || contract.form_no || 'DRAFT'}
                             </span>
                         </div>
-                        <span className="text-[10px] text-muted-foreground mt-0.5">
-                            {involvedParticipants.length} partisipan dalam diskusi ini
-                        </span>
+                        <span className="text-muted-foreground mt-0.5 text-[10px]">{involvedParticipants.length} partisipan dalam diskusi ini</span>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-1.5">
                     {/* Search in Messages */}
                     {isSearchOpen ? (
-                        <div className="flex items-center gap-1 bg-background border border-border rounded-xl px-2 py-0.5 shadow-2xs animate-in fade-in duration-150">
+                        <div className="bg-background border-border animate-in fade-in flex items-center gap-1 rounded-xl border px-2 py-0.5 shadow-2xs duration-150">
                             <Search size={13} className="text-muted-foreground shrink-0" />
                             <input
                                 ref={searchInputRef}
@@ -580,11 +574,13 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                                 placeholder="Cari percakapan..."
-                                className="text-xs text-foreground bg-transparent border-none focus:outline-none w-36 md:w-48 py-1"
+                                className="text-foreground w-36 border-none bg-transparent py-1 text-xs focus:outline-none md:w-48"
                             />
                             {matchingMessages.length > 0 && (
-                                <div className="flex items-center gap-1 text-[10px] text-muted-foreground font-semibold px-1">
-                                    <span>{currentMatchIndex + 1}/{matchingMessages.length}</span>
+                                <div className="text-muted-foreground flex items-center gap-1 px-1 text-[10px] font-semibold">
+                                    <span>
+                                        {currentMatchIndex + 1}/{matchingMessages.length}
+                                    </span>
                                     <button
                                         type="button"
                                         onClick={handlePrevMatch}
@@ -621,7 +617,7 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                                 setIsSearchOpen(true);
                                 setTimeout(() => searchInputRef.current?.focus(), 100);
                             }}
-                            className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-all cursor-pointer"
+                            className="hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer rounded-lg p-1.5 transition-all"
                             title="Cari dalam pesan"
                         >
                             <Search size={15} />
@@ -632,36 +628,32 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                         type="button"
                         onClick={handleRefresh}
                         disabled={refreshing}
-                        className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-all cursor-pointer"
+                        className="hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer rounded-lg p-1.5 transition-all"
                         title="Segarkan Percakapan"
                     >
-                        <RefreshCw size={15} className={cn(refreshing && 'animate-spin text-primary')} />
+                        <RefreshCw size={15} className={cn(refreshing && 'text-primary animate-spin')} />
                     </button>
                 </div>
             </div>
 
             {/* Messages Scroll Area with Bottom Alignment & Top Headroom */}
-            <div
-                ref={scrollContainerRef}
-                onScroll={handleScroll}
-                className="flex-1 overflow-y-auto px-4 pb-3 select-text"
-            >
-                <div className="min-h-full flex flex-col justify-end pt-8">
+            <div ref={scrollContainerRef} onScroll={handleScroll} className="flex-1 overflow-y-auto px-4 pb-3 select-text">
+                <div className="flex min-h-full flex-col justify-end pt-8">
                     {/* Top spacer (headroom) to ensure top message reaction & action bar are never cut off */}
                     <div className="h-6 shrink-0" aria-hidden="true" />
 
                     {loadingMessages && msgs.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground gap-3">
-                            <RefreshCw size={24} className="animate-spin text-primary" />
+                        <div className="text-muted-foreground flex flex-col items-center justify-center gap-3 py-16 text-center">
+                            <RefreshCw size={24} className="text-primary animate-spin" />
                             <span className="text-xs font-medium">Memuat percakapan diskusi...</span>
                         </div>
                     ) : msgs.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground gap-3">
-                            <div className="p-4 rounded-full bg-muted/60 text-muted-foreground">
+                        <div className="text-muted-foreground flex flex-col items-center justify-center gap-3 py-16 text-center">
+                            <div className="bg-muted/60 text-muted-foreground rounded-full p-4">
                                 <MessageSquare size={28} />
                             </div>
-                            <div className="flex flex-col gap-1 max-w-sm">
-                                <span className="text-xs font-bold text-foreground">Belum ada diskusi untuk dokumen ini</span>
+                            <div className="flex max-w-sm flex-col gap-1">
+                                <span className="text-foreground text-xs font-bold">Belum ada diskusi untuk dokumen ini</span>
                                 <span className="text-[11px] leading-relaxed">
                                     Mulai percakapan untuk berkoordinasi dengan inisiator, pemeriksa, atau reviewer terkait pengajuan ini.
                                 </span>
@@ -703,7 +695,7 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                 <button
                     type="button"
                     onClick={scrollToBottom}
-                    className="absolute bottom-44 right-6 z-30 p-2 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-all cursor-pointer animate-in fade-in zoom-in-90 duration-150"
+                    className="bg-primary text-primary-foreground hover:bg-primary/90 animate-in fade-in zoom-in-90 absolute right-6 bottom-44 z-30 cursor-pointer rounded-full p-2 shadow-lg transition-all duration-150"
                     title="Gulir ke Pesan Terbawah"
                 >
                     <ArrowDown size={14} />

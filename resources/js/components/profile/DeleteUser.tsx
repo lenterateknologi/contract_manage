@@ -3,9 +3,9 @@ import { FormEventHandler, useRef } from 'react';
 
 // Components...
 import { Button } from '@/components/ui/buttons/Button';
-import { Input } from '@/components/ui/inputs/Input';
 import InputError from '@/components/ui/forms/InputError';
 import { Label } from '@/components/ui/forms/Label';
+import { Input } from '@/components/ui/inputs/Input';
 
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogTitle, DialogTrigger } from '@/components/ui/dialogs/Dialog';
 
@@ -39,9 +39,9 @@ export default function DeleteUser({ className }: { className?: string }) {
                     Close Account
                 </button>
             </DialogTrigger>
-            <DialogContent className="bg-slate-100/90 dark:bg-zinc-800/90 border-slate-200/80 dark:border-zinc-700/80 text-slate-800 dark:text-zinc-100 max-w-md rounded-2xl border p-6 shadow-2xl">
-                <DialogTitle className="text-slate-800 dark:text-zinc-100 text-lg font-bold">Apakah Anda yakin ingin menghapus akun?</DialogTitle>
-                <DialogDescription className="text-slate-500 dark:text-zinc-400 mt-2 text-xs leading-relaxed">
+            <DialogContent className="max-w-md rounded-2xl border border-slate-200/80 bg-slate-100/90 p-6 text-slate-800 shadow-2xl dark:border-zinc-700/80 dark:bg-zinc-800/90 dark:text-zinc-100">
+                <DialogTitle className="text-lg font-bold text-slate-800 dark:text-zinc-100">Apakah Anda yakin ingin menghapus akun?</DialogTitle>
+                <DialogDescription className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-zinc-400">
                     Setelah akun Anda dihapus, semua data dan sumber daya di dalamnya akan terhapus secara permanen. Silakan masukkan password Anda
                     untuk mengonfirmasi penghapusan akun secara permanen.
                 </DialogDescription>

@@ -8,12 +8,12 @@ use App\Core\Crud\Fields\SelectInput;
 use App\Core\Crud\Fields\TextareaInput;
 use App\Core\Crud\Fields\TextInput;
 use App\Core\Crud\Fields\ToggleInput;
-use App\Core\Crud\Filters\Filter;
+use App\Core\Crud\Filter;
 use App\Core\Crud\Resource;
-use App\Exports\LocationsExport;
+use App\Exports\Master\LocationsExport;
 use App\Imports\LocationsImport;
-use App\Models\CompanyGroup;
-use App\Models\Location;
+use App\Models\Master\CompanyGroup;
+use App\Models\Master\Location;
 
 class LocationResource extends Resource
 {

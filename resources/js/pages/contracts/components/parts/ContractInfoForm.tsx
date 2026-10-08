@@ -417,13 +417,7 @@ export function ContractInfoForm({
                         </div>
                         <div className="flex flex-col gap-1">
                             <span className="text-muted-foreground text-[10px] font-medium">Tanggal Selesai</span>
-                            <Input
-                                type="date"
-                                value={endDate}
-                                onChange={(e) => setEndDate(e.target.value)}
-                                size="sm"
-                                disabled={!canEditPeriod}
-                            />
+                            <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} size="sm" disabled={!canEditPeriod} />
                         </div>
                     </div>
                 </div>

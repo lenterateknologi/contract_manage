@@ -144,6 +144,7 @@ class ContractFileController extends Controller
                 'username' => config('services.coma.username'),
                 'password' => config('services.coma.password'),
             ]);
+
             return ($resp->successful() && $resp->json('status') === 'success') ? $resp->json('data') : null;
         });
 

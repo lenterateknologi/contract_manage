@@ -7,12 +7,12 @@ use App\Core\Crud\Columns\TextColumn;
 use App\Core\Crud\Fields\SelectInput;
 use App\Core\Crud\Fields\TextInput;
 use App\Core\Crud\Fields\ToggleInput;
-use App\Core\Crud\Filters\Filter;
+use App\Core\Crud\Filter;
 use App\Core\Crud\Resource;
-use App\Exports\JobTitlesExport;
+use App\Exports\Master\JobTitlesExport;
 use App\Imports\JobTitlesImport;
-use App\Models\JobLevel;
-use App\Models\JobTitle;
+use App\Models\Master\JobLevel;
+use App\Models\Master\JobTitle;
 
 class JobTitleResource extends Resource
 {
@@ -57,6 +57,7 @@ class JobTitleResource extends Resource
             SelectInput::make('job_level_id', 'Job Level')
                 ->options(fn () => JobLevel::orderBy('name')->get()->mapWithKeys(function ($lvl) {
                     $label = $lvl->code ? "({$lvl->code}) {$lvl->name}" : $lvl->name;
+
                     return [$lvl->id => $label];
                 })->toArray())
                 ->rules(['nullable', 'string', 'exists:m_job_levels,id']),
@@ -79,6 +80,7 @@ class JobTitleResource extends Resource
                     $options = ['__empty__' => '- (Tanpa Level / Belum Ditentukan)'];
                     $levels = JobLevel::where('is_used', true)->orderBy('name')->get()->mapWithKeys(function ($lvl) {
                         $label = $lvl->code ? "({$lvl->code}) {$lvl->name}" : $lvl->name;
+
                         return [$lvl->id => $label];
                     })->toArray();
 

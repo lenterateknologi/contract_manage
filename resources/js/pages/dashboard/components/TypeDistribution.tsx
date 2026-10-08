@@ -9,7 +9,7 @@ export function TypeDistribution({ items }: TypeDistributionProps) {
     const max = Math.max(...items.map((t) => t.count), 1);
 
     return (
-        <div className="bg-white dark:bg-surface-base border border-surface-border/60 rounded-lg text-text-main select-none lg:col-span-3">
+        <div className="dark:bg-surface-base border-surface-border/60 text-text-main rounded-lg border bg-white select-none lg:col-span-3">
             <div className="border-surface-border/60 flex items-center justify-between border-b px-6 py-4">
                 <SectionTitle>Top Tipe Kontrak</SectionTitle>
             </div>

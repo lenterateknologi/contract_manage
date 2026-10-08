@@ -2,9 +2,9 @@
 
 namespace Database\Seeders\Business;
 
-use App\Models\Company;
-use App\Models\CompanyGroup;
-use App\Models\Region;
+use App\Models\Master\Company;
+use App\Models\Master\CompanyGroup;
+use App\Models\Master\Region;
 use Illuminate\Database\Seeder;
 
 class OrganizationalSeeder extends Seeder

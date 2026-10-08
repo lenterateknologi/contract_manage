@@ -12,7 +12,14 @@ interface AuthSplitLayoutProps {
     image?: string;
 }
 
-export default function AuthSplitLayout({ children, title, description, isSuccess = false, successText = 'BERHASIL MASUK', image }: Readonly<AuthSplitLayoutProps>) {
+export default function AuthSplitLayout({
+    children,
+    title,
+    description,
+    isSuccess = false,
+    successText = 'BERHASIL MASUK',
+    image,
+}: Readonly<AuthSplitLayoutProps>) {
     const { name, tagline, logo } = usePage<SharedData>().props;
     const appName = name || import.meta.env.VITE_APP_NAME || 'corixa';
     const appTagline = tagline || import.meta.env.VITE_APP_TAGLINE || 'Legal Management System';

@@ -2,11 +2,11 @@
 
 namespace App\Services\Workflow;
 
-use App\Models\Contract;
-use App\Models\User;
-use App\Models\WorkflowStep;
+use App\Models\Master\User;
+use App\Models\Master\WorkflowStep;
+use App\Models\Transaction\Contract;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 
 class StepAuthorityResolver
 {
@@ -354,7 +354,7 @@ class StepAuthorityResolver
                         $hasFilters = false;
 
                         if (! empty($legacyRoles)) {
-                            $validRoleUuids = array_values(array_filter($legacyRoles, fn ($r) => is_string($r) && \Illuminate\Support\Str::isUuid($r)));
+                            $validRoleUuids = array_values(array_filter($legacyRoles, fn ($r) => is_string($r) && Str::isUuid($r)));
                             $query->where(function ($q) use ($legacyRoles, $validRoleUuids) {
                                 $q->whereHas('roleRelation', fn ($rq) => $rq->whereIn('name', $legacyRoles));
                                 if (! empty($validRoleUuids)) {
@@ -370,7 +370,7 @@ class StepAuthorityResolver
                             $query->where('division_id', $initDeptId);
                             $hasFilters = true;
                         } elseif (! empty($targetDeptIds)) {
-                            $validDeptUuids = array_values(array_filter($targetDeptIds, fn ($d) => is_string($d) && \Illuminate\Support\Str::isUuid($d)));
+                            $validDeptUuids = array_values(array_filter($targetDeptIds, fn ($d) => is_string($d) && Str::isUuid($d)));
                             if (! empty($validDeptUuids)) {
                                 $query->where(function ($q) use ($validDeptUuids) {
                                     $q->whereIn('division_id', $validDeptUuids)

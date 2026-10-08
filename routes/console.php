@@ -22,3 +22,6 @@ Schedule::call(function () {
         DB::statement('REFRESH MATERIALIZED VIEW mv_dashboard_contracts');
     }
 })->hourly();
+
+// ── Daily SLA Overdue Notification to Managers at 08:00 AM ──
+Schedule::command('contract:notify-overdue-sla')->dailyAt('08:00');

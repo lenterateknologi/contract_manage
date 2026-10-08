@@ -1,26 +1,26 @@
+import { UserSwitchModal } from '@/components/impersonation/UserSwitchModal';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialogs/Dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/feedback/Tooltip';
+import { Sidebar, useSidebar } from '@/components/ui/navigation/Sidebar';
+import { HighlightingCell } from '@/components/ui/utilities/Highlighter';
 import { HeaderNotifications } from '@/layouts/app/components/header/HeaderNotifications';
 import { HeaderUserMenu } from '@/layouts/app/components/header/HeaderUserMenu';
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialogs/Dialog';
-import {
-    Sidebar,
-    useSidebar,
-} from '@/components/ui/navigation/Sidebar';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/feedback/Tooltip';
-import { HighlightingCell } from '@/components/ui/utilities/Highlighter';
 import { cn } from '@/lib/utils';
+import { useDetailSidebar, type DetailSidebarTabItem } from '@/stores/useDetailSidebarStore';
+import { usePov } from '@/stores/usePovStore';
 import { type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { useDetailSidebar, type DetailSidebarTabItem } from '@/stores/useDetailSidebarStore';
 import {
     Archive,
     ArrowLeft,
     ArrowRightLeft,
     BarChart3,
     Building2,
-    ChevronRight,
     ChevronDown,
+    ChevronRight,
     Clock,
     Database,
+    ExternalLink,
     FileCheck,
     FileCode,
     FileEdit,
@@ -33,6 +33,7 @@ import {
     Layers,
     LayoutDashboard,
     LayoutGrid,
+    MessageSquare,
     ScanEye,
     ScanLine,
     Search,
@@ -47,13 +48,9 @@ import {
     Workflow,
     X,
     Zap,
-    ExternalLink,
-    MessageSquare,
     type LucideIcon,
 } from 'lucide-react';
-import { memo, useState, useEffect, useRef, useMemo } from 'react';
-import { UserSwitchModal } from '@/components/impersonation/UserSwitchModal';
-import { usePov } from '@/stores/usePovStore';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 
 const iconMap: Record<string, LucideIcon> = {
     Archive,
@@ -115,8 +112,8 @@ const NavTreeItem = memo(function NavTreeItem({
     const ItemIcon = item.icon ?? FileText;
 
     return (
-        <div className="flex flex-col w-full">
-            <div className="flex items-center w-full group/nav">
+        <div className="flex w-full flex-col">
+            <div className="group/nav flex w-full items-center">
                 <Link
                     href={item.url}
                     onClick={() => {
@@ -124,10 +121,10 @@ const NavTreeItem = memo(function NavTreeItem({
                         onNavigate?.();
                     }}
                     className={cn(
-                        'group relative flex flex-1 items-center gap-3 rounded-lg px-2 py-1.5 text-[13px] transition-all duration-150 min-w-0',
+                        'group relative flex min-w-0 flex-1 items-center gap-3 rounded-lg px-2 py-1.5 text-[13px] transition-all duration-150',
                         isSelfActive
-                            ? 'bg-primary/10 dark:bg-primary/20 font-semibold text-primary dark:text-primary'
-                            : 'font-medium text-sidebar-foreground/80 dark:text-zinc-300 hover:bg-sidebar-accent/50 dark:hover:bg-zinc-800/60 hover:text-sidebar-foreground dark:hover:text-white',
+                            ? 'bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary font-semibold'
+                            : 'text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground font-medium dark:text-zinc-300 dark:hover:bg-zinc-800/60 dark:hover:text-white',
                     )}
                 >
                     {/* Active Icon Card (Card on selected icon) */}
@@ -137,8 +134,8 @@ const NavTreeItem = memo(function NavTreeItem({
                             isSelfActive
                                 ? 'bg-primary text-primary-foreground dark:bg-primary dark:text-primary-foreground shadow-xs'
                                 : isChildActive
-                                    ? 'bg-primary/15 dark:bg-primary/25 text-primary dark:text-primary'
-                                    : 'text-sidebar-foreground/60 dark:text-zinc-400 group-hover:text-sidebar-foreground dark:group-hover:text-white',
+                                  ? 'bg-primary/15 dark:bg-primary/25 text-primary dark:text-primary'
+                                  : 'text-sidebar-foreground/60 group-hover:text-sidebar-foreground dark:text-zinc-400 dark:group-hover:text-white',
                         )}
                     >
                         <ItemIcon
@@ -147,24 +144,24 @@ const NavTreeItem = memo(function NavTreeItem({
                                 isSelfActive
                                     ? 'text-primary-foreground dark:text-primary-foreground'
                                     : isChildActive
-                                        ? 'text-primary dark:text-primary'
-                                        : 'text-sidebar-foreground/70 dark:text-zinc-400 group-hover:text-sidebar-foreground dark:group-hover:text-white',
+                                      ? 'text-primary dark:text-primary'
+                                      : 'text-sidebar-foreground/70 group-hover:text-sidebar-foreground dark:text-zinc-400 dark:group-hover:text-white',
                             )}
                         />
                     </div>
-                    <div className="flex flex-col flex-1 min-w-0 justify-center">
+                    <div className="flex min-w-0 flex-1 flex-col justify-center">
                         <span
                             className={cn(
-                                'truncate tracking-tight leading-snug',
+                                'truncate leading-snug tracking-tight',
                                 isSelfActive
-                                    ? 'font-bold text-primary dark:text-primary'
-                                    : 'font-medium text-sidebar-foreground dark:text-zinc-200 group-hover:text-sidebar-foreground dark:group-hover:text-white',
+                                    ? 'text-primary dark:text-primary font-bold'
+                                    : 'text-sidebar-foreground group-hover:text-sidebar-foreground font-medium dark:text-zinc-200 dark:group-hover:text-white',
                             )}
                         >
                             {item.title}
                         </span>
                         {item.description && (
-                            <span className="text-[10.5px] leading-tight truncate mt-0.5 font-normal text-sidebar-foreground/50 dark:text-zinc-400 group-hover:text-sidebar-foreground/70 dark:group-hover:text-zinc-300">
+                            <span className="text-sidebar-foreground/50 group-hover:text-sidebar-foreground/70 mt-0.5 truncate text-[10.5px] leading-tight font-normal dark:text-zinc-400 dark:group-hover:text-zinc-300">
                                 {item.description}
                             </span>
                         )}
@@ -172,10 +169,10 @@ const NavTreeItem = memo(function NavTreeItem({
                     {item.badge !== undefined && item.badge !== null && (
                         <span
                             className={cn(
-                                'ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full tabular-nums shrink-0 transition-colors',
+                                'ml-auto shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold tabular-nums transition-colors',
                                 isSelfActive
                                     ? 'bg-primary text-primary-foreground dark:bg-primary dark:text-primary-foreground'
-                                    : 'bg-sidebar-accent/80 dark:bg-zinc-800 text-sidebar-foreground/70 dark:text-zinc-300 group-hover:text-sidebar-foreground dark:group-hover:text-white',
+                                    : 'bg-sidebar-accent/80 text-sidebar-foreground/70 group-hover:text-sidebar-foreground dark:bg-zinc-800 dark:text-zinc-300 dark:group-hover:text-white',
                             )}
                             title={`${item.badge} data sistem aktif`}
                         >
@@ -189,7 +186,7 @@ const NavTreeItem = memo(function NavTreeItem({
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
-                    className="p-1.5 rounded-lg text-sidebar-foreground/40 dark:text-zinc-500 hover:text-sidebar-foreground dark:hover:text-white hover:bg-sidebar-accent/70 dark:hover:bg-zinc-800 transition-colors opacity-0 group-hover/nav:opacity-100 focus:opacity-100 shrink-0 cursor-pointer"
+                    className="text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent/70 shrink-0 cursor-pointer rounded-lg p-1.5 opacity-0 transition-colors group-hover/nav:opacity-100 focus:opacity-100 dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-white"
                     title="Buka di tab/jendela baru"
                 >
                     <ExternalLink size={13} />
@@ -203,25 +200,22 @@ const NavTreeItem = memo(function NavTreeItem({
                             e.stopPropagation();
                             setIsExpanded((prev) => !prev);
                         }}
-                        className="ml-1 p-1.5 rounded-lg text-sidebar-foreground/45 dark:text-zinc-400 hover:text-sidebar-foreground dark:hover:text-white hover:bg-sidebar-accent/60 dark:hover:bg-zinc-800 transition-colors cursor-pointer shrink-0"
+                        className="text-sidebar-foreground/45 hover:text-sidebar-foreground hover:bg-sidebar-accent/60 ml-1 shrink-0 cursor-pointer rounded-lg p-1.5 transition-colors dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-white"
                         title={isExpanded ? 'Sembunyikan sub-menu' : 'Buka sub-menu'}
                     >
-                        <ChevronRight
-                            size={14}
-                            className={cn('transition-transform duration-200', isExpanded && 'rotate-90')}
-                        />
+                        <ChevronRight size={14} className={cn('transition-transform duration-200', isExpanded && 'rotate-90')} />
                     </button>
                 )}
             </div>
 
             {hasChildren && isExpanded && (
-                <div className="relative ml-4.5 pl-3.5 my-1 space-y-1 border-l-2 border-sidebar-border/70 dark:border-zinc-800">
+                <div className="border-sidebar-border/70 relative my-1 ml-4.5 space-y-1 border-l-2 pl-3.5 dark:border-zinc-800">
                     {item.children!.map((child) => {
                         const isSubActive = checkActive(child.url);
                         const ChildIcon = child.icon ?? FileText;
 
                         return (
-                            <div key={child.url} className="flex items-center w-full group/subnav">
+                            <div key={child.url} className="group/subnav flex w-full items-center">
                                 <Link
                                     href={child.url}
                                     onClick={() => {
@@ -229,11 +223,11 @@ const NavTreeItem = memo(function NavTreeItem({
                                         onNavigate?.();
                                     }}
                                     className={cn(
-                                        'relative group flex flex-1 items-center gap-2.5 rounded-lg px-2 py-1.5 text-[12px] transition-all duration-150 min-w-0',
-                                        'before:absolute before:-left-[15px] before:top-1/2 before:-translate-y-1/2 before:w-2.5 before:h-[2px] before:bg-sidebar-border/80 dark:before:bg-zinc-700 before:rounded-full',
+                                        'group relative flex min-w-0 flex-1 items-center gap-2.5 rounded-lg px-2 py-1.5 text-[12px] transition-all duration-150',
+                                        'before:bg-sidebar-border/80 before:absolute before:top-1/2 before:-left-[15px] before:h-[2px] before:w-2.5 before:-translate-y-1/2 before:rounded-full dark:before:bg-zinc-700',
                                         isSubActive
-                                            ? 'bg-primary/10 dark:bg-primary/20 font-bold text-primary dark:text-primary before:!bg-primary dark:before:!bg-primary'
-                                            : 'font-medium text-sidebar-foreground/75 dark:text-zinc-300 hover:bg-sidebar-accent/40 dark:hover:bg-zinc-800/50 hover:text-sidebar-foreground dark:hover:text-white',
+                                            ? 'bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary before:!bg-primary dark:before:!bg-primary font-bold'
+                                            : 'text-sidebar-foreground/75 hover:bg-sidebar-accent/40 hover:text-sidebar-foreground font-medium dark:text-zinc-300 dark:hover:bg-zinc-800/50 dark:hover:text-white',
                                     )}
                                 >
                                     <div
@@ -241,7 +235,7 @@ const NavTreeItem = memo(function NavTreeItem({
                                             'flex size-5.5 shrink-0 items-center justify-center rounded-md transition-all',
                                             isSubActive
                                                 ? 'bg-primary text-primary-foreground dark:bg-primary dark:text-primary-foreground shadow-xs'
-                                                : 'text-sidebar-foreground/60 dark:text-zinc-400 group-hover:text-sidebar-foreground dark:group-hover:text-white',
+                                                : 'text-sidebar-foreground/60 group-hover:text-sidebar-foreground dark:text-zinc-400 dark:group-hover:text-white',
                                         )}
                                     >
                                         <ChildIcon
@@ -249,23 +243,23 @@ const NavTreeItem = memo(function NavTreeItem({
                                                 'size-3 transition-colors',
                                                 isSubActive
                                                     ? 'text-primary-foreground dark:text-primary-foreground'
-                                                    : 'text-sidebar-foreground/60 dark:text-zinc-400 group-hover:text-sidebar-foreground dark:group-hover:text-white',
+                                                    : 'text-sidebar-foreground/60 group-hover:text-sidebar-foreground dark:text-zinc-400 dark:group-hover:text-white',
                                             )}
                                         />
                                     </div>
-                                    <div className="flex flex-col flex-1 min-w-0 justify-center">
+                                    <div className="flex min-w-0 flex-1 flex-col justify-center">
                                         <span
                                             className={cn(
-                                                'truncate tracking-tight leading-snug',
+                                                'truncate leading-snug tracking-tight',
                                                 isSubActive
-                                                    ? 'font-bold text-primary dark:text-primary'
-                                                    : 'font-medium text-sidebar-foreground/80 dark:text-zinc-300 group-hover:text-sidebar-foreground dark:group-hover:text-white',
+                                                    ? 'text-primary dark:text-primary font-bold'
+                                                    : 'text-sidebar-foreground/80 group-hover:text-sidebar-foreground font-medium dark:text-zinc-300 dark:group-hover:text-white',
                                             )}
                                         >
                                             {child.title}
                                         </span>
                                         {child.description && (
-                                            <span className="text-[10px] leading-tight truncate mt-0.5 font-normal text-sidebar-foreground/50 dark:text-zinc-400 group-hover:text-sidebar-foreground/70 dark:group-hover:text-zinc-300">
+                                            <span className="text-sidebar-foreground/50 group-hover:text-sidebar-foreground/70 mt-0.5 truncate text-[10px] leading-tight font-normal dark:text-zinc-400 dark:group-hover:text-zinc-300">
                                                 {child.description}
                                             </span>
                                         )}
@@ -273,10 +267,10 @@ const NavTreeItem = memo(function NavTreeItem({
                                     {child.badge !== undefined && child.badge !== null && (
                                         <span
                                             className={cn(
-                                                'ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full tabular-nums shrink-0 transition-colors',
+                                                'ml-auto shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums transition-colors',
                                                 isSubActive
                                                     ? 'bg-primary text-primary-foreground dark:bg-primary dark:text-primary-foreground'
-                                                    : 'bg-sidebar-accent/80 dark:bg-zinc-800 text-sidebar-foreground/70 dark:text-zinc-300 group-hover:bg-sidebar-accent group-hover:text-sidebar-foreground dark:group-hover:text-white',
+                                                    : 'bg-sidebar-accent/80 text-sidebar-foreground/70 group-hover:bg-sidebar-accent group-hover:text-sidebar-foreground dark:bg-zinc-800 dark:text-zinc-300 dark:group-hover:text-white',
                                             )}
                                             title={`${child.badge} data aktif`}
                                         >
@@ -290,7 +284,7 @@ const NavTreeItem = memo(function NavTreeItem({
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     onClick={(e) => e.stopPropagation()}
-                                    className="p-1 rounded-md text-sidebar-foreground/40 dark:text-zinc-500 hover:text-sidebar-foreground dark:hover:text-white hover:bg-sidebar-accent/70 dark:hover:bg-zinc-800 transition-colors opacity-0 group-hover/subnav:opacity-100 focus:opacity-100 shrink-0 ml-1 cursor-pointer"
+                                    className="text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent/70 ml-1 shrink-0 cursor-pointer rounded-md p-1 opacity-0 transition-colors group-hover/subnav:opacity-100 focus:opacity-100 dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-white"
                                     title="Buka di tab/jendela baru"
                                 >
                                     <ExternalLink size={12} />
@@ -319,9 +313,7 @@ const DetailNavTreeItem = memo(function DetailNavTreeItem({
 }) {
     const hasChildren = Boolean(tab.children && tab.children.length > 0);
     const isParentActive = activeTab === tab.id;
-    const isChildActive = Boolean(
-        tab.children?.some((child) => isParentActive && activeSubTab === child.id),
-    );
+    const isChildActive = Boolean(tab.children?.some((child) => isParentActive && activeSubTab === child.id));
     // Default expanded as requested
     const [isOpen, setIsOpen] = useState<boolean>(true);
 
@@ -345,7 +337,7 @@ const DetailNavTreeItem = memo(function DetailNavTreeItem({
 
     return (
         <div className="flex flex-col">
-            <div className="flex items-center w-full group/detailparent">
+            <div className="group/detailparent flex w-full items-center">
                 <div
                     onClick={() => {
                         if (hasChildren) {
@@ -357,15 +349,15 @@ const DetailNavTreeItem = memo(function DetailNavTreeItem({
                         }
                     }}
                     className={cn(
-                        'group relative flex flex-1 items-center justify-between gap-2.5 rounded-lg px-2 py-1.5 text-xs transition-all duration-150 cursor-pointer select-none min-w-0',
+                        'group relative flex min-w-0 flex-1 cursor-pointer items-center justify-between gap-2.5 rounded-lg px-2 py-1.5 text-xs transition-all duration-150 select-none',
                         isParentActive && !isChildActive
-                            ? 'bg-primary/10 dark:bg-primary/20 font-bold text-primary dark:text-primary'
+                            ? 'bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary font-bold'
                             : isChildActive
-                              ? 'font-bold text-primary dark:text-primary'
-                              : 'font-semibold text-sidebar-foreground/80 dark:text-zinc-300 hover:bg-sidebar-accent/50 dark:hover:bg-zinc-800/50 hover:text-sidebar-foreground dark:hover:text-white',
+                              ? 'text-primary dark:text-primary font-bold'
+                              : 'text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground font-semibold dark:text-zinc-300 dark:hover:bg-zinc-800/50 dark:hover:text-white',
                     )}
                 >
-                    <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="flex min-w-0 items-center gap-2.5">
                         <div
                             className={cn(
                                 'flex size-7 shrink-0 items-center justify-center rounded-lg transition-all',
@@ -373,7 +365,7 @@ const DetailNavTreeItem = memo(function DetailNavTreeItem({
                                     ? 'bg-primary text-primary-foreground dark:bg-primary dark:text-primary-foreground shadow-xs'
                                     : isParentActive
                                       ? 'bg-primary/15 dark:bg-primary/25 text-primary dark:text-primary'
-                                      : 'text-sidebar-foreground/60 dark:text-zinc-400 group-hover:text-sidebar-foreground dark:group-hover:text-white',
+                                      : 'text-sidebar-foreground/60 group-hover:text-sidebar-foreground dark:text-zinc-400 dark:group-hover:text-white',
                             )}
                         >
                             <TabIcon
@@ -383,7 +375,7 @@ const DetailNavTreeItem = memo(function DetailNavTreeItem({
                                         ? 'text-primary-foreground dark:text-primary-foreground'
                                         : isParentActive
                                           ? 'text-primary dark:text-primary'
-                                          : 'text-sidebar-foreground/70 dark:text-zinc-400 group-hover:text-sidebar-foreground dark:group-hover:text-white',
+                                          : 'text-sidebar-foreground/70 group-hover:text-sidebar-foreground dark:text-zinc-400 dark:group-hover:text-white',
                                 )}
                             />
                         </div>
@@ -391,8 +383,8 @@ const DetailNavTreeItem = memo(function DetailNavTreeItem({
                             className={cn(
                                 'truncate',
                                 isParentActive
-                                    ? 'font-bold text-primary dark:text-primary'
-                                    : 'text-sidebar-foreground/80 dark:text-zinc-300 group-hover:text-sidebar-foreground dark:group-hover:text-white font-semibold',
+                                    ? 'text-primary dark:text-primary font-bold'
+                                    : 'text-sidebar-foreground/80 group-hover:text-sidebar-foreground font-semibold dark:text-zinc-300 dark:group-hover:text-white',
                             )}
                         >
                             {tab.label}
@@ -406,12 +398,10 @@ const DetailNavTreeItem = memo(function DetailNavTreeItem({
                                 e.stopPropagation();
                                 setIsOpen(!isOpen);
                             }}
-                            className="p-0.5 rounded text-sidebar-foreground/50 dark:text-zinc-400 hover:text-sidebar-foreground dark:hover:text-white transition-transform shrink-0"
+                            className="text-sidebar-foreground/50 hover:text-sidebar-foreground shrink-0 rounded p-0.5 transition-transform dark:text-zinc-400 dark:hover:text-white"
                             title={isOpen ? 'Sembunyikan sub-menu' : 'Buka sub-menu'}
                         >
-                            <ChevronDown
-                                className={cn('size-3.5 transition-transform duration-200', isOpen ? 'rotate-0' : '-rotate-90')}
-                            />
+                            <ChevronDown className={cn('size-3.5 transition-transform duration-200', isOpen ? 'rotate-0' : '-rotate-90')} />
                         </button>
                     )}
                 </div>
@@ -421,7 +411,7 @@ const DetailNavTreeItem = memo(function DetailNavTreeItem({
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
-                    className="p-1.5 rounded-lg text-sidebar-foreground/40 dark:text-zinc-500 hover:text-sidebar-foreground dark:hover:text-white hover:bg-sidebar-accent/70 dark:hover:bg-zinc-800 transition-colors opacity-0 group-hover/detailparent:opacity-100 focus:opacity-100 shrink-0 cursor-pointer"
+                    className="text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent/70 shrink-0 cursor-pointer rounded-lg p-1.5 opacity-0 transition-colors group-hover/detailparent:opacity-100 focus:opacity-100 dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-white"
                     title="Buka di tab/jendela baru"
                 >
                     <ExternalLink size={13} />
@@ -430,25 +420,24 @@ const DetailNavTreeItem = memo(function DetailNavTreeItem({
 
             {/* Tree Branch for Children */}
             {hasChildren && isOpen && (
-                <div className="relative ml-4 mt-1 flex flex-col space-y-1 pl-3 border-l-2 border-sidebar-border/70 dark:border-zinc-800">
+                <div className="border-sidebar-border/70 relative mt-1 ml-4 flex flex-col space-y-1 border-l-2 pl-3 dark:border-zinc-800">
                     {tab.children!.map((child) => {
                         const isThisChildActive =
-                            isParentActive &&
-                            (activeSubTab === child.id || (!activeSubTab && tab.children![0].id === child.id));
+                            isParentActive && (activeSubTab === child.id || (!activeSubTab && tab.children![0].id === child.id));
                         const ChildIcon = child.icon;
                         const childUrl = getTabUrl(tab.id, child.id);
 
                         return (
-                            <div key={child.id} className="flex items-center w-full group/detailchild">
+                            <div key={child.id} className="group/detailchild flex w-full items-center">
                                 <button
                                     type="button"
                                     onClick={() => onSelectTab(tab.id, child.id)}
                                     className={cn(
-                                        'relative flex flex-1 items-center gap-2 rounded-lg px-2.5 py-1.5 text-[11.5px] transition-all duration-150 cursor-pointer text-left min-w-0',
-                                        'before:absolute before:-left-[14px] before:top-1/2 before:-translate-y-1/2 before:w-2.5 before:h-[2px] before:bg-sidebar-border/70 dark:before:bg-zinc-700 before:rounded-full',
+                                        'relative flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[11.5px] transition-all duration-150',
+                                        'before:bg-sidebar-border/70 before:absolute before:top-1/2 before:-left-[14px] before:h-[2px] before:w-2.5 before:-translate-y-1/2 before:rounded-full dark:before:bg-zinc-700',
                                         isThisChildActive
-                                            ? 'bg-primary/10 dark:bg-primary/20 font-bold text-primary dark:text-primary before:!bg-primary dark:before:!bg-primary'
-                                            : 'font-medium text-sidebar-foreground/70 dark:text-zinc-300 hover:bg-sidebar-accent/40 dark:hover:bg-zinc-800/50 hover:text-sidebar-foreground dark:hover:text-white',
+                                            ? 'bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary before:!bg-primary dark:before:!bg-primary font-bold'
+                                            : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/40 hover:text-sidebar-foreground font-medium dark:text-zinc-300 dark:hover:bg-zinc-800/50 dark:hover:text-white',
                                     )}
                                 >
                                     {ChildIcon && (
@@ -457,7 +446,7 @@ const DetailNavTreeItem = memo(function DetailNavTreeItem({
                                                 'flex size-5 shrink-0 items-center justify-center rounded-md transition-all',
                                                 isThisChildActive
                                                     ? 'bg-primary text-primary-foreground dark:bg-primary dark:text-primary-foreground shadow-xs'
-                                                    : 'text-sidebar-foreground/60 dark:text-zinc-400 group-hover/detailchild:text-sidebar-foreground dark:group-hover/detailchild:text-white',
+                                                    : 'text-sidebar-foreground/60 group-hover/detailchild:text-sidebar-foreground dark:text-zinc-400 dark:group-hover/detailchild:text-white',
                                             )}
                                         >
                                             <ChildIcon className="size-3" />
@@ -467,8 +456,8 @@ const DetailNavTreeItem = memo(function DetailNavTreeItem({
                                         className={cn(
                                             'truncate',
                                             isThisChildActive
-                                                ? 'font-bold text-primary dark:text-primary'
-                                                : 'text-sidebar-foreground/70 dark:text-zinc-300 group-hover/detailchild:text-sidebar-foreground dark:group-hover/detailchild:text-white',
+                                                ? 'text-primary dark:text-primary font-bold'
+                                                : 'text-sidebar-foreground/70 group-hover/detailchild:text-sidebar-foreground dark:text-zinc-300 dark:group-hover/detailchild:text-white',
                                         )}
                                     >
                                         {child.label}
@@ -476,18 +465,18 @@ const DetailNavTreeItem = memo(function DetailNavTreeItem({
                                     {child.badge && (
                                         <span
                                             className={cn(
-                                                'ml-auto text-[9.5px] font-semibold px-1.5 py-0.2 rounded-md tabular-nums shrink-0 transition-colors',
+                                                'py-0.2 ml-auto shrink-0 rounded-md px-1.5 text-[9.5px] font-semibold tabular-nums transition-colors',
                                                 child.badgeVariant === 'success' || child.isReviewed
                                                     ? isThisChildActive
-                                                        ? 'bg-emerald-500 text-white font-bold'
-                                                        : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold'
+                                                        ? 'bg-emerald-500 font-bold text-white'
+                                                        : 'bg-emerald-500/15 font-bold text-emerald-600 dark:text-emerald-400'
                                                     : child.badgeVariant === 'warning'
                                                       ? isThisChildActive
-                                                          ? 'bg-amber-400 text-amber-950 font-bold'
-                                                          : 'bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold'
+                                                          ? 'bg-amber-400 font-bold text-amber-950'
+                                                          : 'bg-amber-500/15 font-bold text-amber-600 dark:text-amber-400'
                                                       : isThisChildActive
                                                         ? 'bg-primary text-primary-foreground dark:bg-primary dark:text-primary-foreground font-bold'
-                                                        : 'bg-sidebar-accent/80 dark:bg-zinc-800 text-sidebar-foreground/70 dark:text-zinc-300',
+                                                        : 'bg-sidebar-accent/80 text-sidebar-foreground/70 dark:bg-zinc-800 dark:text-zinc-300',
                                             )}
                                             title={child.isReviewed ? 'Sudah direview' : 'Perlu direview'}
                                         >
@@ -501,7 +490,7 @@ const DetailNavTreeItem = memo(function DetailNavTreeItem({
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     onClick={(e) => e.stopPropagation()}
-                                    className="p-1 rounded-md text-sidebar-foreground/40 dark:text-zinc-500 hover:text-sidebar-foreground dark:hover:text-white hover:bg-sidebar-accent/70 dark:hover:bg-zinc-800 transition-colors opacity-0 group-hover/detailchild:opacity-100 focus:opacity-100 shrink-0 ml-1 cursor-pointer"
+                                    className="text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent/70 ml-1 shrink-0 cursor-pointer rounded-md p-1 opacity-0 transition-colors group-hover/detailchild:opacity-100 focus:opacity-100 dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-white"
                                     title="Buka di tab/jendela baru"
                                 >
                                     <ExternalLink size={12} />
@@ -532,7 +521,7 @@ export const AppSidebar = memo(function AppSidebar() {
         auth?.user?.role === 'Super Admin' ||
         auth?.user?.role === 'Admin' ||
         auth?.user?.is_admin ||
-        auth?.user?.role?.toLowerCase()?.includes('admin')
+        auth?.user?.role?.toLowerCase()?.includes('admin'),
     );
     const canImpersonate = Boolean(isSuperAdmin || auth?.impersonation?.can_impersonate);
 
@@ -623,9 +612,7 @@ export const AppSidebar = memo(function AppSidebar() {
 
             // Prefer the group's own icon field, fall back to first item's icon
             const groupIconName = (group as any).icon as string | null | undefined;
-            const primaryIcon = groupIconName
-                ? (iconMap[groupIconName] ?? LayoutDashboard)
-                : (items.find((i) => i.icon)?.icon ?? LayoutDashboard);
+            const primaryIcon = groupIconName ? (iconMap[groupIconName] ?? LayoutDashboard) : (items.find((i) => i.icon)?.icon ?? LayoutDashboard);
 
             return {
                 ...group,
@@ -688,11 +675,12 @@ export const AppSidebar = memo(function AppSidebar() {
                 return g.title;
             }
         }
-        const dashboardGroup = groups.find((g) =>
-            g.items.some((item) => item.url.includes('/dashboard')) ||
-            g.title.toLowerCase().includes('dashboard') ||
-            g.title.toLowerCase().includes('utama') ||
-            g.title.toLowerCase().includes('main')
+        const dashboardGroup = groups.find(
+            (g) =>
+                g.items.some((item) => item.url.includes('/dashboard')) ||
+                g.title.toLowerCase().includes('dashboard') ||
+                g.title.toLowerCase().includes('utama') ||
+                g.title.toLowerCase().includes('main'),
         );
         return dashboardGroup?.title ?? groups[0]?.title ?? '';
     }, [groups, currentPath]);
@@ -798,13 +786,13 @@ export const AppSidebar = memo(function AppSidebar() {
                 style={{ '--sidebar-width': `${totalSidebarWidth}px` } as React.CSSProperties}
                 className="h-svh max-h-svh overflow-hidden border-r-0 bg-transparent p-0 transition-[width] duration-200 ease-linear" // ponytail: keep outer transparent
             >
-                <div className="flex h-full max-h-full w-full select-none overflow-hidden">
+                <div className="flex h-full max-h-full w-full overflow-hidden select-none">
                     {/* ========================================================================= */}
                     {/* 1. PRIMARY SIDEBAR (Compact Icon Bar: Logo, Search, Groups with Label)   */}
                     {/* ========================================================================= */}
                     <div
                         style={{ width: `${PRIMARY_WIDTH}px` }}
-                        className="bg-primary dark:bg-[#101216] text-primary-foreground flex h-full max-h-full shrink-0 flex-col items-center justify-between border-r border-primary/20 dark:border-zinc-800 z-20 overflow-hidden shadow-xs"
+                        className="bg-primary text-primary-foreground border-primary/20 z-20 flex h-full max-h-full shrink-0 flex-col items-center justify-between overflow-hidden border-r shadow-xs dark:border-zinc-800 dark:bg-[#101216]"
                     >
                         {/* Top: Logo with matching h-16 Header and border-b divider */}
                         <div className="flex h-16 w-full shrink-0 items-center justify-center border-b border-white/15 dark:border-zinc-800">
@@ -812,13 +800,9 @@ export const AppSidebar = memo(function AppSidebar() {
                                 <TooltipTrigger asChild>
                                     <Link
                                         href="/dashboard"
-                                        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 transition-all hover:scale-105"
+                                        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/10 transition-all hover:scale-105 hover:bg-white/20"
                                     >
-                                        <img
-                                            src={appLogo}
-                                            alt="Logo"
-                                            className="size-9 object-contain brightness-0 invert"
-                                        />
+                                        <img src={appLogo} alt="Logo" className="size-9 object-contain brightness-0 invert" />
                                     </Link>
                                 </TooltipTrigger>
                                 <TooltipContent side="right" sideOffset={10} className="font-semibold">
@@ -828,7 +812,7 @@ export const AppSidebar = memo(function AppSidebar() {
                         </div>
 
                         {/* Middle: Search and Module Groups (Scrollable) */}
-                        <div className="flex w-full flex-1 min-h-0 flex-col items-center gap-2 py-3 overflow-y-auto overflow-x-hidden no-scrollbar">
+                        <div className="no-scrollbar flex min-h-0 w-full flex-1 flex-col items-center gap-2 overflow-x-hidden overflow-y-auto py-3">
                             {/* Search Button */}
                             <Tooltip>
                                 <TooltipTrigger asChild>
@@ -836,15 +820,16 @@ export const AppSidebar = memo(function AppSidebar() {
                                         type="button"
                                         onClick={() => setIsSearchOpen(true)}
                                         className={cn(
-                                            'group relative flex w-[64px] flex-col items-center justify-center rounded-xl py-1 px-1 transition-all duration-200 cursor-pointer',
-                                            isSearchOpen && 'before:absolute before:-left-1 before:top-1 before:h-9 before:w-2.5 before:bg-white dark:before:bg-primary before:rounded-r-full after:absolute after:-right-1 after:top-1 after:h-9 after:w-2.5 after:bg-white dark:after:bg-primary after:rounded-l-full'
+                                            'group relative flex w-[64px] cursor-pointer flex-col items-center justify-center rounded-xl px-1 py-1 transition-all duration-200',
+                                            isSearchOpen &&
+                                                'dark:before:bg-primary dark:after:bg-primary before:absolute before:top-1 before:-left-1 before:h-9 before:w-2.5 before:rounded-r-full before:bg-white after:absolute after:top-1 after:-right-1 after:h-9 after:w-2.5 after:rounded-l-full after:bg-white',
                                         )}
                                     >
                                         <div
                                             className={cn(
                                                 'flex size-9 items-center justify-center rounded-xl transition-all duration-200',
                                                 isSearchOpen
-                                                    ? 'bg-white text-primary dark:bg-primary dark:text-white shadow-md'
+                                                    ? 'text-primary dark:bg-primary bg-white shadow-md dark:text-white'
                                                     : 'text-white/75 group-hover:bg-white/15 group-hover:text-white',
                                             )}
                                         >
@@ -852,7 +837,7 @@ export const AppSidebar = memo(function AppSidebar() {
                                         </div>
                                         <span
                                             className={cn(
-                                                'mt-1 max-w-[58px] truncate text-[10px] leading-tight tracking-tight text-center transition-colors',
+                                                'mt-1 max-w-[58px] truncate text-center text-[10px] leading-tight tracking-tight transition-colors',
                                                 isSearchOpen
                                                     ? 'font-bold text-white dark:text-white'
                                                     : 'font-medium text-white/70 group-hover:text-white',
@@ -867,7 +852,7 @@ export const AppSidebar = memo(function AppSidebar() {
                                 </TooltipContent>
                             </Tooltip>
 
-                            <div className="h-px w-8 shrink-0 bg-white/20 dark:bg-zinc-800 my-0.5" />
+                            <div className="my-0.5 h-px w-8 shrink-0 bg-white/20 dark:bg-zinc-800" />
 
                             {/* If contract detail is active, show the "Detail Kontrak" icon on top of the module list */}
                             {detailSidebar?.isActive && (
@@ -885,8 +870,9 @@ export const AppSidebar = memo(function AppSidebar() {
                                                     }
                                                 }}
                                                 className={cn(
-                                                    'group relative flex w-[64px] flex-col items-center justify-center rounded-xl py-1 px-1 transition-all duration-200 cursor-pointer',
-                                                    subMode === 'detail' && 'before:absolute before:-left-1 before:top-1 before:h-9 before:w-2.5 before:bg-white dark:before:bg-primary before:rounded-r-full after:absolute after:-right-1 after:top-1 after:h-9 after:w-2.5 after:bg-white dark:after:bg-primary after:rounded-l-full'
+                                                    'group relative flex w-[64px] cursor-pointer flex-col items-center justify-center rounded-xl px-1 py-1 transition-all duration-200',
+                                                    subMode === 'detail' &&
+                                                        'dark:before:bg-primary dark:after:bg-primary before:absolute before:top-1 before:-left-1 before:h-9 before:w-2.5 before:rounded-r-full before:bg-white after:absolute after:top-1 after:-right-1 after:h-9 after:w-2.5 after:rounded-l-full after:bg-white',
                                                 )}
                                             >
                                                 {/* Icon Card (Active Card on Icon only) */}
@@ -894,7 +880,7 @@ export const AppSidebar = memo(function AppSidebar() {
                                                     className={cn(
                                                         'flex size-9 items-center justify-center rounded-xl transition-all duration-200',
                                                         subMode === 'detail'
-                                                            ? 'bg-white text-primary dark:bg-primary dark:text-white shadow-md'
+                                                            ? 'text-primary dark:bg-primary bg-white shadow-md dark:text-white'
                                                             : 'text-white/75 group-hover:bg-white/15 group-hover:text-white',
                                                     )}
                                                 >
@@ -902,7 +888,7 @@ export const AppSidebar = memo(function AppSidebar() {
                                                 </div>
                                                 <span
                                                     className={cn(
-                                                        'mt-1 max-w-[58px] truncate text-[9.5px] leading-tight tracking-tight text-center transition-colors',
+                                                        'mt-1 max-w-[58px] truncate text-center text-[9.5px] leading-tight tracking-tight transition-colors',
                                                         subMode === 'detail'
                                                             ? 'font-bold text-white dark:text-white'
                                                             : 'font-medium text-white/70 group-hover:text-white',
@@ -917,7 +903,7 @@ export const AppSidebar = memo(function AppSidebar() {
                                         </TooltipContent>
                                     </Tooltip>
 
-                                    <div className="h-px w-8 shrink-0 bg-white/20 dark:bg-zinc-800 my-0.5" />
+                                    <div className="my-0.5 h-px w-8 shrink-0 bg-white/20 dark:bg-zinc-800" />
                                 </>
                             )}
 
@@ -955,8 +941,9 @@ export const AppSidebar = memo(function AppSidebar() {
                                                         }
                                                     }}
                                                     className={cn(
-                                                        'group relative flex w-[64px] flex-col items-center justify-center rounded-xl py-1 px-1 transition-all duration-200 cursor-pointer',
-                                                        isSelected && 'before:absolute before:-left-1 before:top-1 before:h-9 before:w-2.5 before:bg-white dark:before:bg-primary before:rounded-r-full after:absolute after:-right-1 after:top-1 after:h-9 after:w-2.5 after:bg-white dark:after:bg-primary after:rounded-l-full'
+                                                        'group relative flex w-[64px] cursor-pointer flex-col items-center justify-center rounded-xl px-1 py-1 transition-all duration-200',
+                                                        isSelected &&
+                                                            'dark:before:bg-primary dark:after:bg-primary before:absolute before:top-1 before:-left-1 before:h-9 before:w-2.5 before:rounded-r-full before:bg-white after:absolute after:top-1 after:-right-1 after:h-9 after:w-2.5 after:rounded-l-full after:bg-white',
                                                     )}
                                                 >
                                                     {/* Icon Card (Active Card on Icon only) */}
@@ -964,7 +951,7 @@ export const AppSidebar = memo(function AppSidebar() {
                                                         className={cn(
                                                             'flex size-9 items-center justify-center rounded-xl transition-all duration-200',
                                                             isSelected
-                                                                ? 'bg-white text-primary dark:bg-primary dark:text-white shadow-md'
+                                                                ? 'text-primary dark:bg-primary bg-white shadow-md dark:text-white'
                                                                 : 'text-white/75 group-hover:bg-white/15 group-hover:text-white',
                                                         )}
                                                     >
@@ -972,7 +959,7 @@ export const AppSidebar = memo(function AppSidebar() {
                                                     </div>
                                                     <span
                                                         className={cn(
-                                                            'mt-1 max-w-[58px] truncate text-[10px] leading-tight tracking-tight text-center transition-colors',
+                                                            'mt-1 max-w-[58px] truncate text-center text-[10px] leading-tight tracking-tight transition-colors',
                                                             isSelected
                                                                 ? 'font-bold text-white dark:text-white'
                                                                 : 'font-medium text-white/70 group-hover:text-white',
@@ -992,7 +979,7 @@ export const AppSidebar = memo(function AppSidebar() {
                         </div>
 
                         {/* Bottom: Switch User, Notifications & HeaderUserMenu */}
-                        <div className="flex w-full shrink-0 flex-col items-center gap-2 pt-2 pb-3 border-t border-white/15 dark:border-zinc-800">
+                        <div className="flex w-full shrink-0 flex-col items-center gap-2 border-t border-white/15 pt-2 pb-3 dark:border-zinc-800">
                             {/* Switch User Button - Khusus Super Admin / Admin */}
                             {canImpersonate && (
                                 <Tooltip>
@@ -1001,18 +988,18 @@ export const AppSidebar = memo(function AppSidebar() {
                                             type="button"
                                             onClick={() => setIsUserSwitchOpen(true)}
                                             className={cn(
-                                                'relative flex size-9 items-center justify-center rounded-xl transition-all cursor-pointer',
+                                                'relative flex size-9 cursor-pointer items-center justify-center rounded-xl transition-all',
                                                 auth?.impersonation?.is_impersonating
-                                                    ? 'bg-amber-500 text-white font-bold shadow-xs ring-2 ring-amber-300'
-                                                    : 'text-white/75 hover:bg-white/15 hover:text-white'
+                                                    ? 'bg-amber-500 font-bold text-white shadow-xs ring-2 ring-amber-300'
+                                                    : 'text-white/75 hover:bg-white/15 hover:text-white',
                                             )}
                                             aria-label="Ganti User Login (Switch User)"
                                         >
                                             <ArrowRightLeft className="size-4.5" />
                                             {auth?.impersonation?.is_impersonating && (
                                                 <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
-                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                                                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
+                                                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75"></span>
+                                                    <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-amber-500"></span>
                                                 </span>
                                             )}
                                         </button>
@@ -1020,7 +1007,7 @@ export const AppSidebar = memo(function AppSidebar() {
                                     <TooltipContent side="right" sideOffset={10}>
                                         <div className="flex flex-col gap-0.5">
                                             <span className="font-semibold">Ganti User Login (Switch User)</span>
-                                            <span className="text-[11px] text-muted-foreground">
+                                            <span className="text-muted-foreground text-[11px]">
                                                 {auth?.impersonation?.is_impersonating
                                                     ? `Sedang login sebagai ${auth.user?.name} (${auth.user?.role})`
                                                     : 'Pilih & login instan sebagai user lain di database'}
@@ -1053,32 +1040,34 @@ export const AppSidebar = memo(function AppSidebar() {
                     <div
                         style={{ width: isSubOpen ? `${SUB_WIDTH}px` : '0px' }}
                         className={cn(
-                            'bg-sidebar/20 dark:bg-[#141518] flex h-full max-h-full flex-col border-r border-sidebar-border/60 dark:border-zinc-800 transition-all duration-200 ease-linear backdrop-blur-xs overflow-hidden',
-                            isSubOpen ? 'opacity-100' : 'overflow-hidden border-r-0 opacity-0 pointer-events-none',
+                            'bg-sidebar/20 border-sidebar-border/60 flex h-full max-h-full flex-col overflow-hidden border-r backdrop-blur-xs transition-all duration-200 ease-linear dark:border-zinc-800 dark:bg-[#141518]',
+                            isSubOpen ? 'opacity-100' : 'pointer-events-none overflow-hidden border-r-0 opacity-0',
                         )}
                     >
                         {/* Simulation Indicator Banner on Sub-sidebar */}
                         {pov.isSimulatingAny && (
-                            <div className="px-3 py-1.5 bg-amber-500/15 border-b border-amber-500/30 flex items-center justify-between shrink-0 gap-1.5">
-                                <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                                    <ScanEye className="size-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
-                                    <div className="flex flex-col min-w-0">
-                                        <span className="text-[10px] font-bold text-amber-800 dark:text-amber-200 truncate leading-tight">
+                            <div className="flex shrink-0 items-center justify-between gap-1.5 border-b border-amber-500/30 bg-amber-500/15 px-3 py-1.5">
+                                <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                                    <ScanEye className="size-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+                                    <div className="flex min-w-0 flex-col">
+                                        <span className="truncate text-[10px] leading-tight font-bold text-amber-800 dark:text-amber-200">
                                             Simulasi POV Aktif
                                         </span>
-                                        <span className="text-[9px] text-amber-700/80 dark:text-amber-300/80 truncate leading-tight">
+                                        <span className="truncate text-[9px] leading-tight text-amber-700/80 dark:text-amber-300/80">
                                             {[
                                                 pov.isSimulatingNav ? `Nav: ${pov.activeNavPov.badge}` : null,
                                                 pov.isSimulatingDashboard ? `Dash: ${pov.activeDashboardPov.badge}` : null,
                                                 pov.isSimulatingFilter ? `Filter: ${pov.activeFilterPov.badge}` : null,
-                                            ].filter(Boolean).join(' • ')}
+                                            ]
+                                                .filter(Boolean)
+                                                .join(' • ')}
                                         </span>
                                     </div>
                                 </div>
                                 <button
                                     type="button"
                                     onClick={pov.resetAll}
-                                    className="text-[9.5px] font-bold text-amber-800 dark:text-amber-200 hover:underline cursor-pointer shrink-0"
+                                    className="shrink-0 cursor-pointer text-[9.5px] font-bold text-amber-800 hover:underline dark:text-amber-200"
                                     title="Kembalikan semua POV ke asli"
                                 >
                                     Reset
@@ -1088,21 +1077,21 @@ export const AppSidebar = memo(function AppSidebar() {
                         {detailSidebar?.isActive && subMode === 'detail' ? (
                             <>
                                 {/* Detail Header Top: Back button + Switch to main menu button */}
-                                <div className="flex h-16 items-center justify-between px-3 border-b border-sidebar-border/40 dark:border-zinc-800 shrink-0 gap-2">
+                                <div className="border-sidebar-border/40 flex h-16 shrink-0 items-center justify-between gap-2 border-b px-3 dark:border-zinc-800">
                                     <button
                                         type="button"
                                         onClick={detailSidebar.onClose}
-                                        className="flex h-9 items-center gap-1.5 px-2.5 rounded-lg text-xs font-semibold text-sidebar-foreground dark:text-zinc-200 bg-sidebar-accent/40 dark:bg-zinc-800/70 hover:bg-sidebar-accent/70 dark:hover:bg-zinc-800 cursor-pointer transition-all shrink-0 hover:scale-102"
+                                        className="text-sidebar-foreground bg-sidebar-accent/40 hover:bg-sidebar-accent/70 flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold transition-all hover:scale-102 dark:bg-zinc-800/70 dark:text-zinc-200 dark:hover:bg-zinc-800"
                                         title="Kembali ke Daftar Pengajuan"
                                     >
                                         <ArrowLeft size={14} strokeWidth={2.5} className="text-primary" />
-                                        <span className="text-[11px] font-bold uppercase tracking-wider">Kembali</span>
+                                        <span className="text-[11px] font-bold tracking-wider uppercase">Kembali</span>
                                     </button>
 
                                     <button
                                         type="button"
                                         onClick={() => setSubMode('main')}
-                                        className="flex h-9 items-center gap-1.5 px-2.5 rounded-lg text-xs font-semibold text-sidebar-foreground/70 dark:text-zinc-300 hover:text-sidebar-foreground dark:hover:text-white hover:bg-sidebar-accent/40 dark:hover:bg-zinc-800/50 cursor-pointer transition-all shrink-0"
+                                        className="text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/40 flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold transition-all dark:text-zinc-300 dark:hover:bg-zinc-800/50 dark:hover:text-white"
                                         title="Buka Sub-side Menu Utama"
                                     >
                                         <LayoutGrid size={13} className="text-sidebar-foreground/60 dark:text-zinc-400" />
@@ -1111,17 +1100,15 @@ export const AppSidebar = memo(function AppSidebar() {
                                 </div>
 
                                 {/* Sub Header: Tabs Pengajuan */}
-                                <div className="flex h-11 items-center justify-between px-4 border-b border-primary/20 dark:border-zinc-800 shrink-0 bg-primary dark:bg-zinc-900 text-primary-foreground shadow-xs">
-                                    <span className="text-[11.5px] font-bold uppercase tracking-wider text-white truncate">
-                                        Menu Pengajuan
-                                    </span>
-                                    <span className="text-[10px] text-white font-semibold bg-white/20 dark:bg-white/10 px-2 py-0.5 rounded-full tabular-nums">
+                                <div className="border-primary/20 bg-primary text-primary-foreground flex h-11 shrink-0 items-center justify-between border-b px-4 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
+                                    <span className="truncate text-[11.5px] font-bold tracking-wider text-white uppercase">Menu Pengajuan</span>
+                                    <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-semibold text-white tabular-nums dark:bg-white/10">
                                         {detailSidebar.tabs.length} tabs
                                     </span>
                                 </div>
 
-                                 {/* Detail Tab Items with Tree hierarchy */}
-                                <div className="flex-1 min-h-0 overflow-y-auto p-2 space-y-1 custom-scrollbar">
+                                {/* Detail Tab Items with Tree hierarchy */}
+                                <div className="custom-scrollbar min-h-0 flex-1 space-y-1 overflow-y-auto p-2">
                                     {detailSidebar.tabs.map((tab) => (
                                         <DetailNavTreeItem
                                             key={tab.id}
@@ -1138,46 +1125,46 @@ export const AppSidebar = memo(function AppSidebar() {
                             <>
                                 {/* When viewing main menu while contract detail is active, show top button to return to contract tabs */}
                                 {detailSidebar?.isActive && (
-                                    <div className="p-2 border-b border-sidebar-border/50 dark:border-zinc-800 bg-primary/5 dark:bg-zinc-900/40 shrink-0">
+                                    <div className="border-sidebar-border/50 bg-primary/5 shrink-0 border-b p-2 dark:border-zinc-800 dark:bg-zinc-900/40">
                                         <button
                                             type="button"
                                             onClick={() => setSubMode('detail')}
-                                            className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-bold shadow-xs hover:opacity-95 transition-all cursor-pointer"
+                                            className="bg-primary text-primary-foreground flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-xs font-bold shadow-xs transition-all hover:opacity-95"
                                             title="Kembali ke Sub-side Detail Kontrak"
                                         >
                                             <div className="flex items-center gap-2 truncate">
                                                 <FileText size={14} />
                                                 <span className="truncate">Menu Pengajuan</span>
                                             </div>
-                                            <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded font-bold shrink-0">Buka</span>
+                                            <span className="shrink-0 rounded bg-white/20 px-1.5 py-0.5 text-[10px] font-bold">Buka</span>
                                         </button>
                                     </div>
                                 )}
 
                                 {/* Sub Header Top: App Name & Tagline (Height h-16 perfectly matching main navbar) */}
-                                <div className="flex h-16 items-center px-4 border-b border-sidebar-border/40 dark:border-zinc-800 shrink-0">
+                                <div className="border-sidebar-border/40 flex h-16 shrink-0 items-center border-b px-4 dark:border-zinc-800">
                                     <div className="flex flex-col justify-center truncate">
-                                        <span className="text-sidebar-foreground dark:text-white text-[15px] leading-tight font-bold tracking-tight">
+                                        <span className="text-sidebar-foreground text-[15px] leading-tight font-bold tracking-tight dark:text-white">
                                             {appName}
                                         </span>
-                                        <span className="text-sidebar-foreground/50 dark:text-zinc-400 text-[10px] leading-tight font-medium truncate mt-0.5">
+                                        <span className="text-sidebar-foreground/50 mt-0.5 truncate text-[10px] leading-tight font-medium dark:text-zinc-400">
                                             {appTagline}
                                         </span>
                                     </div>
                                 </div>
 
                                 {/* Sub Header: Group Title (Colored Primary with h-11 matching table header proportion) */}
-                                <div className="flex h-11 items-center justify-between px-4 border-b border-primary/20 dark:border-zinc-800 shrink-0 bg-primary dark:bg-zinc-900 text-primary-foreground shadow-xs">
-                                    <span className="text-[11.5px] font-bold uppercase tracking-wider text-white truncate">
+                                <div className="border-primary/20 bg-primary text-primary-foreground flex h-11 shrink-0 items-center justify-between border-b px-4 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
+                                    <span className="truncate text-[11.5px] font-bold tracking-wider text-white uppercase">
                                         {currentGroup?.title ?? 'Menu'}
                                     </span>
-                                    <span className="text-[10px] text-white font-semibold bg-white/20 dark:bg-white/10 px-2 py-0.5 rounded-full tabular-nums">
+                                    <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-semibold text-white tabular-nums dark:bg-white/10">
                                         {currentGroup?.items.length ?? 0} menu
                                     </span>
                                 </div>
 
                                 {/* Sub Menu Item List - Tree and Rounded items */}
-                                <div className="flex-1 min-h-0 overflow-y-auto p-2 space-y-1 custom-scrollbar">
+                                <div className="custom-scrollbar min-h-0 flex-1 space-y-1 overflow-y-auto p-2">
                                     {currentGroup?.items.map((item) => (
                                         <NavTreeItem
                                             key={item.title + item.url}
@@ -1199,26 +1186,26 @@ export const AppSidebar = memo(function AppSidebar() {
             {/* SEARCH MODAL DIALOG (⌘K / Ctrl+K)                                         */}
             {/* ========================================================================= */}
             <Dialog open={isSearchOpen} onOpenChange={setIsSearchOpen}>
-                <DialogContent className="max-w-xl p-0 overflow-hidden gap-0 border-border/80 shadow-2xl rounded-2xl">
+                <DialogContent className="border-border/80 max-w-xl gap-0 overflow-hidden rounded-2xl p-0 shadow-2xl">
                     <DialogTitle className="sr-only">Cari Menu & Fitur</DialogTitle>
-                    
+
                     {/* Search Input in Dialog */}
-                    <div className="flex items-center px-4 border-b border-border/60 bg-muted/20">
-                        <Search className="size-5 text-muted-foreground/70 shrink-0 mr-3" />
+                    <div className="border-border/60 bg-muted/20 flex items-center border-b px-4">
+                        <Search className="text-muted-foreground/70 mr-3 size-5 shrink-0" />
                         <input
                             ref={searchInputRef}
                             type="text"
                             placeholder="Cari semua menu, modul & fitur... (contoh: Kontrak, User, Vendor)"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="h-14 w-full bg-transparent text-sm placeholder:text-muted-foreground/60 outline-none"
+                            className="placeholder:text-muted-foreground/60 h-14 w-full bg-transparent text-sm outline-none"
                             autoFocus
                         />
                         {searchQuery && (
                             <button
                                 type="button"
                                 onClick={() => setSearchQuery('')}
-                                className="p-1 text-muted-foreground hover:text-foreground rounded-full cursor-pointer"
+                                className="text-muted-foreground hover:text-foreground cursor-pointer rounded-full p-1"
                             >
                                 <X className="size-4" />
                             </button>
@@ -1228,7 +1215,7 @@ export const AppSidebar = memo(function AppSidebar() {
                     {/* Search Results Area */}
                     <div className="max-h-[360px] overflow-y-auto p-2">
                         {searchQuery.trim() === '' ? (
-                            <div className="p-6 text-center text-xs text-muted-foreground">
+                            <div className="text-muted-foreground p-6 text-center text-xs">
                                 Ketik kata kunci untuk mencari menu di seluruh sistem.
                             </div>
                         ) : searchDialogResults.length > 0 ? (
@@ -1245,19 +1232,19 @@ export const AppSidebar = memo(function AppSidebar() {
                                                 setSelectedGroupTitle(groupTitle);
                                                 if (isMobile) setOpenMobile(false);
                                             }}
-                                            className="group flex items-center justify-between gap-3 rounded-xl px-3.5 py-2.5 text-sm transition-colors hover:bg-primary/10 hover:text-primary"
+                                            className="group hover:bg-primary/10 hover:text-primary flex items-center justify-between gap-3 rounded-xl px-3.5 py-2.5 text-sm transition-colors"
                                         >
                                             <div className="flex items-center gap-3 truncate">
-                                                <ItemIcon className="size-4.5 text-muted-foreground group-hover:text-primary shrink-0 transition-colors" />
-                                                <span className="font-medium truncate text-foreground group-hover:text-primary">
+                                                <ItemIcon className="text-muted-foreground group-hover:text-primary size-4.5 shrink-0 transition-colors" />
+                                                <span className="text-foreground group-hover:text-primary truncate font-medium">
                                                     <HighlightingCell text={item.title} search={searchQuery} />
                                                 </span>
                                             </div>
-                                            <div className="flex items-center gap-2 shrink-0">
-                                                <span className="text-[11px] font-medium text-muted-foreground/70 bg-muted px-2 py-0.5 rounded-md">
+                                            <div className="flex shrink-0 items-center gap-2">
+                                                <span className="text-muted-foreground/70 bg-muted rounded-md px-2 py-0.5 text-[11px] font-medium">
                                                     {groupTitle}
                                                 </span>
-                                                <ChevronRight className="size-4 text-muted-foreground/40 group-hover:text-primary transition-colors" />
+                                                <ChevronRight className="text-muted-foreground/40 group-hover:text-primary size-4 transition-colors" />
                                             </div>
                                         </Link>
                                     );
@@ -1265,18 +1252,16 @@ export const AppSidebar = memo(function AppSidebar() {
                             </div>
                         ) : (
                             <div className="p-8 text-center">
-                                <p className="text-sm font-medium text-muted-foreground">
-                                    Tidak ditemukan menu untuk "{searchQuery}"
-                                </p>
+                                <p className="text-muted-foreground text-sm font-medium">Tidak ditemukan menu untuk "{searchQuery}"</p>
                             </div>
                         )}
                     </div>
 
                     {/* Footer Info */}
-                    <div className="flex items-center justify-between px-4 py-2 bg-muted/40 border-t border-border/40 text-[11px] text-muted-foreground">
+                    <div className="bg-muted/40 border-border/40 text-muted-foreground flex items-center justify-between border-t px-4 py-2 text-[11px]">
                         <span>Pilih menu untuk langsung navigasi</span>
                         <div className="flex items-center gap-1.5">
-                            <kbd className="border border-border rounded px-1.5 py-0.5 font-mono text-[10px] bg-background">ESC</kbd>
+                            <kbd className="border-border bg-background rounded border px-1.5 py-0.5 font-mono text-[10px]">ESC</kbd>
                             <span>tutup</span>
                         </div>
                     </div>
@@ -1284,10 +1269,7 @@ export const AppSidebar = memo(function AppSidebar() {
             </Dialog>
 
             {/* Switch User (Impersonation) Modal for Super Admin */}
-            <UserSwitchModal
-                open={isUserSwitchOpen}
-                onOpenChange={setIsUserSwitchOpen}
-            />
+            <UserSwitchModal open={isUserSwitchOpen} onOpenChange={setIsUserSwitchOpen} />
         </TooltipProvider>
     );
 });

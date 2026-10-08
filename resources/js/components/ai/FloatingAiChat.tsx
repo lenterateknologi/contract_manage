@@ -1,16 +1,6 @@
 import { Button } from '@/components/ui/buttons/Button';
 import { usePermissions } from '@/hooks/use-permissions';
-import {
-    Bot,
-    ChevronDown,
-    Expand,
-    Minimize2,
-    Send,
-    Sparkles,
-    Trash2,
-    User,
-    X,
-} from 'lucide-react';
+import { Bot, ChevronDown, Expand, Minimize2, Send, Sparkles, Trash2, User, X } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 
 interface ChatMessage {
@@ -95,11 +85,14 @@ export function FloatingAiChat() {
             const lower = query.toLowerCase();
 
             if (lower.includes('pending') || lower.includes('approval') || lower.includes('persetujuan')) {
-                reply = 'Berdasarkan data sistem saat ini, terdapat beberapa kontrak yang sedang menunggu review dan approval dari pihak terkait. Anda dapat memeriksa tab **Persetujuan** pada menu Notifikasi atas atau membuka menu [Daftar Kontrak](/contracts) dengan filter *Pending Review*.';
+                reply =
+                    'Berdasarkan data sistem saat ini, terdapat beberapa kontrak yang sedang menunggu review dan approval dari pihak terkait. Anda dapat memeriksa tab **Persetujuan** pada menu Notifikasi atas atau membuka menu [Daftar Kontrak](/contracts) dengan filter *Pending Review*.';
             } else if (lower.includes('template') || lower.includes('form')) {
-                reply = 'Seluruh template kontrak dan formulir dapat dikelola terpusat di menu [Contract Templates](/admin/templates) dan [Form Templates](/admin/form-templates). Hak akses baca/tulis/unduh dapat diatur melalui Access Mapping.';
+                reply =
+                    'Seluruh template kontrak dan formulir dapat dikelola terpusat di menu [Contract Templates](/admin/templates) dan [Form Templates](/admin/form-templates). Hak akses baca/tulis/unduh dapat diatur melalui Access Mapping.';
             } else if (lower.includes('vendor')) {
-                reply = 'Untuk mendaftarkan atau mengecek data Vendor/Partner, Anda dapat menginput data pada sub-dokumen Form F1 Permohonan Kontrak atau melalui modul Master Data Vendor.';
+                reply =
+                    'Untuk mendaftarkan atau mengecek data Vendor/Partner, Anda dapat menginput data pada sub-dokumen Form F1 Permohonan Kontrak atau melalui modul Master Data Vendor.';
             } else {
                 reply = `Saya telah mencatat pertanyaan Anda: "${query}". \n\nSaat ini saya terhubung dengan basis pengetahuan Contract Management untuk membantu Anda mencari klausul, status alur kerja (workflow), dan rekapitulasi data legal.`;
             }
@@ -136,31 +129,29 @@ export function FloatingAiChat() {
     };
 
     return (
-        <div className="fixed bottom-12 right-12 z-[99998] flex flex-col items-end print:hidden">
+        <div className="fixed right-12 bottom-12 z-[99998] flex flex-col items-end print:hidden">
             {/* AI Dialog Window */}
             {isOpen && (
                 <div
-                    className={`mb-5 flex flex-col overflow-hidden rounded-3xl border border-border/80 bg-card shadow-2xl transition-all duration-300 animate-in fade-in slide-in-from-bottom-5 ${
-                        isExpanded
-                            ? 'w-[92vw] sm:w-[840px] h-[90vh] max-h-[920px]'
-                            : 'w-[92vw] sm:w-[500px] h-[780px] max-h-[88vh] min-h-[540px]'
+                    className={`border-border/80 bg-card animate-in fade-in slide-in-from-bottom-5 mb-5 flex flex-col overflow-hidden rounded-3xl border shadow-2xl transition-all duration-300 ${
+                        isExpanded ? 'h-[90vh] max-h-[920px] w-[92vw] sm:w-[840px]' : 'h-[780px] max-h-[88vh] min-h-[540px] w-[92vw] sm:w-[500px]'
                     }`}
                 >
                     {/* Header */}
-                    <div className="flex items-center justify-between border-b border-border/60 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent px-4 py-3.5">
+                    <div className="border-border/60 from-primary/10 via-primary/5 flex items-center justify-between border-b bg-gradient-to-r to-transparent px-4 py-3.5">
                         <div className="flex items-center gap-3">
-                            <div className="relative flex h-9 w-9 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
+                            <div className="bg-primary text-primary-foreground relative flex h-9 w-9 items-center justify-center rounded-2xl shadow-sm">
                                 <Sparkles className="h-4.5 w-4.5" />
-                                <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-card" />
+                                <span className="ring-card absolute -right-0.5 -bottom-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2" />
                             </div>
                             <div>
                                 <div className="flex items-center gap-1.5">
-                                    <h3 className="text-xs font-bold text-foreground">AI Contract Assistant</h3>
-                                    <span className="rounded-md border border-primary/20 bg-primary/10 px-1.5 py-0.2 text-[9px] font-semibold text-primary">
+                                    <h3 className="text-foreground text-xs font-bold">AI Contract Assistant</h3>
+                                    <span className="border-primary/20 bg-primary/10 py-0.2 text-primary rounded-md border px-1.5 text-[9px] font-semibold">
                                         Admin Only
                                     </span>
                                 </div>
-                                <p className="text-[10px] text-muted-foreground">Smart Copilot & Contract Insights</p>
+                                <p className="text-muted-foreground text-[10px]">Smart Copilot & Contract Insights</p>
                             </div>
                         </div>
 
@@ -170,7 +161,7 @@ export function FloatingAiChat() {
                                 type="button"
                                 onClick={clearChat}
                                 title="Bersihkan obrolan"
-                                className="flex h-8 w-8 items-center justify-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+                                className="text-muted-foreground hover:bg-muted hover:text-foreground flex h-8 w-8 cursor-pointer items-center justify-center rounded-xl transition-colors"
                             >
                                 <Trash2 className="h-4 w-4" />
                             </button>
@@ -178,19 +169,15 @@ export function FloatingAiChat() {
                                 type="button"
                                 onClick={() => setIsExpanded(!isExpanded)}
                                 title={isExpanded ? 'Kecilkan jendela' : 'Perbesar jendela'}
-                                className="hidden sm:flex h-8 w-8 items-center justify-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+                                className="text-muted-foreground hover:bg-muted hover:text-foreground hidden h-8 w-8 cursor-pointer items-center justify-center rounded-xl transition-colors sm:flex"
                             >
-                                {isExpanded ? (
-                                    <Minimize2 className="h-4 w-4" />
-                                ) : (
-                                    <Expand className="h-4 w-4" />
-                                )}
+                                {isExpanded ? <Minimize2 className="h-4 w-4" /> : <Expand className="h-4 w-4" />}
                             </button>
                             <button
                                 type="button"
                                 onClick={() => setIsOpen(false)}
                                 title="Tutup"
-                                className="flex h-8 w-8 items-center justify-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+                                className="text-muted-foreground hover:bg-muted hover:text-foreground flex h-8 w-8 cursor-pointer items-center justify-center rounded-xl transition-colors"
                             >
                                 <X className="h-4 w-4" />
                             </button>
@@ -198,19 +185,16 @@ export function FloatingAiChat() {
                     </div>
 
                     {/* Messages Body */}
-                    <div className="flex-1 overflow-y-auto p-4.5 space-y-3.5 bg-muted/20">
+                    <div className="bg-muted/20 flex-1 space-y-3.5 overflow-y-auto p-4.5">
                         {messages.map((msg) => {
                             const isUser = msg.sender === 'user';
                             return (
-                                <div
-                                    key={msg.id}
-                                    className={`flex items-start gap-2.5 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}
-                                >
+                                <div key={msg.id} className={`flex items-start gap-2.5 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
                                     <div
                                         className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-xs font-semibold ${
                                             isUser
                                                 ? 'bg-primary text-primary-foreground shadow-xs'
-                                                : 'bg-card border border-border shadow-xs text-primary'
+                                                : 'bg-card border-border text-primary border shadow-xs'
                                         }`}
                                     >
                                         {isUser ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
@@ -220,12 +204,12 @@ export function FloatingAiChat() {
                                         className={`group relative max-w-[82%] rounded-2xl px-3.5 py-2.5 text-[12px] leading-relaxed shadow-xs select-text ${
                                             isUser
                                                 ? 'bg-primary text-primary-foreground rounded-tr-xs'
-                                                : 'bg-card text-card-foreground border border-border/70 rounded-tl-xs'
+                                                : 'bg-card text-card-foreground border-border/70 rounded-tl-xs border'
                                         }`}
                                     >
                                         <div className="whitespace-pre-wrap">{msg.text}</div>
                                         <div
-                                            className={`mt-1 text-[9px] tabular-nums text-right ${
+                                            className={`mt-1 text-right text-[9px] tabular-nums ${
                                                 isUser ? 'text-primary-foreground/70' : 'text-muted-foreground/70'
                                             }`}
                                         >
@@ -239,14 +223,14 @@ export function FloatingAiChat() {
                         {/* Typing indicator */}
                         {isTyping && (
                             <div className="flex items-start gap-2.5">
-                                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-card border border-border text-primary shadow-xs">
+                                <div className="bg-card border-border text-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border shadow-xs">
                                     <Bot className="h-4 w-4" />
                                 </div>
-                                <div className="rounded-2xl rounded-tl-xs border border-border/70 bg-card px-4 py-3 shadow-xs">
+                                <div className="border-border/70 bg-card rounded-2xl rounded-tl-xs border px-4 py-3 shadow-xs">
                                     <div className="flex items-center gap-1.5">
-                                        <span className="h-1.5 w-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.3s]" />
-                                        <span className="h-1.5 w-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.15s]" />
-                                        <span className="h-1.5 w-1.5 rounded-full bg-primary animate-bounce" />
+                                        <span className="bg-primary h-1.5 w-1.5 animate-bounce rounded-full [animation-delay:-0.3s]" />
+                                        <span className="bg-primary h-1.5 w-1.5 animate-bounce rounded-full [animation-delay:-0.15s]" />
+                                        <span className="bg-primary h-1.5 w-1.5 animate-bounce rounded-full" />
                                     </div>
                                 </div>
                             </div>
@@ -257,8 +241,8 @@ export function FloatingAiChat() {
 
                     {/* Quick Prompts Suggestions */}
                     {messages.length <= 2 && (
-                        <div className="border-t border-border/40 bg-card px-4 py-2.5">
-                            <p className="mb-1.5 text-[10px] font-semibold text-muted-foreground flex items-center gap-1">
+                        <div className="border-border/40 bg-card border-t px-4 py-2.5">
+                            <p className="text-muted-foreground mb-1.5 flex items-center gap-1 text-[10px] font-semibold">
                                 <Sparkles className="h-3 w-3 text-amber-500" />
                                 Saran Cepat:
                             </p>
@@ -268,7 +252,7 @@ export function FloatingAiChat() {
                                         key={idx}
                                         type="button"
                                         onClick={() => handleSendMessage(prompt)}
-                                        className="rounded-xl border border-border/80 bg-muted/50 hover:bg-primary/10 hover:border-primary/30 px-3 py-1.5 text-[11px] text-foreground transition-colors text-left truncate max-w-full cursor-pointer"
+                                        className="border-border/80 bg-muted/50 hover:bg-primary/10 hover:border-primary/30 text-foreground max-w-full cursor-pointer truncate rounded-xl border px-3 py-1.5 text-left text-[11px] transition-colors"
                                     >
                                         {prompt}
                                     </button>
@@ -278,8 +262,8 @@ export function FloatingAiChat() {
                     )}
 
                     {/* Footer Input Bar */}
-                    <div className="border-t border-border/60 bg-card p-4">
-                        <div className="relative flex items-end gap-2 rounded-2xl border border-border bg-background p-2 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary shadow-xs">
+                    <div className="border-border/60 bg-card border-t p-4">
+                        <div className="border-border bg-background focus-within:border-primary focus-within:ring-primary relative flex items-end gap-2 rounded-2xl border p-2 shadow-xs focus-within:ring-1">
                             <textarea
                                 ref={inputRef}
                                 value={input}
@@ -287,20 +271,20 @@ export function FloatingAiChat() {
                                 onKeyDown={handleKeyDown}
                                 placeholder="Tanyakan apapun seputar kontrak atau data sistem..."
                                 rows={1}
-                                className="max-h-32 min-h-[42px] flex-1 resize-none bg-transparent px-3 py-2 text-[12px] text-foreground placeholder:text-muted-foreground focus:outline-hidden"
+                                className="text-foreground placeholder:text-muted-foreground max-h-32 min-h-[42px] flex-1 resize-none bg-transparent px-3 py-2 text-[12px] focus:outline-hidden"
                             />
                             <Button
                                 type="button"
                                 size="icon"
                                 onClick={() => handleSendMessage()}
                                 disabled={!input.trim() || isTyping}
-                                className="h-9 w-9 shrink-0 rounded-xl shadow-xs cursor-pointer disabled:opacity-40"
+                                className="h-9 w-9 shrink-0 cursor-pointer rounded-xl shadow-xs disabled:opacity-40"
                             >
                                 <Send className="h-4 w-4" />
                                 <span className="sr-only">Kirim</span>
                             </Button>
                         </div>
-                        <div className="mt-2 flex items-center justify-between text-[10px] text-muted-foreground px-1">
+                        <div className="text-muted-foreground mt-2 flex items-center justify-between px-1 text-[10px]">
                             <span>Tekan Enter untuk mengirim</span>
                             <span className="flex items-center gap-1">
                                 <Bot className="h-3 w-3" /> AI Model Ready
@@ -314,7 +298,7 @@ export function FloatingAiChat() {
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className="group relative flex h-16 w-16 items-center justify-center rounded-3xl bg-gradient-to-tr from-primary to-indigo-600 text-white shadow-2xl hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer ring-4 ring-primary/20 hover:ring-primary/40"
+                className="group from-primary ring-primary/20 hover:ring-primary/40 relative flex h-16 w-16 cursor-pointer items-center justify-center rounded-3xl bg-gradient-to-tr to-indigo-600 text-white shadow-2xl ring-4 transition-all duration-200 hover:scale-105 active:scale-95"
                 aria-label="Buka AI Chat Assistant"
             >
                 {isOpen ? (
