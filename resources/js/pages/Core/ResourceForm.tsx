@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/buttons/Button';
 import LucideIcons from '@/lib/lucide-dynamic';
 import { cn } from '@/lib/utils';
-import { SlaSimulationModal } from '@/pages/contracts/components/parts/SlaSimulationModal';
+import { SlaSimulationModal } from '@/features/Contracts/components/parts/SlaSimulationModal';
 import AuthorityTableManager from '@/pages/workflows/components/AuthorityTableManager';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { ArrowLeft, Calculator } from 'lucide-react';

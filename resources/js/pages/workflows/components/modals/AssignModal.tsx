@@ -1,4 +1,4 @@
-import { SharedAssignModal } from '@/pages/contracts/components/modals/shared/SharedAssignModal';
+import { SharedAssignModal } from '@/features/Contracts/components/modals/shared/SharedAssignModal';
 
 interface AssignModalProps {
     isOpen: boolean;

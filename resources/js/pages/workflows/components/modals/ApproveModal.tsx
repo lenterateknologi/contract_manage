@@ -1,4 +1,4 @@
-import { SharedApproveModal } from '@/pages/contracts/components/modals/shared/SharedApproveModal';
+import { SharedApproveModal } from '@/features/Contracts/components/modals/shared/SharedApproveModal';
 
 interface ApproveModalProps {
     isOpen: boolean;

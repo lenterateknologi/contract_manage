@@ -1,4 +1,4 @@
-import { SharedAddhocModal } from '@/pages/contracts/components/modals/shared/SharedAddhocModal';
+import { SharedAddhocModal } from '@/features/Contracts/components/modals/shared/SharedAddhocModal';
 
 interface ForwardModalProps {
     isOpen: boolean;

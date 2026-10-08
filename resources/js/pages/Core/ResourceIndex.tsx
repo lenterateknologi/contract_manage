@@ -11,7 +11,7 @@ import { ExcelActions } from '@/components/ui/tables/ExcelActions';
 import { parseDateInput } from '@/lib/formatters';
 import LucideIcons from '@/lib/lucide-dynamic';
 import { cn } from '@/lib/utils';
-import { SlaSimulationModal } from '@/pages/contracts/components/parts/SlaSimulationModal';
+import { SlaSimulationModal } from '@/features/Contracts/components/parts/SlaSimulationModal';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import {
     Building,
