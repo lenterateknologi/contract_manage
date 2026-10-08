@@ -2,7 +2,7 @@ import { router } from '@inertiajs/react';
 import { Briefcase, Building, ChevronRight, FolderClosed, GitBranch, Layers, Network, User, Users } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { MetricItem } from './MetricItem';
+import { MetricItem } from '../ui/MetricItem';
 
 interface MasterDataTabProps {
     data: any;
@@ -23,22 +23,15 @@ export function MasterDataTab({ data }: MasterDataTabProps) {
 
     const treeData = counts.organizationTree || [];
 
-    // State to toggle between Chart and List view
-    const [activeView, setActiveView] = useState<'chart' | 'list'>('chart');
-
     // State for interactive list view (drilldown)
     const [selectedGroupId, setSelectedGroupId] = useState<string>('');
-    const [selectedRegionId, setSelectedRegionId] = useState<string>('');
 
     // Pre-select first items if available
     useEffect(() => {
         if (treeData.length > 0 && !selectedGroupId) {
             setSelectedGroupId(treeData[0].id);
-            if (treeData[0].children && treeData[0].children.length > 0) {
-                setSelectedRegionId(treeData[0].children[0].id);
-            }
         }
-    }, [treeData]);
+    }, [treeData, selectedGroupId]);
 
     const CHART_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899'];
 

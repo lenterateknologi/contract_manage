@@ -11,17 +11,16 @@ interface HeaderTaskListProps {
 }
 
 export function HeaderTaskList({ contract, onNavigateTab }: HeaderTaskListProps) {
-    // Only show requirements checklist button if the logged-in user is the current actor / approver
     const isCurrentActor = contract?.is_current_actor ?? contract?.can_approve ?? false;
-    if (!isCurrentActor) {
-        return null;
-    }
 
     const requirements = useMemo(() => {
+        if (!isCurrentActor) {
+            return { items: [], hasRequirements: false, allFilled: true, totalCount: 0, filledCount: 0 };
+        }
         return resolveContractRequirements(contract);
-    }, [contract]);
+    }, [contract, isCurrentActor]);
 
-    if (!requirements.hasRequirements) {
+    if (!isCurrentActor || !requirements.hasRequirements) {
         return null;
     }
 

@@ -87,8 +87,8 @@ export function ContractSlaCalendar({ selected }: { selected: Contract }) {
     const [viewYear, setViewYear] = useState(initialDate.getFullYear());
     const [viewMonth, setViewMonth] = useState(initialDate.getMonth()); // 0-11
 
-    const [extraPastDays, setExtraPastDays] = useState(7);
-    const [extraFutureDays, setExtraFutureDays] = useState(14);
+    const [extraPastDays] = useState(7);
+    const [extraFutureDays] = useState(14);
     const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null);
 
     const scrollContainerRef = useRef<HTMLDivElement>(null);

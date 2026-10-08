@@ -5,9 +5,7 @@ import { formatFileSize } from '@/lib/formatters';
 import { cn, formatDateTime } from '@/lib/utils';
 import DocumentPreviewModal from '@/pages/contracts/components/modals/DocumentPreviewModal';
 import { Contract, ContractApproval } from '@/pages/contracts/types';
-import { Bot, CheckCircle2, ChevronDown, Clock, Download, Eye, Lock, X } from 'lucide-react';
-import { useState } from 'react';
-import { StatusBadge } from '../ui/ui';
+import { StatusBadge } from '@/components/ui/feedback/StatusBadge';
 
 interface ApprovalCardProps {
     approval: ContractApproval;

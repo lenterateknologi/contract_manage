@@ -6,7 +6,7 @@ interface VendorDocumentProps {
     vendor: Record<string, any>;
 }
 
-export default function VendorDocument({ vendor }: VendorDocumentProps) {
+export default function VendorDocument({ vendor }: Readonly<VendorDocumentProps>) {
     const r = vendor || {};
     const detail = (r.vendor_detail || {}) as Record<string, any>;
     const tax = (detail.tax || {}) as Record<string, any>;
@@ -30,16 +30,14 @@ export default function VendorDocument({ vendor }: VendorDocumentProps) {
                     (/\.(pdf|png|jpe?g|jfif|webp|gif|svg|docx?|xlsx?|pptx?|zip|rar|txt|csv)$/i.test(value) || value.includes('__')))
             ) {
                 const valStr = String(value);
+                const fileUrl =
+                    valStr.startsWith('http') || valStr.startsWith('/')
+                        ? valStr
+                        : `/admin/core/vendors/file-download?fileName=${encodeURIComponent(valStr)}`;
                 display = (
                     <button
                         type="button"
-                        onClick={() => {
-                            const fileUrl =
-                                valStr.startsWith('http') || valStr.startsWith('/')
-                                    ? valStr
-                                    : `/admin/core/vendors/file-download?fileName=${encodeURIComponent(valStr)}`;
-                            window.open(fileUrl, '_blank');
-                        }}
+                        onClick={() => window.open(fileUrl, '_blank')}
                         className="inline-flex cursor-pointer items-center gap-1.5 text-left font-semibold text-blue-600 underline transition-all hover:text-blue-800 hover:no-underline dark:text-blue-400 dark:hover:text-blue-300"
                         title="Klik untuk membuka/preview dokumen"
                     >
@@ -63,6 +61,102 @@ export default function VendorDocument({ vendor }: VendorDocumentProps) {
             </div>
         );
     };
+
+    const sections = [
+        {
+            title: 'I. Profil & Identitas Rekanan',
+            rows: [
+                ['Nama Resmi', detail.name || r.vendor_name],
+                ['Tipe Bentuk Usaha', detail.businessTypeName],
+                ['Nama Cabang', detail.branchName],
+                ['Nomor Registrasi', detail.registrationNumber],
+                ['Nomor Perjanjian', detail.agreementNumber],
+                ['Tanggal Perjanjian', detail.agreementDate],
+                ['Tanggal Disetujui', detail.approvedDate],
+                ['Total Karyawan', detail.totalEmployees],
+                ['Cakupan Wilayah (Coverage Area)', detail.coverageArea],
+                ['Compliance Level', detail.complianceLevel],
+                ['Integrity Pact', detail.integrityPact],
+                ['Master Agreement', detail.masterAgreement],
+                ['Single Vendor', detail.isSingleVendor],
+            ],
+        },
+        {
+            title: 'III. Informasi Kontak & Person in Charge (PIC)',
+            rows: [
+                ['Email Perusahaan', detail.companyEmail],
+                ['No. Telepon Perusahaan', detail.companyPhone],
+                ['Fax Perusahaan', detail.companyFax],
+                ['Email Bagian Keuangan', detail.financeEmail],
+                ['Email Bagian Perpajakan', detail.taxEmail],
+                ['Nama PIC', detail.pic],
+                ['Email PIC', detail.picemail],
+                ['No. HP / Telepon PIC', detail.picphone],
+            ],
+        },
+        {
+            title: 'IV. Data Perpajakan',
+            rows: [
+                ['Status NPWP', tax.typeNpwp],
+                ['Nomor NPWP', tax.npwp],
+                ['Status PKP', tax.typePkp],
+                ['Nomor PKP', tax.pkp],
+                ['Kategori BKP', tax.typeBkp],
+                ['Tarif PPN', tax.ppn ? `${tax.ppn}%` : null],
+                ['Deskripsi BKP', tax.bkpDesc],
+                ['Deskripsi JKP', tax.jkpDesc],
+                ['Organisasi', tax.isOrganization],
+                ['SIUJK', tax.isSiujk],
+                ['Nomor PP23', tax.pp23number],
+                ['Masa Berlaku PP23', tax.pp23expiredDate],
+            ],
+        },
+        {
+            title: 'VII. Perizinan Legalitas',
+            rows: [
+                ['Nomor Induk Berusaha (NIB)', legality.nib],
+                ['Tgl Kadaluarsa NIB', legality.nibexpiredDate],
+                ['Izin Usaha (Business Permit)', legality.businessPermit],
+                ['SIUP', legality.siup],
+                ['Tgl Kadaluarsa SIUP', legality.siupexpiredDate],
+                ['TDP', legality.tdp],
+                ['Tgl Kadaluarsa TDP', legality.tdpexpiredDate],
+                ['Penandatangan Resmi', legality.signing],
+                ['Jabatan Penandatangan', legality.jobTitle],
+                ['Akta Pendirian', legality.memorandumOfAssociation],
+                ['Surat Keputusan Menkumham', legality.decissionLetterMenkumham],
+            ],
+        },
+        {
+            title: 'VIII. Berkas & Lampiran Dokumen',
+            rows: [
+                ['File KTP (ID Card File)', detail.idCardFile],
+                ['File Master Agreement', detail.masterAgreementAttachment],
+                ['File Profile Perusahaan', detail.companyProfileAttachment],
+                ['File Single Vendor', detail.singleVendorFile],
+                ['File Compliance', detail.complianceFile],
+                ['Lampiran NIB', legality.nibattachment],
+                ['Lampiran Izin Usaha', legality.businessPermitAttachment],
+                ['Lampiran SIUP', legality.siupattachment],
+                ['Lampiran TDP', legality.tdpattachment],
+                ['Lampiran Akta Pendirian', legality.memorandumOfAssociationAttachment],
+                ['Lampiran SK Menkumham', legality.decissionLetterMenkumhamAttachment],
+                ['Lampiran Akta Perubahan', legality.memorandumOfAssociationChangingAttachment],
+                ['Lampiran SK Menkumham Perubahan', legality.decissionLetterMenkumhamChangingAttachment],
+                ['Lampiran Spesimen Tanda Tangan', legality.signingAttachment],
+                ['Lampiran Pendaftaran Perusahaan', legality.companyRegistrationAttachment],
+                ['Lampiran Surat Domisili', legality.domicileAttachment],
+                ['Lampiran Lisensi Usaha', legality.businessLicenceFile],
+                ['Lampiran BKPM', legality.investmentCoorBoardFile],
+                ['Lampiran Surat Keagenan', legality.agencyLetterFile],
+                ['Lampiran Dokumen Lainnya', legality.otherAttachment],
+                ['Lampiran NPWP', tax.npwpfile],
+                ['Lampiran SK PKP', tax.skpkpfile],
+                ['Lampiran JKP', tax.jkpfile],
+                ['Lampiran PP23', tax.pp23attachment],
+            ],
+        },
+    ];
 
     return (
         <>
@@ -98,26 +192,12 @@ export default function VendorDocument({ vendor }: VendorDocumentProps) {
                         </p>
                     </div>
 
-                    {/* Section 1: Profil & Identitas Perusahaan */}
+                    {/* Section 1 */}
                     <div className="space-y-2">
                         <h3 className="border-b border-slate-200 pb-1 font-sans text-xs font-bold tracking-wider text-slate-900 uppercase dark:border-slate-800 dark:text-slate-100">
-                            I. Profil & Identitas Rekanan
+                            {sections[0].title}
                         </h3>
-                        <div>
-                            {renderDocRow('Nama Resmi', detail.name || r.vendor_name)}
-                            {renderDocRow('Tipe Bentuk Usaha', detail.businessTypeName)}
-                            {renderDocRow('Nama Cabang', detail.branchName)}
-                            {renderDocRow('Nomor Registrasi', detail.registrationNumber)}
-                            {renderDocRow('Nomor Perjanjian', detail.agreementNumber)}
-                            {renderDocRow('Tanggal Perjanjian', detail.agreementDate)}
-                            {renderDocRow('Tanggal Disetujui', detail.approvedDate)}
-                            {renderDocRow('Total Karyawan', detail.totalEmployees)}
-                            {renderDocRow('Cakupan Wilayah (Coverage Area)', detail.coverageArea)}
-                            {renderDocRow('Compliance Level', detail.complianceLevel)}
-                            {renderDocRow('Integrity Pact', detail.integrityPact)}
-                            {renderDocRow('Master Agreement', detail.masterAgreement)}
-                            {renderDocRow('Single Vendor', detail.isSingleVendor)}
-                        </div>
+                        <div>{sections[0].rows.map(([label, val]) => renderDocRow(label, val))}</div>
                     </div>
 
                     {/* Section 2: Alamat & Lokasi Operasional */}
@@ -147,43 +227,15 @@ export default function VendorDocument({ vendor }: VendorDocumentProps) {
                         </div>
                     </div>
 
-                    {/* Section 3: Kontak & Penanggung Jawab (PIC) */}
-                    <div className="space-y-2">
-                        <h3 className="border-b border-slate-200 pb-1 font-sans text-xs font-bold tracking-wider text-slate-900 uppercase dark:border-slate-800 dark:text-slate-100">
-                            III. Informasi Kontak & Person in Charge (PIC)
-                        </h3>
-                        <div>
-                            {renderDocRow('Email Perusahaan', detail.companyEmail)}
-                            {renderDocRow('No. Telepon Perusahaan', detail.companyPhone)}
-                            {renderDocRow('Fax Perusahaan', detail.companyFax)}
-                            {renderDocRow('Email Bagian Keuangan', detail.financeEmail)}
-                            {renderDocRow('Email Bagian Perpajakan', detail.taxEmail)}
-                            {renderDocRow('Nama PIC', detail.pic)}
-                            {renderDocRow('Email PIC', detail.picemail)}
-                            {renderDocRow('No. HP / Telepon PIC', detail.picphone)}
+                    {/* Section 3 & 4 */}
+                    {sections.slice(1, 3).map((sec) => (
+                        <div key={sec.title} className="space-y-2">
+                            <h3 className="border-b border-slate-200 pb-1 font-sans text-xs font-bold tracking-wider text-slate-900 uppercase dark:border-slate-800 dark:text-slate-100">
+                                {sec.title}
+                            </h3>
+                            <div>{sec.rows.map(([label, val]) => renderDocRow(label, val))}</div>
                         </div>
-                    </div>
-
-                    {/* Section 4: Perpajakan */}
-                    <div className="space-y-2">
-                        <h3 className="border-b border-slate-200 pb-1 font-sans text-xs font-bold tracking-wider text-slate-900 uppercase dark:border-slate-800 dark:text-slate-100">
-                            IV. Data Perpajakan
-                        </h3>
-                        <div>
-                            {renderDocRow('Status NPWP', tax.typeNpwp)}
-                            {renderDocRow('Nomor NPWP', tax.npwp)}
-                            {renderDocRow('Status PKP', tax.typePkp)}
-                            {renderDocRow('Nomor PKP', tax.pkp)}
-                            {renderDocRow('Kategori BKP', tax.typeBkp)}
-                            {renderDocRow('Tarif PPN', tax.ppn ? `${tax.ppn}%` : null)}
-                            {renderDocRow('Deskripsi BKP', tax.bkpDesc)}
-                            {renderDocRow('Deskripsi JKP', tax.jkpDesc)}
-                            {renderDocRow('Organisasi', tax.isOrganization)}
-                            {renderDocRow('SIUJK', tax.isSiujk)}
-                            {renderDocRow('Nomor PP23', tax.pp23number)}
-                            {renderDocRow('Masa Berlaku PP23', tax.pp23expiredDate)}
-                        </div>
-                    </div>
+                    ))}
 
                     {/* Section 5: Bidang Usaha & Bank */}
                     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -244,63 +296,15 @@ export default function VendorDocument({ vendor }: VendorDocumentProps) {
                         </div>
                     </div>
 
-                    {/* Section 6: Legalitas & Berkas */}
-                    <div className="space-y-2">
-                        <h3 className="border-b border-slate-200 pb-1 font-sans text-xs font-bold tracking-wider text-slate-900 uppercase dark:border-slate-800 dark:text-slate-100">
-                            VII. Perizinan Legalitas
-                        </h3>
-                        <div>
-                            {renderDocRow('Nomor Induk Berusaha (NIB)', legality.nib)}
-                            {renderDocRow('Tgl Kadaluarsa NIB', legality.nibexpiredDate)}
-                            {renderDocRow('Izin Usaha (Business Permit)', legality.businessPermit)}
-                            {renderDocRow('SIUP', legality.siup)}
-                            {renderDocRow('Tgl Kadaluarsa SIUP', legality.siupexpiredDate)}
-                            {renderDocRow('TDP', legality.tdp)}
-                            {renderDocRow('Tgl Kadaluarsa TDP', legality.tdpexpiredDate)}
-                            {renderDocRow('Penandatangan Resmi', legality.signing)}
-                            {renderDocRow('Jabatan Penandatangan', legality.jobTitle)}
-                            {renderDocRow('Akta Pendirian', legality.memorandumOfAssociation)}
-                            {renderDocRow('Surat Keputusan Menkumham', legality.decissionLetterMenkumham)}
+                    {/* Section 6 & 7 */}
+                    {sections.slice(3).map((sec) => (
+                        <div key={sec.title} className="space-y-2">
+                            <h3 className="border-b border-slate-200 pb-1 font-sans text-xs font-bold tracking-wider text-slate-900 uppercase dark:border-slate-800 dark:text-slate-100">
+                                {sec.title}
+                            </h3>
+                            <div>{sec.rows.map(([label, val]) => renderDocRow(label, val))}</div>
                         </div>
-                    </div>
-
-                    {/* Section 7: File Lampiran & Berkas Dokumen */}
-                    <div className="space-y-2">
-                        <h3 className="border-b border-slate-200 pb-1 font-sans text-xs font-bold tracking-wider text-slate-900 uppercase dark:border-slate-800 dark:text-slate-100">
-                            VIII. Berkas & Lampiran Dokumen
-                        </h3>
-                        <div>
-                            {/* Lampiran Umum */}
-                            {renderDocRow('File KTP (ID Card File)', detail.idCardFile)}
-                            {renderDocRow('File Master Agreement', detail.masterAgreementAttachment)}
-                            {renderDocRow('File Profile Perusahaan', detail.companyProfileAttachment)}
-                            {renderDocRow('File Single Vendor', detail.singleVendorFile)}
-                            {renderDocRow('File Compliance', detail.complianceFile)}
-
-                            {/* Lampiran Legalitas */}
-                            {renderDocRow('Lampiran NIB', legality.nibattachment)}
-                            {renderDocRow('Lampiran Izin Usaha', legality.businessPermitAttachment)}
-                            {renderDocRow('Lampiran SIUP', legality.siupattachment)}
-                            {renderDocRow('Lampiran TDP', legality.tdpattachment)}
-                            {renderDocRow('Lampiran Akta Pendirian', legality.memorandumOfAssociationAttachment)}
-                            {renderDocRow('Lampiran SK Menkumham', legality.decissionLetterMenkumhamAttachment)}
-                            {renderDocRow('Lampiran Akta Perubahan', legality.memorandumOfAssociationChangingAttachment)}
-                            {renderDocRow('Lampiran SK Menkumham Perubahan', legality.decissionLetterMenkumhamChangingAttachment)}
-                            {renderDocRow('Lampiran Spesimen Tanda Tangan', legality.signingAttachment)}
-                            {renderDocRow('Lampiran Pendaftaran Perusahaan', legality.companyRegistrationAttachment)}
-                            {renderDocRow('Lampiran Surat Domisili', legality.domicileAttachment)}
-                            {renderDocRow('Lampiran Lisensi Usaha', legality.businessLicenceFile)}
-                            {renderDocRow('Lampiran BKPM', legality.investmentCoorBoardFile)}
-                            {renderDocRow('Lampiran Surat Keagenan', legality.agencyLetterFile)}
-                            {renderDocRow('Lampiran Dokumen Lainnya', legality.otherAttachment)}
-
-                            {/* Lampiran Pajak */}
-                            {renderDocRow('Lampiran NPWP', tax.npwpfile)}
-                            {renderDocRow('Lampiran SK PKP', tax.skpkpfile)}
-                            {renderDocRow('Lampiran JKP', tax.jkpfile)}
-                            {renderDocRow('Lampiran PP23', tax.pp23attachment)}
-                        </div>
-                    </div>
+                    ))}
 
                     {/* Document Footer */}
                     <div className="flex items-center justify-between border-t border-slate-200 pt-4 font-sans text-[11px] text-slate-400 dark:border-slate-800">

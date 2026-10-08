@@ -13,7 +13,7 @@ import { contractApi } from '@/pages/contracts/utils';
 import { renderAsync } from 'docx-preview';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
-const { ArrowLeft, Download, FileCheck, FileIcon, FolderOpen, Loader2, Paperclip, Plus, Trash2, Search, ExternalLink, Eye } = Icons;
+const { ArrowLeft, Download, FileCheck, FolderOpen, Loader2, Paperclip, Plus, Trash2, Eye } = Icons;
 
 interface Props {
     contract: Contract;
@@ -465,7 +465,6 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
                 {/* File list */}
                 <div className="custom-scrollbar divide-border/50 flex-1 divide-y overflow-y-auto p-3">
                     {filteredItems.map((at) => {
-                        const isUp = uploading === at.label;
                         const hasFile = (at as any).has_file ?? (Boolean(at.file_name) && at.file_name !== 'Belum diunggah');
                         const isPreviewable = hasFile && /\.(pdf|jpe?g|png|gif|webp|svg|docx)$/i.test(at.file_name || '');
 

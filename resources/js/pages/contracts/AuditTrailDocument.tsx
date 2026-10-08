@@ -15,7 +15,7 @@ interface Props {
     };
 }
 
-export default function AuditTrailDocument({ contract, histories, filters, printedBy }: Props) {
+export default function AuditTrailDocument({ contract, histories, printedBy }: Props) {
     const handlePrint = () => {
         window.print();
     };

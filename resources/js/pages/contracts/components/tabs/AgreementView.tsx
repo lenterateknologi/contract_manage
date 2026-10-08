@@ -147,7 +147,7 @@ export default function AgreementView({
         }
     }, [contractVersionsCount]);
 
-    const { canEdit, isCreator, isApprover, isSigner, activeSignerApproval } = useContractPermissions(contract, effectiveDocType, meId);
+    const { canEdit, isSigner, activeSignerApproval } = useContractPermissions(contract, effectiveDocType, meId);
     const stepDownloaded = activeSignerApproval ? contract.metadata?.[`downloaded_step_${activeSignerApproval.id}`] : null;
 
     const handleDownload = async (vId?: string) => {

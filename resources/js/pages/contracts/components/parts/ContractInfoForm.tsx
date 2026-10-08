@@ -105,34 +105,20 @@ export function ContractInfoForm({
     endDate,
     setEndDate,
     price,
-    setPrice,
-    typeId,
-    setTypeId,
-    submissionTypeId,
-    setSubmissionTypeId,
     firstPartyId = 'internal',
     setFirstPartyId,
     vendorId,
     setVendorId,
-    types,
-    submissionTypes,
     vendors,
     selected,
-    inputCls,
     taxRequired,
     onTaxRequiredChange,
     canEditFirstParty = true,
     canEditVendor = true,
-    canEditCategory = true,
     canEditPrice = true,
     canEditPeriod = true,
     canEditTaxToggle = true,
 }: ContractInfoFormProps) {
-    const activeType = React.useMemo(() => types.find((t) => String(t.id) === String(typeId)), [types, typeId]);
-    const activeSubmissionType = React.useMemo(
-        () => submissionTypes.find((st) => String(st.id) === String(submissionTypeId)),
-        [submissionTypes, submissionTypeId],
-    );
     const initUser = selected.initiator || selected.creator;
     const internalCompanyName = initUser?.company?.name || initUser?.company_name || 'PT. Lentera Teknologi';
     const internalUserName = initUser?.name ? ` (${initUser.name})` : '';

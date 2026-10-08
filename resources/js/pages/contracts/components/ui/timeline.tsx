@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils';
 import * as React from 'react';
 
-export interface TimelineProps extends React.HTMLAttributes<HTMLDivElement> {}
+export type TimelineProps = React.HTMLAttributes<HTMLDivElement>;
 
 export const Timeline = React.forwardRef<HTMLDivElement, TimelineProps>(({ className, children, ...props }, ref) => (
     <div ref={ref} className={cn('relative', className)} {...props}>
@@ -66,7 +66,7 @@ export const TimelineIcon = React.forwardRef<HTMLDivElement, TimelineIconProps>(
 );
 TimelineIcon.displayName = 'TimelineIcon';
 
-export interface TimelineContentProps extends React.HTMLAttributes<HTMLDivElement> {}
+export type TimelineContentProps = React.HTMLAttributes<HTMLDivElement>;
 
 export const TimelineContent = React.forwardRef<HTMLDivElement, TimelineContentProps>(({ className, ...props }, ref) => (
     <div ref={ref} className={cn('flex min-w-0 flex-1 flex-col', className)} {...props} />

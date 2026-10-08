@@ -180,8 +180,6 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
             }
 
             const finalTargetStepId = targetStepIdVal || contract?.workflow_step_id;
-            const targetStep =
-                (contract?.workflow?.steps || []).find((s: any) => String(s.id) === String(finalTargetStepId)) || contract?.workflow_step;
 
             // Only currently active (pending/waiting) ad-hoc approvers for this target step should be pre-selected
             const activeAdhocApprovals = (contract?.approvals || []).filter(
@@ -230,10 +228,6 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
     const handleUpdateSelectedUsers = (val: string[]) => {
         // Force unique values and exclude null strings
         setSelectedUserIds(Array.from(new Set(val.filter((uid) => Boolean(uid) && uid !== 'null' && uid !== 'undefined'))));
-    };
-
-    const handleRemoveUser = (id: string) => {
-        setSelectedUserIds((prev) => prev.filter((uid) => uid !== id));
     };
 
     const handleSubmit = async () => {

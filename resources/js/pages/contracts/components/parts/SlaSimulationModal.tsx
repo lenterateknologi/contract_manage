@@ -76,8 +76,8 @@ export function SlaSimulationModal({ open, onOpenChange, slaConfigs = [], curren
                 name: currentConfig.name || 'Konfigurasi Form Saat Ini',
                 sla_stages: Array.isArray(currentConfig.sla_stages) ? currentConfig.sla_stages : [],
                 sla_total_hours: Number(currentConfig.sla_total_hours) || 120,
-                sla_start_hour: Number(currentConfig.sla_start_hour) ?? 8,
-                sla_cutoff_hour: Number(currentConfig.sla_cutoff_hour) ?? 16,
+                sla_start_hour: currentConfig.sla_start_hour != null ? Number(currentConfig.sla_start_hour) : 8,
+                sla_cutoff_hour: currentConfig.sla_cutoff_hour != null ? Number(currentConfig.sla_cutoff_hour) : 16,
                 working_days: currentConfig.working_days
                     ? Array.isArray(currentConfig.working_days)
                         ? currentConfig.working_days.map(String)
@@ -93,8 +93,8 @@ export function SlaSimulationModal({ open, onOpenChange, slaConfigs = [], curren
                 name: found.name || 'SLA Config',
                 sla_stages: Array.isArray(found.sla_stages) ? found.sla_stages : [],
                 sla_total_hours: Number(found.sla_total_hours) || 120,
-                sla_start_hour: Number(found.sla_start_hour) ?? 8,
-                sla_cutoff_hour: Number(found.sla_cutoff_hour) ?? 16,
+                sla_start_hour: found.sla_start_hour != null ? Number(found.sla_start_hour) : 8,
+                sla_cutoff_hour: found.sla_cutoff_hour != null ? Number(found.sla_cutoff_hour) : 16,
                 working_days: found.working_days
                     ? Array.isArray(found.working_days)
                         ? found.working_days.map(String)

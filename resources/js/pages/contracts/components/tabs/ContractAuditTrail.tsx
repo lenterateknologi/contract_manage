@@ -1,7 +1,6 @@
 import { Button } from '@/components/ui/buttons/Button';
 import { Badge } from '@/components/ui/feedback/Badge';
 import LoadingLottie from '@/components/ui/feedback/LoadingLottie';
-import { useToast } from '@/components/ui/feedback/Toast';
 import { SearchInput } from '@/components/ui/inputs/SearchInput';
 import { FilterCategory, FilterPopover } from '@/components/ui/selection/FilterPopover';
 import { useDebounce } from '@/hooks/use-debounce';
@@ -16,8 +15,7 @@ interface Props {
     contract: Contract;
 }
 
-export default function ContractAuditTrail({ contract }: Props) {
-    const { showToast } = useToast();
+export function ContractAuditTrail({ contract }: Props) {
     const [histories, setHistories] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     // Filter open state is handled internally by FilterPopover
@@ -77,7 +75,6 @@ export default function ContractAuditTrail({ contract }: Props) {
     const currentStep =
         contract.workflow_step || (contract as any).current_step || contract.workflow?.steps?.find((s: any) => s.id === contract.workflow_step_id);
     const currentStepNumber = currentStep?.step || null;
-    const isBranchedWorkflow = Boolean(contract.origin_workflow_id && contract.workflow_id !== contract.origin_workflow_id);
 
     const filterCategories: FilterCategory[] = [
         {
@@ -266,3 +263,5 @@ export default function ContractAuditTrail({ contract }: Props) {
         </div>
     );
 }
+
+export default ContractAuditTrail;

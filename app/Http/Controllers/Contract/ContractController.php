@@ -173,6 +173,8 @@ class ContractController extends Controller
 
         if ($view === 'dashboard') {
             $data['metrics'] = Inertia::defer(fn () => (new ContractDashboardQuery)->getMetrics($request));
+
+            return Inertia::render('dashboard/Index', $data);
         }
 
         return Inertia::render('contracts/Index', $data);
@@ -383,7 +385,7 @@ class ContractController extends Controller
             ],
         ];
 
-        return Inertia::render('contracts/show', $data);
+        return Inertia::render('contracts/Index', $data);
     }
 
     public function getTypes(): JsonResponse

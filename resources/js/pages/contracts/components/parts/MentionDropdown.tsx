@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { Avatar } from '../ui/ui';
+import { UserAvatar as Avatar } from '@/components/profile/UserAvatar';
 
 interface MentionDropdownProps {
     isOpen: boolean;

@@ -39,15 +39,12 @@ export function SharedActionModal({
     actionCode = 'approve',
     actionId,
     actionAlias,
-    users: initialUsers,
     isSubStep,
 }: SharedActionModalProps) {
     const [note, setNote] = useState('');
     const [attachments, setAttachments] = useState<File[]>([]);
     const [executionOrder, setExecutionOrder] = useState<string>('');
     const [loading, setLoading] = useState(false);
-    const [users, setUsers] = useState<any[]>(initialUsers || []);
-    const [fetchingUsers, setFetchingUsers] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
     const [allWorkflows, setAllWorkflows] = useState<any[]>([]);
 
@@ -76,7 +73,6 @@ export function SharedActionModal({
     useEffect(() => {
         if (open) {
             contractApi.getWorkflows().then(setAllWorkflows).catch(console.error);
-            fetchUsers();
             setNote('');
             setAttachments([]);
             setExecutionOrder('');
@@ -101,21 +97,6 @@ export function SharedActionModal({
         actionCode,
         allWorkflows,
     });
-
-    const fetchUsers = async () => {
-        if (initialUsers && initialUsers.length > 0) return;
-        setFetchingUsers(true);
-        try {
-            const data = await contractApi.getUsers();
-            if (Array.isArray(data)) {
-                setUsers(data);
-            }
-        } catch (error) {
-            console.error('Failed to fetch users:', error);
-        } finally {
-            setFetchingUsers(false);
-        }
-    };
 
     const isReject = actionCode === 'reject';
     const isBranch = actionCode === 'branch';

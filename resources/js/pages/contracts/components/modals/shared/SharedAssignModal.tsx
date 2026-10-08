@@ -59,11 +59,11 @@ export function SharedAssignModal({ open, onClose, contract, onUpdate, showToast
 
     useEffect(() => {
         if (open) {
-            fetchUsers(selectedTargetStepId);
+            fetchUsers();
         }
     }, [open, selectedTargetStepId]);
 
-    const fetchUsers = async (targetStepIdVal: string | null) => {
+    const fetchUsers = async () => {
         if (initialUsers && initialUsers.length > 0) {
             setUsers(initialUsers);
             return;
@@ -113,7 +113,6 @@ export function SharedAssignModal({ open, onClose, contract, onUpdate, showToast
                 config = activeAction.assignee_config;
             }
 
-            const finalTargetStepId = targetStepIdVal || contract?.workflow_step_id;
 
             // Existing assignees should be pre-selected from contract.assigned_pic
             const existingAssigneeUserIds = contract?.assigned_pic?.id

@@ -26,10 +26,10 @@ interface Props {
 type ViewTab = 'lite' | 'pro';
 type SortBy = 'time' | 'step';
 
-export default function ApprovalSteps({ contract, approvals = [], creator, submittedAt, meId, onApprove }: Props) {
+export function ApprovalSteps({ contract, approvals = [], creator, submittedAt, meId, onApprove }: Props) {
     const safeApprovals = useMemo(() => (Array.isArray(approvals) ? approvals : []), [approvals]);
     const [viewTab, setViewTab] = useState<ViewTab>('lite');
-    const [sortBy, setSortBy] = useState<SortBy>('time');
+    const [sortBy] = useState<SortBy>('time');
     const [search, setSearch] = useState('');
     const debouncedSearch = useDebounce(search, 500);
     const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
@@ -1248,3 +1248,5 @@ export default function ApprovalSteps({ contract, approvals = [], creator, submi
         </div>
     );
 }
+
+export default ApprovalSteps;

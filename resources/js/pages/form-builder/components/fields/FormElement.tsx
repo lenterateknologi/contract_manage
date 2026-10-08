@@ -6,10 +6,20 @@ import React from 'react';
 // New modular imports
 import { getFieldCategory } from '../builder/constants';
 import { getMarginStyle, getPaddingStyle } from '../utils';
-import { LabeledValueField, TextAreaField, TextField } from './InputFields';
-import { EmptyDropZone, GridXLayout, GridYLayout, GroupLayout } from './LayoutFields';
-import { CheckboxField, RadioField, SelectField } from './SelectionFields';
-import { ImageField, PageBreakField, SignatureBoxField, StaticTextField } from './VisualFields';
+import { LabeledValueField } from './inputs/LabeledValueField';
+import { TextAreaField } from './inputs/TextAreaField';
+import { TextField } from './inputs/TextField';
+import { EmptyDropZone } from './layouts/EmptyDropZone';
+import { GridXLayout } from './layouts/GridXLayout';
+import { GridYLayout } from './layouts/GridYLayout';
+import { GroupLayout } from './layouts/GroupLayout';
+import { CheckboxField } from './selections/CheckboxField';
+import { RadioField } from './selections/RadioField';
+import { SelectField } from './selections/SelectField';
+import { ImageField } from './visuals/ImageField';
+import { PageBreakField } from './visuals/PageBreakField';
+import { SignatureBoxField } from './visuals/SignatureBoxField';
+import { StaticTextField } from './visuals/StaticTextField';
 
 export interface FormField {
     id: string;

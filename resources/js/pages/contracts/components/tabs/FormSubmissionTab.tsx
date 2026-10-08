@@ -124,8 +124,8 @@ function GenericFormTab({
 
     // PDF Queue States
     const [isExporting, setIsExporting] = useState(false);
-    const [pdfJobId, setPdfJobId] = useState<string | null>(null);
-    const [pdfJobStatus, setPdfJobStatus] = useState<any>(null);
+    const [, setPdfJobId] = useState<string | null>(null);
+    const [, setPdfJobStatus] = useState<any>(null);
     const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
     const [fetchedTemplate, setFetchedTemplate] = useState<FormTemplateInfo | null>(null);
 
@@ -145,7 +145,7 @@ function GenericFormTab({
         formTemplates.find((ft) => ft.name?.includes('FORMULIR PERMINTAAN PERJANJIAN') && ft.document_type === docType) ??
         formTemplates.find((ft) => !ft.contract_type_id && ft.document_type === docType);
 
-    const { canEdit, isCreator, isApprover } = useContractPermissions(selected, docType, meUser?.id);
+    const { canEdit } = useContractPermissions(selected, docType, meUser?.id);
 
     const filteredVersions = versions.filter((v) => {
         if (!searchQuery) return true;
@@ -170,12 +170,12 @@ function GenericFormTab({
 
                 // Detect P1 (First Party / Pembeli) change
                 const currentP1Entity = synced['meta_p1_entity'] ?? '';
-                const freshP1Entity = getAutofillValue({ name: 'meta_p1_entity' }, selected, docType, users) ?? '';
+                const freshP1Entity = getAutofillValue({ name: 'meta_p1_entity' }, selected) ?? '';
                 const p1Changed = currentP1Entity && freshP1Entity && currentP1Entity !== freshP1Entity;
 
                 // Detect P2 (Second Party / Penjual) change
                 const currentP2Entity = synced['meta_p2_entity'] ?? '';
-                const freshP2Entity = getAutofillValue({ name: 'meta_p2_entity' }, selected, docType, users) ?? '';
+                const freshP2Entity = getAutofillValue({ name: 'meta_p2_entity' }, selected) ?? '';
                 const p2Changed = currentP2Entity && freshP2Entity && currentP2Entity !== freshP2Entity;
 
                 fields.forEach((f) => {
@@ -183,7 +183,7 @@ function GenericFormTab({
                         const isP1Field = p1RelatedFields.has(f.name);
                         const isP2Field = p2RelatedFields.has(f.name);
                         const forceUpdate = (isP1Field && p1Changed) || (isP2Field && p2Changed);
-                        const val = getAutofillValue(f, selected, docType, users);
+                        const val = getAutofillValue(f, selected);
 
                         // For force-update (party changed): apply even if val is null/empty (clears stale data)
                         if (forceUpdate) {
@@ -283,7 +283,7 @@ function GenericFormTab({
                 const autofilled: Record<string, any> = {};
                 tplFields.forEach((f) => {
                     if (f.type !== 'kop_surat' && f.type !== 'form_title') {
-                        const val = getAutofillValue(f, selected, docType, users);
+                        const val = getAutofillValue(f, selected);
                         if (val !== null) autofilled[f.name] = val;
                     }
                 });
@@ -331,7 +331,7 @@ function GenericFormTab({
                 const initial: Record<string, any> = {};
                 tplFields.forEach((f) => {
                     if (f.type !== 'kop_surat' && f.type !== 'form_title') {
-                        const autofillValue = getAutofillValue(f, selected, docType, users);
+                        const autofillValue = getAutofillValue(f, selected);
                         initial[f.name] = autofillValue !== null ? autofillValue : '';
                     }
                 });
@@ -415,7 +415,7 @@ function GenericFormTab({
             if (res.versions) setVersions(res.versions);
             setVersionNote('');
             setShowNoteModal(false);
-        } catch (e: any) {
+        } catch {
             showToast('Gagal menyimpan data.', 'danger');
         } finally {
             setSaving(false);
@@ -515,7 +515,7 @@ function GenericFormTab({
                                 console.warn('Direct popup navigation fallback:', e);
                                 try {
                                     targetWin.location.href = fullUrl;
-                                } catch (e2) {
+                                } catch {
                                     window.open(fullUrl, '_blank');
                                 }
                             }

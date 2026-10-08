@@ -45,7 +45,6 @@ export function DraftEditableInfoCard({
     types,
     submissionTypes = [],
     vendors = [],
-    canUpdate = true,
     onUpdate,
     meId,
     onStateChange,
@@ -195,35 +194,6 @@ export function DraftEditableInfoCard({
             address: role === 'p1' ? selected.p1_address || '' : selected.p2_address || '',
         };
     };
-
-    // Compute category display hierarchy
-    const categoryDisplayName = useMemo(() => {
-        const targetId = typeId || selected.contract_type_id;
-        let item = targetId ? types.find((t) => String(t.id) === String(targetId)) : null;
-
-        if (!item && selected.contract_type) {
-            item = types.find((t) => t.name === selected.contract_type) || null;
-        }
-
-        if (!item) {
-            return selected.contract_type || '—';
-        }
-
-        const pathNames = [item.name];
-        let current: any = item;
-
-        while (current && current.parent_id && String(current.parent_id) !== String(current.id)) {
-            const parent = types.find((t: any) => String(t.id) === String(current.parent_id));
-            if (parent && String(parent.id) !== String(current.id)) {
-                pathNames.unshift(parent.name);
-                current = parent;
-            } else {
-                break;
-            }
-        }
-
-        return pathNames.join(' - ');
-    }, [typeId, selected.contract_type_id, selected.contract_type, types]);
 
     // Track pristine state
     const originalState = useMemo(() => {

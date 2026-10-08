@@ -1,4 +1,4 @@
-import { SharedRejectModal } from '@/pages/contracts/components/modals/shared/SharedRejectModal';
+import { SharedRejectModal } from '@/pages/contracts/components/modals/shared/SharedApproveModal';
 
 interface RejectModalProps {
     isOpen: boolean;

@@ -43,7 +43,6 @@ export function ContractActionSection({
     canApprove,
     availableCustomActions,
     applicableStepActions,
-    isStepActionLocked,
     isSubStepReviewer,
     isSigner,
     stepDownloaded,

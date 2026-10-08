@@ -186,14 +186,6 @@ export function OverviewTab({ data, onNavigate, meUser, onCreateContract, scope 
         ];
     }, [data, scope]);
 
-    const categoryValues = useMemo(() => {
-        const map: Record<string, number> = {};
-        distributionItems.forEach((item: any) => {
-            map[item.name] = item.count;
-        });
-        return map;
-    }, [distributionItems]);
-
     const totalCategoryCount = useMemo(() => {
         return distributionItems.reduce((acc: number, curr: any) => acc + (curr.count || 0), 0);
     }, [distributionItems]);

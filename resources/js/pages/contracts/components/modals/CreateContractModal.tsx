@@ -3,8 +3,7 @@ import { Modal } from '@/components/ui/dialogs/Modal';
 import { FormInput } from '@/components/ui/inputs/FormInput';
 import { PortalSelect } from '@/components/ui/selection/PortalSelect';
 import { TreeSelect } from '@/components/ui/selection/TreeSelect';
-import { contractApi } from '@/pages/contracts/utils';
-import { validateContractForm } from '@/pages/contracts/validations/contractValidation';
+import { contractApi, validateContractForm } from '@/pages/contracts/utils';
 import { usePov } from '@/stores/usePovStore';
 import { type SharedData } from '@/types';
 import { usePage } from '@inertiajs/react';
@@ -78,21 +77,17 @@ export default function CreateContractModal({
     onSubmit,
     types = [],
     users = [],
-    vendors = [],
     activeTab,
     activeContractTypeId,
-    dashboardConfig,
 }: Props) {
     const { auth, povOptions } = usePage<SharedData>().props;
     const pov = usePov(povOptions);
     const [title, setTitle] = useState('');
     const [parentTypeId, setParentTypeId] = useState('');
     const [typeId, setTypeId] = useState('');
-    const [transactionType, setTransactionType] = useState('Perjanjian Baru');
-    const [taxRequired, setTaxRequired] = useState(true);
+    const [transactionType] = useState('Perjanjian Baru');
+    const [taxRequired] = useState(true);
     const [initiatedById, setInitiatedById] = useState('');
-    const [vendorId, setVendorId] = useState('');
-    const [category, setCategory] = useState<string>('contract');
     const [projectName, setProjectName] = useState('');
     const [loading, setLoading] = useState(false);
     const [workflows, setWorkflows] = useState<any[]>([]);
@@ -182,7 +177,6 @@ export default function CreateContractModal({
                         setTypeId(String(target.id));
                         setParentTypeId(target.parent_id ? String(target.parent_id) : '');
                         setTitle(target.name);
-                        setCategory(resolveTypeCategory(String(target.id), types, activeTab).category);
                     }
                 }
             }

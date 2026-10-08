@@ -36,7 +36,7 @@ import { Input } from '@/components/ui/inputs/Input';
 import AppearanceToggleTab from '@/layouts/app/components/AppearanceTabs';
 import SettingsLayout from '@/layouts/settings/layout';
 import { cn } from '@/lib/utils';
-import { Avatar } from '@/pages/contracts/components/ui/ui';
+import { UserAvatar as Avatar } from '@/components/profile/UserAvatar';
 
 import { UserProfile as BaseUserProfile } from '@/pages/contracts/types';
 

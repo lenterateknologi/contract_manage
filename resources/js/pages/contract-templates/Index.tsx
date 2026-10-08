@@ -22,7 +22,6 @@ const {
     ChevronRight,
     Download,
     Edit3,
-    ExternalLink,
     Eye,
     EyeOff,
     FileSpreadsheet,
@@ -105,7 +104,6 @@ interface FolderTreeNode extends TemplateFolder {
 
 export default function Templates({ folders = [], templates = [], permissions }: Props) {
     const systemPerms = usePermissions('ADMIN_TEMPLATES');
-    const canRead = permissions?.canRead ?? systemPerms.canRead;
     const canDownload = permissions?.canDownload ?? systemPerms.canRead;
     const canUpload = permissions?.canUpload ?? systemPerms.canCreate;
     const canCreateFolder = permissions?.canCreateFolder ?? systemPerms.canCreate;
@@ -137,7 +135,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
 
     // Drag and Drop States
     const [isDragging, setIsDragging] = useState(false);
-    const [dragCounter, setDragCounter] = useState(0);
+    const dragCounterRef = React.useRef(0);
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [processing, setProcessing] = useState(false);
@@ -157,12 +155,6 @@ export default function Templates({ folders = [], templates = [], permissions }:
     const [selectedItem, setSelectedItem] = useState<{ type: 'folder' | 'template'; id: string; name: string } | null>(null);
     const [folderFormParentId, setFolderFormParentId] = useState<string | null>(null);
     const [newFolderName, setNewFolderName] = useState('');
-    const [uploadData, setUploadData] = useState({
-        name: '',
-        description: '',
-        folderId: null as string | null,
-        file: null as File | null,
-    });
     const [targetFolderId, setTargetFolderId] = useState<string | null>(null);
 
     // Bulk Action Modal States
@@ -254,10 +246,6 @@ export default function Templates({ folders = [], templates = [], permissions }:
         };
         return buildNode(null);
     }, [folders, templatesByFolder]);
-
-    const rootTemplatesCount = useMemo(() => {
-        return (templatesByFolder.get(null) || []).length;
-    }, [templatesByFolder]);
 
     const totalAllTemplates = templates.length;
 
@@ -423,32 +411,6 @@ export default function Templates({ folders = [], templates = [], permissions }:
                 },
             },
         );
-    };
-
-    const handleUploadTemplate = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!uploadData.name.trim() || !uploadData.file || isSubmitting) return;
-
-        setIsSubmitting(true);
-        const formData = new FormData();
-        formData.append('name', uploadData.name.trim());
-        formData.append('description', uploadData.description || '');
-        if (uploadData.folderId) {
-            formData.append('template_folder_id', uploadData.folderId);
-        }
-        formData.append('file', uploadData.file);
-
-        router.post(route('admin.templates.store'), formData, {
-            forceFormData: true,
-            onSuccess: () => {
-                setUploadData({ name: '', description: '', folderId: null, file: null });
-                setIsUploadModalOpen(false);
-                setIsSubmitting(false);
-            },
-            onError: () => {
-                setIsSubmitting(false);
-            },
-        });
     };
 
     // Direct Drag-and-Drop file uploader
@@ -1152,7 +1114,7 @@ export default function Templates({ folders = [], templates = [], permissions }:
                     onDragEnter={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        setDragCounter((prev) => prev + 1);
+                        dragCounterRef.current += 1;
                         if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
                             setIsDragging(true);
                         }
@@ -1160,11 +1122,10 @@ export default function Templates({ folders = [], templates = [], permissions }:
                     onDragLeave={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        setDragCounter((prev) => {
-                            const next = prev - 1;
-                            if (next <= 0) setIsDragging(false);
-                            return Math.max(0, next);
-                        });
+                        dragCounterRef.current = Math.max(0, dragCounterRef.current - 1);
+                        if (dragCounterRef.current === 0) {
+                            setIsDragging(false);
+                        }
                     }}
                     onDragOver={(e) => {
                         e.preventDefault();
@@ -1174,8 +1135,8 @@ export default function Templates({ folders = [], templates = [], permissions }:
                     onDrop={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
+                        dragCounterRef.current = 0;
                         setIsDragging(false);
-                        setDragCounter(0);
                         if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
                             handleFilesDropped(e.dataTransfer.files);
                         }

@@ -82,7 +82,7 @@ export const AUTOFILL_KEY_DEFINITIONS: Record<string, { label: string; group: st
     meta_p2_kodepos: { label: 'Kode Pos Pihak II', group: 'Alamat & Kontak Resmi' },
 };
 
-export const getAutofillValue = (field: any, contract: Contract, docType?: 'f1' | 'f2' | 'contract', users: any[] = []) => {
+export const getAutofillValue = (field: any, contract: Contract) => {
     const name = field.name?.toLowerCase();
     if (!name) return null;
 
