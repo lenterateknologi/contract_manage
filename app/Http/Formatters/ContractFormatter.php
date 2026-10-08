@@ -89,16 +89,24 @@ class ContractFormatter
                 'updated_at' => $c->updated_at->toIso8601String(),
                 'updated_at_formatted' => $c->updated_at->translatedFormat('j M Y, H:i'),
                 'can_approve' => (function () use ($c) {
-                    if (! $c->relationLoaded('approvals')) {
+                    if (! Auth::check()) {
                         return false;
                     }
-                    return $c->approvals->where('workflow_step_id', $c->workflow_step_id)->where('status', 'pending')->where('user_id', Auth::id())->isNotEmpty();
+                    $userId = Auth::id();
+                    if ($c->relationLoaded('approvals')) {
+                        return $c->approvals->where('workflow_step_id', $c->workflow_step_id)->where('status', 'pending')->where('user_id', $userId)->isNotEmpty();
+                    }
+                    return false;
                 })(),
                 'is_current_actor' => (function () use ($c) {
-                    if (! $c->relationLoaded('approvals')) {
+                    if (! Auth::check()) {
                         return false;
                     }
-                    return $c->approvals->where('workflow_step_id', $c->workflow_step_id)->where('status', 'pending')->where('user_id', Auth::id())->isNotEmpty();
+                    $userId = Auth::id();
+                    if ($c->relationLoaded('approvals')) {
+                        return $c->approvals->where('workflow_step_id', $c->workflow_step_id)->where('status', 'pending')->where('user_id', $userId)->isNotEmpty();
+                    }
+                    return false;
                 })(),
                 'pending_approval_id' => $c->relationLoaded('approvals')
                     ? $c->approvals->where('workflow_step_id', $c->workflow_step_id)->where('status', 'pending')->where('user_id', Auth::id())->first()?->id
@@ -439,80 +447,45 @@ class ContractFormatter
                 'updated_at' => $fs->updated_at->format('Y-m-d H:i'),
             ]) : [],
             'can_approve' => (function () use ($c, $isDetail) {
-                if (! $c->relationLoaded('approvals')) {
+                if (! Auth::check()) {
                     return false;
                 }
-
-                $isActiveWorkflow = $c->workflow_step_id && $c->workflowStep && ! in_array($c->status, ['approved', 'rejected', 'finished', 'cancelled', 'draft']);
-
-                if ($isActiveWorkflow) {
-                    $hasPendingOrWaiting = $c->approvals
-                        ->where('workflow_step_id', $c->workflow_step_id)
-                        ->whereIn('status', ['pending', 'waiting'])
-                        ->isNotEmpty();
-
-                    if (! $hasPendingOrWaiting && $isDetail) {
-                        app(ContractWorkflowService::class)->createApprovalForStep($c, $c->workflowStep);
-                        $c->unsetRelation('approvals');
-                        $c->load(['approvals.approver', 'approvals.workflowStep']);
-                    }
-                }
-
-                return $c->approvals->where('workflow_step_id', $c->workflow_step_id)->where('status', 'pending')->where('user_id', Auth::id())->filter(function ($a) use ($c) {
-                    if ($a->sub_step !== null) {
+                $userId = Auth::id();
+                if ($c->relationLoaded('approvals')) {
+                    $hasPending = $c->approvals->where('workflow_step_id', $c->workflow_step_id)->where('status', 'pending')->where('user_id', $userId)->isNotEmpty();
+                    if ($hasPending) {
                         return true;
                     }
-                    $hasUnapprovedSubSteps = $c->approvals
-                        ->where('workflow_step_id', $a->workflow_step_id)
-                        ->whereNotNull('sub_step')
-                        ->contains(fn ($sub) => $sub->status !== 'approved');
-
-                    return ! $hasUnapprovedSubSteps;
-                })->isNotEmpty();
+                }
+                $isActiveWorkflow = $c->workflow_step_id && $c->workflowStep && ! in_array($c->status, ['approved', 'rejected', 'finished', 'cancelled', 'draft']);
+                if ($isActiveWorkflow) {
+                    $resolved = app(ContractWorkflowService::class)->resolveApproversForStep($c, $c->workflowStep);
+                    return collect($resolved['approvers'] ?? [])->pluck('id')->contains($userId);
+                }
+                return false;
             })(),
             'is_current_actor' => (function () use ($c, $isDetail) {
-                if (! $c->relationLoaded('approvals')) {
+                if (! Auth::check()) {
                     return false;
                 }
-
-                $isActiveWorkflow = $c->workflow_step_id && $c->workflowStep && ! in_array($c->status, ['approved', 'rejected', 'finished', 'cancelled', 'draft']);
-
-                if ($isActiveWorkflow) {
-                    $hasPendingOrWaiting = $c->approvals
-                        ->where('workflow_step_id', $c->workflow_step_id)
-                        ->whereIn('status', ['pending', 'waiting'])
-                        ->isNotEmpty();
-
-                    if (! $hasPendingOrWaiting && $isDetail) {
-                        app(\App\Services\Workflow\ContractWorkflowService::class)->createApprovalForStep($c, $c->workflowStep);
-                        $c->unsetRelation('approvals');
-                        $c->load(['approvals.approver', 'approvals.workflowStep']);
-                    }
-                }
-
-                return $c->approvals->where('workflow_step_id', $c->workflow_step_id)->where('status', 'pending')->where('user_id', Auth::id())->filter(function ($a) use ($c) {
-                    if ($a->sub_step !== null) {
+                $userId = Auth::id();
+                if ($c->relationLoaded('approvals')) {
+                    $hasPending = $c->approvals->where('workflow_step_id', $c->workflow_step_id)->where('status', 'pending')->where('user_id', $userId)->isNotEmpty();
+                    if ($hasPending) {
                         return true;
                     }
-                    $hasUnapprovedSubSteps = $c->approvals
-                        ->where('workflow_step_id', $a->workflow_step_id)
-                        ->whereNotNull('sub_step')
-                        ->contains(fn ($sub) => $sub->status !== 'approved');
-
-                    return ! $hasUnapprovedSubSteps;
-                })->isNotEmpty();
-            })(),
-            'pending_approval_id' => $c->relationLoaded('approvals') ? $c->approvals->where('workflow_step_id', $c->workflow_step_id)->where('status', 'pending')->where('user_id', Auth::id())->filter(function ($a) use ($c) {
-                if ($a->sub_step !== null) {
-                    return true;
                 }
-                $hasUnapprovedSubSteps = $c->approvals
-                    ->where('workflow_step_id', $a->workflow_step_id)
-                    ->whereNotNull('sub_step')
-                    ->contains(fn ($sub) => $sub->status !== 'approved');
-
-                return ! $hasUnapprovedSubSteps;
-            })->first()?->id : null,
+                $isActiveWorkflow = $c->workflow_step_id && $c->workflowStep && ! in_array($c->status, ['approved', 'rejected', 'finished', 'cancelled', 'draft']);
+                if ($isActiveWorkflow) {
+                    $resolved = app(ContractWorkflowService::class)->resolveApproversForStep($c, $c->workflowStep);
+                    return collect($resolved['approvers'] ?? [])->pluck('id')->contains($userId);
+                }
+                return false;
+            })(),
+            'pending_approval_id' => $c->relationLoaded('approvals')
+                ? ($c->approvals->where('workflow_step_id', $c->workflow_step_id)->where('status', 'pending')->where('user_id', Auth::id())->first()?->id
+                    ?? $c->approvals->where('workflow_step_id', $c->workflow_step_id)->where('user_id', Auth::id())->first()?->id)
+                : null,
             'unread_count' => (int) ($c->unread_count ?? 0),
             'doc_reviews' => $isDetail ? (function () use ($c) {
                 $reviewsMap = [];

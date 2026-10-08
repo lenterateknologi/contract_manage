@@ -3,7 +3,7 @@ import { StatusBadge } from '@/components/ui/feedback/StatusBadge';
 import { cn } from '@/lib/utils';
 import { HeaderTaskList } from '@/pages/contracts/components/parts/HeaderTaskList';
 import { Contract } from '@/pages/contracts/types';
-import { Check, Loader2 } from 'lucide-react';
+import { Check, GitFork, Loader2 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
 interface ContractDetailHeaderProps {
@@ -13,10 +13,12 @@ interface ContractDetailHeaderProps {
     currentActiveSubLabel?: string;
     isAnyDirty: boolean;
     infoSaving: boolean;
+    isAdmin?: boolean;
     onUpdateTitle: (newTitle: string) => void;
     onResetAllChanges?: () => void;
     onSaveAllChanges?: () => void;
     onNavigateTab?: (tab: string, subTab?: string) => void;
+    onOpenAdminWorkflowModal?: () => void;
 }
 
 export function ContractDetailHeader({
@@ -26,10 +28,12 @@ export function ContractDetailHeader({
     currentActiveSubLabel,
     isAnyDirty,
     infoSaving,
+    isAdmin = false,
     onUpdateTitle,
     onResetAllChanges,
     onSaveAllChanges,
     onNavigateTab,
+    onOpenAdminWorkflowModal,
 }: ContractDetailHeaderProps) {
     const [headerTitle, setHeaderTitle] = useState(contract.title);
     const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -118,6 +122,18 @@ export function ContractDetailHeader({
                 <HeaderTaskList contract={contract} onNavigateTab={onNavigateTab} />
 
                 <StatusBadge status={effectiveStatus} statusInfo={contract.status_info} />
+
+                {isAdmin && onOpenAdminWorkflowModal && (
+                    <button
+                        type="button"
+                        onClick={onOpenAdminWorkflowModal}
+                        className="h-7 px-2.5 rounded-lg border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                        title="Admin Override: Ubah alur kerja atau tahapan kontrak ini"
+                    >
+                        <GitFork size={13} className="shrink-0" />
+                        <span className="hidden sm:inline">Ubah Alur</span>
+                    </button>
+                )}
 
                 {/* Save button in navbar when contract info or forms have changes */}
                 {isAnyDirty && (

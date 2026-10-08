@@ -945,39 +945,11 @@ function ContractPage({
         }
 
         if (types && types.length > 0) {
-            const showContract = effectiveDashboardConfig?.show_overview_contract !== false;
-            const showNonContract = effectiveDashboardConfig?.show_overview_non_contract !== false;
-            const showNda = effectiveDashboardConfig?.show_overview_nda !== false;
-
-            const parents = (types as DBContractType[]).filter((t) => !t.parent_id);
-            const kontrakParent = parents.find((p) => {
-                const code = (p.code || '').toUpperCase();
-                const name = (p.name || '').toLowerCase();
-                return code === 'A-1' || (!name.includes('non') && name.includes('kontrak'));
-            });
-            const nonKontrakParent = parents.find((p) => {
-                const code = (p.code || '').toUpperCase();
-                const name = (p.name || '').toLowerCase();
-                return code === 'A-2' || name.includes('non');
-            });
-            const ndaParent = parents.find((p) => {
-                const code = (p.code || '').toUpperCase();
-                const name = (p.name || '').toLowerCase();
-                return code === 'NDA' || name.includes('nda') || name.includes('kerahasiaan');
-            });
-
-            const visibleTypes = types.filter((t) => {
-                if (!showContract && kontrakParent && isDescendantOrSelf(t.id, kontrakParent.id)) return false;
-                if (!showNonContract && nonKontrakParent && isDescendantOrSelf(t.id, nonKontrakParent.id)) return false;
-                if (!showNda && ndaParent && isDescendantOrSelf(t.id, ndaParent.id)) return false;
-                return true;
-            });
-
             list.push({
                 label: 'Kategori Kontrak',
                 key: 'contract_type_id',
                 type: 'searchable',
-                options: visibleTypes.map((t) => ({
+                options: (types as DBContractType[]).map((t) => ({
                     label: t.name,
                     value: t.id,
                 })),
@@ -1105,14 +1077,7 @@ function ContractPage({
         }
     };
 
-    const currentModuleKey = useMemo(() => {
-        if (currentView === 'mine') return 'MY_CTC';
-        if (currentView === 'pending') return 'PENDING';
-        if (currentView === 'expiry') return 'EXPIRY';
-        return 'CONTRACTS';
-    }, [currentView]);
-
-    const { canBulkApprove, canBulkDelete } = usePermissions(currentModuleKey);
+    const { canBulkApprove, canBulkDelete } = usePermissions();
     const hasAnyBulkAction = Boolean(canBulkApprove || canBulkDelete);
 
     const handleBulkApprove = useCallback(
@@ -1304,42 +1269,75 @@ function ContractPage({
                 ];
             }
 
-            const showContract = effectiveDashboardConfig?.show_overview_contract !== false;
-            const showNonContract = effectiveDashboardConfig?.show_overview_non_contract !== false;
-            const showNda = effectiveDashboardConfig?.show_overview_nda !== false;
+            const rootTypes = (types as DBContractType[] || []).filter((t) => !t.parent_id || String(t.parent_id) === String(t.id));
 
             const tabsList = [
                 { key: '', label: 'Semua', count: counts?.all ?? 0, icon: LayoutGrid, isActive: !activeKey },
             ];
 
-            if (showContract) {
-                tabsList.push({
-                    key: 'kontrak',
-                    label: 'Kontrak',
-                    count: counts?.kontrak ?? 0,
-                    icon: FileText,
-                    isActive: activeKey === 'kontrak',
-                });
-            }
+            if (rootTypes.length > 0) {
+                rootTypes.forEach((rt) => {
+                    const code = (rt.code || '').toLowerCase();
+                    const name = (rt.name || '').toLowerCase();
+                    const id = String(rt.id);
 
-            if (showNonContract) {
-                tabsList.push({
-                    key: 'non_kontrak',
-                    label: 'Non Kontrak',
-                    count: counts?.non_kontrak ?? 0,
-                    icon: FileCheck,
-                    isActive: activeKey === 'non_kontrak',
-                });
-            }
+                    let tabKey = id;
+                    let countKey = id;
+                    if (code === 'a-1' || (!name.includes('non') && name.includes('kontrak'))) {
+                        tabKey = 'kontrak';
+                        countKey = counts?.kontrak !== undefined ? 'kontrak' : id;
+                    } else if (code === 'a-2' || name.includes('non')) {
+                        tabKey = 'non_kontrak';
+                        countKey = counts?.non_kontrak !== undefined ? 'non_kontrak' : id;
+                    } else if (code === 'nda' || name.includes('nda') || name.includes('kerahasiaan')) {
+                        tabKey = 'nda';
+                        countKey = counts?.nda !== undefined ? 'nda' : id;
+                    }
 
-            if (showNda) {
-                tabsList.push({
-                    key: 'nda',
-                    label: 'NDA',
-                    count: counts?.nda ?? 0,
-                    icon: Zap,
-                    isActive: activeKey === 'nda',
+                    const tabCount = counts?.[countKey] ?? counts?.[id] ?? 0;
+
+                    tabsList.push({
+                        key: tabKey,
+                        label: rt.name,
+                        count: tabCount,
+                        icon: name.includes('nda') ? Zap : FileText,
+                        isActive: activeKey === tabKey || activeKey === id,
+                    });
                 });
+            } else {
+                const showContract = effectiveDashboardConfig?.show_overview_contract !== false;
+                const showNonContract = effectiveDashboardConfig?.show_overview_non_contract !== false;
+                const showNda = effectiveDashboardConfig?.show_overview_nda !== false;
+
+                if (showContract) {
+                    tabsList.push({
+                        key: 'kontrak',
+                        label: 'Kontrak',
+                        count: counts?.kontrak ?? 0,
+                        icon: FileText,
+                        isActive: activeKey === 'kontrak',
+                    });
+                }
+
+                if (showNonContract) {
+                    tabsList.push({
+                        key: 'non_kontrak',
+                        label: 'Non Kontrak',
+                        count: counts?.non_kontrak ?? 0,
+                        icon: FileCheck,
+                        isActive: activeKey === 'non_kontrak',
+                    });
+                }
+
+                if (showNda) {
+                    tabsList.push({
+                        key: 'nda',
+                        label: 'NDA',
+                        count: counts?.nda ?? 0,
+                        icon: Zap,
+                        isActive: activeKey === 'nda',
+                    });
+                }
             }
 
             return tabsList;

@@ -36,7 +36,12 @@ const {
     Workflow,
 } = Icons;
 
+import { usePermissions } from '@/hooks/use-permissions';
+
 // Lazy load modals
+const AdminChangeWorkflowModal = lazy(() =>
+    import('@/pages/contracts/components/admin/AdminChangeWorkflowModal').then((m) => ({ default: m.AdminChangeWorkflowModal })),
+);
 const SharedAddhocModal = lazy(() =>
     import('@/pages/contracts/components/modals/shared/SharedAddhocModal').then((m) => ({ default: m.SharedAddhocModal })),
 );
@@ -225,17 +230,14 @@ export const ContractDetailView = ({
         updateUrlParams(detailTab, sub);
     };
 
+    const { isAdmin } = usePermissions();
     const [processing, setProcessing] = useState(false);
     const [actionModalOpen, setActionModalOpen] = useState(false);
     const [assignOpen, setAssignOpen] = useState(false);
     const [addhocOpen, setAddhocOpen] = useState(false);
+    const [adminWorkflowModalOpen, setAdminWorkflowModalOpen] = useState(false);
     const [showSpecialActions, setShowSpecialActions] = useState(false);
-    const hasContractAction = Boolean(
-        contract.can_approve ||
-        (contract.status === 'draft' && (contract.created_by === meId || contract.initiated_by_id === meId))
-    );
     const canEditTitle =
-        hasContractAction &&
         contract.workflow_step?.meta?.allow_info_edit !== false &&
         (contract.workflow_step?.meta as any)?.allow_title_edit !== false &&
         contract.allow?.title_edit !== false &&
@@ -358,12 +360,52 @@ export const ContractDetailView = ({
     const activePendingApproval = useMemo(() => {
         if (!contract.approvals) return null;
         if (contract.pending_approval_id) {
-            return contract.approvals.find((a: any) => a.id === contract.pending_approval_id);
+            const found = contract.approvals.find((a: any) => a.id === contract.pending_approval_id);
+            if (found) return found;
         }
-        return contract.approvals.find((a: any) => a.status === 'pending' && a.user_id === meId);
+        return contract.approvals.find(
+            (a: any) => (a.status === 'pending' || a.status === 'waiting') && (a.user_id === meId || (a.user && a.user.id === meId)),
+        );
     }, [contract.approvals, contract.pending_approval_id, meId]);
 
-    const canApprove = !!contract.can_approve || !!activePendingApproval || (contract.status === 'in_review' && !!contract.workflow_step_id);
+    const isStepAuthorityMatched = useMemo(() => {
+        if (!contract.workflow_step) return false;
+        const currentUserObj = meUser || { id: meId };
+        const authorities = (contract.workflow_step as any).approver_authorities || (contract.workflow_step as any).authorities;
+        if (!authorities || authorities.length === 0) {
+            if (contract.workflow_step.approver_type === 'initiator') {
+                return (contract.initiator?.id || contract.initiated_by_id) === meId;
+            }
+            if (contract.workflow_step.approver_type === 'assigned_pic') {
+                return (contract.assigned_pic?.id || contract.assigned_pic_id) === meId;
+            }
+            if (contract.workflow_step.role && meUser?.role) {
+                const roles = Array.isArray(contract.workflow_step.role) ? contract.workflow_step.role : [contract.workflow_step.role];
+                return roles.some((r: string) => String(r).toLowerCase() === String(meUser.role).toLowerCase());
+            }
+            return false;
+        }
+        return matchUserAgainstWorkflowPool(currentUserObj, { authorities }, contract);
+    }, [contract.workflow_step, meUser, contract, meId]);
+
+    const canApprove = useMemo(() => {
+        return (
+            !!contract.can_approve ||
+            !!contract.is_current_actor ||
+            !!activePendingApproval ||
+            !!contract.pending_approval_id ||
+            isStepAuthorityMatched ||
+            (contract.status === 'in_review' && !!contract.workflow_step_id)
+        );
+    }, [
+        contract.can_approve,
+        contract.is_current_actor,
+        activePendingApproval,
+        contract.pending_approval_id,
+        isStepAuthorityMatched,
+        contract.status,
+        contract.workflow_step_id,
+    ]);
 
     const isSubStepReviewer = useMemo(() => {
         return !!activePendingApproval && (activePendingApproval.sub_step != null || activePendingApproval.role === 'Persetujuan Tambahan');
@@ -567,7 +609,9 @@ export const ContractDetailView = ({
 
         // Check required fields for this step/action only if user is current actor
         const isCurrentActor = contract?.is_current_actor ?? contract?.can_approve ?? false;
-        const reqResult = isCurrentActor ? resolveContractRequirements(contract) : { items: [], hasRequirements: false, allFilled: true, totalCount: 0, filledCount: 0 };
+        const reqResult = isCurrentActor
+            ? resolveContractRequirements(contract)
+            : { items: [], hasRequirements: false, allFilled: true, totalCount: 0, filledCount: 0 };
         const reqReviewF1 = isCurrentActor && reqResult.items.some((it) => it.id === 'review_f1' || it.id === 'f1');
         const reqReviewF2 = isCurrentActor && reqResult.items.some((it) => it.id === 'review_f2' || it.id === 'f2');
         const reqReviewAgreement = isCurrentActor && reqResult.items.some((it) => it.id === 'review_agreement' || it.id === 'agreement');
@@ -883,6 +927,8 @@ export const ContractDetailView = ({
                 currentActiveSubLabel={currentActiveSubLabel}
                 isAnyDirty={isAnyDirty}
                 infoSaving={infoSaving}
+                isAdmin={isAdmin}
+                onOpenAdminWorkflowModal={() => setAdminWorkflowModalOpen(true)}
                 onUpdateTitle={(newTitle) => handleUpdate({ title: newTitle }, true)}
                 onResetAllChanges={onResetAllChanges}
                 onSaveAllChanges={onSaveAllChanges}
@@ -1373,6 +1419,15 @@ export const ContractDetailView = ({
                     actionAlias={
                         activeStepAction?.alias || (applicableStepActions.find((a: any) => a.action_code === activeActionCode)?.alias ?? undefined)
                     }
+                />
+            </Suspense>
+            <Suspense fallback={null}>
+                <AdminChangeWorkflowModal
+                    open={adminWorkflowModalOpen}
+                    onClose={() => setAdminWorkflowModalOpen(false)}
+                    contract={contract}
+                    onSuccess={(updated) => handleContractUpdate(updated)}
+                    showToast={showToast}
                 />
             </Suspense>
         </div>

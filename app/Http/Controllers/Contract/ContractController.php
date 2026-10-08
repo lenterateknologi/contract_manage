@@ -219,50 +219,72 @@ class ContractController extends Controller
             };
 
             $roots = $allTypes->whereNull('parent_id');
-            $kontrakParent = $roots->first(fn ($p) => strtoupper($p->code) === 'A-1' || (stripos($p->name, 'non') === false && stripos($p->name, 'kontrak') !== false));
-            $nonKontrakParent = $roots->first(fn ($p) => strtoupper($p->code) === 'A-2' || stripos($p->name, 'non') !== false);
-            $ndaParent = $roots->first(fn ($p) => strtoupper($p->code) === 'NDA' || stripos($p->name, 'nda') !== false || stripos($p->name, 'kerahasiaan') !== false);
-
-            $kontrakIds = $getDescendantIds($kontrakParent?->id);
-            $nonKontrakIds = $getDescendantIds($nonKontrakParent?->id);
-            $ndaIds = $getDescendantIds($ndaParent?->id);
+            
+            // Map every root dynamically to its descendant subtree
+            $rootDescendantMap = [];
+            foreach ($roots as $root) {
+                $rootDescendantMap[$root->id] = $getDescendantIds($root->id);
+            }
 
             // Scoped base query respecting user organization permissions (no eager loading needed for counts)
             $scopedAllQuery = $this->contractListQuery->build(new Request(), 'all', false);
             $activeContractsQuery = (clone $scopedAllQuery)->whereRaw('UPPER(status) != ?', ['ARCHIVED'])->whereNull('closed_at');
 
-            $parentCategoryCounts = [
+            // Dynamic counts per root category
+            $dynamicParentCounts = [];
+            foreach ($rootDescendantMap as $rootId => $descendantIds) {
+                $dynamicParentCounts[$rootId] = (clone $activeContractsQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $descendantIds)->orWhereIn('contract_type_parent_id', $descendantIds))->count();
+            }
+
+            $kontrakParent = $roots->first(fn ($p) => strtoupper($p->code ?? '') === 'A-1' || (stripos($p->name, 'non') === false && stripos($p->name, 'kontrak') !== false)) ?: $roots->first();
+            $nonKontrakParent = $roots->first(fn ($p) => strtoupper($p->code ?? '') === 'A-2' || stripos($p->name, 'non') !== false);
+            $ndaParent = $roots->first(fn ($p) => strtoupper($p->code ?? '') === 'NDA' || stripos($p->name, 'nda') !== false || stripos($p->name, 'kerahasiaan') !== false);
+
+            $kontrakIds = $kontrakParent ? $getDescendantIds($kontrakParent->id) : [];
+            $nonKontrakIds = $nonKontrakParent ? $getDescendantIds($nonKontrakParent->id) : [];
+            $ndaIds = $ndaParent ? $getDescendantIds($ndaParent->id) : [];
+
+            $parentCategoryCounts = array_merge([
                 'all' => (clone $activeContractsQuery)->count(),
-                'kontrak' => (clone $activeContractsQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $kontrakIds)->orWhereIn('contract_type_parent_id', $kontrakIds))->count(),
-                'non_kontrak' => (clone $activeContractsQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $nonKontrakIds)->orWhereIn('contract_type_parent_id', $nonKontrakIds))->count(),
-                'nda' => (clone $activeContractsQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $ndaIds)->orWhereIn('contract_type_parent_id', $ndaIds))->count(),
+                'kontrak' => $kontrakIds ? (clone $activeContractsQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $kontrakIds)->orWhereIn('contract_type_parent_id', $kontrakIds))->count() : 0,
+                'non_kontrak' => $nonKontrakIds ? (clone $activeContractsQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $nonKontrakIds)->orWhereIn('contract_type_parent_id', $nonKontrakIds))->count() : 0,
+                'nda' => $ndaIds ? (clone $activeContractsQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $ndaIds)->orWhereIn('contract_type_parent_id', $ndaIds))->count() : 0,
                 'in_progress' => (clone $scopedAllQuery)->whereIn('status', ['in_review', 'pending', 'locked'])->whereNull('closed_at')->count(),
                 'archived' => (clone $scopedAllQuery)->where(fn ($q) => $q->whereRaw('UPPER(status) = ?', ['ARCHIVED'])->orWhereNotNull('closed_at'))->count(),
-            ];
+            ], $dynamicParentCounts);
 
             // Org Group Counts
             $scopedOrgQuery = $this->contractListQuery->build(new Request(), 'organization', false);
             $activeOrgQuery = (clone $scopedOrgQuery)->whereRaw('UPPER(status) != ?', ['ARCHIVED'])->whereNull('closed_at');
-            $orgCategoryCounts = [
+            $dynamicOrgCounts = [];
+            foreach ($rootDescendantMap as $rootId => $descendantIds) {
+                $dynamicOrgCounts[$rootId] = (clone $activeOrgQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $descendantIds)->orWhereIn('contract_type_parent_id', $descendantIds))->count();
+            }
+
+            $orgCategoryCounts = array_merge([
                 'all' => (clone $activeOrgQuery)->count(),
-                'kontrak' => (clone $activeOrgQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $kontrakIds)->orWhereIn('contract_type_parent_id', $kontrakIds))->count(),
-                'non_kontrak' => (clone $activeOrgQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $nonKontrakIds)->orWhereIn('contract_type_parent_id', $nonKontrakIds))->count(),
-                'nda' => (clone $activeOrgQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $ndaIds)->orWhereIn('contract_type_parent_id', $ndaIds))->count(),
+                'kontrak' => $kontrakIds ? (clone $activeOrgQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $kontrakIds)->orWhereIn('contract_type_parent_id', $kontrakIds))->count() : 0,
+                'non_kontrak' => $nonKontrakIds ? (clone $activeOrgQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $nonKontrakIds)->orWhereIn('contract_type_parent_id', $nonKontrakIds))->count() : 0,
+                'nda' => $ndaIds ? (clone $activeOrgQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $ndaIds)->orWhereIn('contract_type_parent_id', $ndaIds))->count() : 0,
                 'in_progress' => (clone $scopedOrgQuery)->whereIn('status', ['in_review', 'pending', 'locked'])->whereNull('closed_at')->count(),
                 'archived' => (clone $scopedOrgQuery)->where(fn ($q) => $q->whereRaw('UPPER(status) = ?', ['ARCHIVED'])->orWhereNotNull('closed_at'))->count(),
-            ];
+            ], $dynamicOrgCounts);
 
             $scopedMineQuery = $this->contractListQuery->build(new Request(), 'mine', false);
             $myActiveQuery = (clone $scopedMineQuery)->whereRaw('UPPER(status) != ?', ['ARCHIVED'])->whereNull('closed_at');
+            $dynamicMineCounts = [];
+            foreach ($rootDescendantMap as $rootId => $descendantIds) {
+                $dynamicMineCounts[$rootId] = (clone $myActiveQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $descendantIds)->orWhereIn('contract_type_parent_id', $descendantIds))->count();
+            }
 
-            $mineCounts = [
+            $mineCounts = array_merge([
                 'all' => (clone $myActiveQuery)->count(),
-                'kontrak' => (clone $myActiveQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $kontrakIds)->orWhereIn('contract_type_parent_id', $kontrakIds))->count(),
-                'non_kontrak' => (clone $myActiveQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $nonKontrakIds)->orWhereIn('contract_type_parent_id', $nonKontrakIds))->count(),
-                'nda' => (clone $myActiveQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $ndaIds)->orWhereIn('contract_type_parent_id', $ndaIds))->count(),
+                'kontrak' => $kontrakIds ? (clone $myActiveQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $kontrakIds)->orWhereIn('contract_type_parent_id', $kontrakIds))->count() : 0,
+                'non_kontrak' => $nonKontrakIds ? (clone $myActiveQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $nonKontrakIds)->orWhereIn('contract_type_parent_id', $nonKontrakIds))->count() : 0,
+                'nda' => $ndaIds ? (clone $myActiveQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $ndaIds)->orWhereIn('contract_type_parent_id', $ndaIds))->count() : 0,
                 'in_progress' => (clone $scopedMineQuery)->whereIn('status', ['in_review', 'pending', 'locked'])->whereNull('closed_at')->count(),
                 'archived' => (clone $scopedMineQuery)->where(fn ($q) => $q->whereRaw('UPPER(status) = ?', ['ARCHIVED'])->orWhereNotNull('closed_at'))->count(),
-            ];
+            ], $dynamicMineCounts);
 
             $pendingCounts = [
                 'pending' => DB::table('t_approvals')
@@ -287,12 +309,17 @@ class ContractController extends Controller
             $scopedExpiryQuery = (clone $scopedAllQuery)
                 ->whereNotNull('end_date')
                 ->whereDate('end_date', '<=', now()->addDays(30)->toDateString());
-            $expiryCategoryCounts = [
+            $dynamicExpiryCounts = [];
+            foreach ($rootDescendantMap as $rootId => $descendantIds) {
+                $dynamicExpiryCounts[$rootId] = (clone $scopedExpiryQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $descendantIds)->orWhereIn('contract_type_parent_id', $descendantIds))->count();
+            }
+
+            $expiryCategoryCounts = array_merge([
                 'all' => (clone $scopedExpiryQuery)->count(),
-                'kontrak' => (clone $scopedExpiryQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $kontrakIds)->orWhereIn('contract_type_parent_id', $kontrakIds))->count(),
-                'non_kontrak' => (clone $scopedExpiryQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $nonKontrakIds)->orWhereIn('contract_type_parent_id', $nonKontrakIds))->count(),
-                'nda' => (clone $scopedExpiryQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $ndaIds)->orWhereIn('contract_type_parent_id', $ndaIds))->count(),
-            ];
+                'kontrak' => $kontrakIds ? (clone $scopedExpiryQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $kontrakIds)->orWhereIn('contract_type_parent_id', $kontrakIds))->count() : 0,
+                'non_kontrak' => $nonKontrakIds ? (clone $scopedExpiryQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $nonKontrakIds)->orWhereIn('contract_type_parent_id', $nonKontrakIds))->count() : 0,
+                'nda' => $ndaIds ? (clone $scopedExpiryQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $ndaIds)->orWhereIn('contract_type_parent_id', $ndaIds))->count() : 0,
+            ], $dynamicExpiryCounts);
 
             return [
                 'parentCategoryCounts' => $parentCategoryCounts,
@@ -515,6 +542,15 @@ class ContractController extends Controller
 
     public function getWorkflows(Request $request): JsonResponse
     {
+        if ($request->boolean('all')) {
+            $workflows = Workflow::where('is_active', true)
+                ->with(['steps' => fn ($q) => $q->orderBy('step'), 'contractType'])
+                ->orderBy('name')
+                ->get();
+
+            return response()->json($workflows);
+        }
+
         $user = $request->user();
         $targetUserId = $request->query('user_id');
 

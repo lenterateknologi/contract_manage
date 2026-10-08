@@ -54,7 +54,14 @@ export function ContractActionSection({
     onActionClick,
     onSigningAction,
 }: ContractActionSectionProps) {
-    if (availableCustomActions.length === 0 && (!canApprove || contract.workflow_step?.meta?.show_action_panel === false)) {
+    const hasStepActions = applicableStepActions.length > 0 && canApprove;
+    const hasCustomActions = availableCustomActions.length > 0;
+
+    if (!hasStepActions && !hasCustomActions) {
+        return null;
+    }
+
+    if (contract.workflow_step?.meta?.show_action_panel === false && !hasCustomActions) {
         return null;
     }
 
@@ -304,22 +311,10 @@ export function ContractActionSection({
                 </div>
 
                 {/* MAIN STEP ACTIONS */}
-                {canApprove && contract.workflow_step?.meta?.show_action_panel !== false && (
+                {canApprove && (
                     <div className="flex flex-col gap-2 pt-1 border-t border-border/40 mt-1">
-                        {isStepActionLocked && !isSubStepReviewer ? (
-                            <div className="flex flex-col items-center justify-center p-3 text-center bg-amber-500/10 border border-amber-500/20 rounded-xl space-y-1.5">
-                                <AlertCircle size={20} className="text-amber-600 dark:text-amber-400" />
-                                <span className="text-xs font-bold text-amber-700 dark:text-amber-300">
-                                    Aksi Utama Terkunci
-                                </span>
-                                <p className="text-[10px] text-amber-600/90 dark:text-amber-400/90 leading-tight">
-                                    Harap selesaikan aksi khusus yang dipersyaratkan di atas terlebih dahulu untuk membuka tombol persetujuan ini.
-                                </p>
-                            </div>
-                        ) : (
-                            <>
-                                {applicableStepActions.length > 0 ? (
-                                    <div className="flex flex-col gap-2">
+                        {applicableStepActions.length > 0 ? (
+                            <div className="flex flex-col gap-2">
                                         {applicableStepActions.map((action: any) => {
                                             const actionConfig = getActionConfig(
                                                 {
@@ -556,11 +551,9 @@ export function ContractActionSection({
                                         })()}
                                     </>
                                 )}
-                            </>
+                            </div>
                         )}
                     </div>
-                )}
-            </div>
-        </TooltipProvider>
-    );
-}
+                </TooltipProvider>
+            );
+        }

@@ -81,16 +81,16 @@ class GetContractDocumentTypesAction
         $templateId = $contractType?->getInheritedTemplateId($tplCol);
         $contractTemplateId = $contractTplCol ? $contractType?->getInheritedTemplateId($contractTplCol) : null;
 
+        $matchingDocTypes = in_array($docType, ['agreement', 'contract']) ? ['agreement', 'contract'] : [$docType];
+
         // Check form submissions
-        $subDocType = $docType === 'agreement' ? 'contract' : $docType;
         $hasSubmission = $contract->relationLoaded('formSubmissions')
-            ? $contract->formSubmissions->where('document_type', $subDocType)->isNotEmpty()
+            ? $contract->formSubmissions->whereIn('document_type', $matchingDocTypes)->isNotEmpty()
             : false;
 
         // Check versions
-        $versionDocType = $docType === 'contract' ? 'agreement' : $docType;
         $versions = $contract->relationLoaded('versions')
-            ? $contract->versions->where('document_type', $versionDocType)
+            ? $contract->versions->whereIn('document_type', $matchingDocTypes)
             : collect();
         $hasFile = $versions->isNotEmpty();
         $latestVersion = $versions->sortByDesc('version_no')->first();

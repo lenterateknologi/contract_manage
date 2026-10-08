@@ -1,23 +1,14 @@
 import { SharedData } from '@/types';
 import { usePage } from '@inertiajs/react';
 
-export function usePermissions(moduleCode?: string) {
+export function usePermissions(moduleCodeOrRoute?: string) {
     const { auth } = usePage<SharedData>().props;
+    const pageUrl = typeof window !== 'undefined' ? window.location.pathname : '';
+    const lookupKey = moduleCodeOrRoute || pageUrl;
     const permissions = auth.permissions || {};
     const isAdmin = auth.user?.role === 'Super Admin' || auth.user?.role === 'Admin' || !!(auth.user as any)?.is_admin;
 
-    if (!moduleCode) {
-        return {
-            permissions,
-            can: (code: string, action: 'read' | 'create' | 'update' | 'delete') => {
-                if (isAdmin) return true;
-                return !!permissions[code]?.[action];
-            },
-            isAdmin,
-        };
-    }
-
-    const modulePerms = permissions[moduleCode] || {
+    const modulePerms = (lookupKey ? permissions[lookupKey] : null) || {
         read: false,
         create: false,
         update: false,
@@ -36,5 +27,10 @@ export function usePermissions(moduleCode?: string) {
         canBulkApprove: isAdmin || !!(modulePerms as any).bulk_approve,
         canBulkDelete: isAdmin || !!(modulePerms as any).bulk_delete,
         isAdmin,
+        permissions,
+        can: (codeOrRoute: string, action: 'read' | 'create' | 'update' | 'delete' | 'approve' | 'bulk_approve' | 'bulk_delete') => {
+            if (isAdmin) return true;
+            return !!permissions[codeOrRoute]?.[action];
+        },
     };
 }

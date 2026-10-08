@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminContractWorkflowController;
 use App\Http\Controllers\Contract\ContractApprovalController;
 use App\Http\Controllers\Contract\ContractController;
 use App\Http\Controllers\Contract\ContractExportController;
@@ -54,6 +55,12 @@ Route::prefix('contracts')->group(function () {
         Route::post('/add-approver', 'addAdhocApprover');
         Route::post('/submit-approvers', 'submitAdhocApprovers');
         Route::delete('/approver/{approvalId}', 'removeAdhocApprover');
+    });
+
+    // ── Admin-only Contract Operations ──
+    Route::controller(AdminContractWorkflowController::class)->group(function () {
+        Route::post('/{id}/override-workflow', 'override');
+        Route::get('/admin/workflows', 'getWorkflows');
     });
 
     Route::controller(ContractApprovalController::class)->group(function () {

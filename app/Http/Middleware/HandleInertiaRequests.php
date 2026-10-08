@@ -227,12 +227,15 @@ class HandleInertiaRequests extends Middleware
                 return [];
             }
 
-            return AccessModule::where('role_id', $role->id)
+            $access = AccessModule::where('role_id', $role->id)
                 ->join('m_modules', 'm_access_modules.module_id', '=', 'm_modules.id')
-                ->select('m_modules.identifier as code', 'can_read', 'can_create', 'can_update', 'can_delete', 'can_approve', 'can_bulk_approve', 'can_bulk_delete')
-                ->get()
-                ->keyBy('code')
+                ->select('m_modules.identifier as code', 'm_modules.route', 'can_read', 'can_create', 'can_update', 'can_delete', 'can_approve', 'can_bulk_approve', 'can_bulk_delete')
+                ->get();
+
+            $byCode = $access->keyBy('code')
                 ->map(fn ($item) => [
+                    'code' => $item->code,
+                    'route' => $item->route,
                     'read' => (bool) $item->can_read,
                     'create' => (bool) $item->can_create,
                     'update' => (bool) $item->can_update,
@@ -242,6 +245,15 @@ class HandleInertiaRequests extends Middleware
                     'bulk_delete' => (bool) ($item->can_bulk_delete ?? false),
                 ])
                 ->all();
+
+            $byRoute = [];
+            foreach ($access as $item) {
+                if ($item->route) {
+                    $byRoute[$item->route] = $byCode[$item->code] ?? [];
+                }
+            }
+
+            return array_merge($byCode, $byRoute);
         });
     }
 

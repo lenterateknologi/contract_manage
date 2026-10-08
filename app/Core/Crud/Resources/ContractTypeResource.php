@@ -51,7 +51,9 @@ class ContractTypeResource extends Resource
                     ->required()
                     ->rules(['string', 'max:255']),
                 TreeSelectInput::make('parent_id', 'Parent Kategori')
-                    ->options(fn () => Cache::remember('options_contract_types_tree', now()->addMinutes(10), fn () => ContractType::orderBy('name')->get(['id', 'name', 'parent_id'])->toArray())),
+                    ->options(fn () => Cache::remember('options_contract_types_tree', now()->addMinutes(10), fn () => ContractType::orderBy('name')->get(['id', 'name', 'parent_id'])->toArray()))
+                    ->rootOptionLabel('Tanpa Parent (Jadikan Kategori Utama / Root)')
+                    ->rules(['nullable']),
                 ToggleInput::make('is_active', 'Status Aktif')
                     ->default(true),
                 TextareaInput::make('description', 'Deskripsi')

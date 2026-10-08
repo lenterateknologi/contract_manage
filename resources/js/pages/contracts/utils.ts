@@ -16,8 +16,8 @@ export const contractApi = {
         unwrap(api.post(`/api/contracts/${id}/review-doc`, { doc })),
     delete: (id: string): Promise<any> => unwrap(api.delete(`/api/contracts/${id}`)),
     getTypes: (): Promise<any[]> => unwrap(api.get('/api/contracts/types')),
-    getWorkflows: (contractType?: string, userId?: string): Promise<any[]> =>
-        unwrap(api.get('/api/contracts/workflows', { params: { contract_type: contractType, user_id: userId } })),
+    getWorkflows: (contractType?: string, userId?: string, all?: boolean): Promise<any[]> =>
+        unwrap(api.get(all ? '/api/contracts/admin/workflows' : '/api/contracts/workflows', { params: { contract_type: contractType, user_id: userId, all: all ? 1 : undefined } })),
     getUsers: (params?: any): Promise<any[]> => unwrap(api.get('/api/contracts/users', { params })),
     getRoles: (): Promise<any[]> => unwrap(api.get('/api/contracts/roles')),
 
@@ -26,6 +26,11 @@ export const contractApi = {
     documentTypes: (id: string, type?: string): Promise<any> => unwrap(api.get(`/api/contracts/${id}/document-types${type ? `?type=${type}` : ''}`)),
     send: (id: string, data?: { workflow_id?: string; custom_steps?: any[] }): Promise<Contract> =>
         unwrap(api.post(`/api/contracts/${id}/send`, data)),
+    adminOverrideWorkflow: (
+        id: string,
+        data: { workflow_id: string; workflow_step_id: string; reason?: string }
+    ): Promise<Contract> =>
+        unwrap(api.post(`/api/contracts/${id}/override-workflow`, data)),
 
     assignPic: (id: string, assignedPicId: string, note?: string, attachments?: File | File[], actionCode?: string, actionId?: string): Promise<Contract> => {
         const fd = new FormData();

@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { createPortal } from 'react-dom';
-import { Search, ChevronDown, ChevronRight, Check, Lock } from 'lucide-react';
+import { Search, ChevronDown, ChevronRight, Check, Lock, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface TreeSelectItem {
@@ -11,8 +11,8 @@ export interface TreeSelectItem {
 }
 
 interface TreeSelectProps {
-    value: string | string[];
-    onValueChange: (value: any, parentId?: string) => void;
+    value: string | string[] | null | undefined;
+    onValueChange: (value: any, parentId?: string | null) => void;
     items: TreeSelectItem[];
     placeholder?: string;
     searchPlaceholder?: string;
@@ -25,6 +25,9 @@ interface TreeSelectProps {
     disableParentSelection?: boolean;
     sortBy?: 'code' | 'name' | 'none';
     size?: 'default' | 'sm';
+    allowClear?: boolean;
+    rootOptionLabel?: string;
+    disabledId?: string | number;
 }
 
 export function TreeSelect({
@@ -42,6 +45,9 @@ export function TreeSelect({
     disableParentSelection = false,
     sortBy = 'code',
     size = 'default',
+    allowClear = true,
+    rootOptionLabel = 'Tanpa Parent (Jadikan Kategori Utama / Root)',
+    disabledId,
 }: TreeSelectProps) {
     const [open, setOpen] = React.useState(inline);
     const [search, setSearch] = React.useState('');
@@ -67,11 +73,24 @@ export function TreeSelect({
 
     // Value handling
     const selectedIds = React.useMemo(() => {
-        if (Array.isArray(value)) return value.map(String);
-        return value ? [String(value)] : [];
+        if (Array.isArray(value)) return value.filter(v => v !== null && v !== undefined && v !== '').map(String);
+        return (value !== null && value !== undefined && value !== '') ? [String(value)] : [];
     }, [value]);
 
     const isSelected = (id: string | number) => selectedIds.includes(String(id));
+
+    // Prevent selecting current item or its descendants when editing hierarchy
+    const isNodeDisabled = React.useCallback((nodeId: string | number): boolean => {
+        if (!disabledId) return false;
+        if (String(nodeId) === String(disabledId)) return true;
+        
+        let current = items.find(i => String(i.id) === String(nodeId));
+        while (current && current.parent_id && String(current.parent_id) !== String(current.id)) {
+            if (String(current.parent_id) === String(disabledId)) return true;
+            current = items.find(i => String(i.id) === String(current.parent_id));
+        }
+        return false;
+    }, [disabledId, items]);
 
     // Build N-level recursive tree with sort by code (asc)
     const treeData = React.useMemo(() => {
@@ -309,6 +328,7 @@ export function TreeSelect({
             const nId = String(node.id);
             const isExpanded = !!expandedParents[nId];
             const hasChildren = node.children && node.children.length > 0;
+            const isDisabled = isNodeDisabled(node.id);
             
             let fullySelected = false;
             let partiallySelected = false;
@@ -346,7 +366,9 @@ export function TreeSelect({
 
                         <button
                             type="button"
+                            disabled={isDisabled}
                             onClick={(e) => {
+                                if (isDisabled) return;
                                 if (disableParentSelection && hasChildren) {
                                     toggleParentExpansion(nId, e as any);
                                 } else {
@@ -354,7 +376,8 @@ export function TreeSelect({
                                 }
                             }}
                             className={cn(
-                                "flex flex-1 items-center gap-2 py-1.5 text-left transition-colors rounded-sm cursor-pointer",
+                                "flex flex-1 items-center gap-2 py-1.5 text-left transition-colors rounded-sm",
+                                isDisabled ? "opacity-40 cursor-not-allowed" : "cursor-pointer",
                                 isSmall ? "text-xs" : "text-sm",
                                 depth === 0 ? "font-semibold px-3" : "font-medium px-2",
                                 fullySelected ? "text-primary font-medium" : "text-popover-foreground/80"
@@ -391,6 +414,11 @@ export function TreeSelect({
                                     </span>
                                 )}
                                 <span className="truncate">{node.name}</span>
+                                {isDisabled && (
+                                    <span className="text-[10px] text-muted-foreground italic shrink-0 ml-1">
+                                        (Kategori saat ini)
+                                    </span>
+                                )}
                             </div>
                         </button>
 
@@ -478,7 +506,7 @@ export function TreeSelect({
                                 <span className={cn(
                                     "px-1.5 py-0.2 rounded-full text-[10px]",
                                     filterTab === 'selected' ? "bg-white/20 text-white" : "bg-primary/10 text-primary"
-                                )}>
+                                    )}>
                                     {selectedIds.length}
                                 </span>
                             </button>
@@ -501,6 +529,36 @@ export function TreeSelect({
             </div>
 
             <div className={cn("p-0.5", inline ? "w-full" : "flex-1 overflow-y-auto max-h-[280px] [scrollbar-width:thin] custom-scrollbar")}>
+                {!multiple && allowClear && (!search.trim() || 'tanpa parent root kategori utama'.toLowerCase().includes(search.toLowerCase().trim())) && (
+                    <div className="pb-1 mb-1 border-b border-border/60">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                onValueChange(null, null);
+                                setOpen(false);
+                            }}
+                            className={cn(
+                                "flex w-full items-center gap-2 py-1.5 px-3 text-left transition-colors rounded-sm cursor-pointer hover:bg-sidebar-accent/50",
+                                isSmall ? "text-xs" : "text-sm",
+                                selectedIds.length === 0
+                                    ? "text-primary font-medium bg-primary/5"
+                                    : "text-muted-foreground hover:text-foreground"
+                            )}
+                        >
+                            <div className={cn(
+                                "flex h-3.5 w-3.5 items-center justify-center rounded-full border transition-all shrink-0",
+                                selectedIds.length === 0
+                                    ? "border-primary bg-primary text-primary-foreground"
+                                    : "border-border bg-transparent"
+                            )}>
+                                {selectedIds.length === 0 && <div className="h-1.5 w-1.5 rounded-full bg-current" />}
+                            </div>
+                            <span className={cn(selectedIds.length === 0 ? "font-semibold text-primary" : "font-normal italic")}>
+                                {rootOptionLabel}
+                            </span>
+                        </button>
+                    </div>
+                )}
                 {filteredTree.length === 0 ? (
                     <div className="py-6 text-center text-sm text-muted-foreground italic">
                         {filterTab === 'selected' ? 'Belum ada tipe yang dipilih' : emptyText}
@@ -537,11 +595,28 @@ export function TreeSelect({
                     <span className={cn('truncate', isSmall ? 'text-xs' : 'text-sm', selectedDisplay ? 'text-foreground font-normal' : 'text-muted-foreground font-normal')}>
                         {selectedDisplay || placeholder}
                     </span>
-                    {disabled ? (
-                        <Lock size={isSmall ? 13 : 14} className="text-slate-400 dark:text-zinc-500 shrink-0 ml-2 opacity-70" />
-                    ) : (
-                        <ChevronDown size={15} className={cn('text-muted-foreground shrink-0 ml-2 transition-transform duration-200', open && 'rotate-180')} />
-                    )}
+                    <div className="flex items-center shrink-0 ml-2">
+                        {selectedDisplay && !disabled && allowClear && (
+                            <span
+                                role="button"
+                                tabIndex={0}
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    onValueChange(multiple ? [] : null, null);
+                                }}
+                                className="p-0.5 mr-1 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted/80 transition-colors cursor-pointer"
+                                title="Hapus pilihan"
+                            >
+                                <X size={isSmall ? 12 : 13} />
+                            </span>
+                        )}
+                        {disabled ? (
+                            <Lock size={isSmall ? 13 : 14} className="text-slate-400 dark:text-zinc-500 opacity-70" />
+                        ) : (
+                            <ChevronDown size={15} className={cn('text-muted-foreground transition-transform duration-200', open && 'rotate-180')} />
+                        )}
+                    </div>
                 </button>
             )}
 

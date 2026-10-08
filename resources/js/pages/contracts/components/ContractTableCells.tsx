@@ -191,50 +191,31 @@ export interface ContractTypeBadgeConfig {
     borderClass: string;
 }
 
+const BADGE_COLOR_PALETTES = [
+    { bgClass: 'bg-indigo-600', textClass: 'text-white', borderClass: 'border-transparent' },
+    { bgClass: 'bg-blue-600', textClass: 'text-white', borderClass: 'border-transparent' },
+    { bgClass: 'bg-emerald-600', textClass: 'text-white', borderClass: 'border-transparent' },
+    { bgClass: 'bg-amber-600', textClass: 'text-white', borderClass: 'border-transparent' },
+    { bgClass: 'bg-purple-600', textClass: 'text-white', borderClass: 'border-transparent' },
+    { bgClass: 'bg-rose-600', textClass: 'text-white', borderClass: 'border-transparent' },
+    { bgClass: 'bg-teal-600', textClass: 'text-white', borderClass: 'border-transparent' },
+    { bgClass: 'bg-cyan-600', textClass: 'text-white', borderClass: 'border-transparent' },
+    { bgClass: 'bg-violet-600', textClass: 'text-white', borderClass: 'border-transparent' },
+    { bgClass: 'bg-slate-700', textClass: 'text-white', borderClass: 'border-transparent' },
+];
+
 export function getContractTypeBadgeConfig(typeName?: string | null): ContractTypeBadgeConfig {
-    const name = (typeName || 'UMUM').toUpperCase().trim();
-
-    if (name.includes('NDA') || name.includes('RAHASIA')) {
-        return {
-            label: name,
-            bgClass: 'bg-purple-600',
-            textClass: 'text-white',
-            borderClass: 'border-transparent',
-        };
+    const label = (typeName || 'UMUM').trim();
+    let hash = 0;
+    for (let i = 0; i < label.length; i++) {
+        hash = (hash << 5) - hash + label.charCodeAt(i);
+        hash |= 0;
     }
-
-    if (name.includes('MOU') || name.includes('NOTA')) {
-        return {
-            label: name,
-            bgClass: 'bg-blue-600',
-            textClass: 'text-white',
-            borderClass: 'border-transparent',
-        };
-    }
-
-    if (name.includes('VENDOR') || name.includes('PKS') || name.includes('KERJASAMA')) {
-        return {
-            label: name,
-            bgClass: 'bg-indigo-600',
-            textClass: 'text-white',
-            borderClass: 'border-transparent',
-        };
-    }
-
-    if (name.includes('SPK') || name.includes('PERINTAH')) {
-        return {
-            label: name,
-            bgClass: 'bg-amber-600',
-            textClass: 'text-white',
-            borderClass: 'border-transparent',
-        };
-    }
+    const palette = BADGE_COLOR_PALETTES[Math.abs(hash) % BADGE_COLOR_PALETTES.length];
 
     return {
-        label: name,
-        bgClass: 'bg-slate-700',
-        textClass: 'text-white',
-        borderClass: 'border-transparent',
+        label,
+        ...palette,
     };
 }
 

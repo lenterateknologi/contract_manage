@@ -1478,6 +1478,9 @@ export default function ResourceForm({
                             multiple={field.multiple ?? false}
                             inline={field.inline ?? false}
                             disableParentSelection={field.disableParentSelection ?? false}
+                            allowClear={field.allowClear ?? true}
+                            rootOptionLabel={field.rootOptionLabel || (field.name === 'parent_id' ? 'Tanpa Parent (Jadikan Kategori Utama / Root)' : undefined)}
+                            disabledId={record?.id}
                         />
                         {field.helperText && !errors[field.name] && (
                             <p className="text-[11px] text-muted-foreground px-0.5 mt-1 font-normal">

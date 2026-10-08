@@ -29,8 +29,8 @@ interface Props {
     };
 }
 
-// ponytail: helper to resolve root category ('contract' | 'non-contract' | 'nda') & topic from type hierarchy
-function resolveTypeCategory(typeId: string, types: any[], activeTab?: string): { category: 'contract' | 'non-contract' | 'nda'; topic: string } {
+// Helper to resolve root category and topic dynamically from master data hierarchy
+function getRootType(typeId: string, types: any[]): any | null {
     let current = types.find((t) => String(t.id) === String(typeId));
     const visited = new Set<string>();
     while (current && current.parent_id && String(current.parent_id) !== String(current.id) && !visited.has(String(current.id))) {
@@ -42,23 +42,34 @@ function resolveTypeCategory(typeId: string, types: any[], activeTab?: string): 
             break;
         }
     }
+    return current || null;
+}
 
-    if (!current) {
-        if (activeTab === 'non_kontrak') return { category: 'non-contract', topic: 'non-perjanjian' };
-        if (activeTab === 'nda') return { category: 'nda', topic: 'nda' };
-        return { category: 'contract', topic: 'perjanjian' };
+function resolveTypeCategory(typeId: string, types: any[], activeTab?: string): { category: string; topic: string; root: any | null } {
+    const root = getRootType(typeId, types);
+    if (!root) {
+        return {
+            category: activeTab === 'non_kontrak' ? 'non-contract' : activeTab === 'nda' ? 'nda' : 'contract',
+            topic: activeTab === 'non_kontrak' ? 'non-perjanjian' : activeTab === 'nda' ? 'nda' : 'perjanjian',
+            root: null,
+        };
     }
 
-    const code = (current.code || '').toUpperCase();
-    const name = (current.name || '').toLowerCase();
+    const code = (root.code || '').toUpperCase();
+    const name = (root.name || '').toLowerCase();
 
-    if (code === 'A-2' || name.includes('non')) {
-        return { category: 'non-contract', topic: 'non-perjanjian' };
+    let category = root.code ? root.code.toLowerCase() : 'contract';
+    if (code === 'A-1' || (!name.includes('non') && name.includes('kontrak'))) {
+        category = 'contract';
+    } else if (code === 'A-2' || name.includes('non')) {
+        category = 'non-contract';
+    } else if (code === 'NDA' || name.includes('nda') || name.includes('kerahasiaan')) {
+        category = 'nda';
     }
-    if (code === 'NDA' || name.includes('nda') || name.includes('kerahasiaan')) {
-        return { category: 'nda', topic: 'nda' };
-    }
-    return { category: 'contract', topic: 'perjanjian' };
+
+    const topic = root.name || 'perjanjian';
+
+    return { category, topic, root };
 }
 
 export default function CreateContractModal({
@@ -81,7 +92,7 @@ export default function CreateContractModal({
     const [taxRequired, setTaxRequired] = useState(true);
     const [initiatedById, setInitiatedById] = useState('');
     const [vendorId, setVendorId] = useState('');
-    const [category, setCategory] = useState<'contract' | 'non-contract' | 'nda'>('contract');
+    const [category, setCategory] = useState<string>('contract');
     const [projectName, setProjectName] = useState('');
     const [loading, setLoading] = useState(false);
     const [workflows, setWorkflows] = useState<any[]>([]);
@@ -89,81 +100,41 @@ export default function CreateContractModal({
     const [fetchingWorkflows, setFetchingWorkflows] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
-    // ponytail: filter type tree to strictly match active filtering/tab (kontrak / non_kontrak / nda) & dashboardConfig
+    // Filter type tree dynamically from master data hierarchy & active tab/config
     const filteredTypes = useMemo(() => {
-        const showContract = dashboardConfig?.show_overview_contract !== false;
-        const showNonContract = dashboardConfig?.show_overview_non_contract !== false;
-        const showNda = dashboardConfig?.show_overview_nda !== false;
-
         let baseTypes = types;
-        if (!showContract || !showNonContract || !showNda) {
-            // Find root ids that are allowed
-            const allowedRootIds = new Set<string>();
-            types.forEach((t) => {
-                if (t.parent_id && String(t.parent_id) !== String(t.id)) return;
-                const code = (t.code || '').toUpperCase();
-                const name = (t.name || '').toLowerCase();
-                const isContract = code === 'A-1' || (!name.includes('non') && name.includes('kontrak'));
-                const isNonContract = code === 'A-2' || name.includes('non');
-                const isNda = code === 'NDA' || name.includes('nda') || name.includes('kerahasiaan');
 
-                if ((isContract && showContract) || (isNonContract && showNonContract) || (isNda && showNda)) {
-                    allowedRootIds.add(String(t.id));
-                }
+        if (activeTab && activeTab !== 'all' && activeTab !== 'pending' && activeTab !== 'history') {
+            const root = baseTypes.find((t) => {
+                if (t.parent_id && String(t.parent_id) !== String(t.id)) return false;
+                const code = (t.code || '').toLowerCase();
+                const name = (t.name || '').toLowerCase();
+                const id = String(t.id);
+                if (activeTab === id || activeTab === code) return true;
+                if (activeTab === 'kontrak' && (code === 'a-1' || (!name.includes('non') && name.includes('kontrak')))) return true;
+                if (activeTab === 'non_kontrak' && (code === 'a-2' || name.includes('non'))) return true;
+                if (activeTab === 'nda' && (code === 'nda' || name.includes('nda') || name.includes('kerahasiaan'))) return true;
+                return false;
             });
 
-            if (allowedRootIds.size > 0) {
-                const allowedDescendantIds = new Set<string>(allowedRootIds);
+            if (root) {
+                const allowedIds = new Set<string>([String(root.id)]);
                 let added = true;
                 while (added) {
                     added = false;
-                    for (const item of types) {
-                        if (item.parent_id && allowedDescendantIds.has(String(item.parent_id)) && !allowedDescendantIds.has(String(item.id))) {
-                            allowedDescendantIds.add(String(item.id));
+                    for (const item of baseTypes) {
+                        if (item.parent_id && allowedIds.has(String(item.parent_id)) && !allowedIds.has(String(item.id))) {
+                            allowedIds.add(String(item.id));
                             added = true;
                         }
                     }
                 }
-                baseTypes = types.filter((t) => allowedDescendantIds.has(String(t.id)));
+                baseTypes = baseTypes.filter((t) => allowedIds.has(String(t.id)));
             }
         }
 
-        if (!activeTab || activeTab === 'all' || activeTab === 'pending' || activeTab === 'history') {
-            return baseTypes;
-        }
-
-        const root = baseTypes.find((t) => {
-            if (t.parent_id && String(t.parent_id) !== String(t.id)) return false;
-            const code = (t.code || '').toUpperCase();
-            const name = (t.name || '').toLowerCase();
-            if (activeTab === 'kontrak') {
-                return code === 'A-1' || (!name.includes('non') && name.includes('kontrak'));
-            }
-            if (activeTab === 'non_kontrak') {
-                return code === 'A-2' || name.includes('non');
-            }
-            if (activeTab === 'nda') {
-                return code === 'NDA' || name.includes('nda') || name.includes('kerahasiaan');
-            }
-            return false;
-        });
-
-        if (!root) return baseTypes;
-
-        const allowedIds = new Set<string>([String(root.id)]);
-        let added = true;
-        while (added) {
-            added = false;
-            for (const item of baseTypes) {
-                if (item.parent_id && allowedIds.has(String(item.parent_id)) && !allowedIds.has(String(item.id))) {
-                    allowedIds.add(String(item.id));
-                    added = true;
-                }
-            }
-        }
-
-        return baseTypes.filter((t) => allowedIds.has(String(t.id)));
-    }, [types, activeTab, dashboardConfig]);
+        return baseTypes;
+    }, [types, activeTab]);
 
     const initiatorOptions = useMemo(() => {
         const allowedUserIds = auth?.user?.allowed_on_behalf_user_ids;

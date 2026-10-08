@@ -14,6 +14,10 @@ class TreeSelectInput extends Field
 
     protected bool $disableParentSelection = false;
 
+    protected bool $allowClear = true;
+
+    protected ?string $rootOptionLabel = null;
+
     public function options(array|callable $options): static
     {
         if (is_callable($options)) {
@@ -46,6 +50,20 @@ class TreeSelectInput extends Field
         return $this;
     }
 
+    public function allowClear(bool $allow = true): static
+    {
+        $this->allowClear = $allow;
+
+        return $this;
+    }
+
+    public function rootOptionLabel(?string $label): static
+    {
+        $this->rootOptionLabel = $label;
+
+        return $this;
+    }
+
     public function toArray(): array
     {
         return array_merge(parent::toArray(), [
@@ -53,6 +71,8 @@ class TreeSelectInput extends Field
             'multiple' => $this->multiple,
             'inline' => $this->inline,
             'disableParentSelection' => $this->disableParentSelection,
+            'allowClear' => $this->allowClear,
+            'rootOptionLabel' => $this->rootOptionLabel,
         ]);
     }
 }

@@ -82,18 +82,20 @@ class ChatService
             ->latest('created_at')
             ->limit(1);
 
-        $allTypes = \App\Models\ContractType::all();
+        $allTypes = \App\Models\ContractType::whereNull('deleted_at')->get();
         $typeToRootMap = [];
         foreach ($allTypes as $t) {
             $curr = $t;
-            while ($curr && $curr->parent_id) {
+            $visited = [];
+            while ($curr && $curr->parent_id && ! in_array($curr->id, $visited)) {
+                $visited[] = $curr->id;
                 $curr = $allTypes->firstWhere('id', $curr->parent_id);
             }
-            $rootCode = $curr?->code;
+            $rootCode = strtoupper($curr?->code ?? '');
             $rootName = strtolower($curr?->name ?? '');
             if ($rootCode === 'NDA' || str_contains($rootName, 'nda') || str_contains($rootName, 'kerahasiaan')) {
                 $typeToRootMap[$t->id] = 'nda';
-            } elseif ($rootCode === 'A-2' || str_contains($rootName, 'non kontrak')) {
+            } elseif ($rootCode === 'A-2' || str_contains($rootName, 'non')) {
                 $typeToRootMap[$t->id] = 'non_kontrak';
             } else {
                 $typeToRootMap[$t->id] = 'kontrak';
@@ -155,22 +157,26 @@ class ChatService
      */
     public function getDiscussions(User $user, array $filters = [], int $perPage = 15): array
     {
-        $allTypes = \App\Models\ContractType::all();
+        $allTypes = \App\Models\ContractType::whereNull('deleted_at')->get();
         $typeToRootMap = [];
+        $typeToRootNameMap = [];
         foreach ($allTypes as $t) {
             $curr = $t;
-            while ($curr && $curr->parent_id) {
+            $visited = [];
+            while ($curr && $curr->parent_id && ! in_array($curr->id, $visited)) {
+                $visited[] = $curr->id;
                 $curr = $allTypes->firstWhere('id', $curr->parent_id);
             }
-            $rootCode = $curr?->code;
+            $rootCode = strtoupper($curr?->code ?? '');
             $rootName = strtolower($curr?->name ?? '');
             if ($rootCode === 'NDA' || str_contains($rootName, 'nda') || str_contains($rootName, 'kerahasiaan')) {
                 $typeToRootMap[$t->id] = 'nda';
-            } elseif ($rootCode === 'A-2' || str_contains($rootName, 'non kontrak')) {
+            } elseif ($rootCode === 'A-2' || str_contains($rootName, 'non')) {
                 $typeToRootMap[$t->id] = 'non_kontrak';
             } else {
                 $typeToRootMap[$t->id] = 'kontrak';
             }
+            $typeToRootNameMap[$t->id] = $curr?->name ?? $t->name;
         }
 
         $lastMessageQuery = ContractMessage::query()
@@ -197,8 +203,14 @@ class ChatService
         // Category filter
         if (! empty($filters['category']) && $filters['category'] !== 'all') {
             $categoryTarget = strtolower($filters['category']);
-            $matchingTypeIds = array_keys(array_filter($typeToRootMap, fn ($cat) => $cat === $categoryTarget));
-            $query->whereIn('contract_type_id', $matchingTypeIds);
+            $matchingTypeIds = array_keys(array_filter($typeToRootMap, function ($cat, $typeId) use ($categoryTarget, $typeToRootNameMap) {
+                return $cat === $categoryTarget 
+                    || (string) $typeId === $categoryTarget 
+                    || strtolower($typeToRootNameMap[$typeId] ?? '') === $categoryTarget;
+            }, ARRAY_FILTER_USE_BOTH));
+            if (! empty($matchingTypeIds)) {
+                $query->whereIn('contract_type_id', $matchingTypeIds);
+            }
         }
 
         // Search filter

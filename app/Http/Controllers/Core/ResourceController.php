@@ -493,27 +493,7 @@ class ResourceController extends Controller
         $binaryData = $rawBase64 ? base64_decode($rawBase64) : $fileResp->body();
 
         $ext = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
-        $mimeTypes = [
-            'pdf' => 'application/pdf',
-            'png' => 'image/png',
-            'jpg' => 'image/jpeg',
-            'jpeg' => 'image/jpeg',
-            'jfif' => 'image/jpeg',
-            'webp' => 'image/webp',
-            'gif' => 'image/gif',
-            'svg' => 'image/svg+xml',
-            'doc' => 'application/msword',
-            'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            'xls' => 'application/vnd.ms-excel',
-            'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'ppt' => 'application/vnd.ms-powerpoint',
-            'pptx' => 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-            'csv' => 'text/csv',
-            'txt' => 'text/plain',
-            'zip' => 'application/zip',
-            'rar' => 'application/x-rar-compressed',
-        ];
-        $contentType = $mimeTypes[$ext] ?? 'application/octet-stream';
+        $contentType = \Symfony\Component\Mime\MimeTypes::getDefault()->getMimeTypes($ext)[0] ?? 'application/octet-stream';
 
         return response($binaryData, 200, [
             'Content-Type' => $contentType,
