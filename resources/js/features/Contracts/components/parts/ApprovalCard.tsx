@@ -1,11 +1,13 @@
+import React, { useState } from 'react';
+import { Bot, CheckCircle2, ChevronDown, Clock, Download, Eye, Lock, X } from 'lucide-react';
 import { UserAvatarIcon } from '@/components/profile/UserAvatar';
 import { ActionBadge, FileChipIcon, getActionConfig } from '@/components/ui';
 import { Badge } from '@/components/ui/feedback/Badge';
-import { formatFileSize } from '@/lib/formatters';
-import { cn, formatDateTime } from '@/lib/utils';
+import { StatusBadge } from '@/components/ui/feedback/StatusBadge';
 import DocumentPreviewModal from '@/features/Contracts/components/modals/DocumentPreviewModal';
 import { Contract, ContractApproval } from '@/features/Contracts/types';
-import { StatusBadge } from '@/components/ui/feedback/StatusBadge';
+import { formatFileSize } from '@/lib/formatters';
+import { cn, formatDateTime } from '@/lib/utils';
 
 interface ApprovalCardProps {
     approval: ContractApproval;

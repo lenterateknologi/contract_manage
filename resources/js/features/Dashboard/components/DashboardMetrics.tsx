@@ -1,4 +1,4 @@
-import { DashboardSkeleton } from '@/components/ui/feedback/DashboardSkeleton';
+import { DashboardLoading } from '@/components/ui/feedback/DashboardLoading';
 import { router } from '@inertiajs/react';
 import { Briefcase } from 'lucide-react';
 import React, { lazy, Suspense } from 'react';
@@ -8,7 +8,7 @@ const OverviewTab = lazy(() => import('./OverviewTab').then((m) => ({ default: m
 const WorkloadTab = lazy(() => import('./WorkloadTab').then((m) => ({ default: m.WorkloadTab })));
 const MasterDataTab = lazy(() => import('./MasterDataTab').then((m) => ({ default: m.MasterDataTab })));
 
-const TabLoading = () => <DashboardSkeleton />;
+const TabLoading = () => <DashboardLoading message="Memuat Tab Dashboard..." description="Menyiapkan visualisasi data" />;
 
 export function DashboardMetrics({
     metrics,
@@ -17,24 +17,19 @@ export function DashboardMetrics({
     onCreateContract,
 }: {
     metrics: any;
-    activeTab: 'overview' | 'overview_contract' | 'overview_non_contract' | 'overview_nda' | 'workload' | 'master_data';
+    activeTab: 'overview' | 'workload' | 'master_data';
     meUser?: any;
     onCreateContract?: () => void;
 }) {
     if (!metrics) return null;
 
     const config = metrics.dashboardConfig;
-    console.log('[DASHBOARD LOG] Dashboard Metrics received:', metrics);
-    console.log('[DASHBOARD LOG] Resolved Dashboard Config:', config);
 
     const hasAnyTab = config
-        ? config.show_overview ||
-          config.show_overview_contract ||
-          config.show_overview_non_contract ||
-          config.show_overview_nda ||
+        ? config.show_overview !== false ||
           config.show_workload ||
           config.show_master_data
-        : false;
+        : true;
 
     if (!hasAnyTab) {
         return (
@@ -71,39 +66,9 @@ export function DashboardMetrics({
             {/* Tab Contents with Premium Transitions */}
             <div className="transition-all duration-300">
                 <Suspense fallback={<TabLoading />}>
-                    {activeTab === 'overview' && config?.show_overview && (
+                    {activeTab === 'overview' && (config?.show_overview !== false) && (
                         <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
                             <OverviewTab data={metrics} scope="all" onNavigate={handleNavigate} meUser={meUser} onCreateContract={onCreateContract} />
-                        </div>
-                    )}
-
-                    {activeTab === 'overview_contract' && config?.show_overview_contract && (
-                        <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-                            <OverviewTab
-                                data={metrics}
-                                scope="contract"
-                                onNavigate={handleNavigate}
-                                meUser={meUser}
-                                onCreateContract={onCreateContract}
-                            />
-                        </div>
-                    )}
-
-                    {activeTab === 'overview_non_contract' && config?.show_overview_non_contract && (
-                        <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-                            <OverviewTab
-                                data={metrics}
-                                scope="non_contract"
-                                onNavigate={handleNavigate}
-                                meUser={meUser}
-                                onCreateContract={onCreateContract}
-                            />
-                        </div>
-                    )}
-
-                    {activeTab === 'overview_nda' && config?.show_overview_nda && (
-                        <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-                            <OverviewTab data={metrics} scope="nda" onNavigate={handleNavigate} meUser={meUser} onCreateContract={onCreateContract} />
                         </div>
                     )}
 

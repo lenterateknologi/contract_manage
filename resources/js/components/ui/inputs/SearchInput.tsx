@@ -1,15 +1,16 @@
 import * as React from "react";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/inputs/Input";
 
 export interface SearchInputProps extends React.ComponentProps<typeof Input> {
     containerClassName?: string;
     expandable?: boolean;
+    onClear?: () => void;
 }
 
 const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(
-    ({ className, containerClassName, value, expandable = false, ...props }, ref) => {
+    ({ className, containerClassName, value, expandable = false, onClear, ...props }, ref) => {
         const [isFocused, setIsFocused] = React.useState(false);
         const inputRef = React.useRef<HTMLInputElement>(null);
         React.useImperativeHandle(ref, () => inputRef.current as HTMLInputElement);
@@ -26,7 +27,7 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(
                     />
                     <Input
                         className={cn(
-                            "pl-10 pr-4 h-10 rounded-xl text-xs font-medium text-text-main placeholder:text-text-soft",
+                            "pl-10 pr-9 h-10 rounded-xl text-xs font-medium text-text-main placeholder:text-text-soft",
                             "bg-white border border-surface-border transition-all",
                             "focus-visible:ring-1 focus-visible:ring-primary/30 focus-visible:border-primary focus-visible:ring-offset-0",
                             "dark:text-white dark:border-zinc-700 dark:bg-zinc-900 dark:placeholder:text-zinc-400",
@@ -36,6 +37,19 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(
                         value={value}
                         {...props}
                     />
+                    {hasValue && onClear && (
+                        <button
+                            type="button"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onClear();
+                            }}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-text-desc hover:text-text-main dark:hover:text-white p-0.5 rounded-full transition-colors z-10 cursor-pointer"
+                            aria-label="Hapus pencarian"
+                        >
+                            <X className="h-3.5 w-3.5" />
+                        </button>
+                    )}
                 </div>
             );
         }
@@ -87,6 +101,20 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(
                         }}
                         {...(props as any)}
                     />
+
+                    {hasValue && onClear && isExpanded && (
+                        <button
+                            type="button"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onClear();
+                            }}
+                            className="text-text-desc hover:text-text-main dark:hover:text-white p-0.5 ml-1 rounded-full transition-colors z-10 shrink-0 cursor-pointer"
+                            aria-label="Hapus pencarian"
+                        >
+                            <X className="h-3.5 w-3.5" />
+                        </button>
+                    )}
                 </div>
             </div>
         );

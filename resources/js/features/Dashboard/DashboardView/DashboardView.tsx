@@ -1,4 +1,4 @@
-import { DashboardSkeleton } from '@/components/ui/feedback/DashboardSkeleton';
+import { DashboardLoading } from '@/components/ui/feedback/DashboardLoading';
 import { Icons } from '@/components/ui/icons';
 import { FloatingPanel } from '@/components/ui/navigation/FloatingPanel';
 import { MasterPageLayout } from '@/components/ui/navigation/MasterPageLayout';
@@ -26,17 +26,11 @@ const CreateContractModal = lazy(() => import('@/features/Contracts/components/m
 
 export type DashboardActiveTab =
     | 'overview'
-    | 'overview_contract'
-    | 'overview_non_contract'
-    | 'overview_nda'
     | 'workload'
     | 'master_data';
 
 const DASHBOARD_TAB_TO_SLUG: Record<DashboardActiveTab, string> = {
     overview: 'ringkasan',
-    overview_contract: 'ringkasan-kontrak',
-    overview_non_contract: 'ringkasan-non-kontrak',
-    overview_nda: 'ringkasan-nda',
     workload: 'beban-kerja',
     master_data: 'master-data',
 };
@@ -44,15 +38,15 @@ const DASHBOARD_TAB_TO_SLUG: Record<DashboardActiveTab, string> = {
 const SLUG_TO_DASHBOARD_TAB: Record<string, DashboardActiveTab> = {
     ringkasan: 'overview',
     overview: 'overview',
-    'ringkasan-kontrak': 'overview_contract',
-    kontrak: 'overview_contract',
-    overview_contract: 'overview_contract',
-    'ringkasan-non-kontrak': 'overview_non_contract',
-    'non-kontrak': 'overview_non_contract',
-    overview_non_contract: 'overview_non_contract',
-    'ringkasan-nda': 'overview_nda',
-    nda: 'overview_nda',
-    overview_nda: 'overview_nda',
+    'ringkasan-kontrak': 'overview',
+    kontrak: 'overview',
+    overview_contract: 'overview',
+    'ringkasan-non-kontrak': 'overview',
+    'non-kontrak': 'overview',
+    overview_non_contract: 'overview',
+    'ringkasan-nda': 'overview',
+    nda: 'overview',
+    overview_nda: 'overview',
     'beban-kerja': 'workload',
     workload: 'workload',
     'master-data': 'master_data',
@@ -127,7 +121,7 @@ export function DashboardView({
                 return SLUG_TO_DASHBOARD_TAB[saved];
             }
         }
-        return 'overview_contract';
+        return 'overview';
     });
 
     const handleDashboardTabChange = useCallback((newTab: DashboardActiveTab) => {
@@ -150,7 +144,7 @@ export function DashboardView({
                 if (subSlug && SLUG_TO_DASHBOARD_TAB[subSlug]) {
                     setDashboardTab(SLUG_TO_DASHBOARD_TAB[subSlug]);
                 } else if (!subSlug) {
-                    setDashboardTab('overview_contract');
+                    setDashboardTab('overview');
                 }
             }
         };
@@ -168,10 +162,7 @@ export function DashboardView({
         // 1. Simulation POV
         if (pov.isSimulatingDashboard && pov.activeDashboardPov?.config !== undefined) {
             return {
-                show_overview: !!pov.activeDashboardPov.config.show_overview,
-                show_overview_contract: pov.activeDashboardPov.config.show_overview_contract !== false,
-                show_overview_non_contract: pov.activeDashboardPov.config.show_overview_non_contract !== false,
-                show_overview_nda: pov.activeDashboardPov.config.show_overview_nda !== false,
+                show_overview: pov.activeDashboardPov.config.show_overview !== false,
                 show_workload: !!pov.activeDashboardPov.config.show_workload,
                 show_master_data: !!pov.activeDashboardPov.config.show_master_data,
             };
@@ -181,10 +172,7 @@ export function DashboardView({
         const cfg = dashboardConfig || metrics?.dashboardConfig;
         if (cfg) {
             return {
-                show_overview: !!cfg.show_overview,
-                show_overview_contract: cfg.show_overview_contract !== false,
-                show_overview_non_contract: cfg.show_overview_non_contract !== false,
-                show_overview_nda: cfg.show_overview_nda !== false,
+                show_overview: cfg.show_overview !== false,
                 show_workload: !!cfg.show_workload,
                 show_master_data: !!cfg.show_master_data,
             };
@@ -194,20 +182,14 @@ export function DashboardView({
         if (userFilterSettings?.dashboard_config) {
             const uCfg = userFilterSettings.dashboard_config;
             return {
-                show_overview: !!uCfg.show_overview,
-                show_overview_contract: uCfg.show_overview_contract !== false,
-                show_overview_non_contract: uCfg.show_overview_non_contract !== false,
-                show_overview_nda: uCfg.show_overview_nda !== false,
+                show_overview: uCfg.show_overview !== false,
                 show_workload: !!uCfg.show_workload,
                 show_master_data: !!uCfg.show_master_data,
             };
         }
 
         return {
-            show_overview: false,
-            show_overview_contract: true,
-            show_overview_non_contract: true,
-            show_overview_nda: true,
+            show_overview: true,
             show_workload: false,
             show_master_data: false,
         };
@@ -219,17 +201,11 @@ export function DashboardView({
         if (config) {
             const isTabAllowed =
                 (dashboardTab === 'overview' && config.show_overview) ||
-                (dashboardTab === 'overview_contract' && config.show_overview_contract) ||
-                (dashboardTab === 'overview_non_contract' && config.show_overview_non_contract) ||
-                (dashboardTab === 'overview_nda' && config.show_overview_nda) ||
                 (dashboardTab === 'workload' && config.show_workload) ||
                 (dashboardTab === 'master_data' && config.show_master_data);
 
             if (!isTabAllowed) {
-                if (config.show_overview_contract) setDashboardTab('overview_contract');
-                else if (config.show_overview) setDashboardTab('overview');
-                else if (config.show_overview_non_contract) setDashboardTab('overview_non_contract');
-                else if (config.show_overview_nda) setDashboardTab('overview_nda');
+                if (config.show_overview) setDashboardTab('overview');
                 else if (config.show_workload) setDashboardTab('workload');
                 else if (config.show_master_data) setDashboardTab('master_data');
             }
@@ -238,21 +214,13 @@ export function DashboardView({
 
     const headerActions = useMemo(() => {
         const config = effectiveDashboardConfig;
-        const showOverview = config ? !!config.show_overview : false;
-        const showOverviewContract = config ? !!config.show_overview_contract : false;
-        const showOverviewNonContract = config ? !!config.show_overview_non_contract : false;
-        const showOverviewNda = config ? !!config.show_overview_nda : false;
+        const showOverview = config ? !!config.show_overview : true;
         const showWorkload = config ? !!config.show_workload : false;
         const showMasterData = config ? !!config.show_master_data : false;
 
-        if (
-            !showOverview &&
-            !showOverviewContract &&
-            !showOverviewNonContract &&
-            !showOverviewNda &&
-            !showWorkload &&
-            !showMasterData
-        ) {
+        const hasMultipleTabs = [showOverview, showWorkload, showMasterData].filter(Boolean).length > 1;
+
+        if (!hasMultipleTabs && showOverview) {
             return undefined;
         }
 
@@ -264,30 +232,6 @@ export function DashboardView({
                         onClick={() => handleDashboardTabChange('overview')}
                         label="Ringkasan"
                         icon={LayoutDashboard}
-                    />
-                )}
-                {showOverviewContract && (
-                    <DashboardTab
-                        active={dashboardTab === 'overview_contract'}
-                        onClick={() => handleDashboardTabChange('overview_contract')}
-                        label="Ringkasan Kontrak"
-                        icon={FileText}
-                    />
-                )}
-                {showOverviewNonContract && (
-                    <DashboardTab
-                        active={dashboardTab === 'overview_non_contract'}
-                        onClick={() => handleDashboardTabChange('overview_non_contract')}
-                        label="Ringkasan Non Kontrak"
-                        icon={FileType}
-                    />
-                )}
-                {showOverviewNda && (
-                    <DashboardTab
-                        active={dashboardTab === 'overview_nda'}
-                        onClick={() => handleDashboardTabChange('overview_nda')}
-                        label="Ringkasan NDA"
-                        icon={FileCheck}
                     />
                 )}
                 {showWorkload && (
@@ -331,7 +275,7 @@ export function DashboardView({
                                     onCreateContract={() => setCreateOpen(true)}
                                 />
                             ) : (
-                                <DashboardSkeleton />
+                                <DashboardLoading />
                             )}
                         </div>
                     </div>

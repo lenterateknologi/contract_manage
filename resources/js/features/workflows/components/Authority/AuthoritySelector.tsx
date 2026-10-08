@@ -1,0 +1,199 @@
+import { cn } from '@/lib/utils';
+import { Check, ChevronsUpDown, Search, X } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+
+// ponytail: Unified lightweight searchable multi-select with an optional 'Sesuai Inisiator' checkbox
+interface AuthoritySelectorProps {
+    label: string;
+    idPrefix: string;
+    isInitiator: boolean;
+    onIsInitiatorChange?: (checked: boolean) => void;
+    values: string[];
+    onValuesChange: (values: string[]) => void;
+    options: { value: string; label: string }[];
+    placeholder?: string;
+    disabled?: boolean;
+    showCheckbox?: boolean;
+}
+
+export default function AuthoritySelector({
+    label,
+    isInitiator,
+    onIsInitiatorChange,
+    values = [],
+    onValuesChange,
+    options = [],
+    placeholder = 'Pilih...',
+    disabled = false,
+    showCheckbox = true,
+}: AuthoritySelectorProps) {
+    const [open, setOpen] = useState(false);
+    const [search, setSearch] = useState('');
+    // Use internal state so UI always reflects the latest toggle immediately
+    const [internalIsInitiator, setInternalIsInitiator] = useState(!!isInitiator);
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    // Sync if prop changes externally (e.g. form reset or page load)
+    useEffect(() => {
+        setInternalIsInitiator(!!isInitiator);
+    }, [isInitiator]);
+
+    const handleInitiatorToggle = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        // Only block if the whole component is externally disabled, not because isInitiator is on
+        if (disabled || !onIsInitiatorChange) return;
+        const next = !internalIsInitiator;
+        setInternalIsInitiator(next);
+        onIsInitiatorChange(next);
+        // NOTE: do NOT call onValuesChange here — parent's onIsInitiatorChange already handles it
+    };
+
+    const toggleOption = (val: string) => {
+        if (values.includes(val)) {
+            onValuesChange(values.filter((v) => v !== val));
+        } else {
+            onValuesChange([...values, val]);
+        }
+    };
+
+    const removeOption = (e: React.MouseEvent, val: string) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onValuesChange(values.filter((v) => v !== val));
+    };
+
+    const getLabel = (val: string) => options.find((o) => o.value === val)?.label ?? val;
+
+    const filtered = useMemo(() => {
+        if (!search) return options;
+        return options.filter((o) => o.label.toLowerCase().includes(search.toLowerCase()));
+    }, [options, search]);
+
+    useEffect(() => {
+        function handler(e: MouseEvent) {
+            if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+                setOpen(false);
+                setSearch('');
+            }
+        }
+        if (open) document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, [open]);
+
+    // List is disabled when isInitiator is on; checkbox itself only obeys external disabled
+    const isListDisabled = disabled || (showCheckbox && internalIsInitiator);
+
+    return (
+        <div ref={containerRef} className="w-full space-y-1.5">
+            <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{label}</span>
+                {showCheckbox && onIsInitiatorChange && (
+                    <div
+                        className="flex cursor-pointer items-center gap-1.5 select-none"
+                        onClick={handleInitiatorToggle}
+                        title={internalIsInitiator ? 'Klik untuk pilih manual' : 'Klik untuk sesuai inisiator'}
+                    >
+                        <div
+                            className={cn(
+                                'flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border transition-colors',
+                                internalIsInitiator
+                                    ? 'border-slate-900 bg-slate-900 dark:border-slate-100 dark:bg-slate-100'
+                                    : 'border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-900',
+                                disabled && 'cursor-not-allowed opacity-50',
+                            )}
+                        >
+                            {internalIsInitiator && <Check size={9} className="stroke-[3] text-white dark:text-slate-900" />}
+                        </div>
+                        <span className="text-[10px] font-semibold text-slate-700 dark:text-slate-300">Sesuai Inisiator</span>
+                    </div>
+                )}
+            </div>
+
+            <div className={cn('relative w-full', isListDisabled && 'cursor-not-allowed opacity-60', open && 'z-50')}>
+                <div
+                    onClick={(e) => {
+                        if (isListDisabled) e.preventDefault();
+                        else {
+                            setOpen(!open);
+                            setSearch('');
+                        }
+                    }}
+                    className={cn(
+                        'text-foreground flex min-h-[40px] w-full items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2 text-left text-xs font-semibold transition-all outline-none dark:border-slate-800 dark:bg-slate-900',
+                        !isListDisabled && 'hover:border-primary/50 focus:border-primary focus:ring-primary cursor-pointer focus:ring-1',
+                        open && 'border-black dark:border-slate-100',
+                        isListDisabled && 'border-slate-100 bg-slate-50 dark:border-slate-900 dark:bg-slate-950 dark:text-slate-500',
+                    )}
+                >
+                    <div className="flex flex-wrap gap-1.5 pr-2">
+                        {internalIsInitiator ? (
+                            <span className="py-0.5 text-xs font-medium text-slate-400 dark:text-slate-500">Diisi otomatis dari initiator</span>
+                        ) : values.length === 0 ? (
+                            <span className="py-0.5 text-xs font-medium text-slate-400 dark:text-slate-500">{placeholder}</span>
+                        ) : (
+                            values.map((val) => (
+                                <span
+                                    key={val}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="inline-flex items-center gap-1 rounded bg-slate-900 px-2 py-0.5 text-[10px] text-white transition-colors hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"
+                                >
+                                    {getLabel(val)}
+                                    <button
+                                        type="button"
+                                        onClick={(e) => removeOption(e, val)}
+                                        className="text-white/70 hover:text-white focus:outline-none dark:text-slate-900/70 dark:hover:text-slate-900"
+                                    >
+                                        <X size={10} />
+                                    </button>
+                                </span>
+                            ))
+                        )}
+                    </div>
+                    <ChevronsUpDown size={13} className="ml-2 shrink-0 text-slate-400" />
+                </div>
+
+                {open && (
+                    <div className="absolute top-full right-0 left-0 z-[9999] mt-1 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-950">
+                        <div className="relative border-b border-slate-100 dark:border-slate-800" onClick={(e) => e.stopPropagation()}>
+                            <Search size={12} className="absolute top-1/2 left-3 -translate-y-1/2 text-slate-400" />
+                            <input
+                                autoFocus
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                placeholder="Cari..."
+                                className="h-10 w-full bg-white pr-3 pl-8 text-xs font-medium text-slate-900 outline-none dark:bg-slate-950 dark:text-slate-100"
+                            />
+                        </div>
+
+                        <div className="max-h-52 overflow-y-auto bg-white dark:bg-slate-950">
+                            {filtered.length === 0 && <div className="py-6 text-center text-xs text-slate-400 italic">Tidak ada data ditemukan</div>}
+                            {filtered.map((opt) => {
+                                const isSelected = values.includes(opt.value);
+                                return (
+                                    <div
+                                        key={opt.value}
+                                        role="button"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            toggleOption(opt.value);
+                                        }}
+                                        className={cn(
+                                            'flex w-full cursor-pointer items-center justify-between px-3 py-2.5 text-left text-xs font-bold transition-colors hover:bg-slate-50 dark:hover:bg-slate-900/50',
+                                            isSelected
+                                                ? 'bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200'
+                                                : 'text-slate-900 dark:text-slate-100',
+                                        )}
+                                    >
+                                        {opt.label}
+                                        {isSelected && <Check size={11} className="shrink-0" />}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}

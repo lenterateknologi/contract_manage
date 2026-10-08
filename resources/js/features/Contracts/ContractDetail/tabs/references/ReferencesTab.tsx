@@ -1,12 +1,8 @@
 import { Contract } from '@/features/Contracts/types';
 import React, { lazy, Suspense } from 'react';
 
-const ContractReferences = lazy(() =>
-    import('@/components/references/ContractReferences').then((m) => ({ default: m.ContractReferences })),
-);
-const ContractPurchaseOrders = lazy(() =>
-    import('@/components/references/ContractPurchaseOrders').then((m) => ({ default: m.ContractPurchaseOrders })),
-);
+const ContractReferences = lazy(() => import('./ContractReferences'));
+const ContractPurchaseOrders = lazy(() => import('./ContractPurchaseOrders'));
 
 interface ReferencesTabProps {
     contract: Contract;

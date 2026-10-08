@@ -1,4 +1,4 @@
-import { CLOSED_STATUSES, Contract, TERMINAL_STATUSES } from '@/pages/contracts/types';
+import { CLOSED_STATUSES, Contract, TERMINAL_STATUSES } from '@/features/Contracts/types';
 import { SharedData } from '@/types';
 import { usePage } from '@inertiajs/react';
 import { useMemo } from 'react';

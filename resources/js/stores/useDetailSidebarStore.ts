@@ -1,6 +1,6 @@
 import { type LucideIcon } from 'lucide-react';
 import { useSyncExternalStore } from 'react';
-import { type Contract } from '@/pages/contracts/types';
+import { type Contract } from '@/features/Contracts/types';
 
 export interface DetailSidebarTabChild {
     id: string;

@@ -57,7 +57,8 @@ const SendApprovalModal = lazy(() => import('@/features/Contracts/components/mod
 type View =
     'contracts' | 'organization' | 'pending' | 'audit' | 'f1' | 'f2' | 'profile' | 'mine' | 'expiry' | 'archived' | 'in_progress';
 
-import { ConfirmationModal, ContractCardSkeleton, ContractTableSkeleton, StatusBadge } from '@/components/ui';
+import { ConfirmationModal, StatusBadge } from '@/components/ui';
+import { ContractCardSkeleton, ContractTableSkeleton } from './ContractSkeleton';
 import LoadingLottie from '@/components/ui/feedback/LoadingLottie';
 import { FloatingPanel } from '@/components/ui/navigation/FloatingPanel';
 import { LayoutToggle, type LayoutType } from '@/components/ui/navigation/LayoutToggle';

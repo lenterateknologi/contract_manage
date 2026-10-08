@@ -60,7 +60,7 @@ class OrganizationTreeController extends Controller
             $tree[] = $groupNode;
         }
 
-        return Inertia::render('Master/OrganizationTree', [
+        return Inertia::render('members/OrganizationTree', [
             'treeData' => $tree,
             'breadcrumbs' => [
                 ['title' => 'Master Data', 'href' => '#', 'icon' => 'Database'],

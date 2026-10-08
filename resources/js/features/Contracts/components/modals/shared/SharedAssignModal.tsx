@@ -5,7 +5,7 @@ import { CompactSwitch } from '@/components/ui/selection/CompactSwitch';
 import { SearchableMultiSelect } from '@/components/ui/selection/SearchableMultiSelect';
 import { parseApiErrorMessage } from '@/lib/utils';
 import { contractApi } from '@/features/Contracts/utils';
-import { matchUserAgainstWorkflowPool } from '@/pages/workflows/workflow-filter';
+import { matchUserAgainstWorkflowPool } from '@/features/workflows';
 import { CheckCircle2, Loader2, UserCheck, Users, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 

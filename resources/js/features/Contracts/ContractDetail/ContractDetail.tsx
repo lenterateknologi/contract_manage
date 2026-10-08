@@ -6,7 +6,7 @@ import { DraftEditableInfoCard } from '@/features/Contracts/components/parts/Dra
 import { Contract, ContractType } from '@/features/Contracts/types';
 import { contractApi } from '@/features/Contracts/utils';
 import { resolveContractRequirements } from '@/features/Contracts/utils/requirements';
-import { matchUserAgainstWorkflowPool } from '@/pages/workflows/workflow-filter';
+import { matchUserAgainstWorkflowPool } from '@/features/workflows';
 import { detailSidebarStore, type DetailSidebarTabChild, type DetailSidebarTabItem } from '@/stores/useDetailSidebarStore';
 import { usePage } from '@inertiajs/react';
 import React, { lazy, Suspense, useEffect, useMemo, useState } from 'react';
@@ -54,9 +54,7 @@ const PartiesTab = lazy(() => import('./tabs/parties/PartiesTab').then((m) => ({
 const HistoryTab = lazy(() => import('./tabs/history/HistoryTab').then((m) => ({ default: m.HistoryTab })));
 const DiscussionTab = lazy(() => import('./tabs/discussion/DiscussionTab').then((m) => ({ default: m.DiscussionTab })));
 const ReferencesTab = lazy(() => import('./tabs/references/ReferencesTab').then((m) => ({ default: m.ReferencesTab })));
-const ContractAttachments = lazy(() =>
-    import('@/components/attachments/ContractAttachments').then((m) => ({ default: m.ContractAttachments })),
-);
+const ContractAttachments = lazy(() => import('../components/tabs/ContractAttachments'));
 
 import LoadingLottie from '@/components/ui/feedback/LoadingLottie';
 

@@ -1,14 +1,12 @@
-import { formTemplatesApi, subresourcesApi } from '@/api';
 import { Button } from '@/components/ui/buttons/Button';
 import { Modal } from '@/components/ui/dialogs/Modal';
+import LoadingLottie from '@/components/ui/feedback/LoadingLottie';
 import { useToast } from '@/components/ui/feedback/Toast';
 import { SearchInput } from '@/components/ui/inputs/SearchInput';
 import { useContractPermissions } from '@/hooks/use-contract-permissions';
 import { cn } from '@/lib/utils';
-import { Contract } from '@/features/Contracts/types';
-import { contractApi } from '@/features/Contracts/utils';
-import { FormField } from '@/pages/form-builder/components/fields/FormElement';
-import { UnifiedFormViewer } from '@/pages/form-builder/components/renderer/UnifiedFormViewer';
+import { Contract, subresourcesApi } from '@/features/Contracts';
+import { FormField, UnifiedFormViewer, formTemplatesApi } from '@/features/templates';
 import { ArrowRight, Check, Columns, Download, FileText, FolderOpen, History, Loader2, MoreVertical, PlusCircle } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getAutofillValue } from '../parts/autofill';
@@ -595,42 +593,11 @@ function GenericFormTab({
 
     if (loading || !formTemplates || (formTemplates.length === 0 && !matchingTemplate)) {
         return (
-            <div className="bg-surface-base animate-in fade-in flex h-full min-h-0 w-full flex-1 flex-col gap-3 overflow-hidden p-3 duration-300 lg:p-4">
-                {/* Header Skeleton */}
-                <div className="bg-primary/80 flex h-9.5 max-h-[38px] min-h-[38px] shrink-0 animate-pulse items-center justify-between rounded-xl px-4 shadow-xs">
-                    <div className="flex items-center gap-2">
-                        <FileText size={15} className="text-white/80" />
-                        <div className="h-3 w-40 rounded bg-white/30" />
-                    </div>
-                    <div className="h-6 w-20 rounded-lg bg-white/20" />
-                </div>
-
-                {/* Form Document Skeleton */}
-                <div className="border-surface-border flex flex-1 justify-center overflow-y-auto rounded-xl border bg-slate-50/60 p-4 dark:bg-zinc-950/60">
-                    <div className="w-full max-w-[210mm] animate-pulse space-y-6 rounded-xl border border-slate-200 bg-white p-8 shadow-md dark:border-zinc-800 dark:bg-zinc-900">
-                        <div className="flex items-center justify-between border-b border-slate-100 pb-6 dark:border-zinc-800">
-                            <div className="h-8 w-44 rounded bg-slate-200 dark:bg-zinc-800" />
-                            <div className="h-6 w-28 rounded-full bg-slate-200 dark:bg-zinc-800" />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <div className="h-3 w-20 rounded bg-slate-200 dark:bg-zinc-800" />
-                                <div className="h-9 w-full rounded-lg bg-slate-100 dark:bg-zinc-800/60" />
-                            </div>
-                            <div className="space-y-2">
-                                <div className="h-3 w-24 rounded bg-slate-200 dark:bg-zinc-800" />
-                                <div className="h-9 w-full rounded-lg bg-slate-100 dark:bg-zinc-800/60" />
-                            </div>
-                        </div>
-                        <div className="space-y-2">
-                            <div className="h-3 w-32 rounded bg-slate-200 dark:bg-zinc-800" />
-                            <div className="h-20 w-full rounded-lg bg-slate-100 dark:bg-zinc-800/60" />
-                        </div>
-                        <div className="text-primary flex items-center justify-center gap-2 pt-8 text-xs font-semibold">
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            <span>Memuat Formulir {docType.toUpperCase()}...</span>
-                        </div>
-                    </div>
+            <div className="bg-surface-base animate-in fade-in flex h-full min-h-[400px] w-full flex-1 flex-col items-center justify-center p-12 text-center duration-300">
+                <LoadingLottie width={110} height={110} />
+                <div className="mt-3 space-y-1">
+                    <p className="text-xs font-semibold text-text-main">Memuat Formulir {docType.toUpperCase()}...</p>
+                    <p className="text-[11px] text-text-desc">Menyiapkan isian formulir dan riwayat versi</p>
                 </div>
             </div>
         );

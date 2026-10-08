@@ -144,7 +144,7 @@ class TemplateController extends Controller
             $templateQuery->where('is_visible', true);
         }
 
-        return Inertia::render('contract-templates/Index', [
+        return Inertia::render('templates/Index', [
             'folders' => $folderQuery->get(),
             'templates' => $templateQuery->get(),
             'permissions' => $permissions,

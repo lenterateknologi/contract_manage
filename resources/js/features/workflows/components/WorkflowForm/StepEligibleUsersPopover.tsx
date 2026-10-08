@@ -1,0 +1,886 @@
+import { Button } from '@/components/ui/buttons/Button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/dialogs/Popover';
+import { Badge } from '@/components/ui/feedback/Badge';
+import { cn } from '@/lib/utils';
+import { Briefcase, Building2, Check, Copy, Search, Shield, Sparkles, User, UserCheck, Users } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+
+interface StepEligibleUsersPopoverProps {
+    step: any;
+    idx: number;
+    users?: any[];
+    roles?: any[];
+    departments?: any[];
+    divisions?: any[];
+    locations?: any[];
+    companyGroups?: any[];
+    organizationGroups?: any[];
+    companies?: any[];
+    regions?: any[];
+    simulationContext?: {
+        initiatorId?: string;
+        picId?: string;
+        creatorId?: string;
+        adhocId?: string;
+        adhocIds?: string[];
+    };
+    onOpenSimulationModal?: () => void;
+}
+
+export function StepEligibleUsersPopover({
+    step,
+    idx,
+    users = [],
+    roles = [],
+    departments = [],
+    divisions = [],
+    locations = [],
+    organizationGroups = [],
+    simulationContext,
+    onOpenSimulationModal,
+}: StepEligibleUsersPopoverProps) {
+    const [searchQuery, setSearchQuery] = useState('');
+    const [copiedNik, setCopiedNik] = useState<string | null>(null);
+
+    const handleCopyNik = (e: React.MouseEvent, nik: string) => {
+        e.stopPropagation();
+        if (!nik) return;
+        navigator.clipboard.writeText(nik);
+        setCopiedNik(nik);
+        setTimeout(() => {
+            setCopiedNik((prev) => (prev === nik ? null : prev));
+        }, 2000);
+    };
+
+    // Helper untuk mengambil nama Departemen & Divisi pengguna
+    const getDeptName = (u: any) => {
+        if (!u) return null;
+        return u.department?.name || departments.find((d: any) => String(d.id) === String(u.department_id))?.name || null;
+    };
+
+    const getDivName = (u: any) => {
+        if (!u) return null;
+        return u.division?.name || divisions.find((d: any) => String(d.id) === String(u.division_id || u.department?.division_id))?.name || null;
+    };
+
+    // Pengguna simulasi untuk Inisiator, PIC, Creator, dan Adhoc jika ada di context simulasi
+    const simInitiatorUser = useMemo(() => {
+        if (!simulationContext?.initiatorId) return null;
+        return users.find((u: any) => String(u.id) === String(simulationContext.initiatorId)) || null;
+    }, [simulationContext?.initiatorId, users]);
+
+    const simPicUser = useMemo(() => {
+        if (!simulationContext?.picId) return null;
+        return users.find((u: any) => String(u.id) === String(simulationContext.picId)) || null;
+    }, [simulationContext?.picId, users]);
+
+    const simCreatorUser = useMemo(() => {
+        if (!simulationContext?.creatorId) return null;
+        return users.find((u: any) => String(u.id) === String(simulationContext.creatorId)) || null;
+    }, [simulationContext?.creatorId, users]);
+
+    const simAdhocUsers = useMemo(() => {
+        const ids = simulationContext?.adhocIds || (simulationContext?.adhocId ? [simulationContext.adhocId] : []);
+        if (ids.length === 0) return [];
+        return users.filter((u: any) => ids.includes(String(u.id)));
+    }, [simulationContext?.adhocIds, simulationContext?.adhocId, users]);
+
+    // Analisis kriteria akses tahap berdasarkan Otoritas Aktor di tab Konfigurasi Langkah
+    const { eligibleUsers, dynamicRoles, criteriaSummary } = useMemo(() => {
+        const matchedUsersMap = new Map<string, { user: any; reasons: string[] }>();
+        const dynamicList: { type: string; label: string; description: string; activeUser?: any }[] = [];
+        const criteriaParts: string[] = [];
+
+        const authorities: any[] = step.approver_authorities || [];
+        const cfg = step.approver_config || {};
+
+        // 1. Prioritas: Cek jika menggunakan Tabel Otoritas Aktor (approver_authorities)
+        if (authorities && authorities.length > 0) {
+            authorities.forEach((auth: any) => {
+                if (
+                    auth.authority_type === 'custom' ||
+                    ['initiator', 'assigned_pic', 'creator', 'atasan', 'adhoc_approvers', 'adhoc'].includes(auth.authority_type)
+                ) {
+                    const customType = auth.authority_type === 'custom' ? auth.role_id || auth.user_id : auth.authority_type;
+                    if (customType === 'initiator') {
+                        criteriaParts.push('Inisiator');
+                        dynamicList.push({
+                            type: 'initiator',
+                            label: 'Inisiator Kontrak',
+                            description: 'Pengguna yang menginisiasi pengajuan kontrak.',
+                            activeUser: simInitiatorUser,
+                        });
+                        if (simInitiatorUser) {
+                            const existing = matchedUsersMap.get(String(simInitiatorUser.id)) || { user: simInitiatorUser, reasons: [] };
+                            existing.reasons.push('Inisiator (Simulasi)');
+                            matchedUsersMap.set(String(simInitiatorUser.id), existing);
+                        }
+                    } else if (customType === 'assigned_pic') {
+                        criteriaParts.push('PIC Ditugaskan');
+                        dynamicList.push({
+                            type: 'assigned_pic',
+                            label: 'PIC Ditugaskan',
+                            description: 'Pengguna yang ditugaskan sebagai PIC kontrak.',
+                            activeUser: simPicUser,
+                        });
+                        if (simPicUser) {
+                            const existing = matchedUsersMap.get(String(simPicUser.id)) || { user: simPicUser, reasons: [] };
+                            existing.reasons.push('PIC Ditugaskan (Simulasi)');
+                            matchedUsersMap.set(String(simPicUser.id), existing);
+                        }
+                    } else if (customType === 'creator') {
+                        criteriaParts.push('Pembuat Kontrak');
+                        dynamicList.push({
+                            type: 'creator',
+                            label: 'Pembuat Kontrak',
+                            description: 'Pengguna yang membuat draf kontrak.',
+                            activeUser: simCreatorUser,
+                        });
+                        if (simCreatorUser) {
+                            const existing = matchedUsersMap.get(String(simCreatorUser.id)) || { user: simCreatorUser, reasons: [] };
+                            existing.reasons.push('Pembuat Kontrak (Simulasi)');
+                            matchedUsersMap.set(String(simCreatorUser.id), existing);
+                        }
+                    } else if (customType === 'adhoc_approvers' || customType === 'adhoc') {
+                        criteriaParts.push('Approver Tambahan');
+                        if (simAdhocUsers.length > 0) {
+                            simAdhocUsers.forEach((u: any) => {
+                                dynamicList.push({
+                                    type: 'adhoc_approvers',
+                                    label: 'Approver Tambahan (Ad-Hoc)',
+                                    description: 'Pengguna yang ditunjuk sebagai approver tambahan saat pengajuan.',
+                                    activeUser: u,
+                                });
+                                const existing = matchedUsersMap.get(String(u.id)) || { user: u, reasons: [] };
+                                existing.reasons.push('Approver Tambahan (Simulasi)');
+                                matchedUsersMap.set(String(u.id), existing);
+                            });
+                        } else {
+                            dynamicList.push({
+                                type: 'adhoc_approvers',
+                                label: 'Approver Tambahan (Ad-Hoc)',
+                                description: 'Pengguna yang ditunjuk sebagai approver tambahan saat pengajuan.',
+                            });
+                        }
+                    } else if (customType === 'atasan') {
+                        criteriaParts.push('Atasan Langsung');
+                        dynamicList.push({
+                            type: 'atasan',
+                            label: 'Atasan Langsung',
+                            description: 'Atasan langsung dari inisiator pengajuan kontrak.',
+                        });
+                    }
+                } else if (auth.authority_type === 'user' && auth.user_id) {
+                    const u = users.find((user: any) => String(user.id) === String(auth.user_id));
+                    if (u) {
+                        criteriaParts.push(`User: ${u.name}`);
+                        const existing = matchedUsersMap.get(String(u.id)) || { user: u, reasons: [] };
+                        existing.reasons.push('User Spesifik');
+                        matchedUsersMap.set(String(u.id), existing);
+                    }
+                } else {
+                    // Authority Type Group / Filter Aturan Role & Unit
+                    const hasFilters = Boolean(
+                        auth.role_id ||
+                        auth.role_use_initiator ||
+                        auth.department_id ||
+                        auth.department_use_initiator ||
+                        auth.division_id ||
+                        auth.division_use_initiator ||
+                        auth.location_id ||
+                        auth.location_use_initiator ||
+                        auth.company_group_id ||
+                        auth.company_group_use_initiator ||
+                        auth.company_id ||
+                        auth.company_use_initiator ||
+                        auth.region_id ||
+                        auth.region_use_initiator ||
+                        auth.organization_group_id ||
+                        auth.organization_group_use_initiator,
+                    );
+
+                    if (hasFilters) {
+                        const ruleParts: string[] = [];
+                        if (auth.role_use_initiator) ruleParts.push('Role Inisiator');
+                        else if (auth.role_id) {
+                            const rName =
+                                roles.find((r: any) => String(r.id) === String(auth.role_id) || r.name === auth.role_id)?.name || auth.role_id;
+                            ruleParts.push(`Role: ${rName}`);
+                        }
+
+                        if (auth.department_use_initiator) ruleParts.push('Unit Inisiator');
+                        else if (auth.department_id) {
+                            const dName = departments.find((d: any) => String(d.id) === String(auth.department_id))?.name || auth.department_id;
+                            ruleParts.push(`Unit: ${dName}`);
+                        }
+
+                        if (auth.division_use_initiator) ruleParts.push('Divisi Inisiator');
+                        else if (auth.division_id) {
+                            const dvName = divisions.find((d: any) => String(d.id) === String(auth.division_id))?.name || auth.division_id;
+                            ruleParts.push(`Divisi: ${dvName}`);
+                        }
+
+                        if (auth.location_use_initiator) ruleParts.push('Lokasi Inisiator');
+                        else if (auth.location_id) {
+                            const lName =
+                                locations.find(
+                                    (l: any) =>
+                                        String(l.id) === String(auth.location_id) || l.code === auth.location_id || l.name === auth.location_id,
+                                )?.name || auth.location_id;
+                            ruleParts.push(`Lokasi: ${lName}`);
+                        }
+
+                        if (auth.organization_group_use_initiator) ruleParts.push('Org Group Inisiator');
+                        else if (auth.organization_group_id) {
+                            const ogName =
+                                organizationGroups.find(
+                                    (og: any) =>
+                                        String(og.id) === String(auth.organization_group_id) ||
+                                        String(og.idorg_group) === String(auth.organization_group_id) ||
+                                        og.code === auth.organization_group_id ||
+                                        og.name === auth.organization_group_id,
+                                )?.name || auth.organization_group_id;
+                            ruleParts.push(`Org Group: ${ogName}`);
+                        }
+
+                        if (ruleParts.length > 0) criteriaParts.push(ruleParts.join(' & '));
+
+                        users.forEach((user: any) => {
+                            const userRoleId = String(user.role_id || user.role || '');
+                            const userDeptId = String(user.department_id || user.department?.id || '');
+                            const userDivId = String(user.division_id || user.division?.id || user.department?.division_id || '');
+                            const userLocId = String(user.location_id || user.idlocation || user.location?.id || '');
+                            const userCompId = String(user.company_id || user.company?.id || '');
+                            const userCgId = String(user.company_group_id || user.company?.company_group_id || '');
+                            const userRegionId = String(user.region_id || user.company?.region_id || '');
+
+                            let match = true;
+
+                            if (auth.role_use_initiator) {
+                                if (!simInitiatorUser) match = false;
+                                else {
+                                    const initRoleId = String(simInitiatorUser.role_id || simInitiatorUser.role || '');
+                                    if (userRoleId !== initRoleId) match = false;
+                                }
+                            } else if (auth.role_id) {
+                                const targetRole = roles.find((r: any) => String(r.id) === String(auth.role_id) || r.name === auth.role_id);
+                                const matchRoleId = targetRole ? String(targetRole.id) : String(auth.role_id);
+                                const matchRoleName = targetRole ? targetRole.name.toLowerCase() : String(auth.role_id).toLowerCase();
+                                const isRoleMatch = userRoleId === matchRoleId || userRoleId.toLowerCase() === matchRoleName;
+                                if (!isRoleMatch) match = false;
+                            }
+
+                            if (match && auth.department_use_initiator) {
+                                if (!simInitiatorUser) match = false;
+                                else {
+                                    const initDeptId = String(simInitiatorUser.department_id || simInitiatorUser.department?.id || '');
+                                    if (userDeptId !== initDeptId) match = false;
+                                }
+                            } else if (match && auth.department_id) {
+                                if (userDeptId !== String(auth.department_id)) match = false;
+                            }
+
+                            if (match && auth.division_use_initiator) {
+                                if (!simInitiatorUser) match = false;
+                                else {
+                                    const initDivId = String(simInitiatorUser.division_id || simInitiatorUser.division?.id || '');
+                                    if (userDivId !== initDivId) match = false;
+                                }
+                            } else if (match && auth.division_id) {
+                                if (userDivId !== String(auth.division_id)) match = false;
+                            }
+
+                            if (match && auth.location_use_initiator) {
+                                if (!simInitiatorUser) match = false;
+                                else {
+                                    const initLocId = String(
+                                        simInitiatorUser.location_id || simInitiatorUser.idlocation || simInitiatorUser.location?.id || '',
+                                    );
+                                    const initLocName = (simInitiatorUser.location_name || simInitiatorUser.location?.name || '')
+                                        .toLowerCase()
+                                        .trim();
+                                    const userLocName = (user.location_name || user.location?.name || '').toLowerCase().trim();
+                                    const isLocMatch =
+                                        (initLocId && userLocId && initLocId === userLocId) ||
+                                        (initLocName && userLocName && initLocName === userLocName);
+                                    if (!isLocMatch) match = false;
+                                }
+                            } else if (match && auth.location_id) {
+                                const targetLocId = String(auth.location_id);
+                                const targetLoc = locations.find(
+                                    (l: any) => String(l.id) === targetLocId || l.code === targetLocId || l.name === targetLocId,
+                                );
+                                const matchLocId = targetLoc ? String(targetLoc.id) : targetLocId;
+                                const matchLocName = targetLoc ? targetLoc.name.toLowerCase() : targetLocId.toLowerCase();
+                                const userLocName = (user.location_name || user.location?.name || '').toLowerCase().trim();
+                                const isLocMatch = userLocId === matchLocId || (userLocName && userLocName === matchLocName);
+                                if (!isLocMatch) match = false;
+                            }
+
+                            if (match && auth.company_group_use_initiator) {
+                                if (!simInitiatorUser) match = false;
+                                else {
+                                    const initCg = String(simInitiatorUser.company_group_id || '');
+                                    if (userCgId !== initCg) match = false;
+                                }
+                            } else if (match && auth.company_group_id) {
+                                if (userCgId !== String(auth.company_group_id)) match = false;
+                            }
+
+                            if (match && auth.company_use_initiator) {
+                                if (!simInitiatorUser) match = false;
+                                else {
+                                    const initC = String(simInitiatorUser.company_id || '');
+                                    if (userCompId !== initC) match = false;
+                                }
+                            } else if (match && auth.company_id) {
+                                if (userCompId !== String(auth.company_id)) match = false;
+                            }
+
+                            if (match && auth.region_use_initiator) {
+                                if (!simInitiatorUser) match = false;
+                                else {
+                                    const initR = String(simInitiatorUser.region_id || '');
+                                    if (userRegionId !== initR) match = false;
+                                }
+                            } else if (match && auth.region_id) {
+                                if (userRegionId !== String(auth.region_id)) match = false;
+                            }
+
+                            if (match && (auth.organization_group_use_initiator || auth.organization_group_id)) {
+                                const userOrgId = String(user.department?.organization_group_id || user.organization_group_id || '');
+                                const userIdOrgGroup =
+                                    user.department?.idorg_group !== undefined && user.department?.idorg_group !== null
+                                        ? String(user.department.idorg_group)
+                                        : user.idorg_group !== undefined && user.idorg_group !== null
+                                          ? String(user.idorg_group)
+                                          : '';
+                                const userOrgGroupName = (user.org_group_name || user.department?.org_group_name || '').toLowerCase().trim();
+
+                                const userOgObj = organizationGroups.find(
+                                    (og: any) =>
+                                        (userOrgId && String(og.id) === userOrgId) ||
+                                        (userIdOrgGroup && String(og.idorg_group) === userIdOrgGroup) ||
+                                        (userOrgGroupName && og.name?.toLowerCase().trim() === userOrgGroupName),
+                                );
+                                const resolvedUserOgId = userOgObj ? String(userOgObj.id) : userOrgId;
+                                const resolvedUserIdOrgGroup =
+                                    userOgObj && userOgObj.idorg_group !== undefined && userOgObj.idorg_group !== null
+                                        ? String(userOgObj.idorg_group)
+                                        : userIdOrgGroup;
+                                const resolvedUserOgName = (userOgObj?.name || userOrgGroupName).toLowerCase().trim();
+
+                                if (auth.organization_group_use_initiator) {
+                                    if (!simInitiatorUser) {
+                                        match = false;
+                                    } else {
+                                        const initOrgId = String(
+                                            simInitiatorUser.department?.organization_group_id || simInitiatorUser.organization_group_id || '',
+                                        );
+                                        const initIdOrgGroup =
+                                            simInitiatorUser.department?.idorg_group !== undefined &&
+                                            simInitiatorUser.department?.idorg_group !== null
+                                                ? String(simInitiatorUser.department.idorg_group)
+                                                : simInitiatorUser.idorg_group !== undefined && simInitiatorUser.idorg_group !== null
+                                                  ? String(simInitiatorUser.idorg_group)
+                                                  : '';
+                                        const initOrgGroupName = (
+                                            simInitiatorUser.org_group_name ||
+                                            simInitiatorUser.department?.org_group_name ||
+                                            ''
+                                        )
+                                            .toLowerCase()
+                                            .trim();
+
+                                        const initOgObj = organizationGroups.find(
+                                            (og: any) =>
+                                                (initOrgId && String(og.id) === initOrgId) ||
+                                                (initIdOrgGroup && String(og.idorg_group) === initIdOrgGroup) ||
+                                                (initOrgGroupName && og.name?.toLowerCase().trim() === initOrgGroupName),
+                                        );
+                                        const resolvedInitOgId = initOgObj ? String(initOgObj.id) : initOrgId;
+                                        const resolvedInitIdOrgGroup =
+                                            initOgObj && initOgObj.idorg_group !== undefined && initOgObj.idorg_group !== null
+                                                ? String(initOgObj.idorg_group)
+                                                : initIdOrgGroup;
+                                        const resolvedInitOgName = (initOgObj?.name || initOrgGroupName).toLowerCase().trim();
+
+                                        const isOrgGroupMatch =
+                                            (resolvedInitOgId && resolvedUserOgId && resolvedInitOgId === resolvedUserOgId) ||
+                                            (resolvedInitIdOrgGroup && resolvedUserIdOrgGroup && resolvedInitIdOrgGroup === resolvedUserIdOrgGroup) ||
+                                            (resolvedInitOgName && resolvedUserOgName && resolvedInitOgName === resolvedUserOgName);
+
+                                        if (!isOrgGroupMatch) match = false;
+                                    }
+                                } else if (auth.organization_group_id) {
+                                    const targetOg = organizationGroups.find(
+                                        (og: any) =>
+                                            String(og.id) === String(auth.organization_group_id) ||
+                                            String(og.idorg_group) === String(auth.organization_group_id) ||
+                                            og.code === auth.organization_group_id ||
+                                            og.name === auth.organization_group_id,
+                                    );
+                                    const targetOgId = targetOg ? String(targetOg.id) : String(auth.organization_group_id);
+                                    const targetIdOrgGroup =
+                                        targetOg && targetOg.idorg_group !== undefined && targetOg.idorg_group !== null
+                                            ? String(targetOg.idorg_group)
+                                            : null;
+                                    const targetOgName = (targetOg?.name || String(auth.organization_group_id)).toLowerCase().trim();
+
+                                    const isOrgGroupMatch =
+                                        (targetOgId && resolvedUserOgId && targetOgId === resolvedUserOgId) ||
+                                        (targetIdOrgGroup !== null && resolvedUserIdOrgGroup && targetIdOrgGroup === resolvedUserIdOrgGroup) ||
+                                        (targetOgName && resolvedUserOgName && targetOgName === resolvedUserOgName) ||
+                                        (targetOgId && resolvedUserIdOrgGroup && targetOgId === resolvedUserIdOrgGroup);
+
+                                    if (!isOrgGroupMatch) match = false;
+                                }
+                            }
+
+                            if (match) {
+                                const existing = matchedUsersMap.get(String(user.id)) || { user, reasons: [] };
+                                existing.reasons.push(ruleParts.join(' & ') || 'Aturan Otoritas Sesuai');
+                                matchedUsersMap.set(String(user.id), existing);
+                            }
+                        });
+                    }
+                }
+            });
+        } else {
+            // 2. Fallback jika approver_authorities belum diisi, periksa approver_config atau approver_type
+            const customActors = cfg.custom || (['initiator', 'assigned_pic', 'creator'].includes(step.approver_type) ? [step.approver_type] : []);
+            const explicitUsers = cfg.users && cfg.users.length > 0 ? cfg.users : step.approver_type === 'user' ? step.user_ids || [] : [];
+            const targetRoles: string[] = cfg.roles && cfg.roles.length > 0 ? cfg.roles : step.approver_type === 'role' ? step.role || [] : [];
+            const targetDepts: string[] =
+                cfg.departments && cfg.departments.length > 0 ? cfg.departments : step.approver_type === 'role' ? step.department_ids || [] : [];
+
+            const hasAnyConfig = customActors.length > 0 || explicitUsers.length > 0 || targetRoles.length > 0 || targetDepts.length > 0;
+
+            if (hasAnyConfig) {
+                if (customActors.includes('initiator')) {
+                    criteriaParts.push('Inisiator');
+                    dynamicList.push({
+                        type: 'initiator',
+                        label: 'Inisiator Kontrak',
+                        description: 'Pengguna yang menginisiasi pengajuan kontrak.',
+                        activeUser: simInitiatorUser,
+                    });
+                    if (simInitiatorUser) {
+                        const existing = matchedUsersMap.get(String(simInitiatorUser.id)) || { user: simInitiatorUser, reasons: [] };
+                        existing.reasons.push('Inisiator (Simulasi)');
+                        matchedUsersMap.set(String(simInitiatorUser.id), existing);
+                    }
+                }
+
+                if (customActors.includes('assigned_pic')) {
+                    criteriaParts.push('PIC Ditugaskan');
+                    dynamicList.push({
+                        type: 'assigned_pic',
+                        label: 'PIC Ditugaskan',
+                        description: 'Pengguna yang ditugaskan sebagai PIC kontrak.',
+                        activeUser: simPicUser,
+                    });
+                    if (simPicUser) {
+                        const existing = matchedUsersMap.get(String(simPicUser.id)) || { user: simPicUser, reasons: [] };
+                        existing.reasons.push('PIC Ditugaskan (Simulasi)');
+                        matchedUsersMap.set(String(simPicUser.id), existing);
+                    }
+                }
+
+                if (customActors.includes('creator')) {
+                    criteriaParts.push('Pembuat Kontrak');
+                    dynamicList.push({
+                        type: 'creator',
+                        label: 'Pembuat Kontrak',
+                        description: 'Pengguna yang membuat draf kontrak.',
+                        activeUser: simCreatorUser,
+                    });
+                    if (simCreatorUser) {
+                        const existing = matchedUsersMap.get(String(simCreatorUser.id)) || { user: simCreatorUser, reasons: [] };
+                        existing.reasons.push('Pembuat Kontrak (Simulasi)');
+                        matchedUsersMap.set(String(simCreatorUser.id), existing);
+                    }
+                }
+
+                if (customActors.includes('atasan')) {
+                    criteriaParts.push('Atasan Langsung');
+                    dynamicList.push({
+                        type: 'atasan',
+                        label: 'Atasan Langsung',
+                        description: 'Atasan langsung dari inisiator pengajuan kontrak.',
+                    });
+                }
+
+                if (explicitUsers.length > 0) {
+                    criteriaParts.push(`${explicitUsers.length} User Spesifik`);
+                    explicitUsers.forEach((userId: any) => {
+                        const u = users.find((user: any) => String(user.id) === String(userId));
+                        if (u) {
+                            const existing = matchedUsersMap.get(String(u.id)) || { user: u, reasons: [] };
+                            existing.reasons.push('User Ditugaskan Langsung');
+                            matchedUsersMap.set(String(u.id), existing);
+                        }
+                    });
+                }
+
+                if (targetRoles.length > 0 || targetDepts.length > 0) {
+                    if (targetRoles.length > 0) criteriaParts.push(`Role: ${targetRoles.join(', ')}`);
+                    if (targetDepts.length > 0) {
+                        const pool = divisions.length > 0 ? divisions : departments;
+                        const deptNames = targetDepts.map((id: string) => pool.find((d: any) => String(d.id) === String(id))?.name || id);
+                        criteriaParts.push(`Unit: ${deptNames.join(', ')}`);
+                    }
+
+                    users.forEach((u: any) => {
+                        let roleMatch = targetRoles.length === 0;
+                        let deptMatch = targetDepts.length === 0;
+
+                        if (targetRoles.length > 0) {
+                            const userRole = (u.role || '').toLowerCase();
+                            const userRolesList = Array.isArray(u.roles)
+                                ? u.roles.map((r: any) => (typeof r === 'string' ? r : r.name || '').toLowerCase())
+                                : [];
+
+                            roleMatch = targetRoles.some((r: string) => {
+                                const lowR = r.toLowerCase();
+                                return userRole === lowR || userRolesList.includes(lowR);
+                            });
+                        }
+
+                        if (targetDepts.length > 0) {
+                            const uDeptId = String(u.department_id || u.division_id || '');
+                            deptMatch = targetDepts.some((dId: string) => String(dId) === uDeptId);
+                        }
+
+                        if (roleMatch && deptMatch) {
+                            const existing = matchedUsersMap.get(String(u.id)) || { user: u, reasons: [] };
+                            const reasons: string[] = [];
+                            if (targetRoles.length > 0) reasons.push(`Role (${u.role || 'Sesuai'})`);
+                            if (targetDepts.length > 0) reasons.push('Divisi Sesuai');
+                            existing.reasons.push(reasons.join(' & '));
+                            matchedUsersMap.set(String(u.id), existing);
+                        }
+                    });
+                }
+            }
+        }
+
+        if (criteriaParts.length === 0) {
+            criteriaParts.push('Belum ada aktor / otoritas yang dikonfigurasi');
+        }
+
+        return {
+            eligibleUsers: Array.from(matchedUsersMap.values()),
+            dynamicRoles: dynamicList,
+            criteriaSummary: criteriaParts.join(' • ') || '—',
+        };
+    }, [
+        step.approver_authorities,
+        step.approver_config,
+        step.approver_type,
+        step.role,
+        step.department_ids,
+        step.user_ids,
+        users,
+        roles,
+        departments,
+        divisions,
+        simInitiatorUser,
+        simPicUser,
+        simCreatorUser,
+    ]);
+
+    // Filter daftar pengguna berdasarkan pencarian
+    const filteredEligibleUsers = useMemo(() => {
+        if (!searchQuery.trim()) return eligibleUsers;
+        const q = searchQuery.toLowerCase();
+        return eligibleUsers.filter(({ user }) => {
+            const name = (user.name || '').toLowerCase();
+            const email = (user.email || '').toLowerCase();
+            const nik = (user.nik || user.username || '').toLowerCase();
+            const role = (user.role || '').toLowerCase();
+            const dept = (getDeptName(user) || '').toLowerCase();
+            const div = (getDivName(user) || '').toLowerCase();
+            return name.includes(q) || email.includes(q) || nik.includes(q) || role.includes(q) || dept.includes(q) || div.includes(q);
+        });
+    }, [eligibleUsers, searchQuery, departments, divisions]);
+
+    const totalCount = eligibleUsers.length;
+
+    return (
+        <div onClick={(e) => e.stopPropagation()} className="inline-flex items-center">
+            <Popover className="relative">
+                {({ close }) => (
+                    <>
+                        <PopoverTrigger
+                            type="button"
+                            onClick={(e) => e.stopPropagation()}
+                            className={cn(
+                                'relative flex h-7 cursor-pointer items-center justify-center gap-1 rounded-md px-1.5 transition-all select-none',
+                                totalCount > 0
+                                    ? 'text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-950/40'
+                                    : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                            )}
+                            title={`Daftar Pengguna Berhak Akses (${totalCount} orang)`}
+                        >
+                            <UserCheck size={12} />
+                            {totalCount > 0 && (
+                                <span className="flex h-4 min-w-4 items-center justify-center rounded-md bg-indigo-600 px-1 text-[9.5px] leading-none font-medium text-white shadow-2xs dark:bg-indigo-500">
+                                    {totalCount}
+                                </span>
+                            )}
+                        </PopoverTrigger>
+
+                        <PopoverContent
+                            align="end"
+                            className="z-[9999] w-84 space-y-2.5 rounded-xl border border-slate-200 bg-white p-3 text-slate-900 shadow-2xl sm:w-96 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
+                        >
+                            {/* Header */}
+                            <div className="flex items-center justify-between border-b border-slate-100 pb-2 dark:border-zinc-800">
+                                <div className="flex items-center gap-1.5">
+                                    <div className="flex h-6 w-6 items-center justify-center rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+                                        <Users size={13} />
+                                    </div>
+                                    <div>
+                                        <h4 className="text-xs leading-none font-medium text-slate-900 dark:text-zinc-100">Pengguna Berhak Akses</h4>
+                                        <span className="text-muted-foreground mt-0.5 inline-block text-[10px]">Tahap #{step.step || idx + 1}</span>
+                                    </div>
+                                </div>
+                                <Badge
+                                    variant="outline"
+                                    className="rounded-md border-indigo-500/20 bg-indigo-500/10 px-2 py-0.5 text-[10px] font-medium text-indigo-700 dark:text-indigo-300"
+                                >
+                                    {totalCount} Pengguna
+                                </Badge>
+                            </div>
+
+                            {/* Kriteria Akses Singkat */}
+                            <div className="space-y-1 rounded-lg border border-slate-100 bg-slate-50 p-2 text-[11px] dark:border-zinc-800 dark:bg-zinc-900">
+                                <div className="text-muted-foreground flex items-center gap-1 text-[10px] font-medium tracking-wider uppercase">
+                                    <Shield size={10} className="text-primary" />
+                                    <span>Kriteria Otoritas Aktor</span>
+                                </div>
+                                <p className="line-clamp-2 leading-snug font-medium text-slate-800 dark:text-zinc-200">{criteriaSummary}</p>
+                            </div>
+
+                            {/* Info Peran Dinamis (Inisiator / PIC / Atasan) */}
+                            {dynamicRoles.length > 0 && (
+                                <div className="space-y-1.5 pt-0.5">
+                                    {dynamicRoles.map((dr, dIdx) => (
+                                        <div
+                                            key={dIdx}
+                                            className="flex items-start justify-between gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-2 text-[11px]"
+                                        >
+                                            <div className="min-w-0 flex-1 space-y-0.5">
+                                                <div className="flex items-center gap-1.5">
+                                                    <Sparkles size={11} className="shrink-0 text-amber-600 dark:text-amber-400" />
+                                                    <span className="font-medium text-amber-900 dark:text-amber-300">{dr.label}</span>
+                                                </div>
+                                                <p className="text-muted-foreground line-clamp-1 text-[10px]">{dr.description}</p>
+                                                {dr.activeUser && (
+                                                    <div className="space-y-0.5 pt-0.5 text-[10.5px] font-medium text-emerald-700 dark:text-emerald-400">
+                                                        <div className="flex flex-wrap items-center gap-1.5">
+                                                            <UserCheck size={11} className="shrink-0" />
+                                                            <span className="font-semibold">Terpilih: {dr.activeUser.name}</span>
+                                                            {(dr.activeUser.nik || dr.activeUser.username) && (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(e) => handleCopyNik(e, dr.activeUser.nik || dr.activeUser.username)}
+                                                                    title="Klik untuk menyalin NIK"
+                                                                    className={cn(
+                                                                        'group/nik py-0.2 inline-flex cursor-pointer items-center gap-1 rounded border px-1.5 font-mono text-[9px] font-semibold transition-all select-all',
+                                                                        copiedNik === (dr.activeUser.nik || dr.activeUser.username)
+                                                                            ? 'border-emerald-400 bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-200'
+                                                                            : 'border-slate-200 bg-white/80 text-slate-700 hover:bg-slate-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700',
+                                                                    )}
+                                                                >
+                                                                    <span className="text-muted-foreground font-sans text-[8px] font-bold uppercase">
+                                                                        NIK:
+                                                                    </span>
+                                                                    <span>{dr.activeUser.nik || dr.activeUser.username}</span>
+                                                                    {copiedNik === (dr.activeUser.nik || dr.activeUser.username) ? (
+                                                                        <Check size={9} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
+                                                                    ) : (
+                                                                        <Copy
+                                                                            size={9}
+                                                                            className="text-muted-foreground shrink-0 opacity-60 group-hover/nik:opacity-100"
+                                                                        />
+                                                                    )}
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                        <div className="text-muted-foreground flex flex-wrap items-center gap-1 pl-3.5 text-[9.5px]">
+                                                            {dr.activeUser.role && <span>{dr.activeUser.role}</span>}
+                                                            {getDeptName(dr.activeUser) && (
+                                                                <>
+                                                                    <span>•</span>
+                                                                    <span>Unit: {getDeptName(dr.activeUser)}</span>
+                                                                </>
+                                                            )}
+                                                            {getDivName(dr.activeUser) && (
+                                                                <>
+                                                                    <span>•</span>
+                                                                    <span>Divisi: {getDivName(dr.activeUser)}</span>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            {!dr.activeUser && onOpenSimulationModal && (
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => {
+                                                        close();
+                                                        onOpenSimulationModal();
+                                                    }}
+                                                    className="h-6 shrink-0 cursor-pointer border-amber-500/30 px-2 text-[10px] font-medium text-amber-700 hover:bg-amber-500/10 dark:text-amber-300"
+                                                >
+                                                    Simulasi
+                                                </Button>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Search Box */}
+                            {totalCount > 4 && (
+                                <div className="relative">
+                                    <Search size={13} className="text-muted-foreground absolute top-1/2 left-2.5 -translate-y-1/2" />
+                                    <input
+                                        type="text"
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        placeholder="Cari nama, NIK, role, unit, atau divisi..."
+                                        className="focus:ring-primary placeholder:text-muted-foreground h-8 w-full rounded-md border border-slate-200 bg-white pr-3 pl-8 text-[11px] focus:ring-1 focus:outline-none dark:border-zinc-800 dark:bg-zinc-900"
+                                    />
+                                </div>
+                            )}
+
+                            {/* User List */}
+                            <div className="custom-scrollbar max-h-60 space-y-1 overflow-y-auto p-0.5">
+                                {filteredEligibleUsers.length === 0 ? (
+                                    <div className="text-muted-foreground space-y-1 py-6 text-center">
+                                        <User size={20} className="mx-auto opacity-40" />
+                                        <p className="text-xs font-medium">
+                                            {searchQuery ? 'Pengguna tidak ditemukan' : 'Belum ada pengguna yang berhak akses'}
+                                        </p>
+                                        <p className="text-[10px]">
+                                            {searchQuery
+                                                ? 'Coba gunakan kata kunci lain'
+                                                : 'Atur aktor & otoritas di tab Konfigurasi Langkah untuk memberi hak akses'}
+                                        </p>
+                                    </div>
+                                ) : (
+                                    filteredEligibleUsers.map(({ user, reasons }, uIdx) => {
+                                        const deptName = getDeptName(user);
+                                        const divName = getDivName(user);
+                                        const userNik = user.nik || user.username || '';
+
+                                        return (
+                                            <div
+                                                key={user.id || uIdx}
+                                                className="flex items-start justify-between gap-2 rounded-lg border border-transparent p-2 transition-colors hover:border-slate-200/60 hover:bg-slate-50 dark:hover:border-zinc-800 dark:hover:bg-zinc-900"
+                                            >
+                                                <div className="flex min-w-0 flex-1 items-start gap-2">
+                                                    <div className="bg-secondary text-secondary-foreground border-border/50 mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md border text-[10.5px] font-medium uppercase">
+                                                        {(user.name || user.email || 'U').substring(0, 2)}
+                                                    </div>
+                                                    <div className="min-w-0 flex-1 space-y-0.5">
+                                                        <div className="flex flex-wrap items-center gap-1.5">
+                                                            <p className="truncate text-xs leading-tight font-semibold text-slate-800 dark:text-zinc-200">
+                                                                {user.name}
+                                                            </p>
+                                                            {userNik && (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(e) => handleCopyNik(e, userNik)}
+                                                                    title="Klik untuk menyalin NIK"
+                                                                    className={cn(
+                                                                        'group/nik py-0.2 inline-flex cursor-pointer items-center gap-1 rounded border px-1.5 font-mono text-[9px] font-semibold transition-all select-all',
+                                                                        copiedNik === userNik
+                                                                            ? 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300'
+                                                                            : 'border-slate-200 bg-slate-100/90 text-slate-700 hover:bg-slate-200 hover:text-slate-900 dark:border-zinc-700 dark:bg-zinc-800/80 dark:text-zinc-300 dark:hover:bg-zinc-700',
+                                                                    )}
+                                                                >
+                                                                    <span className="text-muted-foreground font-sans text-[8px] font-bold uppercase">
+                                                                        NIK:
+                                                                    </span>
+                                                                    <span>{userNik}</span>
+                                                                    {copiedNik === userNik ? (
+                                                                        <Check size={9} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
+                                                                    ) : (
+                                                                        <Copy
+                                                                            size={9}
+                                                                            className="text-muted-foreground shrink-0 opacity-60 group-hover/nik:opacity-100"
+                                                                        />
+                                                                    )}
+                                                                </button>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Role & Email */}
+                                                        <p className="text-muted-foreground truncate text-[10px] leading-tight">
+                                                            {user.role || 'User'} {user.email && <span className="opacity-70">({user.email})</span>}
+                                                        </p>
+
+                                                        {/* Department & Division */}
+                                                        {(deptName || divName) && (
+                                                            <div className="flex flex-wrap items-center gap-1 pt-0.5 text-[9.5px] text-slate-500 dark:text-zinc-400">
+                                                                {deptName && (
+                                                                    <span className="py-0.2 inline-flex items-center gap-0.5 rounded border border-slate-200/50 bg-slate-100 px-1.5 text-[9px] dark:border-zinc-700/50 dark:bg-zinc-800/60">
+                                                                        <Building2 size={9} className="text-primary/70 shrink-0" />
+                                                                        <span className="max-w-[130px] truncate">{deptName}</span>
+                                                                    </span>
+                                                                )}
+                                                                {divName && (
+                                                                    <span className="py-0.2 inline-flex items-center gap-0.5 rounded border border-slate-200/50 bg-slate-100 px-1.5 text-[9px] dark:border-zinc-700/50 dark:bg-zinc-800/60">
+                                                                        <Briefcase size={9} className="shrink-0 text-indigo-500/70" />
+                                                                        <span className="max-w-[130px] truncate">{divName}</span>
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex shrink-0 flex-col items-end gap-0.5 pt-0.5">
+                                                    {reasons.map((r, rIdx) => (
+                                                        <Badge
+                                                            key={rIdx}
+                                                            variant="secondary"
+                                                            className="py-0.2 border-border/50 text-muted-foreground max-w-[110px] truncate rounded-md px-1.5 text-[9px] font-medium"
+                                                        >
+                                                            {r}
+                                                        </Badge>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        );
+                                    })
+                                )}
+                            </div>
+
+                            {/* Footer */}
+                            <div className="text-muted-foreground flex items-center justify-between border-t border-slate-100 pt-2 text-[10px] dark:border-zinc-800">
+                                <span>Total {totalCount} orang berhak akses</span>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => close()}
+                                    className="h-6 px-2 text-[10.5px] font-medium"
+                                >
+                                    Tutup
+                                </Button>
+                            </div>
+                        </PopoverContent>
+                    </>
+                )}
+            </Popover>
+        </div>
+    );
+}

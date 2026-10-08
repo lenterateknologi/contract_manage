@@ -1,4 +1,4 @@
-import { approvalsApi, contractsApi, subresourcesApi } from '@/api';
+import { approvalsApi, contractsApi, subresourcesApi } from '@/features/Contracts';
 import { Icons } from '@/components/ui';
 import { Button } from '@/components/ui/buttons/Button';
 import LoadingLottie from '@/components/ui/feedback/LoadingLottie';
@@ -574,42 +574,11 @@ export default function AgreementView({
                 )}
 
                 {loading ? (
-                    /* High-polish Document Skeleton during initial loading */
-                    <div className="flex flex-1 animate-pulse flex-col items-center justify-center bg-transparent p-8">
-                        <div className="flex h-[85vh] max-h-[700px] w-full max-w-[210mm] flex-col justify-between bg-transparent p-8">
-                            <div className="space-y-6">
-                                {/* Header skeleton */}
-                                <div className="flex items-center justify-between border-b border-slate-100 pb-6 dark:border-zinc-800">
-                                    <div className="flex items-center gap-3">
-                                        <div className="h-10 w-10 rounded-lg bg-slate-200 dark:bg-zinc-800" />
-                                        <div className="space-y-2">
-                                            <div className="h-3.5 w-36 rounded bg-slate-200 dark:bg-zinc-800" />
-                                            <div className="h-2.5 w-24 rounded bg-slate-100 dark:bg-zinc-800/60" />
-                                        </div>
-                                    </div>
-                                    <div className="h-6 w-20 rounded-full bg-slate-200 dark:bg-zinc-800" />
-                                </div>
-
-                                {/* Body skeleton lines */}
-                                <div className="space-y-3 pt-4">
-                                    <div className="h-3 w-3/4 rounded bg-slate-200 dark:bg-zinc-800" />
-                                    <div className="h-3 w-full rounded bg-slate-100 dark:bg-zinc-800/60" />
-                                    <div className="h-3 w-5/6 rounded bg-slate-100 dark:bg-zinc-800/60" />
-                                    <div className="h-3 w-2/3 rounded bg-slate-100 dark:bg-zinc-800/60" />
-                                </div>
-
-                                <div className="space-y-3 pt-6">
-                                    <div className="h-4 w-48 rounded bg-slate-200 dark:bg-zinc-800" />
-                                    <div className="h-3 w-full rounded bg-slate-100 dark:bg-zinc-800/60" />
-                                    <div className="h-3 w-11/12 rounded bg-slate-100 dark:bg-zinc-800/60" />
-                                    <div className="h-3 w-4/5 rounded bg-slate-100 dark:bg-zinc-800/60" />
-                                </div>
-                            </div>
-
-                            <div className="text-primary flex items-center justify-center gap-2 py-4 text-xs font-semibold">
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                                <span>Menyiapkan Dokumen {titleLabel}...</span>
-                            </div>
+                    <div className="flex flex-1 flex-col items-center justify-center bg-transparent p-12 text-center animate-in fade-in duration-300">
+                        <LoadingLottie width={110} height={110} />
+                        <div className="mt-3 space-y-1">
+                            <p className="text-xs font-semibold text-text-main">Menyiapkan Dokumen {titleLabel}...</p>
+                            <p className="text-[11px] text-text-desc">Memuat pratinjau dan riwayat versi dokumen</p>
                         </div>
                     </div>
                 ) : versions.length === 0 ? (

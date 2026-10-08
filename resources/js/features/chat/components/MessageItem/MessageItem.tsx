@@ -7,7 +7,7 @@ import {
     MessageAvatar,
     MessageContent,
     MessageHeader,
-} from '@/components/ui/user/Message';
+} from './MessagePrimitives';
 import { cn } from '@/lib/utils';
 import { usePage } from '@inertiajs/react';
 import { Check, Copy, Download, Eye, File as FileIcon, Smile } from 'lucide-react';

@@ -115,10 +115,7 @@ class ContractDashboardQuery
         return [
             'has_setting' => (bool) $dashboardConfig,
             'name' => $dashboardConfig ? $dashboardConfig->name : null,
-            'show_overview' => $dashboardConfig ? (bool) $dashboardConfig->show_overview : false,
-            'show_overview_contract' => $dashboardConfig ? (bool) $dashboardConfig->show_overview_contract : false,
-            'show_overview_non_contract' => $dashboardConfig ? (bool) $dashboardConfig->show_overview_non_contract : false,
-            'show_overview_nda' => $dashboardConfig ? (bool) $dashboardConfig->show_overview_nda : false,
+            'show_overview' => $dashboardConfig ? (bool) $dashboardConfig->show_overview : true,
             'show_workload' => $dashboardConfig ? (bool) $dashboardConfig->show_workload : false,
             'show_master_data' => $dashboardConfig ? (bool) $dashboardConfig->show_master_data : false,
         ];

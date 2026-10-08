@@ -1,5 +1,5 @@
 import { AVATAR_SIZE_MAP, type AvatarSize, cn, getInitials, getUserAvatarData } from '@/lib/utils';
-import { UserProfile } from '@/pages/contracts/types';
+import { UserProfile } from '@/features/Contracts/types';
 import * as AvatarPrimitive from '@radix-ui/react-avatar';
 import * as React from 'react';
 

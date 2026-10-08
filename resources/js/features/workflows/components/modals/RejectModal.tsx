@@ -1,0 +1,27 @@
+import { SharedRejectModal } from '@/features/Contracts/components/modals/shared/SharedApproveModal';
+
+interface RejectModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    step: any;
+    idx: number;
+    showToast: (message: string, type?: 'success' | 'danger' | 'info') => void;
+}
+
+export function RejectModal({ isOpen, onClose, step: _step, idx: _idx, showToast }: RejectModalProps) {
+    return (
+        <SharedRejectModal
+            open={isOpen}
+            onClose={onClose}
+            actionAlias="Tolak"
+            onSubmit={async () => {
+                return new Promise((resolve) => {
+                    setTimeout(() => {
+                        showToast('Simulasi Penolakan berhasil!', 'danger');
+                        resolve();
+                    }, 850);
+                });
+            }}
+        />
+    );
+}

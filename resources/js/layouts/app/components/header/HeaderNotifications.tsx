@@ -1,4 +1,5 @@
-import { discussionsApi, notificationsApi } from '@/api';
+import { notificationsService } from '@/services/notificationsService';
+import { chatService } from '@/features/chat/services/chatService';
 import { Button } from '@/components/ui/buttons/Button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/selection/DropdownMenu';
 import { cn } from '@/lib/utils';
@@ -117,7 +118,7 @@ export const HeaderNotifications = memo(function HeaderNotifications({ variant =
 
     const fetchNotifications = useCallback(async () => {
         try {
-            const res: any = await notificationsApi.list();
+            const res: any = await notificationsService.list();
             const items: NotificationItem[] = Array.isArray(res) ? res : (res?.data ?? res?.items ?? []);
             setNotifications(items);
 
@@ -188,7 +189,7 @@ export const HeaderNotifications = memo(function HeaderNotifications({ variant =
 
     const handleNotificationClick = (item: NotificationItem) => {
         if (item.type === 'new_message' && item.contract_id) {
-            discussionsApi.messages.markRead(item.contract_id).catch(console.error);
+            chatService.markConversationAsRead(item.contract_id);
         }
         if (!readIds.includes(item.id)) {
             const newReadIds = [...readIds, item.id];
@@ -198,7 +199,7 @@ export const HeaderNotifications = memo(function HeaderNotifications({ variant =
 
     const markAllRead = async () => {
         try {
-            await notificationsApi.markAllRead();
+            await notificationsService.markAllRead();
             const currentIds = notifications.map((n) => n.id);
             const newReadIds = Array.from(new Set([...readIds, ...currentIds]));
             saveReadIds(newReadIds);

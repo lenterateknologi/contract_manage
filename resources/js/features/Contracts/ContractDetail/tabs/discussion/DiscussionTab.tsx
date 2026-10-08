@@ -2,7 +2,7 @@ import { Contract } from '@/features/Contracts/types';
 import React, { lazy, Suspense } from 'react';
 
 const ContractChat = lazy(() => import('@/features/chat').then((m) => ({ default: m.ContractChatThread })));
-const ContractMembers = lazy(() => import('@/components/members/ContractMembers').then((m) => ({ default: m.ContractMembers })));
+const ContractMembers = lazy(() => import('@/features/members').then((m) => ({ default: m.ContractMembers })));
 
 interface DiscussionTabProps {
     contract: Contract;

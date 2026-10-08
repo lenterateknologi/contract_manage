@@ -5,11 +5,14 @@ namespace App\Core\Crud\Resources;
 use App\Core\Crud\Columns\BooleanColumn;
 use App\Core\Crud\Columns\TextColumn;
 use App\Core\Crud\Fields\Section;
+use App\Core\Crud\Fields\SelectInput;
 use App\Core\Crud\Fields\TextareaInput;
 use App\Core\Crud\Fields\TextInput;
 use App\Core\Crud\Fields\ToggleInput;
+use App\Core\Crud\Fields\TreeSelectInput;
 use App\Core\Crud\Filter;
 use App\Core\Crud\Resource;
+use App\Models\Master\ContractType;
 use App\Models\Master\DashboardType;
 use App\Models\Master\Department;
 use App\Models\Master\Division;
@@ -37,11 +40,9 @@ class DashboardTypeResource extends Resource
             TextColumn::make('division_names', 'Divisi')->sortable(),
             TextColumn::make('department_names', 'Departemen')->sortable(),
             TextColumn::make('location_names', 'Lokasi')->sortable(),
+            TextColumn::make('contract_type_names', 'Filter Tipe Kontrak'),
             TextColumn::make('users_count', 'Total User')->alignRight(),
-            BooleanColumn::make('show_overview', 'Ringkasan (Semua)'),
-            BooleanColumn::make('show_overview_contract', 'Ringkasan Kontrak'),
-            BooleanColumn::make('show_overview_non_contract', 'Ringkasan Non Kontrak'),
-            BooleanColumn::make('show_overview_nda', 'Ringkasan NDA'),
+            BooleanColumn::make('show_overview', 'Ringkasan'),
             BooleanColumn::make('show_workload', 'Beban Kerja'),
             BooleanColumn::make('show_master_data', 'Master Data'),
             BooleanColumn::make('can_create_on_behalf', 'On-Behalf'),
@@ -70,22 +71,10 @@ class DashboardTypeResource extends Resource
             ])->icon('ShieldCheck'),
 
             Section::make('Visibilitas Tab Ringkasan & Dashboard', [
-                ToggleInput::make('show_overview', 'Ringkasan Semua (Gabungan)')
-                    ->default(false)
+                ToggleInput::make('show_overview', 'Ringkasan Dashboard (Overview)')
+                    ->default(true)
                     ->icon('LayoutGrid')
                     ->helperText('Menampilkan tab statistik ringkasan dan KPI gabungan seluruh kategori dokumen.'),
-                ToggleInput::make('show_overview_contract', 'Ringkasan Kontrak')
-                    ->default(false)
-                    ->icon('FileText')
-                    ->helperText('Menampilkan tab statistik khusus dokumen bertipe Kontrak Vendor / Rekanan.'),
-                ToggleInput::make('show_overview_non_contract', 'Ringkasan Non Kontrak')
-                    ->default(false)
-                    ->icon('Files')
-                    ->helperText('Menampilkan tab statistik khusus dokumen operasional Non-Kontrak.'),
-                ToggleInput::make('show_overview_nda', 'Ringkasan NDA')
-                    ->default(false)
-                    ->icon('ShieldCheck')
-                    ->helperText('Menampilkan tab statistik khusus perjanjian Non-Disclosure Agreement.'),
                 ToggleInput::make('show_workload', 'Beban Kerja (Workload)')
                     ->default(false)
                     ->icon('Briefcase')
@@ -94,6 +83,12 @@ class DashboardTypeResource extends Resource
                     ->default(false)
                     ->icon('Database')
                     ->helperText('Menampilkan tab akses pintas ke registri master data & matriks referensi.'),
+                TreeSelectInput::make('contract_type_ids', 'Batasi Tipe Kontrak yang Ditampilkan (Opsional)')
+                    ->multiple(true)
+                    ->options(fn () => ContractType::where('is_active', true)->orderBy('name')->get(['id', 'name', 'code', 'parent_id'])->toArray())
+                    ->icon('FileText')
+                    ->helperText('Pilih hierarki tipe kontrak tertentu yang boleh ditampilkan pada profil dashboard ini. Kosongkan untuk menampilkan seluruh tipe kontrak.')
+                    ->columnSpan(3),
             ])->icon('Eye'),
 
             Section::make('Otoritas & Akses Template Dokumen (Corixa Repository)', [
