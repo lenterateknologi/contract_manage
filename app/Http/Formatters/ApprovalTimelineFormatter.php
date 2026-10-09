@@ -488,7 +488,7 @@ class ApprovalTimelineFormatter
                         if ($isCurrentStep) {
                             $hasActiveAdhoc = $adhocApprovals->whereIn('status', ['pending', 'waiting'])->isNotEmpty();
                             $mainStatus = $hasActiveAdhoc ? 'waiting' : 'pending';
-                        } elseif ($step->step < $currentStepNumber) {
+                        } elseif ($isStepSkipped || $step->step < $currentStepNumber) {
                             $mainStatus = 'SKIPPED';
                         }
 

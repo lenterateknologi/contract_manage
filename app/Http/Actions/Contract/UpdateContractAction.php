@@ -57,7 +57,25 @@ class UpdateContractAction
         // Capture old values before updating
         $oldContract = $contract->replicate();
         $oldContract->id = $contract->id;
-        $oldAttributes = $contract->getAttributes();
+        // Sync tax_required and metadata
+        if (array_key_exists('tax_required', $validated)) {
+            $metadata = $contract->metadata ?? [];
+            $isTax = filter_var($validated['tax_required'], FILTER_VALIDATE_BOOLEAN);
+            $metadata['tax_required'] = $isTax;
+            $metadata['meta_tax_required'] = $isTax ? 'Ya' : 'Tidak';
+            $contract->metadata = $metadata;
+            $contract->save();
+        } elseif (isset($validated['metadata']) && is_array($validated['metadata'])) {
+            $metadata = array_merge($contract->metadata ?? [], $validated['metadata']);
+            if (isset($metadata['tax_required']) || isset($metadata['meta_tax_required'])) {
+                $taxVal = $metadata['tax_required'] ?? $metadata['meta_tax_required'];
+                $isTax = ($taxVal === true || $taxVal === '1' || $taxVal === 1 || $taxVal === 'Ya' || $taxVal === 'ya' || $taxVal === 'true');
+                $metadata['tax_required'] = $isTax;
+                $metadata['meta_tax_required'] = $isTax ? 'Ya' : 'Tidak';
+            }
+            $contract->metadata = $metadata;
+            $contract->save();
+        }
 
         $contract->update($validated);
 

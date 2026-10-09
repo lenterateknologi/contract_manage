@@ -5,11 +5,12 @@ import { useDebounce } from '@/hooks/use-debounce';
 import { cn, formatDateTime } from '@/lib/utils';
 import { Contract, ContractApproval, UserProfile } from '@/features/Contracts/types';
 import { Popover, PopoverButton, PopoverPanel, Portal } from '@headlessui/react';
-import { ArrowDownRight, ChevronDown, Download, GitCommit, Layers, LogIn, UserCheck, Users, Workflow } from 'lucide-react';
+import { ArrowDownRight, ChevronDown, Download, GitCommit, GitFork, Layers, LogIn, UserCheck, Users, Workflow } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 import { ApprovalCard } from './ApprovalCard';
 import { InitiatorStepCard } from './InitiatorStepCard';
 import { ProjectedStepCard } from './ProjectedStepCard';
+import { usePermissions } from '@/hooks/use-permissions';
 
 import { Timeline, TimelineContent, TimelineIcon, TimelineItem } from '../ui/timeline';
 import { ApprovalStepsLite } from './ApprovalStepsLite';
@@ -21,12 +22,14 @@ interface Props {
     submittedAt?: string;
     meId?: string;
     onApprove: (note: string, attachment?: File) => Promise<void>;
+    onOpenAdminWorkflowModal?: () => void;
 }
 
 type ViewTab = 'lite' | 'pro';
 type SortBy = 'time' | 'step';
 
-export function ApprovalSteps({ contract, approvals = [], creator, submittedAt, meId, onApprove }: Props) {
+export function ApprovalSteps({ contract, approvals = [], creator, submittedAt, meId, onApprove, onOpenAdminWorkflowModal }: Props) {
+    const { isAdmin } = usePermissions();
     const safeApprovals = useMemo(() => (Array.isArray(approvals) ? approvals : []), [approvals]);
     const [viewTab, setViewTab] = useState<ViewTab>('lite');
     const [sortBy] = useState<SortBy>('time');
@@ -558,6 +561,18 @@ export function ApprovalSteps({ contract, approvals = [], creator, submittedAt, 
                             className="bg-surface-base h-7 text-[10px] uppercase"
                         />
                     </div>
+
+                    {isAdmin && onOpenAdminWorkflowModal && (
+                        <button
+                            type="button"
+                            onClick={onOpenAdminWorkflowModal}
+                            className="border-rose-500/30 bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 dark:text-rose-400 flex h-7 cursor-pointer items-center gap-1 rounded px-2 text-[10px] font-bold uppercase transition-colors"
+                            title="Admin Override: Ubah alur kerja atau tahapan kontrak ini secara paksa"
+                        >
+                            <GitFork size={12} className="shrink-0" />
+                            <span className="hidden sm:inline">Ubah Alur (Admin)</span>
+                        </button>
+                    )}
 
                     <Button
                         variant="outline"

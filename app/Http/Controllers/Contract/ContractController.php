@@ -178,6 +178,10 @@ class ContractController extends Controller
     {
         $userId = Auth::id();
         $perPage = min(max($request->integer('per_page', 10), 1), 100);
+        $withDuty = $request->route('withDuty') ?? $request->boolean('with_duty', false);
+        if ($request->routeIs('admin.*') || $request->is('admin/*')) {
+            $withDuty = true;
+        }
 
         // 1. Pending Actions (Perlu Tindakan - Paling Atas)
         $pendingQuery = Contract::query()
@@ -217,11 +221,52 @@ class ContractController extends Controller
             ->withQueryString()
             ->through(fn ($c) => ContractFormatter::formatContract($c, false));
 
-        // 2. In Progress (Sedang Diproses milik user - Tengah)
+        // 2. Duty (Tugas Saya - Ditugaskan sebagai PIC) - Hanya jika withDuty = true
+        $dutyContracts = null;
+        if ($withDuty) {
+            $dutyQuery = Contract::query()
+                ->duty($userId)
+                ->whereNotIn(DB::raw('LOWER(status)'), ['draft', 'archived'])
+                ->whereNull('closed_at')
+                ->with([
+                    'creator.department',
+                    'contractType',
+                    'submissionType',
+                    'statusDetail',
+                    'workflow',
+                    'workflowStep.actions',
+                    'vendor',
+                    'initiator.department',
+                    'parent',
+                    'assignedPic.department',
+                    'approvals',
+                ]);
+
+            if ($request->filled('search_duty')) {
+                $search = mb_strtolower(addcslashes($request->search_duty, '%_\\'));
+                $dutyQuery->where(function ($q) use ($search) {
+                    $q->where(DB::raw('LOWER(title)'), 'like', "%{$search}%")
+                        ->orWhere(DB::raw('LOWER(form_no)'), 'like', "%{$search}%");
+                });
+            }
+
+            $this->applyActivitySort(
+                $dutyQuery,
+                $request->input('sort_duty'),
+                $request->input('dir_duty'),
+                'updated_at'
+            );
+
+            $dutyContracts = $dutyQuery
+                ->paginate($perPage, ['*'], 'page_duty')
+                ->withQueryString()
+                ->through(fn ($c) => ContractFormatter::formatContract($c, false));
+        }
+
+        // 3. In Progress (Sedang Diproses milik user - Tengah)
         $inProgressQuery = Contract::query()
             ->mine()
-            ->whereIn('status', ['in_review', 'revision', 'pending', 'locked'])
-            ->whereRaw('UPPER(status) != ?', ['DRAFT'])
+            ->whereNotIn(DB::raw('LOWER(status)'), ['draft', 'approved', 'finalisasi', 'rejected', 'cancelled', 'archived'])
             ->whereNull('closed_at')
             ->with([
                 'creator.department',
@@ -257,7 +302,7 @@ class ContractController extends Controller
             ->withQueryString()
             ->through(fn ($c) => ContractFormatter::formatContract($c, false));
 
-        // 3. Draft (Draft pengajuan milik user - Paling Bawah)
+        // 4. Draft (Draft pengajuan milik user - Paling Bawah)
         $draftQuery = Contract::query()
             ->mine()
             ->whereRaw('UPPER(status) = ?', ['DRAFT'])
@@ -297,10 +342,10 @@ class ContractController extends Controller
         $counts = $this->getCachedContractCounts($userId);
         $activityCounts = [
             'pending' => Contract::pendingApprovalFor($userId)->count(),
+            'duty' => $withDuty ? Contract::duty($userId)->whereNotIn(DB::raw('LOWER(status)'), ['draft', 'archived'])->whereNull('closed_at')->count() : 0,
             'history' => Contract::actedBy($userId)->count(),
             'in_progress' => Contract::mine($userId)
-                ->whereIn('status', ['in_review', 'revision', 'pending', 'locked'])
-                ->whereRaw('UPPER(status) != ?', ['DRAFT'])
+                ->whereNotIn(DB::raw('LOWER(status)'), ['draft', 'approved', 'finalisasi', 'rejected', 'cancelled', 'archived'])
                 ->whereNull('closed_at')
                 ->count(),
             'draft' => Contract::mine($userId)
@@ -312,7 +357,9 @@ class ContractController extends Controller
         if ($request->wantsJson() && ! $request->header('X-Inertia')) {
             return response()->json([
                 'status' => 'success',
+                'withDuty' => (bool) $withDuty,
                 'pending' => $pendingContracts,
+                'duty' => $dutyContracts,
                 'in_progress' => $inProgressContracts,
                 'draft' => $draftContracts,
                 'counts' => $activityCounts,
@@ -321,12 +368,17 @@ class ContractController extends Controller
         }
 
         $data = array_merge([
-            'currentView' => 'activity',
+            'currentView' => $withDuty ? 'admin_activity' : 'activity',
+            'withDuty' => (bool) $withDuty,
             'pendingContracts' => $pendingContracts,
+            'dutyContracts' => $dutyContracts,
             'inProgressContracts' => $inProgressContracts,
             'draftContracts' => $draftContracts,
             'activityCounts' => $activityCounts,
             'counts' => $activityCounts,
+            'breadcrumbs' => $withDuty
+                ? [['title' => 'Aktivitas Pengajuan (Legal)', 'href' => '/admin/contracts/activity']]
+                : [['title' => 'Aktivitas Pengajuan', 'href' => '/contracts/activity']],
             'types' => $loaders['types'](),
             'submissionTypes' => $loaders['submissionTypes'](),
             'users' => Inertia::defer(fn () => $loaders['users']()),
@@ -341,15 +393,16 @@ class ContractController extends Controller
             'companies' => $loaders['companies'](),
             'contractStatuses' => $loaders['contractStatuses'](),
             'filters' => $request->only([
-                'search_pending', 'search_progress', 'search_draft',
-                'page_pending', 'page_progress', 'page_draft',
+                'search_pending', 'search_duty', 'search_progress', 'search_draft',
+                'page_pending', 'page_duty', 'page_progress', 'page_draft',
                 'sort_pending', 'dir_pending',
+                'sort_duty', 'dir_duty',
                 'sort_progress', 'dir_progress',
                 'sort_draft', 'dir_draft',
             ]),
             'breadcrumbs' => [
                 ['title' => 'Manajemen Kontrak', 'href' => route('contracts'), 'icon' => 'FileText'],
-                ['title' => 'Aktivitas Pengajuan', 'href' => '#', 'description' => 'Ringkasan pengajuan yang perlu tindakan, sedang diproses, dan draft.', 'icon' => 'Layers'],
+                ['title' => 'Aktivitas Pengajuan', 'href' => '#', 'description' => 'Ringkasan pengajuan yang perlu tindakan, tugas penugasan PIC, sedang diproses, dan draft.', 'icon' => 'Layers'],
             ],
         ], $counts);
 
@@ -474,7 +527,7 @@ class ContractController extends Controller
                 ];
 
                 if ($includeStatus && $scopedQuery) {
-                    $base['in_progress'] = (clone $scopedQuery)->whereIn('status', ['in_review', 'revision', 'pending', 'locked'])->whereNull('closed_at')->count();
+                    $base['in_progress'] = (clone $scopedQuery)->whereNotIn(DB::raw('LOWER(status)'), ['draft', 'approved', 'finalisasi', 'rejected', 'cancelled', 'archived'])->whereNull('closed_at')->count();
                     $base['archived'] = (clone $scopedQuery)->where(fn ($q) => $q->whereRaw('UPPER(status) = ?', ['ARCHIVED'])->orWhereNotNull('closed_at'))->count();
                 }
 

@@ -108,7 +108,7 @@ export default function CreateContractModal({
     const [typeId, setTypeId] = useState('');
     const [, setCategory] = useState('contract');
     const [transactionType] = useState('Perjanjian Baru');
-    const [taxRequired] = useState(true);
+    const [taxRequired] = useState(false);
     const [initiatedById, setInitiatedById] = useState('');
     const [projectName, setProjectName] = useState('');
     const [loading, setLoading] = useState(false);

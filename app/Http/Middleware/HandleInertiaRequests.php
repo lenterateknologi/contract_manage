@@ -94,6 +94,7 @@ class HandleInertiaRequests extends Middleware
                     'allowed_departments' => $request->user()->allowed_departments,
                     'can_create_on_behalf' => (bool) $request->user()->can_create_on_behalf,
                     'allowed_on_behalf_user_ids' => $request->user()->allowed_on_behalf_user_ids,
+                    'is_admin' => (bool) ($request->user()->isAdmin() || $request->user()->isSuperAdmin() || in_array($request->user()->role, ['Admin', 'Super Admin'])),
                 ]) : null,
                 'permissions' => $this->getUserPermissions($request),
                 'impersonation' => [
@@ -280,6 +281,22 @@ class HandleInertiaRequests extends Middleware
                 }
             }
 
+            $isAdmin = in_array($roleName, ['Admin', 'Super Admin']);
+            if ($isAdmin) {
+                $byCode['ADMIN_BACKUPS'] = [
+                    'code' => 'ADMIN_BACKUPS',
+                    'route' => '/admin/backups',
+                    'read' => true,
+                    'create' => true,
+                    'update' => true,
+                    'delete' => true,
+                    'approve' => false,
+                    'bulk_approve' => false,
+                    'bulk_delete' => false,
+                ];
+                $byRoute['/admin/backups'] = $byCode['ADMIN_BACKUPS'];
+            }
+
             return array_merge($byCode, $byRoute);
         });
     }
@@ -342,8 +359,10 @@ class HandleInertiaRequests extends Middleware
                         $menuTitle = match ($route) {
                             '/contracts', '/admin/contracts' => 'Semua Pengajuan',
                             '/contracts/organization', '/contracts/org-group' => 'Semua Pengajuan',
-                            '/contracts/activity' => 'Aktivitas Pengajuan',
+                            '/contracts/activity', '/admin/contracts/activity' => 'Aktivitas Pengajuan',
                             '/contracts/mine' => 'Pengajuan Saya',
+                            '/contracts/mine?parent_tab=in_progress' => 'Sedang Diproses',
+                            '/contracts/mine?status=draft' => 'Draft Pengajuan',
                             '/contracts/duty' => 'Tugas Saya',
                             '/contracts/pending' => 'Persetujuan Saya',
                             '/contracts/expiry' => 'Masa Berlaku Dokumen',
@@ -380,6 +399,47 @@ class HandleInertiaRequests extends Middleware
                     ];
                 })
                 ->all();
+
+            $isAdmin = (bool) ($currentUser && ($currentUser->isAdmin() || $currentUser->isSuperAdmin() || in_array($roleName, ['Admin', 'Super Admin'])));
+            if ($isAdmin) {
+                $hasBackup = false;
+                if (isset($groups['Pengaturan Sistem'])) {
+                    foreach ($groups['Pengaturan Sistem']['items'] as $item) {
+                        if ($item['url'] === '/admin/backups') {
+                            $hasBackup = true;
+                            break;
+                        }
+                    }
+                    if (! $hasBackup) {
+                        $groups['Pengaturan Sistem']['items'][] = [
+                            'title' => 'Dump & Restore',
+                            'url' => '/admin/backups',
+                            'description' => 'Manajemen ekspor dan impor file database dump/restore secara manual',
+                            'icon' => 'Database',
+                            'sequence' => 99,
+                            'badge' => null,
+                            'children' => null,
+                        ];
+                    }
+                } else {
+                    $groups['Pengaturan Sistem'] = [
+                        'title' => 'Pengaturan Sistem',
+                        'icon' => 'Settings2',
+                        'sequence' => 99,
+                        'items' => [
+                            [
+                                'title' => 'Dump & Restore',
+                                'url' => '/admin/backups',
+                                'description' => 'Manajemen ekspor dan impor file database dump/restore secara manual',
+                                'icon' => 'Database',
+                                'sequence' => 99,
+                                'badge' => null,
+                                'children' => null,
+                            ],
+                        ],
+                    ];
+                }
+            }
 
             usort($groups, function ($a, $b) {
                 $orderA = $a['sequence'] ?? 9999;

@@ -388,6 +388,8 @@ class AdminController extends Controller
             ->where('module_group_id', $group->id)
             ->delete();
 
+        Cache::flush();
+
         return back()->with('success', 'Grup berhasil dilepas dari navigasi role ini.');
     }
 
@@ -409,6 +411,8 @@ class AdminController extends Controller
                 'module_group_id' => null,
                 'sequence' => null,
             ]);
+
+        Cache::flush();
 
         return back()->with('success', 'Modul berhasil dilepas dari navigasi role ini.');
     }

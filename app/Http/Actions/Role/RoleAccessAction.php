@@ -7,6 +7,7 @@ use App\Models\Master\Module;
 use App\Models\Master\ModuleGroup;
 use App\Models\Master\Role;
 use App\Models\Master\RoleModuleGroup;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class RoleAccessAction
@@ -44,6 +45,8 @@ class RoleAccessAction
                 );
             }
         });
+
+        Cache::flush();
     }
 
     /**
@@ -102,6 +105,8 @@ class RoleAccessAction
                     'sequence' => null,
                 ]);
         });
+
+        Cache::flush();
     }
 
     /**

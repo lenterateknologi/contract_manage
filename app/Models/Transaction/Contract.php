@@ -409,7 +409,7 @@ class Contract extends Model
         $userId = $userId ?? Auth::id();
 
         return $query->whereNull('closed_at')
-            ->whereIn('status', ['in_review', 'pending', 'locked', 'revision', 'waiting'])
+            ->whereNotIn(DB::raw('LOWER(status)'), ['draft', 'rejected', 'cancelled', 'archived'])
             ->whereHas('approvals', function (Builder $q) use ($userId): void {
                 $q->where('user_id', $userId)
                     ->where('status', 'pending')

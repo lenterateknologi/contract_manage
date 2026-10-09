@@ -718,14 +718,14 @@ export const AppSidebar = memo(function AppSidebar() {
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Link
-                                        href="/contracts/activity"
+                                        href="/"
                                         className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/10 transition-all hover:scale-105 hover:bg-white/20"
                                     >
                                         <img src={appLogo} alt="Logo" className="size-9 object-contain brightness-0 invert" />
                                     </Link>
                                 </TooltipTrigger>
                                 <TooltipContent side="right" sideOffset={10} className="font-semibold">
-                                    Aktivitas Kontrak
+                                    Beranda
                                 </TooltipContent>
                             </Tooltip>
                         </div>

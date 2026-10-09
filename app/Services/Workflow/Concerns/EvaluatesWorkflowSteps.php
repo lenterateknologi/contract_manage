@@ -57,8 +57,15 @@ trait EvaluatesWorkflowSteps
             $metadata = $contract->metadata ?? [];
             $actual = $metadata[$key] ?? null;
 
-            if ($key === 'contract.has_tax' && $actual === null) {
-                $actual = $metadata['tax_required'] ?? null;
+            if ($key === 'contract.has_tax' || $key === 'tax_required' || $key === 'meta_tax_required') {
+                $rawTax = $metadata['contract.has_tax'] ?? ($metadata['tax_required'] ?? ($metadata['meta_tax_required'] ?? null));
+                if ($rawTax === 'Tidak' || $rawTax === 'tidak' || $rawTax === 'no' || $rawTax === '0' || $rawTax === 0 || $rawTax === false) {
+                    $actual = false;
+                } elseif ($rawTax === 'Ya' || $rawTax === 'ya' || $rawTax === 'yes' || $rawTax === '1' || $rawTax === 1 || $rawTax === true) {
+                    $actual = true;
+                } else {
+                    $actual = ! empty($rawTax);
+                }
             }
 
             $isActive = false;
@@ -128,8 +135,15 @@ trait EvaluatesWorkflowSteps
             }
 
             $actual = $metadata[$key] ?? null;
-            if ($key === 'contract.has_tax' && $actual === null) {
-                $actual = $metadata['tax_required'] ?? null;
+            if ($key === 'contract.has_tax' || $key === 'tax_required' || $key === 'meta_tax_required') {
+                $rawTax = $metadata['contract.has_tax'] ?? ($metadata['tax_required'] ?? ($metadata['meta_tax_required'] ?? null));
+                if ($rawTax === 'Tidak' || $rawTax === 'tidak' || $rawTax === 'no' || $rawTax === '0' || $rawTax === 0 || $rawTax === false) {
+                    $actual = false;
+                } elseif ($rawTax === 'Ya' || $rawTax === 'ya' || $rawTax === 'yes' || $rawTax === '1' || $rawTax === 1 || $rawTax === true) {
+                    $actual = true;
+                } else {
+                    $actual = ! empty($rawTax);
+                }
             }
 
             $isActive = false;

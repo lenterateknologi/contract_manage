@@ -3,6 +3,7 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
     AlertCircle,
     ArrowUpRight,
+    Briefcase,
     Calendar,
     Check,
     Clock,
@@ -53,12 +54,9 @@ import {
     CreatedAtCell,
     StatusAndStepCell,
 } from '@/features/Contracts/ContractList/ContractTableCells';
-import { ContractDetailView } from '@/features/Contracts/ContractDetail/ContractDetail';
 import CreateContractModal from '@/features/Contracts/components/modals/CreateContractModal';
 import { EditContractModal } from '@/features/Contracts/components/modals/EditContractModal';
-import PreviewModal from '@/features/Contracts/components/modals/PreviewModal';
 import { ContractContextMenu } from '@/features/Contracts/components/ContractContextMenu';
-import { ConfirmationModal } from '@/components/ui';
 import { contractApi } from '@/features/Contracts/utils';
 
 interface PagedData<T> {
@@ -72,7 +70,9 @@ interface PagedData<T> {
 }
 
 interface ActivityPageProps {
+    withDuty?: boolean;
     pendingContracts: PagedData<Contract>;
+    dutyContracts?: PagedData<Contract> | null;
     inProgressContracts: PagedData<Contract>;
     draftContracts: PagedData<Contract>;
     types: DBContractType[];
@@ -80,6 +80,7 @@ interface ActivityPageProps {
     counts?: Record<string, any>;
     activityCounts?: {
         pending?: number;
+        duty?: number;
         history?: number;
         in_progress?: number;
         draft?: number;
@@ -206,7 +207,9 @@ function SortableHeaderCell({
 }
 
 export function ActivityViewContent({
+    withDuty = false,
     pendingContracts,
+    dutyContracts,
     inProgressContracts,
     draftContracts,
     types = [],
@@ -232,16 +235,10 @@ export function ActivityViewContent({
     const { auth } = usePage<{ auth: { user: UserProfile | null } }>().props;
     const { showToast } = useToast();
 
-    const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
     const [createOpen, setCreateOpen] = useState(false);
     const [editOpen, setEditOpen] = useState(false);
     const [contractToEdit, setContractToEdit] = useState<Contract | null>(null);
     const [processing, setProcessing] = useState(false);
-    const [deleteOpen, setDeleteOpen] = useState(false);
-    const [previewOpen, setPreviewOpen] = useState(false);
-    const [previewTitle, setPreviewTitle] = useState('');
-    const [previewUrl, setPreviewUrl] = useState('');
-    const [previewHasFile, setPreviewHasFile] = useState(false);
     const [contextMenu, setContextMenu] = useState<{
         contract: Contract;
         position: { x: number; y: number };
@@ -258,6 +255,7 @@ export function ActivityViewContent({
 
     // Search state per table
     const [searchPending, setSearchPending] = useState(filters.search_pending || '');
+    const [searchDuty, setSearchDuty] = useState(filters.search_duty || '');
     const [searchProgress, setSearchProgress] = useState(filters.search_progress || '');
     const [searchDraft, setSearchDraft] = useState(filters.search_draft || '');
 
@@ -268,6 +266,7 @@ export function ActivityViewContent({
                 ...filters,
                 [key]: value,
                 ...(key === 'search_pending' ? { page_pending: 1 } : {}),
+                ...(key === 'search_duty' ? { page_duty: 1 } : {}),
                 ...(key === 'search_progress' ? { page_progress: 1 } : {}),
                 ...(key === 'search_draft' ? { page_draft: 1 } : {}),
             },
@@ -278,7 +277,7 @@ export function ActivityViewContent({
         );
     };
 
-    const handleSort = (tableKey: 'pending' | 'progress' | 'draft', columnKey: string) => {
+    const handleSort = (tableKey: 'pending' | 'duty' | 'progress' | 'draft', columnKey: string) => {
         const sortKey = `sort_${tableKey}`;
         const dirKey = `dir_${tableKey}`;
         const pageKey = `page_${tableKey}`;
@@ -317,7 +316,7 @@ export function ActivityViewContent({
     };
 
     const openDetail = (contract: Contract) => {
-        setSelectedContract(contract);
+        router.get(`/contracts/${contract.id}`);
     };
 
     const openEdit = (contract: Contract, e?: React.MouseEvent) => {
@@ -375,72 +374,9 @@ export function ActivityViewContent({
         }
     };
 
-    if (selectedContract) {
-        return (
-            <>
-                <Head title={`Detail - ${selectedContract.title || selectedContract.form_no || 'Pengajuan'}`} />
-                <div className="flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden bg-slate-100/60 dark:bg-zinc-950">
-                    <ContractDetailView
-                        contract={selectedContract}
-                        meId={auth?.user?.id}
-                        types={types as any}
-                        submissionTypes={submissionTypes}
-                        vendors={vendors}
-                        formTemplates={formTemplates}
-                        users={users}
-                        canUpdate={true}
-                        onClose={() => {
-                            setSelectedContract(null);
-                            router.reload();
-                        }}
-                        onUpdate={(updated) => {
-                            setSelectedContract((prev) => (prev ? { ...prev, ...updated } : updated));
-                        }}
-                        showToast={showToast}
-                        setDeleteOpen={setDeleteOpen}
-                        setPreviewTitle={setPreviewTitle}
-                        setPreviewUrl={setPreviewUrl}
-                        setPreviewHasFile={setPreviewHasFile}
-                        setPreviewOpen={setPreviewOpen}
-                        meUser={auth?.user}
-                    />
-                </div>
-                <ConfirmationModal
-                    open={deleteOpen}
-                    onClose={() => setDeleteOpen(false)}
-                    onConfirm={async () => {
-                        if (!selectedContract) return;
-                        setProcessing(true);
-                        try {
-                            await contractApi.delete(selectedContract.id);
-                            showToast('Pengajuan berhasil dihapus.', 'success');
-                            setDeleteOpen(false);
-                            setSelectedContract(null);
-                            router.reload();
-                        } catch {
-                            showToast('Gagal menghapus pengajuan.', 'danger');
-                        } finally {
-                            setProcessing(false);
-                        }
-                    }}
-                    title="Hapus Kontrak?"
-                    description="Seluruh data dokumen, riwayat, dan chat terkait kontrak ini akan dihapus secara permanen."
-                    processing={processing}
-                />
-                <PreviewModal
-                    open={previewOpen}
-                    onClose={() => setPreviewOpen(false)}
-                    title={previewTitle}
-                    url={previewUrl}
-                    hasFile={previewHasFile}
-                />
-            </>
-        );
-    }
-
     return (
         <>
-            <Head title="Aktivitas Pengajuan" />
+            <Head title={withDuty ? "Aktivitas Pengajuan Legal" : "Aktivitas Pengajuan"} />
 
             <div className="flex h-full max-h-full w-full min-h-0 flex-1 flex-col overflow-hidden bg-background">
                 <div className="custom-scrollbar h-full min-h-0 flex-1 overflow-y-auto p-3 md:p-4 space-y-3 w-full">
@@ -452,10 +388,12 @@ export function ActivityViewContent({
                             </div>
                             <div>
                                 <h1 className="text-xs font-bold text-text-main tracking-tight">
-                                    Aktivitas Pengajuan Saya
+                                    {withDuty ? 'Aktivitas Pengajuan (Legal)' : 'Aktivitas Pengajuan Saya'}
                                 </h1>
                                 <p className="text-[11px] text-text-desc">
-                                    Pantau dan kelola seluruh pengajuan Anda: tindakan persetujuan, progres aktif, dan draft.
+                                    {withDuty
+                                        ? 'Pantau dan kelola seluruh aktivitas pengajuan: persetujuan, penugasan PIC legal, progres aktif, dan draft.'
+                                        : 'Pantau dan kelola seluruh pengajuan Anda: tindakan persetujuan, progres aktif, dan draft.'}
                                 </p>
                             </div>
                         </div>
@@ -483,7 +421,12 @@ export function ActivityViewContent({
                     </div>
 
                     {/* Quick KPI Stats (Seragam & 4px Radius) */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                    <div className={cn(
+                        "grid gap-2.5",
+                        withDuty
+                            ? "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5"
+                            : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
+                    )}>
                         <Link
                             href="/contracts/pending?approval_status=pending"
                             className="group bg-surface-card hover:bg-surface-muted/30 border border-surface-border hover:border-primary/40 rounded-[4px] p-2.5 flex items-center justify-between transition-colors cursor-pointer"
@@ -506,6 +449,31 @@ export function ActivityViewContent({
                                 <Clock size={16} />
                             </div>
                         </Link>
+
+                        {withDuty && (
+                            <Link
+                                href="/contracts/duty"
+                                className="group bg-surface-card hover:bg-surface-muted/30 border border-surface-border hover:border-primary/40 rounded-[4px] p-2.5 flex items-center justify-between transition-colors cursor-pointer"
+                            >
+                                <div className="space-y-0.5">
+                                    <div className="flex items-center gap-1">
+                                        <span className="text-[10px] font-bold text-text-desc group-hover:text-primary uppercase tracking-wider transition-colors">
+                                            Tugas Saya (PIC)
+                                        </span>
+                                        <ArrowUpRight size={11} className="text-text-desc opacity-0 group-hover:opacity-100 group-hover:text-primary transition-all" />
+                                    </div>
+                                    <div className="text-lg font-black text-text-main">
+                                        {activityCounts?.duty ?? counts?.duty ?? dutyContracts?.total ?? 0}
+                                    </div>
+                                    <p className="text-[10px] text-text-desc">
+                                        Penugasan PIC legal
+                                    </p>
+                                </div>
+                                <div className="size-8 rounded-[4px] bg-surface-muted group-hover:bg-primary/10 group-hover:text-primary flex items-center justify-center text-text-desc transition-colors">
+                                    <Briefcase size={16} />
+                                </div>
+                            </Link>
+                        )}
 
                         <Link
                             href="/contracts/pending?approval_status=history"
@@ -694,42 +662,42 @@ export function ActivityViewContent({
                                         </tr>
                                     ) : (
                                         pendingContracts?.data?.map((c) => (
-                                            <tr
-                                                key={c.id}
-                                                onClick={() => openDetail(c)}
-                                                onContextMenu={(e) => handleRowContextMenu(c, e)}
-                                                className="group hover:bg-surface-muted/20 transition-colors cursor-pointer"
-                                            >
-                                                <td className="px-3 py-1.5">
-                                                    <ContractNoAndTitleCell c={c} types={types as any} />
-                                                </td>
-                                                <td className="px-3 py-1.5">
-                                                    <InitiatorCell c={c} />
-                                                </td>
-                                                <td className="px-3 py-1.5">
-                                                    <StatusAndStepCell c={c} />
-                                                </td>
-                                                <td className="px-3 py-1.5">
-                                                    <AssignedPicCell c={c} />
-                                                </td>
-                                                <td className="px-3 py-1.5">
-                                                    <CreatedAtCell c={c} />
-                                                </td>
-                                                <td className="w-[80px] min-w-[80px] max-w-[80px] px-3 py-1.5 text-center" onClick={(e) => e.stopPropagation()}>
-                                                    <div className="flex items-center justify-center">
-                                                        <Button
-                                                            variant="primary"
-                                                            size="sm"
-                                                            onClick={() => openDetail(c)}
-                                                            className="h-6 w-6 p-0 rounded-[4px] shadow-none cursor-pointer"
-                                                            title="Tindak Lanjuti"
-                                                        >
-                                                            <Eye size={12} />
-                                                        </Button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))
+                                             <tr
+                                                 key={c.id}
+                                                 onClick={() => openDetail(c)}
+                                                 onContextMenu={(e) => handleRowContextMenu(c, e)}
+                                                 className="group hover:bg-surface-muted/20 transition-colors cursor-pointer"
+                                             >
+                                                 <td className="px-3 py-1.5">
+                                                     <ContractNoAndTitleCell c={c} types={types as any} />
+                                                 </td>
+                                                 <td className="px-3 py-1.5">
+                                                     <InitiatorCell c={c} />
+                                                 </td>
+                                                 <td className="px-3 py-1.5">
+                                                     <StatusAndStepCell c={c} />
+                                                 </td>
+                                                 <td className="px-3 py-1.5">
+                                                     <AssignedPicCell c={c} />
+                                                 </td>
+                                                 <td className="px-3 py-1.5">
+                                                     <CreatedAtCell c={c} />
+                                                 </td>
+                                                 <td className="w-[80px] min-w-[80px] max-w-[80px] px-3 py-1.5 text-center" onClick={(e) => e.stopPropagation()}>
+                                                     <div className="flex items-center justify-center">
+                                                         <Button
+                                                             variant="primary"
+                                                             size="sm"
+                                                             onClick={() => openDetail(c)}
+                                                             className="h-6 w-6 p-0 rounded-[4px] shadow-none cursor-pointer"
+                                                             title="Tindak Lanjuti"
+                                                         >
+                                                             <Eye size={12} />
+                                                         </Button>
+                                                     </div>
+                                                 </td>
+                                             </tr>
+                                         ))
                                     )}
                                 </tbody>
                             </table>
@@ -743,7 +711,166 @@ export function ActivityViewContent({
                     </div>
 
                     {/* ========================================================================= */}
-                    {/* TABLE 2: SEDANG DIPROSES (IN PROGRESS) - TENGAH                            */}
+                    {/* TABLE 2: TUGAS SAYA (PENUGASAN PIC LEGAL) - HANYA ADMIN/LEGAL             */}
+                    {/* ========================================================================= */}
+                    {withDuty && (
+                        <div className="overflow-hidden border border-surface-border rounded-[4px] bg-surface-card">
+                            {/* Header */}
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-surface-border bg-surface-muted/30 px-3 py-2">
+                                <div className="flex items-center gap-2">
+                                    <div className="flex size-6 items-center justify-center rounded-[4px] bg-surface-muted text-text-desc">
+                                        <Briefcase size={13} />
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <h2 className="text-xs font-bold text-text-main">
+                                            Tugas Saya / Penugasan PIC
+                                        </h2>
+                                        <span className="rounded-[4px] bg-surface-muted px-1.5 py-0.2 text-[10px] font-extrabold text-text-main">
+                                            {dutyContracts?.total || 0}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Search bar & See More */}
+                                <div className="flex items-center gap-1.5 w-full sm:w-auto">
+                                    <div className="relative w-full sm:w-56">
+                                        <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-desc opacity-60" />
+                                        <input
+                                            type="text"
+                                            value={searchDuty}
+                                            onChange={(e) => setSearchDuty(e.target.value)}
+                                            onKeyDown={(e) => e.key === 'Enter' && handleSearchSubmit('search_duty', searchDuty)}
+                                            placeholder="Cari judul / no. form..."
+                                            className="h-7 w-full rounded-[4px] border border-surface-border bg-surface-base pl-7 pr-6 text-[11px] text-text-main placeholder:text-text-desc outline-none focus:border-primary"
+                                        />
+                                        {searchDuty && (
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setSearchDuty('');
+                                                    handleSearchSubmit('search_duty', '');
+                                                }}
+                                                className="absolute right-2 top-1/2 -translate-y-1/2 text-text-desc hover:text-text-main cursor-pointer"
+                                            >
+                                                <X size={11} />
+                                            </button>
+                                        )}
+                                    </div>
+                                    <Link
+                                        href="/contracts/duty"
+                                        className="inline-flex h-7 items-center justify-center gap-1 rounded-[4px] border border-surface-border bg-surface-base px-2 text-[11px] font-medium text-text-desc hover:border-primary hover:text-primary transition-colors shrink-0 shadow-none cursor-pointer"
+                                        title="Lihat semua tugas penugasan PIC"
+                                    >
+                                        <span>Lihat Semua</span>
+                                        <ArrowUpRight size={12} />
+                                    </Link>
+                                </div>
+                            </div>
+
+                            {/* Table */}
+                            <div className="overflow-x-auto custom-scrollbar">
+                                <table className="w-full border-collapse text-left text-[11px]">
+                                    <thead className="bg-primary dark:bg-zinc-800/90 text-white dark:text-zinc-200">
+                                        <tr className="border-b border-primary/20 dark:border-zinc-700/80">
+                                            <SortableHeaderCell
+                                                title="No. Dokumen & Judul"
+                                                columnKey="title"
+                                                currentSort={filters.sort_duty || 'updated_at'}
+                                                currentDir={filters.dir_duty || 'desc'}
+                                                onSort={(col) => handleSort('duty', col)}
+                                            />
+                                            <SortableHeaderCell
+                                                title="Requestor"
+                                                columnKey="requestor"
+                                                currentSort={filters.sort_duty || 'updated_at'}
+                                                currentDir={filters.dir_duty || 'desc'}
+                                                onSort={(col) => handleSort('duty', col)}
+                                            />
+                                            <SortableHeaderCell
+                                                title="Tahap & Status"
+                                                columnKey="status"
+                                                currentSort={filters.sort_duty || 'updated_at'}
+                                                currentDir={filters.dir_duty || 'desc'}
+                                                onSort={(col) => handleSort('duty', col)}
+                                            />
+                                            <SortableHeaderCell
+                                                title="Tanggal Masuk"
+                                                columnKey="updated_at"
+                                                currentSort={filters.sort_duty || 'updated_at'}
+                                                currentDir={filters.dir_duty || 'desc'}
+                                                onSort={(col) => handleSort('duty', col)}
+                                            />
+                                            <SortableHeaderCell
+                                                title="Aksi"
+                                                align="center"
+                                                className="w-[80px] min-w-[80px] max-w-[80px] text-center"
+                                            />
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-surface-border">
+                                        {!dutyContracts || dutyContracts?.data?.length === 0 ? (
+                                            <tr>
+                                                <td colSpan={5} className="py-6 text-center text-text-desc">
+                                                    <div className="flex flex-col items-center justify-center gap-1">
+                                                        <Briefcase size={16} className="text-text-desc opacity-50" />
+                                                        <span className="text-[11px] font-medium text-text-desc">
+                                                            Tidak ada tugas penugasan PIC yang sedang aktif
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ) : (
+                                            dutyContracts?.data?.map((c) => (
+                                                <tr
+                                                    key={c.id}
+                                                    onClick={() => openDetail(c)}
+                                                    onContextMenu={(e) => handleRowContextMenu(c, e)}
+                                                    className="group hover:bg-surface-muted/20 transition-colors cursor-pointer"
+                                                >
+                                                    <td className="px-3 py-1.5">
+                                                         <ContractNoAndTitleCell c={c} types={types as any} />
+                                                     </td>
+                                                     <td className="px-3 py-1.5">
+                                                         <InitiatorCell c={c} />
+                                                     </td>
+                                                     <td className="px-3 py-1.5">
+                                                         <StatusAndStepCell c={c} />
+                                                     </td>
+                                                     <td className="px-3 py-1.5">
+                                                         <CreatedAtCell c={c} />
+                                                     </td>
+                                                     <td className="w-[80px] min-w-[80px] max-w-[80px] px-3 py-1.5 text-center" onClick={(e) => e.stopPropagation()}>
+                                                         <div className="flex items-center justify-center">
+                                                             <Button
+                                                                 variant="primary"
+                                                                 size="sm"
+                                                                 onClick={() => openDetail(c)}
+                                                                 className="h-6 w-6 p-0 rounded-[4px] shadow-none cursor-pointer"
+                                                                 title="Buka Dokumen"
+                                                             >
+                                                                 <Eye size={12} />
+                                                             </Button>
+                                                         </div>
+                                                     </td>
+                                                 </tr>
+                                             ))
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {dutyContracts && (
+                                <PaginationBar
+                                    paged={dutyContracts}
+                                    pageParam="page_duty"
+                                    onPageChange={handlePageChange}
+                                />
+                            )}
+                        </div>
+                    )}
+
+                    {/* ========================================================================= */}
+                    {/* TABLE 3: SEDANG DIPROSES (IN PROGRESS) - TENGAH                            */}
                     {/* ========================================================================= */}
                     <div className="overflow-hidden border border-surface-border rounded-[4px] bg-surface-card">
                         {/* Header */}

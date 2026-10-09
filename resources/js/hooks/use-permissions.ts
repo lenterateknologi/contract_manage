@@ -6,7 +6,8 @@ export function usePermissions(moduleCodeOrRoute?: string) {
     const pageUrl = typeof window !== 'undefined' ? window.location.pathname : '';
     const lookupKey = moduleCodeOrRoute || pageUrl;
     const permissions = auth?.permissions || {};
-    const isAdmin = Boolean((auth?.user as any)?.is_admin);
+    const userRole = (auth?.user as any)?.role || (auth?.user as any)?.role_name;
+    const isAdmin = Boolean((auth?.user as any)?.is_admin || ['Admin', 'Super Admin'].includes(userRole));
 
     const modulePerms = (lookupKey ? permissions[lookupKey] : null) || {
         read: false,

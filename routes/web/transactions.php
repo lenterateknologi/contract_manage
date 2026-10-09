@@ -29,9 +29,11 @@ Route::controller(ContractController::class)->group(function () {
         Route::get('/masterdata', 'contractsView')->defaults('view', 'dashboard')->defaults('tab', 'master_data');
     });
 
+    Route::get('/admin/contracts/activity', 'activityView')->defaults('withDuty', true)->name('admin.contracts.activity');
+
     Route::prefix('contracts')->group(function () {
         Route::get('/', 'contractsView')->defaults('view', 'contracts')->name('contracts');
-        Route::get('/activity', 'activityView')->name('contracts.activity');
+        Route::get('/activity', 'activityView')->defaults('withDuty', false)->name('contracts.activity');
         Route::get('/mine', 'contractsView')->defaults('view', 'mine')->name('contracts.mine');
         Route::get('/duty', 'contractsView')->defaults('view', 'duty')->name('contracts.duty');
         Route::get('/organization', 'contractsView')->defaults('view', 'organization')->name('contracts.organization');

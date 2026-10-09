@@ -25,7 +25,7 @@ class AdminContractWorkflowController extends Controller
     public function override(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
-        $isAdmin = $user && ($user->role === 'Super Admin' || $user->role === 'Admin' || (bool) $user->is_admin);
+        $isAdmin = $user && ($user->isAdmin() || $user->isSuperAdmin() || in_array($user->role, ['Admin', 'Super Admin']) || in_array($user->role_name, ['Admin', 'Super Admin']) || (bool) $user->is_admin);
         if (! $isAdmin) {
             return $this->errorResponse('Hanya Administrator yang memiliki akses untuk mengubah alur kerja kontrak.', 403);
         }

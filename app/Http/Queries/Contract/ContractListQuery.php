@@ -96,7 +96,7 @@ class ContractListQuery
             'pending' => $this->applyPendingView($query, $request),
             'expiry' => $this->applyExpiryView($query, $request),
             'archived' => $query->where(fn (Builder $q) => $q->whereRaw('UPPER(status) = ?', ['ARCHIVED'])->orWhereNotNull('closed_at')),
-            'in_progress' => $query->whereIn('status', ['in_review', 'revision', 'pending', 'locked'])->whereNull('closed_at'),
+            'in_progress' => $query->whereNotIn(DB::raw('LOWER(status)'), ['draft', 'approved', 'finalisasi', 'rejected', 'cancelled', 'archived'])->whereNull('closed_at'),
             'all' => $query->whereRaw('UPPER(status) != ?', ['DRAFT']),
             default => $this->applyContractsView($query, $request),
         };
@@ -206,7 +206,7 @@ class ContractListQuery
                 $query->where(fn (Builder $q) => $q->whereRaw('UPPER(status) = ?', ['ARCHIVED'])->orWhereNotNull('closed_at'));
                 break;
             case 'in_progress':
-                $query->whereIn('status', ['in_review', 'revision', 'pending', 'locked'])->whereNull('closed_at');
+                $query->whereNotIn(DB::raw('LOWER(status)'), ['draft', 'approved', 'finalisasi', 'rejected', 'cancelled', 'archived'])->whereNull('closed_at');
                 break;
             default:
                 $hasStatusFilter = $request->filled('status') || $request->filled('statuses');

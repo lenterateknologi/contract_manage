@@ -286,6 +286,8 @@ class MasterConfigController extends Controller
             }
         }
 
+        Cache::flush();
+
         return back()->with('success', 'Navigation and permissions berhasil diperbarui.');
     }
 

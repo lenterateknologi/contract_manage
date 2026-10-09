@@ -1005,6 +1005,7 @@ export const ContractDetailView = ({
                                                 meId={meId}
                                                 onApprove={(note, file) => handleApprove(note, file)}
                                                 showToast={showToast}
+                                                onOpenAdminWorkflowModal={() => setAdminWorkflowModalOpen(true)}
                                             />
                                         )}
 

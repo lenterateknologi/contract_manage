@@ -4,6 +4,7 @@ import { DateRangePicker } from '@/components/ui/inputs/DateRangePicker';
 import { PageTable } from '@/components/ui/navigation/PageTable';
 import { DataTable } from '@/components/ui/tables/DataTable';
 import { formatDate } from '@/lib/utils';
+import { Link } from '@inertiajs/react';
 import { BarChart3, FileSpreadsheet, Loader2 } from 'lucide-react';
 import React, { useMemo } from 'react';
 import { useAnalyticsReport } from '../../hooks/useAnalyticsReport';
@@ -40,13 +41,13 @@ export function AnalyticsView() {
                 label: 'Pembuat (Pengaju)',
                 key: 'creator_ids',
                 type: 'searchable' as const,
-                options: data?.users.map((u) => ({ label: u.name, value: u.id })) || [],
+                options: data?.users?.map((u) => ({ label: u.name, value: u.id })) || [],
             },
             {
                 label: 'Pihak Terkait (Person)',
                 key: 'involved_ids',
                 type: 'searchable' as const,
-                options: data?.users.map((u) => ({ label: u.name, value: u.id })) || [],
+                options: data?.users?.map((u) => ({ label: u.name, value: u.id })) || [],
             },
             {
                 label: 'Status Pengajuan',
@@ -73,16 +74,25 @@ export function AnalyticsView() {
             header: 'No. Form / Kontrak',
             accessorKey: 'form_no',
             cell: (row: any) => (
-                <span className="text-primary font-mono text-xs font-bold whitespace-nowrap">{row.form_no || row.contract_no || '—'}</span>
+                <Link
+                    href={`/contracts/${row.id}`}
+                    className="text-primary hover:underline font-mono text-xs font-bold whitespace-nowrap"
+                >
+                    {row.form_no || row.contract_no || '—'}
+                </Link>
             ),
         },
         {
             header: 'Judul Pengajuan / Kontrak',
             accessorKey: 'title',
             cell: (row: any) => (
-                <span className="text-text-main block max-w-[280px] truncate text-xs font-medium" title={row.title}>
+                <Link
+                    href={`/contracts/${row.id}`}
+                    className="text-text-main block max-w-[280px] truncate text-xs font-medium hover:text-primary hover:underline"
+                    title={row.title}
+                >
                     {row.title}
-                </span>
+                </Link>
             ),
         },
         {
@@ -169,7 +179,7 @@ export function AnalyticsView() {
                 onPerPageChange: () => {},
             }}
         >
-            <DataTable columns={columns} data={data?.recentContracts || []} loading={loading} borderless={true} />
+            <DataTable columns={columns} data={data?.contracts?.data || []} loading={loading} borderless={true} />
         </PageTable>
     );
 }

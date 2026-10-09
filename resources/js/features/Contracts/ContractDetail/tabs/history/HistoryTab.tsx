@@ -10,6 +10,7 @@ interface HistoryTabProps {
     meId?: string;
     onApprove?: (note?: string, file?: File) => void;
     showToast?: (type: string, message: string) => void;
+    onOpenAdminWorkflowModal?: () => void;
 }
 
 export function HistoryTab({
@@ -18,6 +19,7 @@ export function HistoryTab({
     meId,
     onApprove,
     showToast,
+    onOpenAdminWorkflowModal,
 }: HistoryTabProps) {
     const activeSub = ['timeline', 'related_workflows', 'audit'].includes(historySubTab)
         ? historySubTab
@@ -33,6 +35,7 @@ export function HistoryTab({
                     submittedAt={contract.submitted_at ?? undefined}
                     meId={meId}
                     onApprove={onApprove ? (note, file) => onApprove(note, file) : undefined}
+                    onOpenAdminWorkflowModal={onOpenAdminWorkflowModal}
                 />
             )}
             {activeSub === 'related_workflows' && (
