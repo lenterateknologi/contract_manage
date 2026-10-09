@@ -121,8 +121,9 @@ class ContractFilterScopeService
     }
 
     /**
-     * Scope field tipe "array" (division_id, department_id).
-     * Perbedaan: jika ada di request tapi kosong setelah intersect → kosongkan (bukan pakai whitelist penuh).
+     * Scope field tipe "array" (division_id, department_id, contract_type_id, category).
+     * Jika hasil intersect kosong → pakai whitelist penuh. Array kosong tidak boleh
+     * diteruskan karena filter di Query menganggap kosong = tanpa filter (bocor).
      */
     private function scopeArrayField(Request $request, string $field, ?array $whitelist): void
     {
@@ -130,14 +131,13 @@ class ContractFilterScopeService
             return;
         }
 
-        if ($request->has($field)) {
-            $req = array_filter((array) $request->$field, fn ($v) => ! empty($v) && $v !== 'null');
-            $allowed = array_values(array_intersect($req, $whitelist));
-            $request->merge([$field => $allowed]);
-        } else {
-            // Tidak ada di request → default ke seluruh whitelist
-            $request->merge([$field => $whitelist]);
-        }
+        $raw = $request->input($field);
+        $req = $request->filled($field)
+            ? array_filter(array_map('trim', is_array($raw) ? $raw : explode(',', (string) $raw)), fn ($v) => ! empty($v) && $v !== 'null')
+            : [];
+        $allowed = array_values(array_intersect($req, $whitelist));
+
+        $request->merge([$field => empty($allowed) ? array_values($whitelist) : $allowed]);
     }
 
     /**

@@ -18,14 +18,14 @@ import {
     User,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { CartesianGrid, Cell, Line, LineChart, Pie, PieChart, Tooltip as RechartsTooltip, ResponsiveContainer, XAxis, YAxis } from 'recharts';
+import { CartesianGrid, Line, LineChart, Tooltip as RechartsTooltip, ResponsiveContainer, XAxis, YAxis } from 'recharts';
 
 interface OverviewTabProps {
     data: any;
     onNavigate: (view: string, params?: any) => void;
     meUser?: any;
     onCreateContract?: () => void;
-    scope?: 'all' | 'contract' | 'non_contract' | 'nda';
+    scope?: string;
 }
 
 export function OverviewTab({ data, onNavigate, meUser, onCreateContract, scope = 'all' }: OverviewTabProps) {
@@ -38,26 +38,40 @@ export function OverviewTab({ data, onNavigate, meUser, onCreateContract, scope 
         setIsMounted(true);
     }, []);
 
-    const parentTab = scope === 'contract' ? 'kontrak' : scope === 'non_contract' ? 'non_kontrak' : scope === 'nda' ? 'nda' : undefined;
-    const scopeLabel = scope === 'contract' ? 'Kontrak' : scope === 'non_contract' ? 'Non Kontrak' : scope === 'nda' ? 'NDA' : 'Dokumen';
-    const scopeSubtitle =
-        scope === 'contract'
-            ? 'Ringkasan operasional dan prioritas tugas dokumen Kontrak'
-            : scope === 'non_contract'
-              ? 'Ringkasan operasional dan prioritas tugas dokumen Non Kontrak'
-              : scope === 'nda'
-                ? 'Ringkasan operasional dan prioritas tugas dokumen NDA'
-                : 'Ringkasan operasional dan prioritas tugas dokumen Anda';
+    const currentScopeData = useMemo(() => {
+        if (!scope || scope === 'all') return null;
+
+        // 1. Direct match by key (e.g. data['contract'], data['contractData'], etc.)
+        if (data?.[scope]) return data[scope];
+        const camelKey = scope.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase()) + 'Data';
+        if (data?.[camelKey]) return data[camelKey];
+        if (data?.[`${scope}Data`]) return data[`${scope}Data`];
+        if (data?.scopedCategories?.[scope]) return data.scopedCategories[scope];
+
+        // 2. Search within scopedCategories by typeName or typeId
+        if (data?.scopedCategories && typeof data.scopedCategories === 'object') {
+            for (const key of Object.keys(data.scopedCategories)) {
+                const item = data.scopedCategories[key];
+                if (item?.typeName?.toLowerCase() === scope.toLowerCase() || item?.typeId === scope) {
+                    return item;
+                }
+            }
+        }
+
+        return null;
+    }, [data, scope]);
+
+    const isScoped = Boolean(scope && scope !== 'all' && currentScopeData);
+    const parentTab = isScoped ? (currentScopeData?.typeSlug || scope) : undefined;
+    const scopeLabel = isScoped
+        ? (currentScopeData?.typeName || scope.replace(/[_-]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()))
+        : 'Dokumen';
+    const scopeSubtitle = isScoped
+        ? `Ringkasan operasional dan prioritas tugas dokumen ${scopeLabel}`
+        : 'Ringkasan operasional dan prioritas tugas dokumen Anda';
 
     const m = useMemo(() => {
-        const raw =
-            scope === 'contract'
-                ? data?.contractData?.summary
-                : scope === 'non_contract'
-                  ? data?.nonContractData?.summary
-                  : scope === 'nda'
-                    ? data?.ndaData?.summary
-                    : data?.summary;
+        const raw = isScoped ? currentScopeData?.summary : data?.summary;
         return (
             raw || {
                 total: 0,
@@ -70,28 +84,22 @@ export function OverviewTab({ data, onNavigate, meUser, onCreateContract, scope 
                 pending_for_me: 0,
             }
         );
-    }, [data, scope]);
+    }, [isScoped, currentScopeData, data]);
 
     const overviewDailyTrend = useMemo(() => {
-        if (scope === 'contract' && data?.contractData?.dailyTrend) return data.contractData.dailyTrend;
-        if (scope === 'non_contract' && data?.nonContractData?.dailyTrend) return data.nonContractData.dailyTrend;
-        if (scope === 'nda' && data?.ndaData?.dailyTrend) return data.ndaData.dailyTrend;
+        if (isScoped && currentScopeData?.dailyTrend) return currentScopeData.dailyTrend;
         return data?.overviewDailyTrend || [];
-    }, [data, scope]);
+    }, [isScoped, currentScopeData, data]);
 
     const pendingApprovalsList = useMemo(() => {
-        if (scope === 'contract' && data?.contractData?.pendingApprovalsList) return data.contractData.pendingApprovalsList;
-        if (scope === 'non_contract' && data?.nonContractData?.pendingApprovalsList) return data.nonContractData.pendingApprovalsList;
-        if (scope === 'nda' && data?.ndaData?.pendingApprovalsList) return data.ndaData.pendingApprovalsList;
+        if (isScoped && currentScopeData?.pendingApprovalsList) return currentScopeData.pendingApprovalsList;
         return data?.pendingApprovalsList || [];
-    }, [data, scope]);
+    }, [isScoped, currentScopeData, data]);
 
     const upcomingRenewals = useMemo(() => {
-        if (scope === 'contract' && data?.contractData?.upcomingRenewals) return data.contractData.upcomingRenewals;
-        if (scope === 'non_contract' && data?.nonContractData?.upcomingRenewals) return data.nonContractData.upcomingRenewals;
-        if (scope === 'nda' && data?.ndaData?.upcomingRenewals) return data.ndaData.upcomingRenewals;
+        if (isScoped && currentScopeData?.upcomingRenewals) return currentScopeData.upcomingRenewals;
         return data?.upcomingRenewals || [];
-    }, [data, scope]);
+    }, [isScoped, currentScopeData, data]);
 
     const filteredDailyTrend = useMemo(() => {
         if (!overviewDailyTrend || overviewDailyTrend.length === 0) return [];
@@ -161,34 +169,20 @@ export function OverviewTab({ data, onNavigate, meUser, onCreateContract, scope 
     ];
 
     const categoriesList = useMemo(() => {
-        if (scope === 'contract' && data?.contractData?.categoriesList) return data.contractData.categoriesList;
-        if (scope === 'non_contract' && data?.nonContractData?.categoriesList) return data.nonContractData.categoriesList;
-        if (scope === 'nda' && data?.ndaData?.categoriesList) return data.ndaData.categoriesList;
-        return ['Kontrak', 'Non Kontrak', 'NDA'];
-    }, [data, scope]);
-
-    const distributionItems = useMemo(() => {
-        if (scope === 'contract' && data?.contractData?.distribution) {
-            return data.contractData.distribution;
-        }
-        if (scope === 'non_contract' && data?.nonContractData?.distribution) {
-            return data.nonContractData.distribution;
-        }
-        if (scope === 'nda' && data?.ndaData?.distribution) {
-            return data.ndaData.distribution;
+        if (isScoped && currentScopeData?.categoriesList && Array.isArray(currentScopeData.categoriesList)) {
+            return currentScopeData.categoriesList;
         }
 
-        const dist = data?.overviewCategoryDistribution || {};
-        return [
-            { name: 'Kontrak', count: dist['Kontrak']?.count ?? 0, type_id: dist['Kontrak']?.type_id ?? null },
-            { name: 'Non Kontrak', count: dist['Non Kontrak']?.count ?? 0, type_id: dist['Non Kontrak']?.type_id ?? null },
-            { name: 'NDA', count: dist['NDA']?.count ?? 0, type_id: dist['NDA']?.type_id ?? null },
-        ];
-    }, [data, scope]);
+        if (Array.isArray(data?.categoriesList) && data.categoriesList.length > 0) {
+            return data.categoriesList;
+        }
 
-    const totalCategoryCount = useMemo(() => {
-        return distributionItems.reduce((acc: number, curr: any) => acc + (curr.count || 0), 0);
-    }, [distributionItems]);
+        if (data?.overviewCategoryDistribution) {
+            return Object.keys(data.overviewCategoryDistribution);
+        }
+
+        return [];
+    }, [isScoped, currentScopeData, data]);
 
     const handleResetDateFilter = () => {
         setDatePreset('7d');
@@ -382,285 +376,7 @@ export function OverviewTab({ data, onNavigate, meUser, onCreateContract, scope 
                 })}
             </div>
 
-            {/* 3. Daily Trend Line Chart (65%) & Category Distribution (35%) */}
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-10">
-                {/* Line Chart Card (65%) */}
-                <Card className="border-surface-border bg-surface-base flex flex-col justify-between rounded-lg shadow-none lg:col-span-7">
-                    <CardHeader className="border-surface-border flex flex-row flex-wrap items-center justify-between gap-3 space-y-0 border-b p-4 pb-3">
-                        <div className="min-w-[200px] flex-1">
-                            <CardTitle className="text-text-main text-xs font-bold tracking-wider uppercase">
-                                Tren Pembuatan {scope === 'all' ? 'Dokumen' : scopeLabel}
-                            </CardTitle>
-                            <p className="text-text-soft text-[10px]">
-                                Volume pembuatan {scopeLabel.toLowerCase()} per kategori dalam rentang waktu terpilih
-                            </p>
-                        </div>
-
-                        {/* Filter Presets & Custom Date Selector */}
-                        <div className="flex flex-wrap items-center gap-2">
-                            <div className="border-surface-border bg-surface-muted/50 flex items-center gap-1 rounded-md border p-0.5">
-                                {[
-                                    { id: '7d', label: '7 HARI' },
-                                    { id: '14d', label: '14 HARI' },
-                                    { id: 'this_month', label: 'BULAN INI' },
-                                    { id: 'last_month', label: 'BULAN LALU' },
-                                    { id: 'custom', label: 'CUSTOM' },
-                                ].map((tab) => (
-                                    <button
-                                        key={tab.id}
-                                        type="button"
-                                        onClick={() => setDatePreset(tab.id as any)}
-                                        className={cn(
-                                            'cursor-pointer rounded px-2 py-1 text-[9.5px] font-bold tracking-wider uppercase shadow-none transition-all',
-                                            datePreset === tab.id
-                                                ? 'bg-surface-base text-text-main border-surface-border border font-extrabold shadow-none'
-                                                : 'text-text-soft hover:text-text-main',
-                                        )}
-                                    >
-                                        {tab.label}
-                                    </button>
-                                ))}
-                            </div>
-
-                            {datePreset === 'custom' && (
-                                <div className="animate-in fade-in flex items-center gap-1.5 duration-200">
-                                    <input
-                                        type="date"
-                                        value={startDate}
-                                        onChange={(e) => setStartDate(e.target.value)}
-                                        className="border-surface-border bg-surface-base text-text-main focus:border-primary h-7 rounded-md border px-2 text-[10px] font-medium shadow-none focus:outline-none"
-                                    />
-                                    <span className="text-text-soft text-[10px]">-</span>
-                                    <input
-                                        type="date"
-                                        value={endDate}
-                                        onChange={(e) => setEndDate(e.target.value)}
-                                        className="border-surface-border bg-surface-base text-text-main focus:border-primary h-7 rounded-md border px-2 text-[10px] font-medium shadow-none focus:outline-none"
-                                    />
-                                    {(startDate || endDate) && (
-                                        <button
-                                            type="button"
-                                            onClick={handleResetDateFilter}
-                                            className="border-surface-border bg-surface-base text-text-soft flex h-7 w-7 cursor-pointer items-center justify-center rounded-md border shadow-none transition-colors hover:text-rose-500"
-                                            title="Reset Filter Tanggal"
-                                        >
-                                            <RotateCcw size={11} />
-                                        </button>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-3">
-                        <div className="h-[340px] w-full">
-                            {!isMounted || filteredDailyTrend.length === 0 ? (
-                                <div className="text-text-soft flex h-full flex-col items-center justify-center text-center text-xs font-semibold uppercase">
-                                    Tidak ada data tren harian untuk rentang tanggal ini
-                                </div>
-                            ) : (
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <LineChart data={filteredDailyTrend} margin={{ top: 15, right: 15, left: -25, bottom: 5 }}>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(150,150,150,0.15)" />
-                                        <XAxis dataKey="date" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} />
-                                        <YAxis stroke="#888888" fontSize={10} tickLine={false} axisLine={false} allowDecimals={false} />
-                                        <RechartsTooltip
-                                            content={({ active, payload }: any) => {
-                                                if (active && payload && payload.length) {
-                                                    const item = payload[0].payload;
-                                                    return (
-                                                        <div className="border-surface-border bg-surface-base min-w-[180px] space-y-1.5 rounded-md border p-2.5 text-xs shadow-none">
-                                                            <p className="text-text-main border-surface-border border-b pb-1 font-bold">
-                                                                {item.full_date || item.date}
-                                                            </p>
-                                                            <div className="space-y-1">
-                                                                {payload.map((p: any, idx: number) => (
-                                                                    <div key={idx} className="flex items-center justify-between gap-3">
-                                                                        <span className="text-text-soft flex items-center gap-1.5 text-[10.5px]">
-                                                                            <span
-                                                                                className="h-2 w-2 rounded-full"
-                                                                                style={{ backgroundColor: p.color }}
-                                                                            />
-                                                                            {p.name}
-                                                                        </span>
-                                                                        <span className="text-text-main text-[10.5px] font-bold">
-                                                                            {p.value} Dokumen
-                                                                        </span>
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                }
-                                                return null;
-                                            }}
-                                        />
-                                        {categoriesList.map((category: string, idx: number) => {
-                                            const strokeColor = CHART_COLORS[idx % CHART_COLORS.length];
-                                            return (
-                                                <Line
-                                                    key={category}
-                                                    type="monotone"
-                                                    dataKey={category}
-                                                    name={category}
-                                                    stroke={strokeColor}
-                                                    strokeWidth={2}
-                                                    dot={false}
-                                                    activeDot={{ r: 4, stroke: '#ffffff', strokeWidth: 1.5 }}
-                                                />
-                                            );
-                                        })}
-                                    </LineChart>
-                                </ResponsiveContainer>
-                            )}
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* Donut Chart & Category Breakdown (35%) */}
-                <Card className="border-surface-border bg-surface-base flex flex-col justify-between rounded-lg shadow-none lg:col-span-3">
-                    <div>
-                        <CardHeader className="border-surface-border space-y-0 border-b p-4 pb-3">
-                            <CardTitle className="text-text-main text-xs font-bold tracking-wider uppercase">
-                                {scope === 'all' ? 'Ringkasan Distribusi' : `Distribusi Tipe ${scopeLabel}`}
-                            </CardTitle>
-                            <p className="text-text-soft text-[10px]">Proporsi seluruh {scopeLabel.toLowerCase()} berdasarkan kategori</p>
-                        </CardHeader>
-                        <CardContent className="space-y-3 p-4">
-                            {/* Centered Donut Chart */}
-                            <div className="relative flex h-36 w-full items-center justify-center">
-                                {isMounted && (
-                                    <>
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            {(() => {
-                                                const pieData = distributionItems
-                                                    .map((item: any, idx: number) => ({
-                                                        name: item.name,
-                                                        value: item.count || 0,
-                                                        color: CHART_COLORS[idx % CHART_COLORS.length],
-                                                    }))
-                                                    .filter((item: any) => item.value > 0);
-
-                                                return (
-                                                    <PieChart>
-                                                        {pieData.length === 0 ? (
-                                                            <Pie
-                                                                data={[{ name: 'Belum ada dokumen', value: 1 }]}
-                                                                cx="50%"
-                                                                cy="50%"
-                                                                innerRadius={38}
-                                                                outerRadius={58}
-                                                                dataKey="value"
-                                                                stroke="none"
-                                                            >
-                                                                <Cell fill="rgba(150, 150, 150, 0.15)" />
-                                                            </Pie>
-                                                        ) : (
-                                                            <Pie
-                                                                data={pieData}
-                                                                cx="50%"
-                                                                cy="50%"
-                                                                innerRadius={38}
-                                                                outerRadius={58}
-                                                                paddingAngle={3}
-                                                                dataKey="value"
-                                                            >
-                                                                {pieData.map((entry: any, idx: number) => (
-                                                                    <Cell key={`cell-${idx}`} fill={entry.color} />
-                                                                ))}
-                                                            </Pie>
-                                                        )}
-                                                        {pieData.length > 0 && (
-                                                            <RechartsTooltip
-                                                                content={({ active, payload }: any) => {
-                                                                    if (active && payload && payload.length) {
-                                                                        const item = payload[0];
-                                                                        return (
-                                                                            <div className="border-surface-border bg-surface-base rounded-md border p-2 text-xs shadow-none">
-                                                                                <p className="text-text-main text-[10px] font-bold">{item.name}</p>
-                                                                                <p className="text-primary mt-0.5 text-[11px] font-extrabold">
-                                                                                    {item.value} Dokumen
-                                                                                </p>
-                                                                            </div>
-                                                                        );
-                                                                    }
-                                                                    return null;
-                                                                }}
-                                                            />
-                                                        )}
-                                                    </PieChart>
-                                                );
-                                            })()}
-                                        </ResponsiveContainer>
-
-                                        {/* Center count overlay */}
-                                        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-                                            <span className="text-text-main text-sm leading-none font-black">{totalCategoryCount}</span>
-                                            <span className="text-text-soft mt-0.5 text-[8px] font-extrabold tracking-widest uppercase">Total</span>
-                                        </div>
-                                    </>
-                                )}
-                            </div>
-
-                            {/* Category Items List */}
-                            <div className="border-surface-border custom-scrollbar max-h-[190px] space-y-1.5 overflow-y-auto border-t pt-2">
-                                {distributionItems.map((item: any, idx: number) => {
-                                    const categoryIcons: Record<string, any> = {
-                                        Kontrak: FileText,
-                                        'Non Kontrak': Layers,
-                                        NDA: Shield,
-                                    };
-                                    const CategoryIcon = categoryIcons[item.name] || FileText;
-                                    const val = item.count || 0;
-                                    const total = totalCategoryCount > 0 ? totalCategoryCount : 1;
-                                    const pct = Math.round((val / total) * 100);
-
-                                    const handleCategoryClick = () => {
-                                        if (item.type_id) {
-                                            onNavigate('contracts', {
-                                                contract_type_id: item.type_id,
-                                                ...(parentTab ? { parent_tab: parentTab } : {}),
-                                            });
-                                        } else if (parentTab) {
-                                            onNavigate('contracts', { parent_tab: parentTab });
-                                        } else {
-                                            onNavigate('contracts');
-                                        }
-                                    };
-
-                                    return (
-                                        <div
-                                            key={item.name + idx}
-                                            onClick={handleCategoryClick}
-                                            className="border-surface-border bg-surface-base hover:bg-surface-muted hover:border-primary flex cursor-pointer items-center justify-between gap-2 rounded-md border p-1.5 px-2 transition-all active:scale-[0.99]"
-                                            title={`Klik untuk membuka daftar ${item.name}`}
-                                        >
-                                            <div className="flex min-w-0 items-center gap-2">
-                                                <ChipIcon
-                                                    icon={CategoryIcon}
-                                                    size="xs"
-                                                    shape="rounded"
-                                                    style={{ backgroundColor: CHART_COLORS[idx % CHART_COLORS.length] }}
-                                                    className="border-transparent"
-                                                />
-                                                <span className="text-text-main truncate text-[10px] font-semibold">{item.name}</span>
-                                            </div>
-                                            <div className="flex shrink-0 items-center gap-1.5">
-                                                <span className="text-text-soft text-[9px]">{pct}%</span>
-                                                <span className="border-surface-border bg-surface-base text-text-main rounded border px-1.5 py-0.5 text-[9px] font-bold">
-                                                    {val}
-                                                </span>
-                                                <ChevronRight size={10} className="text-text-soft opacity-50" />
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </CardContent>
-                    </div>
-                </Card>
-            </div>
-
-            {/* 4. Action Center Grid: Priority Pending Approvals (50%) & Expiring Contracts (50%) */}
+            {/* 3. Action Center Grid: Priority Pending Approvals (50%) & Expiring Contracts (50%) */}
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                 {/* Column 1: Priority Pending Approvals */}
                 <Card className="border-surface-border bg-surface-base flex flex-col justify-between rounded-lg shadow-none">
@@ -684,10 +400,10 @@ export function OverviewTab({ data, onNavigate, meUser, onCreateContract, scope 
                         </CardHeader>
                         <CardContent className="space-y-2 p-4">
                             {pendingApprovalsList.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center py-7 text-center">
-                                    <ChipIcon icon={CheckCircle2} size="lg" bg="bg-emerald-600" shape="circle" className="mb-2" />
+                                <div className="flex min-h-[340px] flex-col items-center justify-center py-16 text-center">
+                                    <ChipIcon icon={CheckCircle2} size="lg" bg="bg-emerald-600" shape="circle" className="mb-3" />
                                     <p className="text-text-main text-xs font-bold">Tidak Ada Persetujuan Tertunda</p>
-                                    <p className="text-text-soft mt-0.5 max-w-xs text-[10px]">
+                                    <p className="text-text-soft mt-1 max-w-xs text-[10.5px]">
                                         Seluruh pengajuan yang ditujukan ke Anda telah diproses.
                                     </p>
                                 </div>
@@ -772,10 +488,10 @@ export function OverviewTab({ data, onNavigate, meUser, onCreateContract, scope 
                         </CardHeader>
                         <CardContent className="space-y-2 p-4">
                             {upcomingRenewals.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center py-7 text-center">
-                                    <ChipIcon icon={Calendar} size="lg" bg="bg-slate-600" shape="circle" className="mb-2" />
+                                <div className="flex min-h-[340px] flex-col items-center justify-center py-16 text-center">
+                                    <ChipIcon icon={Calendar} size="lg" bg="bg-slate-600" shape="circle" className="mb-3" />
                                     <p className="text-text-main text-xs font-bold">Tidak Ada Kontrak Mendekati Jatuh Tempo</p>
-                                    <p className="text-text-soft mt-0.5 max-w-xs text-[10px]">
+                                    <p className="text-text-soft mt-1 max-w-xs text-[10.5px]">
                                         Seluruh kontrak aktif memiliki masa berlaku yang masih panjang.
                                     </p>
                                 </div>
@@ -832,6 +548,138 @@ export function OverviewTab({ data, onNavigate, meUser, onCreateContract, scope 
                     </div>
                 </Card>
             </div>
+
+            {/* 4. Daily Trend Line Chart */}
+            <Card className="border-surface-border bg-surface-base flex flex-col justify-between rounded-lg shadow-none w-full">
+                <CardHeader className="border-surface-border flex flex-row flex-wrap items-center justify-between gap-3 space-y-0 border-b p-4 pb-3">
+                    <div className="min-w-[200px] flex-1">
+                        <CardTitle className="text-text-main text-xs font-bold tracking-wider uppercase">
+                            Tren Pembuatan {scope === 'all' ? 'Dokumen' : scopeLabel}
+                        </CardTitle>
+                        <p className="text-text-soft text-[10px]">
+                            Volume pembuatan {scopeLabel.toLowerCase()} per kategori dalam rentang waktu terpilih
+                        </p>
+                    </div>
+
+                    {/* Filter Presets & Custom Date Selector */}
+                    <div className="flex flex-wrap items-center gap-2">
+                        <div className="border-surface-border bg-surface-muted/50 flex items-center gap-1 rounded-md border p-0.5">
+                            {[
+                                { id: '7d', label: '7 HARI' },
+                                { id: '14d', label: '14 HARI' },
+                                { id: 'this_month', label: 'BULAN INI' },
+                                { id: 'last_month', label: 'BULAN LALU' },
+                                { id: 'custom', label: 'CUSTOM' },
+                            ].map((tab) => (
+                                <button
+                                    key={tab.id}
+                                    type="button"
+                                    onClick={() => setDatePreset(tab.id as any)}
+                                    className={cn(
+                                        'cursor-pointer rounded px-2 py-1 text-[9.5px] font-bold tracking-wider uppercase shadow-none transition-all',
+                                        datePreset === tab.id
+                                            ? 'bg-surface-base text-text-main border-surface-border border font-extrabold shadow-none'
+                                            : 'text-text-soft hover:text-text-main',
+                                    )}
+                                >
+                                    {tab.label}
+                                </button>
+                            ))}
+                        </div>
+
+                        {datePreset === 'custom' && (
+                            <div className="animate-in fade-in flex items-center gap-1.5 duration-200">
+                                <input
+                                    type="date"
+                                    value={startDate}
+                                    onChange={(e) => setStartDate(e.target.value)}
+                                    className="border-surface-border bg-surface-base text-text-main focus:border-primary h-7 rounded-md border px-2 text-[10px] font-medium shadow-none focus:outline-none"
+                                />
+                                <span className="text-text-soft text-[10px]">-</span>
+                                <input
+                                    type="date"
+                                    value={endDate}
+                                    onChange={(e) => setEndDate(e.target.value)}
+                                    className="border-surface-border bg-surface-base text-text-main focus:border-primary h-7 rounded-md border px-2 text-[10px] font-medium shadow-none focus:outline-none"
+                                />
+                                {(startDate || endDate) && (
+                                    <button
+                                        type="button"
+                                        onClick={handleResetDateFilter}
+                                        className="border-surface-border bg-surface-base text-text-soft flex h-7 w-7 cursor-pointer items-center justify-center rounded-md border shadow-none transition-colors hover:text-rose-500"
+                                        title="Reset Filter Tanggal"
+                                    >
+                                        <RotateCcw size={11} />
+                                    </button>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </CardHeader>
+                <CardContent className="p-4 pt-3">
+                    <div className="h-[340px] w-full">
+                        {!isMounted || filteredDailyTrend.length === 0 ? (
+                            <div className="text-text-soft flex h-full flex-col items-center justify-center text-center text-xs font-semibold uppercase">
+                                Tidak ada data tren harian untuk rentang tanggal ini
+                            </div>
+                        ) : (
+                            <ResponsiveContainer width="100%" height="100%">
+                                <LineChart data={filteredDailyTrend} margin={{ top: 15, right: 15, left: -25, bottom: 5 }}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(150,150,150,0.15)" />
+                                    <XAxis dataKey="date" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} />
+                                    <YAxis stroke="#888888" fontSize={10} tickLine={false} axisLine={false} allowDecimals={false} />
+                                    <RechartsTooltip
+                                        content={({ active, payload }: any) => {
+                                            if (active && payload && payload.length) {
+                                                const item = payload[0].payload;
+                                                return (
+                                                    <div className="border-surface-border bg-surface-base min-w-[180px] space-y-1.5 rounded-md border p-2.5 text-xs shadow-none">
+                                                        <p className="text-text-main border-surface-border border-b pb-1 font-bold">
+                                                            {item.full_date || item.date}
+                                                        </p>
+                                                        <div className="space-y-1">
+                                                            {payload.map((p: any, idx: number) => (
+                                                                <div key={idx} className="flex items-center justify-between gap-3">
+                                                                    <span className="text-text-soft flex items-center gap-1.5 text-[10.5px]">
+                                                                        <span
+                                                                            className="h-2 w-2 rounded-full"
+                                                                            style={{ backgroundColor: p.color }}
+                                                                        />
+                                                                        {p.name}
+                                                                    </span>
+                                                                    <span className="text-text-main text-[10.5px] font-bold">
+                                                                        {p.value} Dokumen
+                                                                    </span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            }
+                                            return null;
+                                        }}
+                                    />
+                                    {categoriesList.map((category: string, idx: number) => {
+                                        const strokeColor = CHART_COLORS[idx % CHART_COLORS.length];
+                                        return (
+                                            <Line
+                                                key={category}
+                                                type="monotone"
+                                                dataKey={category}
+                                                name={category}
+                                                stroke={strokeColor}
+                                                strokeWidth={2}
+                                                dot={false}
+                                                activeDot={{ r: 4, stroke: '#ffffff', strokeWidth: 1.5 }}
+                                            />
+                                        );
+                                    })}
+                                </LineChart>
+                            </ResponsiveContainer>
+                        )}
+                    </div>
+                </CardContent>
+            </Card>
         </div>
     );
 }

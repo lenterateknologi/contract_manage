@@ -382,7 +382,7 @@ class User extends Authenticatable
 
     public function getCompanyGroupIdAttribute(): ?string
     {
-        if (array_key_exists('company_group_id', $this->attributes)) {
+        if (array_key_exists('company_group_id', $this->attributes) && ! empty($this->attributes['company_group_id'])) {
             return $this->attributes['company_group_id'];
         }
 
@@ -404,20 +404,13 @@ class User extends Authenticatable
 
     public function setCompanyGroupIdAttribute($value): void
     {
-        // No-op as company_group_id is derived from company/location/businessUnit
+        $this->attributes['company_group_id'] = $value;
     }
 
     public function getCompanyGroupNameAttribute(): ?string
     {
         if ($this->relationLoaded('companyGroup') && $this->getRelation('companyGroup')) {
             return $this->getRelation('companyGroup')->name;
-        }
-
-        if ($this->relationLoaded('company')) {
-            $company = $this->getRelation('company');
-            if ($company && array_key_exists('company_group_name', $company->getAttributes())) {
-                return $company->getAttributes()['company_group_name'];
-            }
         }
 
         $companyGroupId = $this->attributes['company_group_id'] ?? null;
@@ -427,6 +420,13 @@ class User extends Authenticatable
             }
 
             return self::$companyGroupMemoryCache[$companyGroupId];
+        }
+
+        if ($this->relationLoaded('company')) {
+            $company = $this->getRelation('company');
+            if ($company && array_key_exists('company_group_name', $company->getAttributes()) && ! empty($company->getAttributes()['company_group_name'])) {
+                return $company->getAttributes()['company_group_name'];
+            }
         }
 
         $companyName = $this->attributes['company_name'] ?? null;
@@ -690,7 +690,7 @@ class User extends Authenticatable
             return true;
         }
 
-        $userRole = $this->roleRelation?->name ?? $this->role;
+        $userRole = $this->relationLoaded('roleRelation') ? ($this->roleRelation?->name ?? $this->role) : $this->role;
         $globalRoles = config('master.contracts.global_view_roles', ['Admin', 'Super Admin', 'Legal']);
 
         if (! empty($userRole) && in_array($userRole, $globalRoles, true)) {

@@ -1,7 +1,8 @@
 import { Contract } from '@/features/Contracts/types';
 import { usePage } from '@inertiajs/react';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useMessages } from '../../hooks/useMessages';
+import { chatService } from '../../services/chatService';
 import { AttachmentPreview } from '../AttachmentPreview/AttachmentPreview';
 import { ChatHeader } from '../ChatHeader/ChatHeader';
 import { MessageComposer } from '../MessageComposer/MessageComposer';
@@ -25,6 +26,21 @@ export function ContractChatThread({
 
     const [isSearchingInThread, setIsSearchingInThread] = useState(false);
     const [threadSearchQuery, setThreadSearchQuery] = useState('');
+    const [mentionUsers, setMentionUsers] = useState<any[]>(users);
+
+    useEffect(() => {
+        if (users && users.length > 0) {
+            setMentionUsers(users);
+        } else if (contract?.id) {
+            let isMounted = true;
+            chatService.getMentionableUsers(contract.id).then((list) => {
+                if (isMounted) setMentionUsers(list);
+            });
+            return () => {
+                isMounted = false;
+            };
+        }
+    }, [contract?.id, users]);
 
     const {
         messages,
@@ -47,7 +63,7 @@ export function ContractChatThread({
     };
 
     return (
-        <div className="flex h-full flex-1 flex-col bg-white dark:bg-slate-900 overflow-hidden">
+        <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col bg-card overflow-hidden">
             {/* Header */}
             <ChatHeader
                 conversation={contract}
@@ -72,7 +88,7 @@ export function ContractChatThread({
             <MessageComposer
                 onSendMessage={handleSendMessage}
                 isSending={isSending}
-                users={users}
+                users={mentionUsers}
             />
 
             {/* Preview Modal */}

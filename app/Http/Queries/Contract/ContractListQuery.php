@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class ContractListQuery
 {
@@ -31,7 +32,7 @@ class ContractListQuery
         'parent:id,form_no,contract_no,title',
         'assignedPic:id,name,role_id,department_id,division_id,company_id,email,nik,jobtitle_name,phone_number,mobile_no',
         'assignedPic.department:id,name,code,idorg_group,org_group_name',
-        'approvals:id,contract_id,user_id,workflow_step_id,status,sub_step',
+        'approvals:id,contract_id,user_id,workflow_step_id,status,sub_step,decided_at,comment,updated_at',
     ];
 
     /**
@@ -55,7 +56,7 @@ class ContractListQuery
     public function build(Request $request, string $view = 'contracts', bool $withRelations = true): Builder
     {
         $user = Auth::user();
-        if ($user && $view !== 'mine') {
+        if ($user && $view !== 'mine' && $view !== 'pending' && $view !== 'duty' && $view !== 'assigned') {
             // Delegasikan semua scope organisasi ke service — satu tempat, satu aturan.
             (new ContractFilterScopeService)->applyToRequest($request, $user);
         }
@@ -67,15 +68,12 @@ class ContractListQuery
 
         $this->applyViewFilter($query, $view, $request);
         $this->applySearchFilter($query, $request);
+        $this->applyStatusFilter($query, $request, $view);
+        $this->applyTypeFilter($query, $request);
 
-        // ponytail: view 'mine' menampilkan semua pengajuan yang dibuat/diinisiasi user tanpa batasan filter organisasi/tipe
-        if ($view !== 'mine') {
-            $this->applyStatusFilter($query, $request, $view);
-            $this->applyTypeFilter($query, $request);
-            if ($view !== 'pending') {
-                $this->applyDepartmentFilter($query, $request);
-                $this->applyOrgFilters($query, $request);
-            }
+        if ($view !== 'mine' && $view !== 'pending' && $view !== 'duty' && $view !== 'assigned') {
+            $this->applyDepartmentFilter($query, $request);
+            $this->applyOrgFilters($query, $request);
         }
 
         $this->applyDateRangeFilter($query, $request);
@@ -87,19 +85,18 @@ class ContractListQuery
     }
 
     /**
-     * Apply view-specific constraints (mine, pending, expiry, f1, f2, contracts, all).
+     * Apply view-specific constraints (mine, pending, duty, expiry, contracts, all).
      */
     private function applyViewFilter(Builder $query, string $view, Request $request): void
     {
         match ($view) {
             'mine' => $this->applyMineView($query, $request),
+            'duty', 'my_duty', 'assigned' => $this->applyDutyView($query, $request),
             'organization', 'org_group' => $this->applyOrganizationView($query, $request),
             'pending' => $this->applyPendingView($query, $request),
             'expiry' => $this->applyExpiryView($query, $request),
             'archived' => $query->where(fn (Builder $q) => $q->whereRaw('UPPER(status) = ?', ['ARCHIVED'])->orWhereNotNull('closed_at')),
             'in_progress' => $query->whereIn('status', ['in_review', 'revision', 'pending', 'locked'])->whereNull('closed_at'),
-            'f1' => $query->whereRaw('UPPER(status) != ?', ['DRAFT'])->whereHas('versions', fn (Builder $q) => $q->where('document_type', 'f1')),
-            'f2' => $query->whereRaw('UPPER(status) != ?', ['DRAFT'])->whereHas('versions', fn (Builder $q) => $q->where('document_type', 'f2')),
             'all' => $query->whereRaw('UPPER(status) != ?', ['DRAFT']),
             default => $this->applyContractsView($query, $request),
         };
@@ -107,26 +104,18 @@ class ContractListQuery
 
     private function applyMineView(Builder $query, Request $request): void
     {
-        $userId = Auth::id();
-        $query->where(function (Builder $q) use ($userId): void {
-            $q->where('created_by', $userId)
-                ->orWhere('initiated_by_id', $userId);
-        });
-        $mineTab = $request->input('mine_tab', 'all');
+        $query->mine();
 
-        switch ($mineTab) {
-            case 'archived':
-                $query->where(fn (Builder $q) => $q->whereRaw('UPPER(status) = ?', ['ARCHIVED'])->orWhereNotNull('closed_at'));
-                break;
-            case 'in_progress':
-                $query->whereIn('status', ['in_review', 'pending', 'locked'])->whereNull('closed_at');
-                break;
-            default:
-                if ($mineTab !== 'all') {
-                    $this->applyParentTabFilter($query, $mineTab);
-                }
-                break;
-        }
+        $mineTab = $request->input('mine_tab', 'all');
+        $this->applyParentTabState($query, $mineTab, $request);
+    }
+
+    private function applyDutyView(Builder $query, Request $request): void
+    {
+        $query->duty();
+
+        $dutyTab = $request->input('duty_tab', $request->input('parent_tab', 'all'));
+        $this->applyParentTabState($query, $dutyTab, $request);
     }
 
     private function applyOrganizationView(Builder $query, Request $request): void
@@ -155,48 +144,33 @@ class ContractListQuery
                     ->pluck('id')
                     ->toArray();
 
-                if (! empty($orgGroupDeptIds)) {
-                    $query->where(function (Builder $q) use ($orgGroupDeptIds) {
-                        $q->whereHas('initiator', fn ($iq) => $iq->whereIn('department_id', $orgGroupDeptIds))
-                            ->orWhere(fn ($sq) => $sq->whereNull('initiated_by_id')->whereHas('creator', fn ($cq) => $cq->whereIn('department_id', $orgGroupDeptIds)));
-                    });
+                if (empty($orgGroupDeptIds)) {
+                    $query->whereRaw('1 = 0');
+                } else {
+                    $this->filterByUserOrgField($query, 'department_id', $orgGroupDeptIds);
                 }
             }
         }
 
-        switch ($parentTab) {
-            case 'archived':
-                $query->where(fn (Builder $q) => $q->whereRaw('UPPER(status) = ?', ['ARCHIVED'])->orWhereNotNull('closed_at'));
-                break;
-            case 'in_progress':
-                $query->whereIn('status', ['in_review', 'pending', 'locked'])->whereNull('closed_at');
-                break;
-            default:
-                $hasStatusFilter = $request->filled('status') || $request->filled('statuses');
-                $hasSearch = $request->filled('search');
-                if (! $hasStatusFilter && ! $hasSearch) {
-                    $query->whereRaw('UPPER(status) != ?', ['ARCHIVED'])->whereNull('closed_at');
-                }
-                $this->applyParentTabFilter($query, $parentTab);
-                break;
-        }
+        $this->applyParentTabState($query, $parentTab, $request);
     }
 
     private function applyPendingView(Builder $query, Request $request): void
     {
-        $pendingTab = $request->input('pending_tab', 'pending');
         $query->whereRaw('UPPER(status) != ?', ['DRAFT']);
+        $approvalStatus = $request->input('approval_status') ?? $request->input('pending_tab', 'pending');
 
-        if ($pendingTab === 'history') {
-            $query->whereHas('approvals', function (Builder $q): void {
-                $q->where('user_id', Auth::id())
-                    ->whereIn('status', ['approved', 'rejected', 'revision']);
-            });
+        if ($approvalStatus === 'pending') {
+            $query->pendingApprovalFor();
+        } elseif (in_array($approvalStatus, ['history', 'approved', 'rejected', 'revision'])) {
+            $statuses = in_array($approvalStatus, ['approved', 'rejected', 'revision'])
+                ? [$approvalStatus]
+                : ['approved', 'rejected', 'revision'];
+            $query->actedBy(Auth::id(), $statuses);
         } else {
-            $query->whereHas('approvals', function (Builder $q): void {
-                $q->where('user_id', Auth::id())
-                    ->where('status', 'pending')
-                    ->whereColumn('workflow_step_id', 't_contracts.workflow_step_id');
+            $query->where(function (Builder $sub): void {
+                $sub->pendingApprovalFor()
+                    ->orWhere(fn (Builder $q) => $q->actedBy(Auth::id()));
             });
         }
     }
@@ -222,12 +196,17 @@ class ContractListQuery
         $query->whereRaw('UPPER(status) != ?', ['DRAFT']);
         $parentTab = $request->input('parent_tab', 'all');
 
+        $this->applyParentTabState($query, $parentTab, $request);
+    }
+
+    private function applyParentTabState(Builder $query, ?string $parentTab, Request $request): void
+    {
         switch ($parentTab) {
             case 'archived':
                 $query->where(fn (Builder $q) => $q->whereRaw('UPPER(status) = ?', ['ARCHIVED'])->orWhereNotNull('closed_at'));
                 break;
             case 'in_progress':
-                $query->whereIn('status', ['in_review', 'pending', 'locked'])->whereNull('closed_at');
+                $query->whereIn('status', ['in_review', 'revision', 'pending', 'locked'])->whereNull('closed_at');
                 break;
             default:
                 $hasStatusFilter = $request->filled('status') || $request->filled('statuses');
@@ -242,25 +221,83 @@ class ContractListQuery
 
     private function applyParentTabFilter(Builder $query, ?string $tab): void
     {
-        if (! in_array($tab, ['kontrak', 'non_kontrak', 'nda'], true)) {
+        $this->whereTypeIn($query, $this->resolveParentTabTypeIds($tab));
+    }
+
+    /**
+     * Restrict to contracts whose type or parent type is in $typeIds. No-op when empty.
+     *
+     * @param  array<string>  $typeIds
+     */
+    private function whereTypeIn(Builder $query, array $typeIds): void
+    {
+        if (empty($typeIds)) {
             return;
         }
 
-        $parents = DB::table('m_contract_types')->whereNull('parent_id')->get();
-        $targetParent = match ($tab) {
-            'kontrak' => $parents->first(fn ($p) => strtoupper($p->code) === 'A-1' || (stripos($p->name, 'non') === false && stripos($p->name, 'kontrak') !== false)),
-            'non_kontrak' => $parents->first(fn ($p) => strtoupper($p->code) === 'A-2' || stripos($p->name, 'non') !== false),
-            'nda' => $parents->first(fn ($p) => strtoupper($p->code) === 'NDA' || stripos($p->name, 'nda') !== false || stripos($p->name, 'kerahasiaan') !== false),
-            default => null,
-        };
+        $query->where(function (Builder $q) use ($typeIds) {
+            $q->whereIn('contract_type_id', $typeIds)
+                ->orWhereIn('contract_type_parent_id', $typeIds);
+        });
+    }
 
-        if ($targetParent) {
-            $allDescendantIds = array_merge([$targetParent->id], $this->getDescendantTypeIds($targetParent->id));
-            $query->where(function (Builder $q) use ($allDescendantIds) {
-                $q->whereIn('contract_type_id', $allDescendantIds)
-                    ->orWhereIn('contract_type_parent_id', $allDescendantIds);
-            });
+    /**
+     * Resolve a parent tab (id / code / name) to the parent id + all descendant type ids.
+     *
+     * @return array<string>
+     */
+    private function resolveParentTabTypeIds(?string $tab): array
+    {
+        if (empty($tab) || $tab === 'all') {
+            return [];
         }
+
+        $tabClean = trim($tab);
+        $tabNormalized = strtolower(str_replace(['_', '-'], '', $tabClean));
+        $tabSlug = Str::slug($tabClean);
+
+        $parents = DB::table('m_contract_types')->whereNull('parent_id')->get();
+        $targetParent = $parents->first(function ($p) use ($tabClean, $tabNormalized, $tabSlug) {
+            // 1. Direct ID match (UUID)
+            if ($p->id === $tabClean) {
+                return true;
+            }
+
+            // 2. Canonical aliases (contract/kontrak, non_contract/non_kontrak, nda)
+            if (in_array($tabNormalized, ['contract', 'kontrak', 'a1'], true) && (strtoupper($p->code ?? '') === 'A-1' || (stripos($p->name, 'non') === false && (stripos($p->name, 'kontrak') !== false || stripos($p->name, 'contract') !== false)))) {
+                return true;
+            }
+            if (in_array($tabNormalized, ['noncontract', 'nonkontrak', 'a2'], true) && (strtoupper($p->code ?? '') === 'A-2' || stripos($p->name, 'non') !== false)) {
+                return true;
+            }
+            if (in_array($tabNormalized, ['nda', 'kerahasiaan', 'perjanjiankerahasiaan'], true) && (strtoupper($p->code ?? '') === 'NDA' || stripos($p->name, 'nda') !== false || stripos($p->name, 'kerahasiaan') !== false)) {
+                return true;
+            }
+
+            // 3. Code match (e.g. 'PA', 'A-1', 'A-2', 'NDA', 'TEST-REV-DOC')
+            $codeClean = trim($p->code ?? '');
+            if (! empty($codeClean)) {
+                $codeNormalized = strtolower(str_replace(['_', '-'], '', $codeClean));
+                if ($codeNormalized === $tabNormalized || Str::slug($codeClean) === $tabSlug) {
+                    return true;
+                }
+            }
+
+            // 4. Name match / slug match (e.g. 'Surat Kuasa', 'Kontrak', 'Non Kontrak')
+            $nameClean = trim($p->name ?? '');
+            if (! empty($nameClean)) {
+                $nameNormalized = strtolower(str_replace(['_', '-'], '', $nameClean));
+                if ($nameNormalized === $tabNormalized || Str::slug($nameClean) === $tabSlug) {
+                    return true;
+                }
+            }
+
+            return false;
+        });
+
+        return $targetParent
+            ? array_merge([$targetParent->id], $this->getDescendantTypeIds($targetParent->id))
+            : [];
     }
 
     /**
@@ -272,7 +309,8 @@ class ContractListQuery
             return;
         }
 
-        $search = strtolower($request->search);
+        $escaped = addcslashes($request->search, '%_\\');
+        $search = mb_strtolower($escaped);
         $query->where(function (Builder $q) use ($search): void {
             $q->where(DB::raw('LOWER(title)'), 'like', "%{$search}%")
                 ->orWhere(DB::raw('LOWER(form_no)'), 'like', "%{$search}%")
@@ -296,22 +334,14 @@ class ContractListQuery
         $statuses = is_array($statusInput) ? $statusInput : explode(',', (string) $statusInput);
         $statuses = array_values(array_filter(array_map('trim', $statuses)));
         if ($view !== 'mine') {
-            $statuses = array_filter($statuses, fn ($s) => strtoupper($s) !== 'DRAFT');
+            $statuses = array_values(array_filter($statuses, fn ($s) => strtoupper($s) !== 'DRAFT'));
         }
 
         if (empty($statuses)) {
-            if ($view !== 'mine') {
-                $query->whereRaw('1 = 0');
-            }
-
             return;
         }
 
-        if (count($statuses) === 1) {
-            $query->whereRaw('UPPER(status) = ?', [strtoupper($statuses[0])]);
-        } else {
-            $query->whereIn(DB::raw('UPPER(status)'), array_map('strtoupper', array_values($statuses)));
-        }
+        $query->whereIn(DB::raw('UPPER(status)'), array_map('strtoupper', $statuses));
     }
 
     private function applyTypeFilter(Builder $query, Request $request): void
@@ -319,37 +349,15 @@ class ContractListQuery
         $typeInput = $request->input('contract_type_id') ?? $request->input('contract_type_ids');
         $categoryInput = $request->input('category') ?? $request->input('categories');
 
-        // Scoping per category (e.g. from DashboardType profile 'non-contract', 'contract', 'nda')
+        // Scoping per category (e.g. from DashboardType profile) — categories are OR-ed together
         if (! empty($categoryInput) && $categoryInput !== 'all') {
             $categories = is_array($categoryInput) ? $categoryInput : explode(',', (string) $categoryInput);
-            $categories = array_values(array_filter(array_map('trim', $categories)));
-
-            if (! empty($categories)) {
-                $parents = DB::table('m_contract_types')->whereNull('parent_id')->get();
-                $categoryTypeIds = [];
-
-                foreach ($categories as $cat) {
-                    $catNormalized = strtolower(str_replace('_', '-', $cat));
-                    $root = match ($catNormalized) {
-                        'contract', 'kontrak' => $parents->first(fn ($p) => strtoupper($p->code) === 'A-1' || (stripos($p->name, 'non') === false && stripos($p->name, 'kontrak') !== false)),
-                        'non-contract', 'non_kontrak' => $parents->first(fn ($p) => strtoupper($p->code) === 'A-2' || stripos($p->name, 'non') !== false),
-                        'nda' => $parents->first(fn ($p) => strtoupper($p->code) === 'NDA' || stripos($p->name, 'nda') !== false || stripos($p->name, 'kerahasiaan') !== false),
-                        default => null,
-                    };
-
-                    if ($root) {
-                        $categoryTypeIds = array_merge($categoryTypeIds, [$root->id], $this->getDescendantTypeIds($root->id));
-                    }
-                }
-
-                if (! empty($categoryTypeIds)) {
-                    $categoryTypeIds = array_values(array_unique(array_filter($categoryTypeIds)));
-                    $query->where(function (Builder $q) use ($categoryTypeIds) {
-                        $q->whereIn('contract_type_id', $categoryTypeIds)
-                            ->orWhereIn('contract_type_parent_id', $categoryTypeIds);
-                    });
-                }
-            }
+            $categoryTypeIds = collect($categories)
+                ->flatMap(fn ($cat) => $this->resolveParentTabTypeIds(trim((string) $cat)))
+                ->unique()
+                ->values()
+                ->all();
+            $this->whereTypeIn($query, $categoryTypeIds);
         }
 
         if (empty($typeInput) || $typeInput === 'all') {
@@ -421,42 +429,8 @@ class ContractListQuery
      */
     private function applyDepartmentFilter(Builder $query, Request $request): void
     {
-        $user = Auth::user();
-        $settings = $user ? $user->getContractFilterSettings() : [];
-        $roleName = $user ? $user->role : null;
-        $hasFullAccess = $user ? in_array($roleName, ['Admin', 'Super Admin', 'Director', 'CEO', 'VP']) : false;
-
-        $allowedDeps = ! empty($settings['allowed_departments'])
-            ? collect($settings['allowed_departments'])->map(fn ($id) => $id === '[USER_LOGIN]' ? strval($user->department_id) : $id)->filter(fn ($id) => ! empty($id) && $id !== 'null' && $id !== '[USER_LOGIN]')->unique()->toArray()
-            : [];
-
-        $departmentId = $request->department_id ?? $request->department_ids;
-
-        if (empty($departmentId) && ! $hasFullAccess && ! empty($allowedDeps)) {
-            $departmentId = $allowedDeps;
-        }
-
-        if (empty($departmentId)) {
-            return;
-        }
-
-        $departmentIds = is_array($departmentId) ? $departmentId : explode(',', (string) $departmentId);
-        $departmentIds = array_values(array_filter(array_map('trim', $departmentIds)));
-
-        if (empty($departmentIds)) {
-            return;
-        }
-
-        $query->where(function (Builder $q) use ($departmentIds): void {
-            $q->whereHas('initiator', function (Builder $sq) use ($departmentIds): void {
-                $sq->whereIn('department_id', $departmentIds);
-            })->orWhere(function (Builder $sq) use ($departmentIds): void {
-                $sq->whereNull('initiated_by_id')
-                    ->whereHas('creator', function (Builder $ssq) use ($departmentIds): void {
-                        $ssq->whereIn('department_id', $departmentIds);
-                    });
-            });
-        });
+        $cleanFn = fn ($id) => preg_replace('/^(g|r|c|d)_/', '', trim(explode('|', (string) $id)[0]));
+        $this->applyOrgFieldFilter($query, 'department_id', $request->input('department_id') ?? $request->input('department_ids'), $cleanFn);
     }
 
     /**
@@ -493,149 +467,38 @@ class ContractListQuery
 
     private function applyOrgFilters(Builder $query, Request $request): void
     {
-        $cleanFn = fn ($id) => preg_replace('/^(g|r|c)_/', '', trim($id));
+        $cleanFn = fn ($id) => preg_replace('/^(g|r|c|d)_/', '', trim(explode('|', (string) $id)[0]));
 
-        $this->applyCompanyGroupFilter($query, $request->company_group_id ?? $request->company_group_ids, $cleanFn);
-        $this->applyRegionFilter($query, $request->region_id ?? $request->region_ids, $cleanFn);
-        $this->applyCompanyFilter($query, $request->company_id ?? $request->company_ids, $cleanFn);
-        $this->applyDivisionFilter($query, $request->division_id ?? $request->division_ids);
+        $this->applyOrgFieldFilter($query, 'company_group_id', $request->input('company_group_id') ?? $request->input('company_group_ids'), $cleanFn);
+        $this->applyOrgFieldFilter($query, 'region_id', $request->input('region_id') ?? $request->input('region_ids'), $cleanFn);
+        $this->applyOrgFieldFilter($query, 'company_id', $request->input('company_id') ?? $request->input('company_ids'), $cleanFn);
+        $this->applyOrgFieldFilter($query, 'division_id', $request->input('division_id') ?? $request->input('division_ids'), $cleanFn);
     }
 
-    private function applyCompanyGroupFilter(Builder $query, mixed $groupIds, \Closure $cleanFn): void
+    private function applyOrgFieldFilter(Builder $query, string $column, mixed $rawIds, \Closure $cleanFn): void
     {
-        if (empty($groupIds)) {
+        if (empty($rawIds) || $rawIds === 'all') {
             return;
         }
-        $groupIds = is_array($groupIds) ? $groupIds : explode(',', (string) $groupIds);
-        $cleanGroupIds = collect($groupIds)
-            ->map(fn ($id) => $cleanFn(head(explode('|', (string) $id))))
-            ->filter(fn ($id) => ! empty($id) && $id !== 'null')
-            ->unique()
-            ->toArray();
+        $ids = is_array($rawIds) ? $rawIds : explode(',', (string) $rawIds);
+        $cleanIds = array_values(array_unique(array_filter(array_map($cleanFn, $ids), fn ($id) => ! empty($id) && $id !== 'null')));
 
-        if (! empty($cleanGroupIds)) {
-            $query->where(function (Builder $q) use ($cleanGroupIds) {
-                $q->whereHas('initiator', fn ($sq) => $sq->whereIn('company_group_id', $cleanGroupIds))
-                    ->orWhere(fn ($sq) => $sq->whereNull('initiated_by_id')->whereHas('creator', fn ($ssq) => $ssq->whereIn('company_group_id', $cleanGroupIds)));
-            });
-        }
+        $this->filterByUserOrgField($query, $column, $cleanIds);
     }
 
-    private function applyRegionFilter(Builder $query, mixed $regionIds, \Closure $cleanFn): void
+    /**
+     * Scope query to only contracts whose initiator or creator belongs to the given org field values.
+     */
+    private function filterByUserOrgField(Builder $query, string $column, array $values): void
     {
-        if (empty($regionIds)) {
-            return;
-        }
-        $regionIds = is_array($regionIds) ? $regionIds : explode(',', (string) $regionIds);
-        $cleanRegionIds = collect($regionIds)
-            ->map(fn ($id) => $cleanFn((string) $id))
-            ->filter(fn ($id) => ! empty($id) && $id !== 'null')
-            ->unique()
-            ->toArray();
-
-        if (empty($cleanRegionIds)) {
+        if (empty($values)) {
             return;
         }
 
-        $query->where(function (Builder $q) use ($cleanRegionIds, $cleanFn) {
-            $q->where(function (Builder $sub) use ($cleanRegionIds, $cleanFn) {
-                foreach ($cleanRegionIds as $rId) {
-                    if (str_contains($rId, '|')) {
-                        $parts = explode('|', $rId);
-                        $gId = $cleanFn($parts[0]);
-                        $realRegionId = $cleanFn($parts[1]);
-
-                        $sub->orWhere(function (Builder $inner) use ($gId, $realRegionId) {
-                            $inner->whereHas('initiator', function ($sq) use ($gId, $realRegionId) {
-                                $sq->where('company_group_id', $gId);
-                                if ($realRegionId === 'null') {
-                                    $sq->whereNull('region_id');
-                                } else {
-                                    $sq->where('region_id', $realRegionId);
-                                }
-                            })->orWhere(function ($sq) use ($gId, $realRegionId) {
-                                $sq->whereNull('initiated_by_id')->whereHas('creator', function ($ssq) use ($gId, $realRegionId) {
-                                    $ssq->where('company_group_id', $gId);
-                                    if ($realRegionId === 'null') {
-                                        $ssq->whereNull('region_id');
-                                    } else {
-                                        $ssq->where('region_id', $realRegionId);
-                                    }
-                                });
-                            });
-                        });
-                    } else {
-                        $sub->orWhere(function (Builder $inner) use ($rId) {
-                            $inner->whereHas('initiator', fn ($sq) => $sq->where('region_id', $rId))
-                                ->orWhere(fn ($sq) => $sq->whereNull('initiated_by_id')->whereHas('creator', fn ($ssq) => $ssq->where('region_id', $rId)));
-                        });
-                    }
-                }
-            });
+        $query->where(function (Builder $q) use ($column, $values): void {
+            $q->whereHas('initiator', fn (Builder $sq) => $sq->whereIn($column, $values))
+                ->orWhere(fn (Builder $sq) => $sq->whereNull('initiated_by_id')->whereHas('creator', fn (Builder $ssq) => $ssq->whereIn($column, $values)));
         });
-    }
-
-    private function applyCompanyFilter(Builder $query, mixed $companyIds, \Closure $cleanFn): void
-    {
-        if (empty($companyIds)) {
-            return;
-        }
-        $companyIds = is_array($companyIds) ? $companyIds : explode(',', (string) $companyIds);
-        $cleanCompanyIds = collect($companyIds)
-            ->map(fn ($id) => $cleanFn((string) $id))
-            ->filter(fn ($id) => ! empty($id) && $id !== 'null')
-            ->unique()
-            ->toArray();
-
-        if (empty($cleanCompanyIds)) {
-            return;
-        }
-
-        $query->where(function (Builder $q) use ($cleanCompanyIds, $cleanFn) {
-            $q->where(function (Builder $sub) use ($cleanCompanyIds, $cleanFn) {
-                foreach ($cleanCompanyIds as $cId) {
-                    if (str_contains($cId, '|')) {
-                        $parts = explode('|', $cId);
-                        $gId = $cleanFn($parts[0]);
-                        $realCompanyId = $cleanFn(end($parts));
-
-                        $sub->orWhere(function (Builder $inner) use ($gId, $realCompanyId) {
-                            $inner->whereHas('initiator', function ($sq) use ($gId, $realCompanyId) {
-                                $sq->where('company_group_id', $gId)->where('company_id', $realCompanyId);
-                            })->orWhere(function ($sq) use ($gId, $realCompanyId) {
-                                $sq->whereNull('initiated_by_id')->whereHas('creator', function ($ssq) use ($gId, $realCompanyId) {
-                                    $ssq->where('company_group_id', $gId)->where('company_id', $realCompanyId);
-                                });
-                            });
-                        });
-                    } else {
-                        $sub->orWhere(function (Builder $inner) use ($cId) {
-                            $inner->whereHas('initiator', fn ($sq) => $sq->where('company_id', $cId))
-                                ->orWhere(fn ($sq) => $sq->whereNull('initiated_by_id')->whereHas('creator', fn ($ssq) => $ssq->where('company_id', $cId)));
-                        });
-                    }
-                }
-            });
-        });
-    }
-
-    private function applyDivisionFilter(Builder $query, mixed $divisionIds): void
-    {
-        if (empty($divisionIds)) {
-            return;
-        }
-        $divisionIds = is_array($divisionIds) ? $divisionIds : explode(',', (string) $divisionIds);
-        $cleanDivisionIds = collect($divisionIds)
-            ->filter(fn ($id) => ! empty($id) && $id !== 'null')
-            ->unique()
-            ->toArray();
-
-        if (! empty($cleanDivisionIds)) {
-            $query->where(function (Builder $q) use ($cleanDivisionIds) {
-                $q->whereHas('initiator', fn ($sq) => $sq->whereIn('division_id', $cleanDivisionIds))
-                    ->orWhere(fn ($sq) => $sq->whereNull('initiated_by_id')->whereHas('creator', fn ($ssq) => $ssq->whereIn('division_id', $cleanDivisionIds)));
-            });
-        }
     }
 
     /**
@@ -656,15 +519,26 @@ class ContractListQuery
             return;
         }
 
+        // Normalize sorting aliases
+        $normalizedSortBy = match ($sortBy) {
+            'contract_no_title' => 'title',
+            'contract_no' => 'form_no',
+            'period' => 'contract_date',
+            'initiator' => 'creator',
+            default => $sortBy,
+        };
+
         $customSorts = $this->getCustomSortExpressions($sortDir);
 
-        if (isset($customSorts[$sortBy])) {
-            $customSorts[$sortBy]($query);
-        } elseif (in_array($sortBy, self::SELECT, true)) {
-            $query->orderBy($sortBy, $sortDir);
+        if (isset($customSorts[$normalizedSortBy])) {
+            $customSorts[$normalizedSortBy]($query);
+        } elseif (in_array($normalizedSortBy, self::SELECT, true)) {
+            $query->orderBy($normalizedSortBy, $sortDir);
         } else {
             $query->latest('created_at');
         }
+
+        $query->orderBy('t_contracts.id', 'desc');
     }
 
     /**
@@ -683,18 +557,34 @@ class ContractListQuery
             ->limit(1);
 
         return [
-            'contract_no_title' => fn (Builder $q) => $q->orderByRaw("COALESCE(t_contracts.title, t_contracts.form_no, t_contracts.contract_no) {$sortDir}"),
             'title' => fn (Builder $q) => $q->orderByRaw("COALESCE(t_contracts.title, t_contracts.form_no, t_contracts.contract_no) {$sortDir}"),
-            'contract_no' => fn (Builder $q) => $q->orderByRaw("COALESCE(t_contracts.form_no, t_contracts.contract_no) {$sortDir}"),
             'form_no' => fn (Builder $q) => $q->orderByRaw("COALESCE(t_contracts.form_no, t_contracts.contract_no) {$sortDir}"),
             'vendor' => fn (Builder $q) => $q->orderBy($vendorSubquery, $sortDir),
-            'period' => fn (Builder $q) => $q->orderBy('contract_date', $sortDir),
             'contract_date' => fn (Builder $q) => $q->orderBy('contract_date', $sortDir),
             'end_date' => fn (Builder $q) => $q->orderBy('end_date', $sortDir),
-            'initiator' => fn (Builder $q) => $q->orderBy($userSubquery('COALESCE(t_contracts.initiated_by_id, t_contracts.created_by)'), $sortDir),
             'creator' => fn (Builder $q) => $q->orderBy($userSubquery('COALESCE(t_contracts.initiated_by_id, t_contracts.created_by)'), $sortDir),
             'assigned_pic' => fn (Builder $q) => $q->orderBy($userSubquery('t_contracts.assigned_pic_id'), $sortDir),
             'status' => fn (Builder $q) => $q->orderBy('status', $sortDir),
+            'decided_at' => fn (Builder $q) => $q->orderBy(
+                DB::table('t_approvals')
+                    ->select('decided_at')
+                    ->whereColumn('t_approvals.contract_id', 't_contracts.id')
+                    ->where('t_approvals.user_id', Auth::id())
+                    ->whereIn('t_approvals.status', ['approved', 'rejected', 'revision'])
+                    ->latest('decided_at')
+                    ->limit(1),
+                $sortDir
+            ),
+            'decision' => fn (Builder $q) => $q->orderBy(
+                DB::table('t_approvals')
+                    ->select('status')
+                    ->whereColumn('t_approvals.contract_id', 't_contracts.id')
+                    ->where('t_approvals.user_id', Auth::id())
+                    ->whereIn('t_approvals.status', ['approved', 'rejected', 'revision'])
+                    ->latest('decided_at')
+                    ->limit(1),
+                $sortDir
+            ),
             'created_at' => fn (Builder $q) => $q->orderBy('created_at', $sortDir),
             'updated_at' => fn (Builder $q) => $q->orderBy('updated_at', $sortDir),
         ];

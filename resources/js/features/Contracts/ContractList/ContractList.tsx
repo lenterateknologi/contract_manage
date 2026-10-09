@@ -55,7 +55,7 @@ const PreviewModal = lazy(() => import('@/features/Contracts/components/modals/P
 const SendApprovalModal = lazy(() => import('@/features/Contracts/components/modals/SendApprovalModal'));
 
 type View =
-    'contracts' | 'organization' | 'pending' | 'audit' | 'f1' | 'f2' | 'profile' | 'mine' | 'expiry' | 'archived' | 'in_progress';
+    'contracts' | 'organization' | 'pending' | 'audit' | 'profile' | 'mine' | 'duty' | 'expiry' | 'archived' | 'in_progress';
 
 import { ConfirmationModal, StatusBadge } from '@/components/ui';
 import { ContractCardSkeleton, ContractTableSkeleton } from './ContractSkeleton';
@@ -72,6 +72,7 @@ import {
     renderContractPeriod,
     renderInitiator,
     renderStatusAndStep,
+    renderUserDecision,
     renderVendor,
 } from './ContractTableCells';
 import { ContractFilterBar as PageFilter } from './ContractFilterBar';
@@ -268,6 +269,7 @@ export interface ContractListProps {
         in_progress: number;
         archived: number;
     };
+    dutyCounts?: Record<string, number>;
     orgCategoryCounts?: {
         all: number;
         kontrak: number;
@@ -305,6 +307,7 @@ export interface ContractListProps {
         sortDir?: 'asc' | 'desc' | string;
         sort_dir?: 'asc' | 'desc' | string;
         mine_tab?: string;
+        duty_tab?: string;
         org_tab?: string;
         parent_tab?: string;
         pending_tab?: string;
@@ -357,6 +360,7 @@ export function ContractList({
     regions = [],
     divisions = [],
     mineCounts,
+    dutyCounts,
     orgCategoryCounts,
     parentCategoryCounts,
     pendingCounts,
@@ -427,68 +431,50 @@ export function ContractList({
     }, [metrics?.dashboardConfig, dashboardConfig, userFilterSettings, pov.isSimulatingDashboard, pov.activeDashboardPov]);
 
     const [selected, setSelected] = useState<Contract | null>(initialSelected ?? null);
+
+    const currentTab = filters?.mine_tab || filters?.duty_tab || filters?.org_tab || filters?.parent_tab || filters?.expiry_tab;
+    const currentTabTitle = (() => {
+        if (!currentTab || currentTab === 'all') return '';
+        const found = ((types as DBContractType[]) || []).find(
+            (t) =>
+                String(t.id) === currentTab ||
+                (t.code && t.code.toLowerCase() === currentTab.toLowerCase()) ||
+                (t.name && t.name.toLowerCase().replace(/[-_]/g, '') === currentTab.toLowerCase().replace(/[-_]/g, ''))
+        );
+        if (found) return found.name;
+        if (currentTab === 'in_progress') return 'On Progress';
+        if (currentTab === 'archived') return 'Arsip';
+        return currentTab;
+    })();
+
+    const isHistoryTab = view === 'pending' && (filters?.approval_status === 'history' || ['approved', 'rejected', 'revision'].includes(filters?.approval_status as string));
+
     const viewTitleMap: Record<string, string> = {
         dashboard: 'Dashboard Kontrak',
-        organization:
-            filters?.org_tab === 'kontrak'
-                ? 'Semua Pengajuan - Kontrak'
-                : filters?.org_tab === 'non_kontrak'
-                  ? 'Semua Pengajuan - Non Kontrak'
-                  : filters?.org_tab === 'nda'
-                    ? 'Semua Pengajuan - NDA'
-                    : 'Semua Pengajuan',
-        contracts:
-            filters?.parent_tab === 'kontrak'
-                ? 'Semua Pengajuan - Kontrak'
-                : filters?.parent_tab === 'non_kontrak'
-                  ? 'Semua Pengajuan - Non Kontrak'
-                  : filters?.parent_tab === 'nda'
-                    ? 'Semua Pengajuan - NDA'
-                    : 'Semua Pengajuan',
-        mine:
-            filters?.mine_tab === 'kontrak'
-                ? 'Pengajuan Saya - Kontrak'
-                : filters?.mine_tab === 'non_kontrak'
-                  ? 'Pengajuan Saya - Non Kontrak'
-                  : filters?.mine_tab === 'nda'
-                    ? 'Pengajuan Saya - NDA'
-                    : 'Pengajuan Saya',
-        pending: filters?.pending_tab === 'history' ? 'Persetujuan Saya - Riwayat Persetujuan' : 'Persetujuan Saya - Perlu Persetujuan',
-        expiry:
-            filters?.expiry_tab === 'kontrak'
-                ? 'Masa Berlaku - Kontrak'
-                : filters?.expiry_tab === 'non_kontrak'
-                  ? 'Masa Berlaku - Non Kontrak'
-                  : filters?.expiry_tab === 'nda'
-                    ? 'Masa Berlaku - NDA'
-                    : 'Masa Berlaku Kontrak',
+        organization: currentTabTitle ? `Semua Pengajuan - ${currentTabTitle}` : 'Semua Pengajuan',
+        contracts: currentTabTitle ? `Semua Pengajuan - ${currentTabTitle}` : 'Semua Pengajuan',
+        mine: currentTabTitle ? `Pengajuan Saya - ${currentTabTitle}` : 'Pengajuan Saya',
+        duty: 'Tugas Saya',
+        pending: isHistoryTab ? 'Persetujuan Saya - Pernah Saya Tindak Lanjuti' : 'Persetujuan Saya - Butuh Tindakan Saya',
+        expiry: 'Masa Berlaku Dokumen',
         archived: 'Arsip Dokumen',
         in_progress: 'On Progress',
-        f1: 'Dokumen Formulir F1',
-        f2: 'Dokumen Formulir F2',
         profile: 'Profil Saya',
     };
     const viewDescMap: Record<string, string> = {
         dashboard: 'Statistik dan ringkasan aktivitas kontrak.',
         organization: 'Daftar seluruh dokumen pengajuan dalam lingkup Organization Group Anda.',
-        contracts: 'Daftar seluruh arsip dokumen pengajuan dalam sistem.',
         mine: 'Daftar dokumen pengajuan yang Anda buat.',
-        pending:
-            filters?.pending_tab === 'history'
-                ? 'Riwayat dokumen pengajuan yang pernah Anda proses.'
-                : 'Dokumen pengajuan yang menunggu persetujuan Anda.',
-        expiry:
-            filters?.expiry_tab === 'kontrak'
-                ? 'Daftar dokumen kontrak yang akan atau telah berakhir masa berlakunya.'
-                : filters?.expiry_tab === 'non_kontrak'
-                  ? 'Daftar dokumen non kontrak yang akan atau telah berakhir masa berlakunya.'
-                  : filters?.expiry_tab === 'nda'
-                    ? 'Daftar dokumen NDA yang akan atau telah berakhir masa berlakunya.'
-                    : 'Kontrak yang akan atau telah berakhir.',
+        duty: 'Daftar dokumen pengajuan yang ditugaskan kepada Anda sebagai PIC.',
+        contracts: 'Daftar seluruh dokumen pengajuan dalam sistem.',
+        pending: isHistoryTab
+            ? 'Daftar dokumen pengajuan yang pernah Anda berikan persetujuan, penolakan, atau permintaan revisi.'
+            : 'Daftar dokumen pengajuan yang saat ini membutuhkan tindakan persetujuan dari Anda.',
+        expiry: currentTabTitle
+            ? `Daftar dokumen ${currentTabTitle} yang akan atau telah berakhir masa berlakunya.`
+            : 'Dokumen yang akan atau telah berakhir masa berlakunya.',
         archived: 'Daftar seluruh dokumen kontrak yang diarsipkan.',
         in_progress: 'Daftar seluruh kontrak dalam proses pengerjaan.',
-        f1: 'Daftar kontrak dengan dokumen F1.',
-        f2: 'Daftar kontrak dengan dokumen F2.',
         profile: 'Informasi akun dan pengaturan profil.',
     };
     const viewIconMap: Record<string, React.ComponentType<{ className?: string; size?: number | string; strokeWidth?: number }>> = {
@@ -588,7 +574,7 @@ export function ContractList({
     const activeFilterCount = useMemo(() => {
         let count = 0;
         if (filters) {
-            const arrayKeys = ['company_group_id', 'region_id', 'company_id', 'division_id', 'department_id', 'contract_type_id', 'status'];
+            const arrayKeys = ['company_group_id', 'region_id', 'company_id', 'division_id', 'department_id', 'contract_type_id', 'status', 'approval_status'];
             arrayKeys.forEach((k) => {
                 const v = (filters as Record<string, unknown>)[k];
                 if (Array.isArray(v)) {
@@ -774,6 +760,80 @@ export function ContractList({
             options?: Array<{ label: string; value: string | number }>;
         }> = [];
 
+        // For pending view (Persetujuan Saya), provide Hasil Keputusan (if history tab), Tipe Dokumen, Status Pengajuan, and Rentang Tanggal
+        if (view === 'pending') {
+            if (isHistoryTab) {
+                list.push({
+                    label: 'Hasil Keputusan',
+                    key: 'approval_status',
+                    type: 'searchable',
+                    options: [
+                        { label: 'Semua Keputusan', value: 'history' },
+                        { label: 'Disetujui', value: 'approved' },
+                        { label: 'Ditolak', value: 'rejected' },
+                        { label: 'Minta Revisi', value: 'revision' },
+                    ],
+                });
+            }
+
+            if (types && types.length > 0) {
+                list.push({
+                    label: 'Tipe Dokumen',
+                    key: 'contract_type_id',
+                    type: 'tree',
+                    treeItems: types as any[],
+                });
+            }
+
+            list.push({
+                label: 'Status Pengajuan',
+                key: 'status',
+                type: 'multiselect',
+                options: (masterContractStatuses || []).map((s) => ({
+                    label: s.label || s.code,
+                    value: s.code,
+                })),
+            });
+
+            list.push({
+                label: 'Rentang Tanggal',
+                key: 'created',
+                type: 'date-range',
+            });
+
+            return list;
+        }
+
+        // For duty and expiry views (Tugas Saya & Masa Berlaku), provide Tipe Dokumen, Status Pengajuan, and Rentang Tanggal
+        if (view === 'duty' || view === 'expiry') {
+            if (types && types.length > 0) {
+                list.push({
+                    label: 'Tipe Dokumen',
+                    key: 'contract_type_id',
+                    type: 'tree',
+                    treeItems: types as any[],
+                });
+            }
+
+            list.push({
+                label: 'Status Pengajuan',
+                key: 'status',
+                type: 'multiselect',
+                options: (masterContractStatuses || []).map((s) => ({
+                    label: s.label || s.code,
+                    value: s.code,
+                })),
+            });
+
+            list.push({
+                label: 'Rentang Tanggal',
+                key: 'created',
+                type: 'date-range',
+            });
+
+            return list;
+        }
+
         if (canChangeCompanyGroup && companyGroups && companyGroups.length > 0) {
             list.push({
                 label: 'Grup Perusahaan',
@@ -836,13 +896,10 @@ export function ContractList({
 
         if (types && types.length > 0) {
             list.push({
-                label: 'Kategori Kontrak',
+                label: 'Tipe Dokumen',
                 key: 'contract_type_id',
-                type: 'searchable',
-                options: (types as DBContractType[]).map((t) => ({
-                    label: t.name,
-                    value: t.id,
-                })),
+                type: 'tree',
+                treeItems: types as any[],
             });
         }
 
@@ -874,7 +931,7 @@ export function ContractList({
         companies,
         divisions,
         departments,
-        types,
+        view,
         masterContractStatuses,
     ]);
 
@@ -887,6 +944,10 @@ export function ContractList({
                 return filters?.parent_tab || '';
             case 'mine':
                 return filters?.mine_tab || '';
+            case 'duty':
+            case 'my_duty':
+            case 'assigned':
+                return filters?.duty_tab || filters?.parent_tab || '';
             case 'organization':
             case 'contracts.organization':
             case 'contracts/organization':
@@ -896,7 +957,7 @@ export function ContractList({
             default:
                 return '';
         }
-    }, [view, filters?.parent_tab, filters?.mine_tab, filters?.org_tab, filters?.expiry_tab]);
+    }, [view, filters?.parent_tab, filters?.mine_tab, filters?.duty_tab, filters?.org_tab, filters?.expiry_tab]);
 
     const handleCreate = async (data: Parameters<typeof contractApi.create>[0]) => {
         setProcessing(true);
@@ -1020,322 +1081,134 @@ export function ContractList({
     const renderPeriodWithExpiry = useCallback((c: Contract) => renderContractPeriod(c, isExpiryView), [isExpiryView]);
 
     const columns: Column<Contract>[] = useMemo(
-        () => [
-            {
-                accessorKey: 'contract_no_title',
-                header: (
-                    <div className="flex items-center gap-2">
-                        <Hash size={14} className="text-text-desc" />
-                        <span>No. & Judul Kontrak</span>
-                    </div>
-                ),
-                cell: renderContractWithTypes,
-                sortable: true,
-            },
-            {
-                accessorKey: 'vendor',
-                header: (
-                    <div className="flex items-center gap-2">
-                        <FileType size={14} className="text-text-desc" />
-                        <span>Vendor</span>
-                    </div>
-                ),
-                cell: renderVendor,
-                sortable: true,
-            },
-            {
-                accessorKey: 'period',
-                header: (
-                    <div className="flex items-center gap-2">
-                        <Calendar size={14} className="text-text-desc" />
-                        <span>{isExpiryView ? 'Masa Berlaku & Kedaluwarsa' : 'Masa Berlaku'}</span>
-                    </div>
-                ),
-                cell: renderPeriodWithExpiry,
-                sortable: true,
-            },
-            {
-                accessorKey: 'initiator',
-                header: (
-                    <div className="flex items-center gap-2">
-                        <User size={14} className="text-text-desc" />
-                        <span>Pembuat</span>
-                    </div>
-                ),
-                cell: renderInitiator,
-                sortable: true,
-            },
-            {
-                accessorKey: 'status',
-                header: (
-                    <div className="flex items-center gap-2">
-                        <GitBranch size={14} className="text-text-desc" />
-                        <span>Status</span>
-                    </div>
-                ),
-                cell: renderStatusAndStep,
-                sortable: true,
-            },
-            {
-                accessorKey: 'assigned_pic',
-                header: (
-                    <div className="flex items-center gap-2">
-                        <UserPlus size={14} className="text-text-desc" />
-                        <span>Ditugaskan</span>
-                    </div>
-                ),
-                cell: renderAssignedPic,
-                sortable: true,
-            },
-            {
-                accessorKey: 'created_at',
-                header: (
-                    <div className="flex items-center gap-2">
-                        <Calendar size={14} className="text-text-desc" />
-                        <span>Dibuat</span>
-                    </div>
-                ),
-                cell: renderCreatedAt,
-                sortable: true,
-            },
-            {
-                accessorKey: 'actions',
-                header: (
-                    <div className="flex items-center justify-center">
-                        <span>Aksi</span>
-                    </div>
-                ),
-                align: 'center',
-                pinned: 'right',
-                className: 'w-16 text-center px-2 py-1.5',
-                cell: (c: Contract) => (
-                    <div className="flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
-                        <a
-                            href={`/contracts/${c.id}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-text-muted hover:text-primary hover:bg-primary/10 hover:border-primary/20 inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg border border-transparent transition-all"
-                            title="Buka di Tab Baru"
-                        >
-                            <ExternalLink size={14} />
-                        </a>
-                    </div>
-                ),
-            },
-        ],
-        [renderContractWithTypes, renderPeriodWithExpiry, isExpiryView],
+        () => {
+            const cols: Column<Contract>[] = [
+                {
+                    accessorKey: 'contract_no_title',
+                    header: (
+                        <div className="flex items-center gap-2">
+                            <Hash size={14} className="text-text-desc" />
+                            <span>No. & Judul Kontrak</span>
+                        </div>
+                    ),
+                    cell: renderContractWithTypes,
+                    sortable: true,
+                },
+                {
+                    accessorKey: 'vendor',
+                    header: (
+                        <div className="flex items-center gap-2">
+                            <FileType size={14} className="text-text-desc" />
+                            <span>Vendor</span>
+                        </div>
+                    ),
+                    cell: renderVendor,
+                    sortable: true,
+                },
+                {
+                    accessorKey: 'period',
+                    header: (
+                        <div className="flex items-center gap-2">
+                            <Calendar size={14} className="text-text-desc" />
+                            <span>{isExpiryView ? 'Masa Berlaku & Kedaluwarsa' : 'Masa Berlaku'}</span>
+                        </div>
+                    ),
+                    cell: renderPeriodWithExpiry,
+                    sortable: true,
+                },
+                {
+                    accessorKey: 'initiator',
+                    header: (
+                        <div className="flex items-center gap-2">
+                            <User size={14} className="text-text-desc" />
+                            <span>Requestor</span>
+                        </div>
+                    ),
+                    cell: renderInitiator,
+                    sortable: true,
+                },
+                {
+                    accessorKey: 'status',
+                    header: (
+                        <div className="flex items-center gap-2">
+                            <GitBranch size={14} className="text-text-desc" />
+                            <span>Status</span>
+                        </div>
+                    ),
+                    cell: renderStatusAndStep,
+                    sortable: true,
+                },
+            ];
+
+            if (isHistoryTab) {
+                cols.push({
+                    accessorKey: 'decision',
+                    header: (
+                        <div className="flex items-center gap-2">
+                            <Check size={14} className="text-text-desc" />
+                            <span>Keputusan Anda</span>
+                        </div>
+                    ),
+                    cell: renderUserDecision,
+                    sortable: true,
+                });
+            }
+
+            cols.push(
+                {
+                    accessorKey: 'assigned_pic',
+                    header: (
+                        <div className="flex items-center gap-2">
+                            <UserPlus size={14} className="text-text-desc" />
+                            <span>PIC</span>
+                        </div>
+                    ),
+                    cell: renderAssignedPic,
+                    sortable: true,
+                },
+                {
+                    accessorKey: 'created_at',
+                    header: (
+                        <div className="flex items-center gap-2">
+                            <Calendar size={14} className="text-text-desc" />
+                            <span>Dibuat</span>
+                        </div>
+                    ),
+                    cell: renderCreatedAt,
+                    sortable: true,
+                },
+                {
+                    accessorKey: 'actions',
+                    header: (
+                        <div className="flex items-center justify-center">
+                            <span>Aksi</span>
+                        </div>
+                    ),
+                    align: 'center',
+                    pinned: 'right',
+                    className: 'w-16 text-center px-2 py-1.5',
+                    cell: (c: Contract) => (
+                        <div className="flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+                            <a
+                                href={`/contracts/${c.id}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-text-muted hover:text-primary hover:bg-primary/10 hover:border-primary/20 inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg border border-transparent transition-all"
+                                title="Buka di Tab Baru"
+                            >
+                                <ExternalLink size={14} />
+                            </a>
+                        </div>
+                    ),
+                }
+            );
+
+            return cols;
+        },
+        [renderContractWithTypes, renderPeriodWithExpiry, isExpiryView, isHistoryTab],
     );
 
-    const renderCategoryTabs = () => {
-        let tabs: {
-            key: string;
-            label: string;
-            count: number;
-            icon?: React.ComponentType<{ className?: string; size?: number | string }> | React.ReactNode;
-            isActive: boolean;
-        }[] = [];
-        const activeView = (currentView || view) as string;
 
-        const buildTabs = (
-            counts: { all?: number; kontrak?: number; non_kontrak?: number; nda?: number } | undefined,
-            activeKey: string,
-            isHistoryPending: boolean = false,
-        ) => {
-            if (isHistoryPending) {
-                return [
-                    {
-                        key: 'pending',
-                        label: 'Perlu Persetujuan',
-                        count: pendingCounts?.pending ?? 0,
-                        icon: Clock,
-                        isActive: activeKey === 'pending',
-                    },
-                    {
-                        key: 'history',
-                        label: 'Riwayat Persetujuan',
-                        count: pendingCounts?.history ?? 0,
-                        icon: History,
-                        isActive: activeKey === 'history',
-                    },
-                ];
-            }
-
-            const rootTypes = ((types as DBContractType[]) || []).filter((t) => !t.parent_id || String(t.parent_id) === String(t.id));
-
-            const tabsList = [{ key: '', label: 'Semua', count: counts?.all ?? 0, icon: LayoutGrid, isActive: !activeKey }];
-
-            if (rootTypes.length > 0) {
-                rootTypes.forEach((rt) => {
-                    const code = (rt.code || '').toLowerCase();
-                    const name = (rt.name || '').toLowerCase();
-                    const id = String(rt.id);
-
-                    let tabKey = id;
-                    let countKey = id;
-                    if (code === 'a-1' || (!name.includes('non') && name.includes('kontrak'))) {
-                        tabKey = 'kontrak';
-                        countKey = counts?.kontrak !== undefined ? 'kontrak' : id;
-                    } else if (code === 'a-2' || name.includes('non')) {
-                        tabKey = 'non_kontrak';
-                        countKey = counts?.non_kontrak !== undefined ? 'non_kontrak' : id;
-                    } else if (code === 'nda' || name.includes('nda') || name.includes('kerahasiaan')) {
-                        tabKey = 'nda';
-                        countKey = counts?.nda !== undefined ? 'nda' : id;
-                    }
-
-                    const tabCount = counts?.[countKey] ?? counts?.[id] ?? 0;
-
-                    tabsList.push({
-                        key: tabKey,
-                        label: rt.name,
-                        count: tabCount,
-                        icon: name.includes('nda') ? Zap : FileText,
-                        isActive: activeKey === tabKey || activeKey === id,
-                    });
-                });
-            } else {
-                const showContract = effectiveDashboardConfig?.show_overview_contract !== false;
-                const showNonContract = effectiveDashboardConfig?.show_overview_non_contract !== false;
-                const showNda = effectiveDashboardConfig?.show_overview_nda !== false;
-
-                if (showContract) {
-                    tabsList.push({
-                        key: 'kontrak',
-                        label: 'Kontrak',
-                        count: counts?.kontrak ?? 0,
-                        icon: FileText,
-                        isActive: activeKey === 'kontrak',
-                    });
-                }
-
-                if (showNonContract) {
-                    tabsList.push({
-                        key: 'non_kontrak',
-                        label: 'Non Kontrak',
-                        count: counts?.non_kontrak ?? 0,
-                        icon: FileCheck,
-                        isActive: activeKey === 'non_kontrak',
-                    });
-                }
-
-                if (showNda) {
-                    tabsList.push({
-                        key: 'nda',
-                        label: 'NDA',
-                        count: counts?.nda ?? 0,
-                        icon: Zap,
-                        isActive: activeKey === 'nda',
-                    });
-                }
-            }
-
-            return tabsList;
-        };
-
-        switch (activeView) {
-            case 'contracts':
-            case 'admin.contracts':
-            case 'admin/contracts': {
-                const activeKey = filters?.parent_tab || '';
-                tabs = buildTabs(parentCategoryCounts, activeKey);
-                break;
-            }
-            case 'organization':
-            case 'contracts.organization':
-            case 'contracts/organization': {
-                const activeKey = filters?.org_tab || filters?.parent_tab || '';
-                tabs = buildTabs(orgCategoryCounts || parentCategoryCounts, activeKey);
-                break;
-            }
-            case 'mine': {
-                const activeKey = filters?.mine_tab || '';
-                tabs = buildTabs(mineCounts, activeKey);
-                break;
-            }
-            case 'pending': {
-                const activeKey = filters?.pending_tab === 'history' ? 'history' : 'pending';
-                tabs = buildTabs(undefined, activeKey, true);
-                break;
-            }
-            case 'expiry': {
-                const activeKey = filters?.expiry_tab || '';
-                tabs = buildTabs(expiryCategoryCounts, activeKey);
-                break;
-            }
-            default:
-                break;
-        }
-
-        if (tabs.length === 0) return null;
-
-        const onTabClick = (tabKey: string) => {
-            switch (activeView) {
-                case 'contracts':
-                case 'admin.contracts':
-                case 'admin/contracts':
-                    handleFilterChange({ parent_tab: tabKey || '', page: 1 });
-                    break;
-                case 'organization':
-                case 'contracts.organization':
-                case 'contracts/organization':
-                    handleFilterChange({ org_tab: tabKey || '', page: 1 });
-                    break;
-                case 'mine':
-                    handleFilterChange({ mine_tab: tabKey || '', page: 1 });
-                    break;
-                case 'pending':
-                    handleFilterChange({ pending_tab: tabKey, page: 1 });
-                    break;
-                case 'expiry':
-                    handleFilterChange({ expiry_tab: tabKey || '', page: 1 });
-                    break;
-                default:
-                    break;
-            }
-        };
-
-        return (
-            <div className="border-surface-border bg-card custom-scrollbar flex h-11 shrink-0 items-center gap-6 overflow-x-auto border-b px-5 select-none">
-                {tabs.map((tab) => {
-                    const TabIcon = tab.icon;
-                    return (
-                        <button
-                            key={tab.key}
-                            type="button"
-                            onClick={() => onTabClick(tab.key)}
-                            className={cn(
-                                'group relative -mb-px flex h-full shrink-0 cursor-pointer items-center gap-2 border-b-2 text-xs font-bold transition-all duration-150 select-none',
-                                tab.isActive
-                                    ? 'border-primary text-primary'
-                                    : 'text-muted-foreground hover:border-border hover:text-foreground border-transparent',
-                            )}
-                        >
-                            {TabIcon && (
-                                <TabIcon
-                                    size={14}
-                                    className={cn(
-                                        'shrink-0 transition-colors',
-                                        tab.isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground',
-                                    )}
-                                />
-                            )}
-                            <span>{tab.label}</span>
-                            <span
-                                className={cn(
-                                    'shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums transition-colors',
-                                    tab.isActive
-                                        ? 'bg-primary/10 text-primary dark:bg-primary/20'
-                                        : 'bg-muted text-muted-foreground group-hover:text-foreground',
-                                )}
-                            >
-                                {tab.count}
-                            </span>
-                        </button>
-                    );
-                })}
-            </div>
-        );
-    };
 
     return (
         <>
@@ -1493,7 +1366,61 @@ export function ContractList({
                                         <ProfileView meUser={meUser} showToast={showToast} />
                                     ) : (
                                         <div className="bg-surface-base/20 border-surface-border flex h-full min-h-0 flex-1 flex-col gap-0 overflow-hidden">
-                                            {renderCategoryTabs()}
+                                            {view === 'pending' && (
+                                                <div className="flex items-center gap-1.5 border-b border-surface-border bg-surface-base/60 px-3 py-2 shrink-0">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleFilterChange({ approval_status: 'pending', page: 1 })}
+                                                        className={cn(
+                                                            'flex items-center gap-2 px-3 py-1.5 rounded-[4px] text-xs font-semibold transition-all cursor-pointer',
+                                                            (!filters?.approval_status || filters?.approval_status === 'pending')
+                                                                ? 'bg-primary text-primary-foreground shadow-sm'
+                                                                : 'bg-surface-muted text-text-desc hover:text-text-main hover:bg-surface-muted/80',
+                                                        )}
+                                                    >
+                                                        <Clock size={13} />
+                                                        <span>Butuh Tindakan Saya</span>
+                                                        {typeof pendingCounts?.pending === 'number' && (
+                                                            <span
+                                                                className={cn(
+                                                                    'px-1.5 py-0.2 rounded-[4px] text-[10px] font-black',
+                                                                    (!filters?.approval_status || filters?.approval_status === 'pending')
+                                                                        ? 'bg-white text-primary'
+                                                                        : 'bg-primary/10 text-primary',
+                                                                )}
+                                                            >
+                                                                {pendingCounts.pending}
+                                                            </span>
+                                                        )}
+                                                    </button>
+
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleFilterChange({ approval_status: 'history', page: 1 })}
+                                                        className={cn(
+                                                            'flex items-center gap-2 px-3 py-1.5 rounded-[4px] text-xs font-semibold transition-all cursor-pointer',
+                                                            filters?.approval_status === 'history' || ['approved', 'rejected', 'revision'].includes(filters?.approval_status as string)
+                                                                ? 'bg-primary text-primary-foreground shadow-sm'
+                                                                : 'bg-surface-muted text-text-desc hover:text-text-main hover:bg-surface-muted/80',
+                                                        )}
+                                                    >
+                                                        <History size={13} />
+                                                        <span>Pernah Saya Tindak Lanjuti</span>
+                                                        {typeof pendingCounts?.history === 'number' && (
+                                                            <span
+                                                                className={cn(
+                                                                    'px-1.5 py-0.2 rounded-[4px] text-[10px] font-black',
+                                                                    filters?.approval_status === 'history' || ['approved', 'rejected', 'revision'].includes(filters?.approval_status as string)
+                                                                        ? 'bg-white text-primary'
+                                                                        : 'bg-surface-base border border-surface-border text-text-desc',
+                                                                )}
+                                                            >
+                                                                {pendingCounts.history}
+                                                            </span>
+                                                        )}
+                                                    </button>
+                                                </div>
+                                            )}
                                             {isFilterExpanded && (
                                                 <PageFilter
                                                     categories={filterCategories}

@@ -18,6 +18,7 @@ use App\Models\Master\AccessModule;
 use App\Models\Master\DashboardType;
 use App\Models\Master\Role;
 use App\Models\Master\User;
+use App\Models\Master\Workflow;
 use App\Models\Transaction\Contract;
 use App\Models\Transaction\SubmissionReview;
 use App\Services\ContractFilterScopeService;
@@ -26,12 +27,12 @@ use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 use Maatwebsite\Excel\Facades\Excel;
@@ -69,20 +70,7 @@ class ContractController extends Controller
         $this->contractOptionsQuery = $contractOptionsQuery;
     }
 
-    #[OA\Get(
-        path: '/api/contracts',
-        summary: 'Get list of contracts',
-        tags: ['Contracts'],
-        security: [['bearerAuth' => []]],
-        parameters: [
-            new OA\Parameter(name: 'view', in: 'query', description: 'Filter by view (dashboard, contracts, mine, pending, etc.)', schema: new OA\Schema(type: 'string')),
-            new OA\Parameter(name: 'search', in: 'query', description: 'Search query', schema: new OA\Schema(type: 'string')),
-            new OA\Parameter(name: 'per_page', in: 'query', description: 'Items per page', schema: new OA\Schema(type: 'integer', default: 10)),
-        ],
-        responses: [
-            new OA\Response(response: 200, description: 'List of contracts'),
-        ],
-    )]
+
     public function index(Request $request): JsonResponse
     {
         $view = $request->query('view', 'contracts');
@@ -107,13 +95,12 @@ class ContractController extends Controller
             }
         }
 
-        $contracts = in_array($view, ['dashboard', 'profile'])
-            ? new LengthAwarePaginator([], 0, 25)
-            : $this->contractListQuery
-                ->build($request, $view)
-                ->paginate($request->integer('per_page', 25))
-                ->withQueryString()
-                ->through(fn ($c) => ContractFormatter::formatContract($c, false));
+        $perPage = min(max($request->integer('per_page', 25), 1), 100);
+        $contracts = $this->contractListQuery
+            ->build($request, $view)
+            ->paginate($perPage)
+            ->withQueryString()
+            ->through(fn ($c) => ContractFormatter::formatContract($c, false));
 
         $counts = $this->getCachedContractCounts(Auth::id());
 
@@ -160,10 +147,11 @@ class ContractController extends Controller
                 'created_from', 'created_to', 'region_ids', 'vendor_ids', 'statuses',
                 'contract_type_ids', 'pic_ids', 'department_ids', 'submission_type_id',
                 'period', 'company_group_ids', 'company_ids',
-                'company_group_id', 'region_id', 'company_id', 'division_id', 'mine_tab', 'org_tab', 'contract_tab', 'parent_tab', 'pending_tab', 'expiry_tab',
+                'company_group_id', 'region_id', 'company_id', 'division_id',
+                'mine_tab', 'duty_tab', 'org_tab', 'contract_tab', 'parent_tab', 'pending_tab', 'approval_status', 'expiry_tab',
                 'sort_by', 'sort_dir', 'sortBy', 'sortDir',
             ]), [
-                'per_page' => $request->integer('per_page', 10),
+                'per_page' => $perPage,
             ]),
             'breadcrumbs' => [
                 ['title' => 'Manajemen Kontrak', 'href' => route('contracts'), 'icon' => 'FileText'],
@@ -181,6 +169,211 @@ class ContractController extends Controller
     }
 
     /**
+     * View summary portal with 3 vertical tables:
+     * 1. Perlu Tindakan (Pending Approval for user)
+     * 2. Sedang Diproses (In-progress submissions made by user)
+     * 3. Draft (Draft submissions made by user)
+     */
+    public function activityView(Request $request): Response|JsonResponse
+    {
+        $userId = Auth::id();
+        $perPage = min(max($request->integer('per_page', 10), 1), 100);
+
+        // 1. Pending Actions (Perlu Tindakan - Paling Atas)
+        $pendingQuery = Contract::query()
+            ->pendingApprovalFor($userId)
+            ->whereRaw('UPPER(status) != ?', ['DRAFT'])
+            ->with([
+                'creator.department',
+                'contractType',
+                'submissionType',
+                'statusDetail',
+                'workflow',
+                'workflowStep.actions',
+                'vendor',
+                'initiator.department',
+                'parent',
+                'assignedPic.department',
+                'approvals',
+            ]);
+
+        if ($request->filled('search_pending')) {
+            $search = mb_strtolower(addcslashes($request->search_pending, '%_\\'));
+            $pendingQuery->where(function ($q) use ($search) {
+                $q->where(DB::raw('LOWER(title)'), 'like', "%{$search}%")
+                    ->orWhere(DB::raw('LOWER(form_no)'), 'like', "%{$search}%");
+            });
+        }
+
+        $this->applyActivitySort(
+            $pendingQuery,
+            $request->input('sort_pending'),
+            $request->input('dir_pending'),
+            'updated_at'
+        );
+
+        $pendingContracts = $pendingQuery
+            ->paginate($perPage, ['*'], 'page_pending')
+            ->withQueryString()
+            ->through(fn ($c) => ContractFormatter::formatContract($c, false));
+
+        // 2. In Progress (Sedang Diproses milik user - Tengah)
+        $inProgressQuery = Contract::query()
+            ->mine()
+            ->whereIn('status', ['in_review', 'revision', 'pending', 'locked'])
+            ->whereRaw('UPPER(status) != ?', ['DRAFT'])
+            ->whereNull('closed_at')
+            ->with([
+                'creator.department',
+                'contractType',
+                'submissionType',
+                'statusDetail',
+                'workflow',
+                'workflowStep.actions',
+                'vendor',
+                'initiator.department',
+                'parent',
+                'assignedPic.department',
+                'approvals',
+            ]);
+
+        if ($request->filled('search_progress')) {
+            $search = mb_strtolower(addcslashes($request->search_progress, '%_\\'));
+            $inProgressQuery->where(function ($q) use ($search) {
+                $q->where(DB::raw('LOWER(title)'), 'like', "%{$search}%")
+                    ->orWhere(DB::raw('LOWER(form_no)'), 'like', "%{$search}%");
+            });
+        }
+
+        $this->applyActivitySort(
+            $inProgressQuery,
+            $request->input('sort_progress'),
+            $request->input('dir_progress'),
+            'updated_at'
+        );
+
+        $inProgressContracts = $inProgressQuery
+            ->paginate($perPage, ['*'], 'page_progress')
+            ->withQueryString()
+            ->through(fn ($c) => ContractFormatter::formatContract($c, false));
+
+        // 3. Draft (Draft pengajuan milik user - Paling Bawah)
+        $draftQuery = Contract::query()
+            ->mine()
+            ->whereRaw('UPPER(status) = ?', ['DRAFT'])
+            ->with([
+                'creator.department',
+                'contractType',
+                'submissionType',
+                'statusDetail',
+                'workflow',
+                'workflowStep.actions',
+                'vendor',
+                'initiator.department',
+                'parent',
+                'assignedPic.department',
+            ]);
+
+        if ($request->filled('search_draft')) {
+            $search = mb_strtolower(addcslashes($request->search_draft, '%_\\'));
+            $draftQuery->where(function ($q) use ($search) {
+                $q->where(DB::raw('LOWER(title)'), 'like', "%{$search}%")
+                    ->orWhere(DB::raw('LOWER(form_no)'), 'like', "%{$search}%");
+            });
+        }
+
+        $this->applyActivitySort(
+            $draftQuery,
+            $request->input('sort_draft'),
+            $request->input('dir_draft'),
+            'updated_at'
+        );
+
+        $draftContracts = $draftQuery
+            ->paginate($perPage, ['*'], 'page_draft')
+            ->withQueryString()
+            ->through(fn ($c) => ContractFormatter::formatContract($c, false));
+
+        $counts = $this->getCachedContractCounts($userId);
+        $loaders = $this->contractOptionsQuery->getLoaders();
+
+        if ($request->wantsJson() && ! $request->header('X-Inertia')) {
+            return response()->json([
+                'status' => 'success',
+                'pending' => $pendingContracts,
+                'in_progress' => $inProgressContracts,
+                'draft' => $draftContracts,
+                'counts' => $counts,
+            ]);
+        }
+
+        $data = [
+            'currentView' => 'activity',
+            'pendingContracts' => $pendingContracts,
+            'inProgressContracts' => $inProgressContracts,
+            'draftContracts' => $draftContracts,
+            'types' => $loaders['types'](),
+            'submissionTypes' => $loaders['submissionTypes'](),
+            'users' => Inertia::defer(fn () => $loaders['users']()),
+            'vendors' => Inertia::defer(fn () => $loaders['vendors']()),
+            'formTemplates' => Inertia::defer(fn () => $loaders['formTemplates']()),
+            'departments' => $loaders['departments'](),
+            'divisions' => $loaders['divisions'](),
+            'roles' => $loaders['roles'](),
+            'regions' => $loaders['regions'](),
+            'locations' => $loaders['locations'](),
+            'companyGroups' => $loaders['companyGroups'](),
+            'companies' => $loaders['companies'](),
+            'contractStatuses' => $loaders['contractStatuses'](),
+            'counts' => $counts,
+            'filters' => $request->only([
+                'search_pending', 'search_progress', 'search_draft',
+                'page_pending', 'page_progress', 'page_draft',
+                'sort_pending', 'dir_pending',
+                'sort_progress', 'dir_progress',
+                'sort_draft', 'dir_draft',
+            ]),
+            'breadcrumbs' => [
+                ['title' => 'Manajemen Kontrak', 'href' => route('contracts'), 'icon' => 'FileText'],
+                ['title' => 'Aktivitas Pengajuan', 'href' => '#', 'description' => 'Ringkasan pengajuan yang perlu tindakan, sedang diproses, dan draft.', 'icon' => 'Layers'],
+            ],
+        ];
+
+        return Inertia::render('contracts/Activity', $data);
+    }
+
+    /**
+     * Apply sorting for activity view tables.
+     */
+    private function applyActivitySort($query, ?string $sortBy, ?string $sortDir, string $defaultSort = 'updated_at'): void
+    {
+        $dir = strtolower($sortDir ?? 'desc') === 'asc' ? 'asc' : 'desc';
+        $sortBy = $sortBy ?: $defaultSort;
+
+        $userSubquery = fn (string $columnExpr) => User::select('name')
+            ->whereColumn('m_users.id', DB::raw($columnExpr))
+            ->limit(1);
+
+        $typeSubquery = fn () => DB::table('m_contract_types')
+            ->select('name')
+            ->whereColumn('m_contract_types.id', 't_contracts.contract_type_id')
+            ->limit(1);
+
+        match ($sortBy) {
+            'title', 'form_no', 'contract_no_title' => $query->orderByRaw("COALESCE(t_contracts.title, t_contracts.form_no, t_contracts.contract_no) {$dir}"),
+            'requestor', 'creator', 'initiator' => $query->orderBy($userSubquery('COALESCE(t_contracts.initiated_by_id, t_contracts.created_by)'), $dir),
+            'pic', 'assigned_pic', 'assigned_pic_id' => $query->orderBy($userSubquery('t_contracts.assigned_pic_id'), $dir),
+            'type', 'contract_type', 'contract_type_id' => $query->orderBy($typeSubquery(), $dir),
+            'status' => $query->orderBy('status', $dir),
+            'created_at' => $query->orderBy('created_at', $dir),
+            'updated_at' => $query->orderBy('updated_at', $dir),
+            default => $query->orderBy($sortBy, $dir),
+        };
+
+        $query->orderBy('t_contracts.id', 'desc');
+    }
+
+    /**
      * Get view metadata including title, description, and icon.
      *
      * @return array{title: string, description: string, icon: string}
@@ -191,12 +384,11 @@ class ContractController extends Controller
             'dashboard' => ['title' => 'Dashboard', 'description' => 'Statistik dan ringkasan aktivitas kontrak.', 'icon' => 'LayoutGrid'],
             'organization' => ['title' => 'Semua Pengajuan', 'description' => 'Daftar seluruh dokumen pengajuan dalam lingkup Organization Group Anda.', 'icon' => 'FileText'],
             'mine' => ['title' => 'Pengajuan Saya', 'description' => 'Daftar dokumen pengajuan yang Anda buat.', 'icon' => 'FileEdit'],
+            'duty', 'my_duty', 'assigned' => ['title' => 'Tugas Saya', 'description' => 'Daftar dokumen pengajuan yang ditugaskan kepada Anda sebagai PIC.', 'icon' => 'Briefcase'],
             'pending' => ['title' => 'Persetujuan Saya', 'description' => 'Dokumen pengajuan yang menunggu atau telah diproses persetujuan Anda.', 'icon' => 'Clock'],
             'expiry' => ['title' => 'Masa Berlaku Dokumen', 'description' => 'Dokumen yang akan atau telah berakhir masa berlakunya.', 'icon' => 'History'],
             'archived' => ['title' => 'Arsip Dokumen', 'description' => 'Kontrak yang telah diarsipkan.', 'icon' => 'FolderClosed'],
             'in_progress' => ['title' => 'On Progress', 'description' => 'Kontrak yang sedang dalam proses pengerjaan.', 'icon' => 'Clock'],
-            'f1' => ['title' => 'Formulir F1', 'description' => 'Daftar kontrak dengan dokumen F1.', 'icon' => 'FilePlus'],
-            'f2' => ['title' => 'Formulir F2', 'description' => 'Daftar kontrak dengan dokumen F2.', 'icon' => 'FilePlus'],
             default => ['title' => 'Semua Pengajuan', 'description' => 'Daftar seluruh dokumen pengajuan dalam sistem.', 'icon' => 'FileText'],
         };
     }
@@ -226,18 +418,14 @@ class ContractController extends Controller
 
             // Map every root dynamically to its descendant subtree
             $rootDescendantMap = [];
+            $rootMetaMap = [];
             foreach ($roots as $root) {
                 $rootDescendantMap[$root->id] = $getDescendantIds($root->id);
-            }
-
-            // Scoped base query respecting user organization permissions (no eager loading needed for counts)
-            $scopedAllQuery = $this->contractListQuery->build(new Request, 'all', false);
-            $activeContractsQuery = (clone $scopedAllQuery)->whereRaw('UPPER(status) != ?', ['ARCHIVED'])->whereNull('closed_at');
-
-            // Dynamic counts per root category
-            $dynamicParentCounts = [];
-            foreach ($rootDescendantMap as $rootId => $descendantIds) {
-                $dynamicParentCounts[$rootId] = (clone $activeContractsQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $descendantIds)->orWhereIn('contract_type_parent_id', $descendantIds))->count();
+                $rootMetaMap[$root->id] = [
+                    'code' => strtolower($root->code ?? ''),
+                    'slug' => Str::slug($root->name ?? ''),
+                    'code_slug' => Str::slug($root->code ?? ''),
+                ];
             }
 
             $kontrakParent = $roots->first(fn ($p) => strtoupper($p->code ?? '') === 'A-1' || (stripos($p->name, 'non') === false && stripos($p->name, 'kontrak') !== false)) ?: $roots->first();
@@ -248,87 +436,74 @@ class ContractController extends Controller
             $nonKontrakIds = $nonKontrakParent ? $getDescendantIds($nonKontrakParent->id) : [];
             $ndaIds = $ndaParent ? $getDescendantIds($ndaParent->id) : [];
 
-            $parentCategoryCounts = array_merge([
-                'all' => (clone $activeContractsQuery)->count(),
-                'kontrak' => $kontrakIds ? (clone $activeContractsQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $kontrakIds)->orWhereIn('contract_type_parent_id', $kontrakIds))->count() : 0,
-                'non_kontrak' => $nonKontrakIds ? (clone $activeContractsQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $nonKontrakIds)->orWhereIn('contract_type_parent_id', $nonKontrakIds))->count() : 0,
-                'nda' => $ndaIds ? (clone $activeContractsQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $ndaIds)->orWhereIn('contract_type_parent_id', $ndaIds))->count() : 0,
-                'in_progress' => (clone $scopedAllQuery)->whereIn('status', ['in_review', 'pending', 'locked'])->whereNull('closed_at')->count(),
-                'archived' => (clone $scopedAllQuery)->where(fn ($q) => $q->whereRaw('UPPER(status) = ?', ['ARCHIVED'])->orWhereNotNull('closed_at'))->count(),
-            ], $dynamicParentCounts);
+            $buildCategoryCounts = function ($activeQuery, $scopedQuery = null, bool $includeStatus = true) use ($rootDescendantMap, $rootMetaMap, $kontrakIds, $nonKontrakIds, $ndaIds) {
+                $dynamic = [];
+                foreach ($rootDescendantMap as $rootId => $descendantIds) {
+                    $cnt = (clone $activeQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $descendantIds)->orWhereIn('contract_type_parent_id', $descendantIds))->count();
+                    $dynamic[$rootId] = $cnt;
+                    if (! empty($rootMetaMap[$rootId]['code'])) {
+                        $dynamic[$rootMetaMap[$rootId]['code']] = $cnt;
+                    }
+                    if (! empty($rootMetaMap[$rootId]['slug'])) {
+                        $dynamic[$rootMetaMap[$rootId]['slug']] = $cnt;
+                    }
+                    if (! empty($rootMetaMap[$rootId]['code_slug'])) {
+                        $dynamic[$rootMetaMap[$rootId]['code_slug']] = $cnt;
+                    }
+                }
+
+                $base = [
+                    'all' => (clone $activeQuery)->count(),
+                    'kontrak' => $kontrakIds ? (clone $activeQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $kontrakIds)->orWhereIn('contract_type_parent_id', $kontrakIds))->count() : 0,
+                    'non_kontrak' => $nonKontrakIds ? (clone $activeQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $nonKontrakIds)->orWhereIn('contract_type_parent_id', $nonKontrakIds))->count() : 0,
+                    'nda' => $ndaIds ? (clone $activeQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $ndaIds)->orWhereIn('contract_type_parent_id', $ndaIds))->count() : 0,
+                ];
+
+                if ($includeStatus && $scopedQuery) {
+                    $base['in_progress'] = (clone $scopedQuery)->whereIn('status', ['in_review', 'revision', 'pending', 'locked'])->whereNull('closed_at')->count();
+                    $base['archived'] = (clone $scopedQuery)->where(fn ($q) => $q->whereRaw('UPPER(status) = ?', ['ARCHIVED'])->orWhereNotNull('closed_at'))->count();
+                }
+
+                return array_merge($base, $dynamic);
+            };
+
+            // Scoped base query respecting user organization permissions (no eager loading needed for counts)
+            $scopedAllQuery = $this->contractListQuery->build(new Request, 'all', false);
+            $activeContractsQuery = (clone $scopedAllQuery)->whereRaw('UPPER(status) != ?', ['ARCHIVED'])->whereNull('closed_at');
+            $parentCategoryCounts = $buildCategoryCounts($activeContractsQuery, $scopedAllQuery, true);
 
             // Org Group Counts
             $scopedOrgQuery = $this->contractListQuery->build(new Request, 'organization', false);
             $activeOrgQuery = (clone $scopedOrgQuery)->whereRaw('UPPER(status) != ?', ['ARCHIVED'])->whereNull('closed_at');
-            $dynamicOrgCounts = [];
-            foreach ($rootDescendantMap as $rootId => $descendantIds) {
-                $dynamicOrgCounts[$rootId] = (clone $activeOrgQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $descendantIds)->orWhereIn('contract_type_parent_id', $descendantIds))->count();
-            }
+            $orgCategoryCounts = $buildCategoryCounts($activeOrgQuery, $scopedOrgQuery, true);
 
-            $orgCategoryCounts = array_merge([
-                'all' => (clone $activeOrgQuery)->count(),
-                'kontrak' => $kontrakIds ? (clone $activeOrgQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $kontrakIds)->orWhereIn('contract_type_parent_id', $kontrakIds))->count() : 0,
-                'non_kontrak' => $nonKontrakIds ? (clone $activeOrgQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $nonKontrakIds)->orWhereIn('contract_type_parent_id', $nonKontrakIds))->count() : 0,
-                'nda' => $ndaIds ? (clone $activeOrgQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $ndaIds)->orWhereIn('contract_type_parent_id', $ndaIds))->count() : 0,
-                'in_progress' => (clone $scopedOrgQuery)->whereIn('status', ['in_review', 'pending', 'locked'])->whereNull('closed_at')->count(),
-                'archived' => (clone $scopedOrgQuery)->where(fn ($q) => $q->whereRaw('UPPER(status) = ?', ['ARCHIVED'])->orWhereNotNull('closed_at'))->count(),
-            ], $dynamicOrgCounts);
-
-            $scopedMineQuery = $this->contractListQuery->build(new Request, 'mine', false);
+            // Mine Counts
+            $scopedMineQuery = Contract::mine($userId);
             $myActiveQuery = (clone $scopedMineQuery)->whereRaw('UPPER(status) != ?', ['ARCHIVED'])->whereNull('closed_at');
-            $dynamicMineCounts = [];
-            foreach ($rootDescendantMap as $rootId => $descendantIds) {
-                $dynamicMineCounts[$rootId] = (clone $myActiveQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $descendantIds)->orWhereIn('contract_type_parent_id', $descendantIds))->count();
-            }
+            $mineCounts = $buildCategoryCounts($myActiveQuery, $scopedMineQuery, true);
 
-            $mineCounts = array_merge([
-                'all' => (clone $myActiveQuery)->count(),
-                'kontrak' => $kontrakIds ? (clone $myActiveQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $kontrakIds)->orWhereIn('contract_type_parent_id', $kontrakIds))->count() : 0,
-                'non_kontrak' => $nonKontrakIds ? (clone $myActiveQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $nonKontrakIds)->orWhereIn('contract_type_parent_id', $nonKontrakIds))->count() : 0,
-                'nda' => $ndaIds ? (clone $myActiveQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $ndaIds)->orWhereIn('contract_type_parent_id', $ndaIds))->count() : 0,
-                'in_progress' => (clone $scopedMineQuery)->whereIn('status', ['in_review', 'pending', 'locked'])->whereNull('closed_at')->count(),
-                'archived' => (clone $scopedMineQuery)->where(fn ($q) => $q->whereRaw('UPPER(status) = ?', ['ARCHIVED'])->orWhereNotNull('closed_at'))->count(),
-            ], $dynamicMineCounts);
+            // Duty Counts (Assigned PIC)
+            $scopedDutyQuery = Contract::duty($userId);
+            $dutyActiveQuery = (clone $scopedDutyQuery)->whereRaw('UPPER(status) != ?', ['ARCHIVED'])->whereNull('closed_at');
+            $dutyCounts = $buildCategoryCounts($dutyActiveQuery, $scopedDutyQuery, true);
 
+            // Pending Approvals Counts
             $pendingCounts = [
-                'pending' => DB::table('t_approvals')
-                    ->join('t_contracts', 't_approvals.contract_id', '=', 't_contracts.id')
-                    ->where('t_approvals.user_id', $userId)
-                    ->where('t_approvals.status', 'pending')
-                    ->whereNull('t_contracts.deleted_at')
-                    ->whereRaw("UPPER(t_contracts.status) != 'DRAFT'")
-                    ->whereColumn('t_approvals.workflow_step_id', 't_contracts.workflow_step_id')
-                    ->distinct('t_contracts.id')
-                    ->count('t_contracts.id'),
-                'history' => DB::table('t_approvals')
-                    ->join('t_contracts', 't_approvals.contract_id', '=', 't_contracts.id')
-                    ->where('t_approvals.user_id', $userId)
-                    ->whereIn('t_approvals.status', ['approved', 'rejected', 'revision'])
-                    ->whereNull('t_contracts.deleted_at')
-                    ->whereRaw("UPPER(t_contracts.status) != 'DRAFT'")
-                    ->distinct('t_contracts.id')
-                    ->count('t_contracts.id'),
+                'pending' => Contract::pendingApprovalFor($userId)->count(),
+                'history' => Contract::actedBy($userId)->count(),
             ];
 
+            // Expiry Counts
             $scopedExpiryQuery = (clone $scopedAllQuery)
                 ->whereNotNull('end_date')
                 ->whereDate('end_date', '<=', now()->addDays(30)->toDateString());
-            $dynamicExpiryCounts = [];
-            foreach ($rootDescendantMap as $rootId => $descendantIds) {
-                $dynamicExpiryCounts[$rootId] = (clone $scopedExpiryQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $descendantIds)->orWhereIn('contract_type_parent_id', $descendantIds))->count();
-            }
-
-            $expiryCategoryCounts = array_merge([
-                'all' => (clone $scopedExpiryQuery)->count(),
-                'kontrak' => $kontrakIds ? (clone $scopedExpiryQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $kontrakIds)->orWhereIn('contract_type_parent_id', $kontrakIds))->count() : 0,
-                'non_kontrak' => $nonKontrakIds ? (clone $scopedExpiryQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $nonKontrakIds)->orWhereIn('contract_type_parent_id', $nonKontrakIds))->count() : 0,
-                'nda' => $ndaIds ? (clone $scopedExpiryQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $ndaIds)->orWhereIn('contract_type_parent_id', $ndaIds))->count() : 0,
-            ], $dynamicExpiryCounts);
+            $expiryCategoryCounts = $buildCategoryCounts($scopedExpiryQuery, null, false);
 
             return [
                 'parentCategoryCounts' => $parentCategoryCounts,
                 'orgCategoryCounts' => $orgCategoryCounts,
                 'mineCounts' => $mineCounts,
+                'dutyCounts' => $dutyCounts,
                 'pendingCounts' => $pendingCounts,
                 'expiryCategoryCounts' => $expiryCategoryCounts,
             ];
@@ -404,16 +579,19 @@ class ContractController extends Controller
 
     public function getDashboardVisibility(Request $request): JsonResponse
     {
+        $authUser = $request->user();
         $userId = $request->query('user_id');
         $dashboardTypeId = $request->query('dashboard_type_id');
 
         $user = null;
         if (! empty($userId)) {
-            $user = User::with(['roleRelation', 'division', 'department'])->find($userId);
+            if ($authUser && ($authUser->id === $userId || $authUser->isAdmin())) {
+                $user = User::with(['roleRelation', 'division', 'department'])->find($userId);
+            }
         }
 
         if (! $user) {
-            $user = $request->user();
+            $user = $authUser;
             if ($user && ! $user->relationLoaded('roleRelation')) {
                 $user->load(['roleRelation', 'division', 'department']);
             }
@@ -519,25 +697,13 @@ class ContractController extends Controller
         return $this->successResponse((new ContractDashboardQuery)->getRecentActivityMetrics($request), 'Dashboard recent activity retrieved successfully');
     }
 
-    #[OA\Get(
-        path: '/api/contracts/{id}',
-        summary: 'Get contract details',
-        tags: ['Contracts'],
-        security: [['bearerAuth' => []]],
-        parameters: [
-            new OA\Parameter(name: 'id', in: 'path', description: 'Contract ID', required: true, schema: new OA\Schema(type: 'string')),
-        ],
-        responses: [
-            new OA\Response(response: 200, description: 'Contract details'),
-            new OA\Response(response: 404, description: 'Contract not found'),
-        ],
-    )]
     public function show(string $id): JsonResponse
     {
         $contract = $this->contractDetailQuery->find($id);
 
-        // Authorization: Only Admin or Creator can view drafts
-        if ($contract->status === 'draft' && $contract->created_by !== Auth::id() && Auth::user()?->role !== 'Admin') {
+        // Authorization: policy view + only Admin or Creator can view drafts
+        $isDraftBlocked = $contract->status === 'draft' && ! $this->ownsOrAdmin($contract);
+        if ($isDraftBlocked || ! Gate::allows('view', $contract)) {
             return $this->errorResponse('Halaman tidak tersedia', 403);
         }
 
@@ -555,10 +721,11 @@ class ContractController extends Controller
             return response()->json($workflows);
         }
 
-        $user = $request->user();
+        $authUser = $request->user();
         $targetUserId = $request->query('user_id');
+        $user = $authUser;
 
-        if ($targetUserId) {
+        if ($targetUserId && $authUser && ($authUser->id === $targetUserId || $authUser->isAdmin())) {
             $targetUser = User::find($targetUserId);
             if ($targetUser) {
                 $user = $targetUser;
@@ -582,8 +749,9 @@ class ContractController extends Controller
     public function getRoles(): JsonResponse
     {
         $loaders = $this->contractOptionsQuery->getLoaders();
+        $roles = $loaders['roles']();
 
-        return $this->successResponse($loaders['roles'](), 'Roles retrieved successfully');
+        return $this->successResponse($roles, 'Roles retrieved successfully');
     }
 
     public function store(StoreContractRequest $request): JsonResponse
@@ -674,7 +842,7 @@ class ContractController extends Controller
                     'submission_id' => $contract->id,
                     'submission_type' => SubmissionReview::TYPE_CONTRACT,
                     'workflow_step_id' => $contract->workflow_step_id,
-                    'step_number' => $contract->workflow_step?->step ?? $contract->current_step_number,
+                    'step_number' => $contract->workflowStep?->step ?? $contract->current_step_number,
                     'workflow_iteration' => $contract->workflow_iteration ?? 1,
                     'context_type' => SubmissionReview::CONTEXT_DOCUMENT_REVIEW,
                     'item_key' => $doc,
@@ -731,15 +899,15 @@ class ContractController extends Controller
             return $this->errorResponse('Hanya kontrak berstatus draft yang dapat dihapus.', 422);
         }
 
-        return DB::transaction(function () use ($contract) {
-            // Delete from storage
-            Storage::disk('local')->deleteDirectory("contracts/{$contract->id}");
+        if (! $this->ownsOrAdmin($contract)) {
+            return $this->errorResponse('Anda tidak memiliki izin menghapus kontrak ini.', 403);
+        }
 
-            // Other relations are deleted by database cascade
-            $contract->delete();
+        // Other relations are deleted by database cascade; files removed only after DB commit
+        DB::transaction(fn () => $contract->delete());
+        Storage::disk('local')->deleteDirectory("contracts/{$contract->id}");
 
-            return $this->successResponse(null, 'Kontrak berhasil dihapus.');
-        });
+        return $this->successResponse(null, 'Kontrak berhasil dihapus.');
     }
 
     public function bulkDestroy(Request $request): JsonResponse
@@ -753,20 +921,31 @@ class ContractController extends Controller
             return $this->errorResponse('Tidak ada kontrak yang dipilih.', 422);
         }
 
-        return DB::transaction(function () use ($ids) {
-            $contracts = Contract::whereIn('id', $ids)->get();
-            $count = 0;
+        $contracts = Contract::whereIn('id', (array) $ids)
+            ->where('status', 'draft')
+            ->get()
+            ->filter(fn (Contract $c) => $this->ownsOrAdmin($c));
 
-            foreach ($contracts as $contract) {
-                if ($contract->status === 'draft') {
-                    Storage::disk('local')->deleteDirectory("contracts/{$contract->id}");
-                    $contract->delete();
-                    $count++;
-                }
-            }
+        DB::transaction(fn () => $contracts->each->delete());
+        $contracts->each(fn (Contract $c) => Storage::disk('local')->deleteDirectory("contracts/{$c->id}"));
 
-            return $this->successResponse(['deleted_count' => $count], "{$count} kontrak berhasil dihapus.");
-        });
+        $count = $contracts->count();
+
+        return $this->successResponse(['deleted_count' => $count], "{$count} kontrak berhasil dihapus.");
+    }
+
+    /**
+     * Creator, initiator, or admin.
+     */
+    private function ownsOrAdmin(Contract $contract): bool
+    {
+        $user = Auth::user();
+
+        return $user && (
+            $contract->created_by === $user->id
+            || $contract->initiated_by_id === $user->id
+            || $user->isAdmin()
+        );
     }
 
     public function export(Request $request)

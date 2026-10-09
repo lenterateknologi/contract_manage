@@ -5,7 +5,7 @@ import { useToast } from '@/components/ui/feedback/Toast';
 import { SearchInput } from '@/components/ui/inputs/SearchInput';
 import { useContractPermissions } from '@/hooks/use-contract-permissions';
 import { cn } from '@/lib/utils';
-import { Contract, subresourcesApi } from '@/features/Contracts';
+import { Contract, contractApi, subresourcesApi } from '@/features/Contracts';
 import { FormField, UnifiedFormViewer, formTemplatesApi } from '@/features/templates';
 import { ArrowRight, Check, Columns, Download, FileText, FolderOpen, History, Loader2, MoreVertical, PlusCircle } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/buttons/Button';
 import { Bookmark, BookmarkCheck, Calendar, Check, ChevronDown, RotateCcw, SlidersHorizontal, Trash2, X } from 'lucide-react';
 import { DateRangePicker } from '@/components/ui/inputs/DateRangePicker';
 import { SearchableMultiSelect } from '@/components/ui/selection/SearchableMultiSelect';
+import { TreeSelect, TreeSelectItem } from '@/components/ui/selection/TreeSelect';
 
 export interface FilterOption {
     label: string;
@@ -15,8 +16,9 @@ export interface FilterOption {
 export interface FilterCategory {
     key: string;
     label: string;
-    type?: 'multiselect' | 'searchable' | 'date-range' | 'grid';
+    type?: 'multiselect' | 'searchable' | 'date-range' | 'grid' | 'tree';
     options?: FilterOption[];
+    treeItems?: any[];
     placeholder?: string;
 }
 
@@ -238,6 +240,27 @@ export function PageFilter({
                     }
 
                     const activeValues = ensureArray(activeFilters[category.key]);
+
+                    if (category.type === 'tree' || category.treeItems) {
+                        return (
+                            <div key={category.key} className="space-y-1.5">
+                                <label className="text-xs font-semibold text-text-desc block truncate">
+                                    {category.label}
+                                </label>
+                                <TreeSelect
+                                    items={category.treeItems || []}
+                                    value={activeValues}
+                                    multiple={true}
+                                    size="sm"
+                                    onValueChange={(vals) => onFilterChange(category.key, vals)}
+                                    placeholder={category.placeholder || `Semua ${category.label}`}
+                                    searchPlaceholder={`Cari ${category.label.toLowerCase()}...`}
+                                    triggerClassName="h-9 w-full rounded-md"
+                                />
+                            </div>
+                        );
+                    }
+
                     const options = (category.options || []).map((opt) => ({
                         value: String(opt.value),
                         label: opt.label,

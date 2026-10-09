@@ -230,10 +230,14 @@ export const ContractDetailView = ({
     const [adminWorkflowModalOpen, setAdminWorkflowModalOpen] = useState(false);
     const [showSpecialActions, setShowSpecialActions] = useState(false);
     const canEditTitle =
-        contract.workflow_step?.meta?.allow_info_edit !== false &&
-        (contract.workflow_step?.meta as any)?.allow_title_edit !== false &&
-        contract.allow?.title_edit !== false &&
-        contract.allow_title_edit !== false;
+        contract?.workflow_step?.meta?.allow_info_edit !== false &&
+        (contract?.workflow_step?.meta as any)?.allow_title_edit !== false &&
+        contract?.allow?.title_edit !== false &&
+        contract?.allow_title_edit !== false;
+
+    if (!contract) {
+        return null;
+    }
 
     const [hasInfoChanges, setHasInfoChanges] = useState(false);
     const [infoSaving, setInfoSaving] = useState(false);

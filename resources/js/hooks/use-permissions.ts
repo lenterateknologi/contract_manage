@@ -5,8 +5,8 @@ export function usePermissions(moduleCodeOrRoute?: string) {
     const { auth } = usePage<SharedData>().props;
     const pageUrl = typeof window !== 'undefined' ? window.location.pathname : '';
     const lookupKey = moduleCodeOrRoute || pageUrl;
-    const permissions = auth.permissions || {};
-    const isAdmin = auth.user?.role === 'Super Admin' || auth.user?.role === 'Admin' || !!(auth.user as any)?.is_admin;
+    const permissions = auth?.permissions || {};
+    const isAdmin = Boolean((auth?.user as any)?.is_admin);
 
     const modulePerms = (lookupKey ? permissions[lookupKey] : null) || {
         read: false,

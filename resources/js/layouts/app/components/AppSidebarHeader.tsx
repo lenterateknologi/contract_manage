@@ -13,6 +13,7 @@ export const AppSidebarHeader = memo(function AppSidebarHeader({ breadcrumbs = [
     const isDetailRoute =
         /^\/contracts\/[a-zA-Z0-9-]+$/.test(path) &&
         ![
+            '/contracts/activity',
             '/contracts/mine',
             '/contracts/organization',
             '/contracts/org-group',

@@ -28,9 +28,26 @@ export function MessageComposer({
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [mentionSearch, setMentionSearch] = useState('');
     const [showMentionDropdown, setShowMentionDropdown] = useState(false);
+    const [mentionIndex, setMentionIndex] = useState(0);
 
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Filter users based on query
+    const filteredMentionUsers = React.useMemo(() => {
+        if (!showMentionDropdown || !users || users.length === 0) return [];
+        const q = mentionSearch.toLowerCase().trim();
+        if (!q) return users.slice(0, 8);
+        return users
+            .filter((u) => {
+                const name = (u.name || '').toLowerCase();
+                const email = (u.email || '').toLowerCase();
+                const role = (u.role || '').toLowerCase();
+                const dept = (u.department?.name || u.department_name || '').toLowerCase();
+                return name.includes(q) || email.includes(q) || role.includes(q) || dept.includes(q);
+            })
+            .slice(0, 8);
+    }, [users, showMentionDropdown, mentionSearch]);
 
     const handleSend = async () => {
         if ((!text.trim() && !selectedFile) || isSending) return;
@@ -38,6 +55,7 @@ export function MessageComposer({
         const currentFile = selectedFile;
         setText('');
         setSelectedFile(null);
+        setShowMentionDropdown(false);
         if (textareaRef.current) {
             textareaRef.current.style.height = 'auto';
         }
@@ -52,7 +70,55 @@ export function MessageComposer({
         }
     };
 
+    const handleSelectMention = (user: { id: string; name: string }) => {
+        if (!textareaRef.current) return;
+        const cursor = textareaRef.current.selectionStart || text.length;
+        const textBefore = text.slice(0, cursor);
+        const textAfter = text.slice(cursor);
+        const lastAt = textBefore.lastIndexOf('@');
+        if (lastAt === -1) return;
+
+        const mentionText = `@${user.name} `;
+        const updated = `${textBefore.slice(0, lastAt)}${mentionText}${textAfter}`;
+        const nextCursor = lastAt + mentionText.length;
+        setText(updated);
+        setShowMentionDropdown(false);
+        setMentionSearch('');
+        setTimeout(() => {
+            if (textareaRef.current) {
+                textareaRef.current.focus();
+                textareaRef.current.setSelectionRange(nextCursor, nextCursor);
+            }
+        }, 50);
+    };
+
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        if (showMentionDropdown && filteredMentionUsers.length > 0) {
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                setMentionIndex((prev) => (prev + 1) % filteredMentionUsers.length);
+                return;
+            }
+            if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                setMentionIndex((prev) => (prev - 1 + filteredMentionUsers.length) % filteredMentionUsers.length);
+                return;
+            }
+            if (e.key === 'Enter' || e.key === 'Tab') {
+                e.preventDefault();
+                const selectedUser = filteredMentionUsers[mentionIndex] || filteredMentionUsers[0];
+                if (selectedUser) {
+                    handleSelectMention(selectedUser);
+                }
+                return;
+            }
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                setShowMentionDropdown(false);
+                return;
+            }
+        }
+
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             handleSend();
@@ -77,23 +143,12 @@ export function MessageComposer({
             const query = textBeforeCursor.slice(lastAt + 1);
             if (!/\s/.test(query)) {
                 setMentionSearch(query);
+                setMentionIndex(0);
                 setShowMentionDropdown(true);
                 return;
             }
         }
         setShowMentionDropdown(false);
-    };
-
-    const handleSelectMention = (user: { id: string; name: string }) => {
-        if (!textareaRef.current) return;
-        const cursor = textareaRef.current.selectionStart;
-        const textBefore = text.slice(0, cursor);
-        const textAfter = text.slice(cursor);
-        const lastAt = textBefore.lastIndexOf('@');
-        const updated = `${textBefore.slice(0, lastAt)}@${user.name} ${textAfter}`;
-        setText(updated);
-        setShowMentionDropdown(false);
-        setTimeout(() => textareaRef.current?.focus(), 50);
     };
 
     const applyFormat = (wrapper: string) => {
@@ -113,15 +168,16 @@ export function MessageComposer({
     };
 
     return (
-        <div className="relative border-t border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
+        <div className="relative border-t border-border bg-card p-3">
             {/* Mention Dropdown */}
-            {showMentionDropdown && users.length > 0 && (
-                <div className="absolute bottom-full left-4 mb-2 z-40">
+            {showMentionDropdown && filteredMentionUsers.length > 0 && (
+                <div className="absolute bottom-full left-4 mb-2 z-50">
                     <MentionDropdown
-                        users={users}
-                        search={mentionSearch}
-                        onSelect={handleSelectMention}
-                        onClose={() => setShowMentionDropdown(false)}
+                        isOpen={showMentionDropdown}
+                        users={filteredMentionUsers}
+                        mentionIndex={mentionIndex}
+                        setMentionIndex={setMentionIndex}
+                        insertMention={handleSelectMention}
                     />
                 </div>
             )}

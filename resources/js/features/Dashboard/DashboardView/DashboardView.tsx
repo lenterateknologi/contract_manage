@@ -161,17 +161,20 @@ export function DashboardView({
     const effectiveDashboardConfig = useMemo(() => {
         // 1. Simulation POV
         if (pov.isSimulatingDashboard && pov.activeDashboardPov?.config !== undefined) {
+            const pCfg = pov.activeDashboardPov.config;
             return {
-                show_overview: pov.activeDashboardPov.config.show_overview !== false,
-                show_workload: !!pov.activeDashboardPov.config.show_workload,
-                show_master_data: !!pov.activeDashboardPov.config.show_master_data,
+                ...pCfg,
+                show_overview: pCfg.show_overview !== false,
+                show_workload: !!pCfg.show_workload,
+                show_master_data: !!pCfg.show_master_data,
             };
         }
 
         // 2. Direct dashboard config or metrics
-        const cfg = dashboardConfig || metrics?.dashboardConfig;
+        const cfg = dashboardConfig || (metrics?.dashboardConfig as DashboardConfig | undefined);
         if (cfg) {
             return {
+                ...cfg,
                 show_overview: cfg.show_overview !== false,
                 show_workload: !!cfg.show_workload,
                 show_master_data: !!cfg.show_master_data,
@@ -182,6 +185,7 @@ export function DashboardView({
         if (userFilterSettings?.dashboard_config) {
             const uCfg = userFilterSettings.dashboard_config;
             return {
+                ...uCfg,
                 show_overview: uCfg.show_overview !== false,
                 show_workload: !!uCfg.show_workload,
                 show_master_data: !!uCfg.show_master_data,

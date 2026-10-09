@@ -1,7 +1,7 @@
 import * as React from 'react';
-import { createPortal } from 'react-dom';
-import { Search, ChevronDown, ChevronRight, Check, Lock, X } from 'lucide-react';
+import { Search, ChevronDown, Check, Lock, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/dialogs/Popover';
 
 export interface TreeSelectItem {
     id: string | number;
@@ -28,6 +28,7 @@ interface TreeSelectProps {
     allowClear?: boolean;
     rootOptionLabel?: string;
     disabledId?: string | number;
+    align?: 'start' | 'center' | 'end';
 }
 
 export function TreeSelect({
@@ -48,28 +49,12 @@ export function TreeSelect({
     allowClear = true,
     rootOptionLabel = 'Tanpa Parent (Jadikan Kategori Utama / Root)',
     disabledId,
+    align = 'start',
 }: TreeSelectProps) {
-    const [open, setOpen] = React.useState(inline);
     const [search, setSearch] = React.useState('');
     const [filterTab, setFilterTab] = React.useState<'all' | 'selected'>('all');
     const [expandedParents, setExpandedParents] = React.useState<Record<string, boolean>>({});
-    const [isMounted, setIsMounted] = React.useState(false);
     const isSmall = size === 'sm';
-
-    const containerRef = React.useRef<HTMLDivElement>(null);
-    const buttonRef = React.useRef<HTMLButtonElement>(null);
-
-    React.useEffect(() => {
-        setIsMounted(true);
-        // Handle clicking outside to close
-        const handleClickOutside = (event: MouseEvent) => {
-            if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-                setOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
 
     // Value handling
     const selectedIds = React.useMemo(() => {
@@ -109,7 +94,6 @@ export function TreeSelect({
         };
 
         const buildNode = (parentId: string | null = null): any[] => {
-            // Find items belonging to this parentId
             const children = items.filter(item => {
                 if (parentId === null) return !item.parent_id || String(item.parent_id) === String(item.id);
                 return String(item.parent_id) === parentId && String(item.parent_id) !== String(item.id);
@@ -127,7 +111,7 @@ export function TreeSelect({
         
         let roots = buildNode(null);
         
-        // Handle orphans (items whose parent is not in the list)
+        // Handle orphans
         if (roots.length === 0 && items.length > 0) {
             const allIds = new Set(items.map(i => String(i.id)));
             const orphans = items.filter(i => i.parent_id && !allIds.has(String(i.parent_id)));
@@ -152,13 +136,15 @@ export function TreeSelect({
     }, [items, sortBy]);
 
     // Selection logic
-    const handleSelect = (item: TreeSelectItem) => {
+    const handleSelect = (item: TreeSelectItem, closePopover?: () => void) => {
         const id = String(item.id);
         const pId = String(item.parent_id);
 
         if (!multiple) {
             onValueChange(id, pId);
-            setOpen(false);
+            if (closePopover) {
+                closePopover();
+            }
             return;
         }
 
@@ -193,21 +179,17 @@ export function TreeSelect({
         const hasChildren = descendantIds.length > 0;
 
         if (hasChildren) {
-            // Check if fully selected
             const currentlyFullySelected = isSelected(id) && descendantIds.every(dId => isSelected(dId));
 
             if (currentlyFullySelected) {
-                // Deselect parent and all descendants
                 newSelected = newSelected.filter(sid => sid !== id && !descendantIds.includes(sid));
             } else {
-                // Select parent and all descendants
                 if (!newSelected.includes(id)) newSelected.push(id);
                 descendantIds.forEach(cid => {
                     if (!newSelected.includes(cid)) newSelected.push(cid);
                 });
             }
         } else {
-            // Leaf selection
             if (newSelected.includes(id)) {
                 newSelected = newSelected.filter(sid => sid !== id);
             } else {
@@ -223,7 +205,6 @@ export function TreeSelect({
         if (multiple) {
             if (selectedIds.length === 0) return null;
             
-            // Map IDs to names
             const names = selectedIds.map(id => {
                 const item = items.find(i => String(i.id) === id);
                 return item ? item.name : id;
@@ -239,7 +220,6 @@ export function TreeSelect({
             const pathNames = [item.name];
             let current = item;
             
-            // Traverse up to find all ancestors
             while (current && current.parent_id && String(current.parent_id) !== String(current.id)) {
                 const parent = items.find((i: any) => String(i.id) === String(current.parent_id));
                 if (parent && String(parent.id) !== String(current.id)) {
@@ -254,15 +234,13 @@ export function TreeSelect({
         }
     }, [selectedIds, multiple, items]);
 
-    // Filtering logic (Preserve full parent-to-child hierarchy on search and selected tab)
+    // Filtering logic
     const filteredTree = React.useMemo(() => {
         const searchLower = search.toLowerCase().trim();
 
         const filterSubtree = (node: any): any | null => {
             const nId = String(node.id);
             const matchesSearch = !searchLower || node.name?.toLowerCase().includes(searchLower);
-
-            // If selected only mode is on, check if self or any descendant is selected
             const isNodeSelected = selectedIds.includes(nId);
 
             const filteredChildren = (node.children || [])
@@ -281,7 +259,6 @@ export function TreeSelect({
                 return null;
             }
 
-            // Normal search mode
             if (matchesSearch) {
                 return node;
             }
@@ -323,7 +300,7 @@ export function TreeSelect({
     };
 
     // Recursive render function
-    const renderTreeNodes = (nodes: any[], depth = 0) => {
+    const renderTreeNodes = (nodes: any[], depth = 0, closePopover?: () => void) => {
         return nodes.map(node => {
             const nId = String(node.id);
             const isExpanded = !!expandedParents[nId];
@@ -359,7 +336,6 @@ export function TreeSelect({
                         className="group flex w-full items-center gap-1 rounded-md hover:bg-sidebar-accent/40 pr-2 relative"
                         style={{ paddingLeft: depth === 0 ? '0px' : '6px' }}
                     >
-                        {/* Horizontal Connector Line (Line X) for child items */}
                         {depth > 0 && (
                             <div className="absolute -left-[13px] top-1/2 w-3 h-0 border-t-2 border-primary/30 dark:border-primary/40 -translate-y-1/2" />
                         )}
@@ -372,7 +348,7 @@ export function TreeSelect({
                                 if (disableParentSelection && hasChildren) {
                                     toggleParentExpansion(nId, e as any);
                                 } else {
-                                    handleSelect(node);
+                                    handleSelect(node, closePopover);
                                 }
                             }}
                             className={cn(
@@ -438,7 +414,7 @@ export function TreeSelect({
 
                     {isExpanded && hasChildren && (
                         <div className="flex flex-col border-l-2 border-primary/30 dark:border-primary/40 ml-[18px] pl-3 my-0.5 space-y-0.5">
-                            {renderTreeNodes(node.children, depth + 1)}
+                            {renderTreeNodes(node.children, depth + 1, closePopover)}
                         </div>
                     )}
                 </div>
@@ -446,28 +422,29 @@ export function TreeSelect({
         });
     };
 
-    const dropdownContent = (open || inline) && (
-        <div
-            id="tree-select-dropdown"
-            className={cn(
-                "flex flex-col text-popover-foreground",
-                inline ? "w-full space-y-2" : "absolute left-0 right-0 top-full z-50 mt-1 max-h-[380px] overflow-hidden rounded-xl border border-border bg-popover shadow-lg animate-in fade-in-0 zoom-in-95 p-2"
-            )}
-        >
+    const renderInnerDropdown = (closePopover?: () => void) => (
+        <div className="flex flex-col text-popover-foreground w-full space-y-1.5">
             {/* Search & Filter Header */}
             <div className="flex flex-col gap-1.5 pb-1">
-                <div className={cn(
-                    "flex items-center px-3 shrink-0 bg-background rounded-md border border-border",
-                    inline && "sticky top-0 z-10"
-                )}>
+                <div className="flex items-center px-3 shrink-0 bg-background rounded-md border border-border">
                     <Search size={14} className="mr-2 shrink-0 text-muted-foreground" />
                     <input
                         autoFocus={!inline}
                         value={search}
                         onChange={e => setSearch(e.target.value)}
+                        onKeyDown={e => e.stopPropagation()}
                         placeholder={searchPlaceholder}
-                        className="flex h-9 w-full bg-transparent py-1.5 text-sm outline-none placeholder:text-muted-foreground"
+                        className="flex h-8 w-full bg-transparent py-1 text-xs outline-none placeholder:text-muted-foreground"
                     />
+                    {search && (
+                        <button
+                            type="button"
+                            onClick={() => setSearch('')}
+                            className="p-0.5 text-muted-foreground hover:text-foreground cursor-pointer"
+                        >
+                            <X size={12} />
+                        </button>
+                    )}
                 </div>
 
                 {/* Filter Tabs (when multiple is enabled) */}
@@ -506,7 +483,7 @@ export function TreeSelect({
                                 <span className={cn(
                                     "px-1.5 py-0.2 rounded-full text-[10px]",
                                     filterTab === 'selected' ? "bg-white/20 text-white" : "bg-primary/10 text-primary"
-                                    )}>
+                                )}>
                                     {selectedIds.length}
                                 </span>
                             </button>
@@ -535,7 +512,7 @@ export function TreeSelect({
                             type="button"
                             onClick={() => {
                                 onValueChange(null, null);
-                                setOpen(false);
+                                if (closePopover) closePopover();
                             }}
                             className={cn(
                                 "flex w-full items-center gap-2 py-1.5 px-3 text-left transition-colors rounded-sm cursor-pointer hover:bg-sidebar-accent/50",
@@ -560,112 +537,79 @@ export function TreeSelect({
                     </div>
                 )}
                 {filteredTree.length === 0 ? (
-                    <div className="py-6 text-center text-sm text-muted-foreground italic">
+                    <div className="py-6 text-center text-xs text-muted-foreground italic">
                         {filterTab === 'selected' ? 'Belum ada tipe yang dipilih' : emptyText}
                     </div>
                 ) : (
-                    renderTreeNodes(filteredTree)
+                    renderTreeNodes(filteredTree, 0, closePopover)
                 )}
             </div>
         </div>
     );
 
+    if (inline) {
+        return (
+            <div className="relative w-full space-y-2 border border-border rounded-xl p-3 bg-surface-base">
+                {renderInnerDropdown()}
+            </div>
+        );
+    }
+
     return (
-        <div ref={containerRef} className="relative w-full space-y-1">
-            {!inline && (
-                <button
-                    ref={buttonRef}
-                    type="button"
-                    disabled={disabled}
-                    onClick={() => {
-                        if (!disabled) {
-                            setOpen(!open);
-                            setSearch('');
-                        }
-                    }}
-                    className={cn(
-                        'flex w-full items-center justify-between rounded-lg border border-border bg-surface-base font-normal ring-offset-background transition-all outline-hidden text-left',
-                        isSmall ? 'h-9 px-3 text-xs' : 'h-10 px-3.5 py-2 text-sm',
-                        !disabled && 'cursor-pointer hover:border-primary/50 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary',
-                        disabled && 'cursor-not-allowed bg-slate-100/70 dark:bg-zinc-900/80 border-slate-200 dark:border-zinc-800 text-slate-500 dark:text-zinc-400 shadow-none',
-                        open && 'border-primary ring-1 ring-primary',
-                        triggerClassName
-                    )}
-                >
-                    <span className={cn('truncate', isSmall ? 'text-xs' : 'text-sm', selectedDisplay ? 'text-foreground font-normal' : 'text-muted-foreground font-normal')}>
-                        {selectedDisplay || placeholder}
-                    </span>
-                    <div className="flex items-center shrink-0 ml-2">
-                        {selectedDisplay && !disabled && allowClear && (
-                            <span
-                                role="button"
-                                tabIndex={0}
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    onValueChange(multiple ? [] : null, null);
-                                }}
-                                className="p-0.5 mr-1 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted/80 transition-colors cursor-pointer"
-                                title="Hapus pilihan"
+        <div className="relative w-full space-y-1">
+            <Popover className="w-full">
+                {({ open, close }) => (
+                    <>
+                        <PopoverTrigger asChild disabled={disabled}>
+                            <button
+                                type="button"
+                                disabled={disabled}
+                                className={cn(
+                                    'flex w-full items-center justify-between rounded-lg border border-border bg-surface-base font-normal ring-offset-background transition-all outline-hidden text-left',
+                                    isSmall ? 'h-9 px-3 text-xs' : 'h-10 px-3.5 py-2 text-sm',
+                                    !disabled && 'cursor-pointer hover:border-primary/50 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary',
+                                    disabled && 'cursor-not-allowed bg-slate-100/70 dark:bg-zinc-900/80 border-slate-200 dark:border-zinc-800 text-slate-500 dark:text-zinc-400 shadow-none',
+                                    open && 'border-primary ring-1 ring-primary',
+                                    triggerClassName
+                                )}
                             >
-                                <X size={isSmall ? 12 : 13} />
-                            </span>
-                        )}
-                        {disabled ? (
-                            <Lock size={isSmall ? 13 : 14} className="text-slate-400 dark:text-zinc-500 opacity-70" />
-                        ) : (
-                            <ChevronDown size={15} className={cn('text-muted-foreground transition-transform duration-200', open && 'rotate-180')} />
-                        )}
-                    </div>
-                </button>
-            )}
+                                <span className={cn('truncate', isSmall ? 'text-xs' : 'text-sm', selectedDisplay ? 'text-foreground font-normal' : 'text-muted-foreground font-normal')}>
+                                    {selectedDisplay || placeholder}
+                                </span>
+                                <div className="flex items-center shrink-0 ml-2">
+                                    {selectedDisplay && !disabled && allowClear && (
+                                        <span
+                                            role="button"
+                                            tabIndex={0}
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                onValueChange(multiple ? [] : null, null);
+                                            }}
+                                            className="p-0.5 mr-1 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted/80 transition-colors cursor-pointer"
+                                            title="Hapus pilihan"
+                                        >
+                                            <X size={isSmall ? 12 : 13} />
+                                        </span>
+                                    )}
+                                    {disabled ? (
+                                        <Lock size={isSmall ? 13 : 14} className="text-slate-400 dark:text-zinc-500 opacity-70" />
+                                    ) : (
+                                        <ChevronDown size={15} className={cn('text-muted-foreground transition-transform duration-200', open && 'rotate-180')} />
+                                    )}
+                                </div>
+                            </button>
+                        </PopoverTrigger>
 
-            {/* Selected badges for multi-selection in TreeSelect */}
-            {multiple && !inline && selectedIds.length > 0 && !disabled && (
-                <div className="flex flex-wrap gap-1.5 pt-0.5">
-                    {selectedIds.map(id => {
-                        const item = items.find(i => String(i.id) === id);
-                        const label = item ? item.name : id;
-                        return (
-                            <span
-                                key={id}
-                                className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-medium bg-primary/10 text-primary border border-primary/20 max-w-full"
-                            >
-                                <span className="truncate max-w-[220px]">{label}</span>
-                                <button
-                                    type="button"
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        const newSelected = selectedIds.filter(sid => sid !== id);
-                                        onValueChange(newSelected);
-                                    }}
-                                    className="hover:bg-primary/20 rounded-full p-0.5 cursor-pointer text-primary transition-colors shrink-0"
-                                    title="Hapus tipe ini"
-                                >
-                                    <Check size={10} className="hidden" />
-                                    <span className="font-bold text-xs leading-none">×</span>
-                                </button>
-                            </span>
-                        );
-                    })}
-                    {selectedIds.length > 1 && (
-                        <button
-                            type="button"
-                            onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                onValueChange([]);
-                            }}
-                            className="text-[10.5px] font-medium text-rose-500 hover:text-rose-600 hover:underline px-1.5 py-0.5 cursor-pointer"
+                        <PopoverContent
+                            align={align}
+                            className="w-[var(--button-width)] min-w-[300px] max-w-[460px] p-2 bg-white dark:bg-zinc-950 border border-border shadow-2xl rounded-xl z-[999999]"
                         >
-                            Hapus Semua ({selectedIds.length})
-                        </button>
-                    )}
-                </div>
-            )}
-
-            {dropdownContent}
+                            {renderInnerDropdown(close)}
+                        </PopoverContent>
+                    </>
+                )}
+            </Popover>
         </div>
     );
 }

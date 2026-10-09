@@ -10,6 +10,7 @@ use App\Models\Master\DashboardType;
 use App\Models\Master\Module;
 use App\Models\Master\Role;
 use App\Models\Master\User;
+use App\Models\Transaction\Contract;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -394,7 +395,7 @@ class HandleInertiaRequests extends Middleware
                 $ndaIds = $getDescendantIds($ndaParent?->id);
 
                 // Scoped base query for all contracts and expiry respecting user organization permissions
-                $scopedAllQuery = app(ContractListQuery::class)->build(new Request, 'all');
+                $scopedAllQuery = app(ContractListQuery::class)->build(new Request, 'all', false);
                 $scopedActiveQuery = (clone $scopedAllQuery)->whereRaw("UPPER(status) != 'ARCHIVED'")->whereNull('closed_at');
 
                 $allTotal = (clone $scopedActiveQuery)->count();
@@ -402,26 +403,16 @@ class HandleInertiaRequests extends Middleware
                 $allNonKontrak = (clone $scopedActiveQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $nonKontrakIds)->orWhereIn('contract_type_parent_id', $nonKontrakIds))->count();
                 $allNda = (clone $scopedActiveQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $ndaIds)->orWhereIn('contract_type_parent_id', $ndaIds))->count();
 
-                $myBaseQuery = DB::table('t_contracts')->whereNull('deleted_at')->where(function ($q) use ($userId) {
-                    $q->where('created_by', $userId)->orWhere('initiated_by_id', $userId);
-                });
-                $myTotal = (clone $myBaseQuery)->whereRaw("UPPER(status) != 'ARCHIVED'")->whereNull('closed_at')->count();
-                $myKontrak = (clone $myBaseQuery)->whereRaw("UPPER(status) != 'ARCHIVED'")->whereNull('closed_at')->where(fn ($q) => $q->whereIn('contract_type_id', $kontrakIds)->orWhereIn('contract_type_parent_id', $kontrakIds))->count();
-                $myNonKontrak = (clone $myBaseQuery)->whereRaw("UPPER(status) != 'ARCHIVED'")->whereNull('closed_at')->where(fn ($q) => $q->whereIn('contract_type_id', $nonKontrakIds)->orWhereIn('contract_type_parent_id', $nonKontrakIds))->count();
-                $myNda = (clone $myBaseQuery)->whereRaw("UPPER(status) != 'ARCHIVED'")->whereNull('closed_at')->where(fn ($q) => $q->whereIn('contract_type_id', $ndaIds)->orWhereIn('contract_type_parent_id', $ndaIds))->count();
+                $myActiveQuery = Contract::mine($userId)->whereRaw("UPPER(status) != 'ARCHIVED'")->whereNull('closed_at');
+                $myTotal = (clone $myActiveQuery)->count();
+                $myKontrak = (clone $myActiveQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $kontrakIds)->orWhereIn('contract_type_parent_id', $kontrakIds))->count();
+                $myNonKontrak = (clone $myActiveQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $nonKontrakIds)->orWhereIn('contract_type_parent_id', $nonKontrakIds))->count();
+                $myNda = (clone $myActiveQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $ndaIds)->orWhereIn('contract_type_parent_id', $ndaIds))->count();
 
                 $pendingApprovalCount = 0;
                 $historyApprovalCount = 0;
                 if ($userId) {
-                    $pendingApprovalCount = DB::table('t_approvals')
-                        ->join('t_contracts', 't_approvals.contract_id', '=', 't_contracts.id')
-                        ->where('t_approvals.user_id', $userId)
-                        ->where('t_approvals.status', 'pending')
-                        ->whereNull('t_contracts.deleted_at')
-                        ->whereRaw("UPPER(t_contracts.status) != 'DRAFT'")
-                        ->whereColumn('t_approvals.workflow_step_id', 't_contracts.workflow_step_id')
-                        ->distinct('t_contracts.id')
-                        ->count('t_contracts.id');
+                    $pendingApprovalCount = Contract::pendingApprovalFor($userId)->count();
 
                     $historyApprovalCount = DB::table('t_approvals')
                         ->join('t_contracts', 't_approvals.contract_id', '=', 't_contracts.id')
@@ -442,12 +433,15 @@ class HandleInertiaRequests extends Middleware
                 $expiryNda = (clone $scopedExpiryQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $ndaIds)->orWhereIn('contract_type_parent_id', $ndaIds))->count();
 
                 // Scoped base query for organization group contracts
-                $scopedOrgQuery = app(ContractListQuery::class)->build(new Request, 'organization');
+                $scopedOrgQuery = app(ContractListQuery::class)->build(new Request, 'organization', false);
                 $scopedOrgActiveQuery = (clone $scopedOrgQuery)->whereRaw("UPPER(status) != 'ARCHIVED'")->whereNull('closed_at');
                 $orgTotal = (clone $scopedOrgActiveQuery)->count();
                 $orgKontrak = (clone $scopedOrgActiveQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $kontrakIds)->orWhereIn('contract_type_parent_id', $kontrakIds))->count();
                 $orgNonKontrak = (clone $scopedOrgActiveQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $nonKontrakIds)->orWhereIn('contract_type_parent_id', $nonKontrakIds))->count();
                 $orgNda = (clone $scopedOrgActiveQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $ndaIds)->orWhereIn('contract_type_parent_id', $ndaIds))->count();
+
+                $dutyActiveQuery = Contract::duty($userId)->whereRaw("UPPER(status) != 'ARCHIVED'")->whereNull('closed_at');
+                $dutyTotal = (clone $dutyActiveQuery)->count();
 
                 return [
                     'all' => [
@@ -467,6 +461,9 @@ class HandleInertiaRequests extends Middleware
                         'kontrak' => $myKontrak,
                         'non_kontrak' => $myNonKontrak,
                         'nda' => $myNda,
+                    ],
+                    'duty' => [
+                        'total' => $dutyTotal,
                     ],
                     'pending' => [
                         'total' => $pendingApprovalCount + $historyApprovalCount,
@@ -496,13 +493,21 @@ class HandleInertiaRequests extends Middleware
                                 'title' => 'Semua Pengajuan',
                                 'badge' => $contractCounts['organization']['total'] ?? 0,
                             ],
+                            '/contracts/activity' => [
+                                'title' => 'Aktivitas Pengajuan',
+                                'badge' => $contractCounts['pending']['pending'] ?? 0,
+                            ],
                             '/contracts/mine' => [
                                 'title' => 'Pengajuan Saya',
                                 'badge' => $contractCounts['mine']['total'] ?? 0,
                             ],
+                            '/contracts/duty' => [
+                                'title' => 'Tugas Saya',
+                                'badge' => $contractCounts['duty']['total'] ?? 0,
+                            ],
                             '/contracts/pending' => [
                                 'title' => 'Persetujuan Saya',
-                                'badge' => $contractCounts['pending']['total'] ?? 0,
+                                'badge' => $contractCounts['pending']['pending'] ?? 0,
                             ],
                             '/contracts/expiry' => [
                                 'title' => 'Masa Berlaku Dokumen',
@@ -553,66 +558,6 @@ class HandleInertiaRequests extends Middleware
 
                 return $orderA <=> $orderB;
             });
-
-            $isAdmin = $request->user()->role === 'Admin' || $request->user()->role === 'Super Admin' || $request->user()->is_admin;
-            if ($isAdmin) {
-                $hasBackup = false;
-                foreach ($groups as $group) {
-                    foreach ($group['items'] as $item) {
-                        if ($item['url'] === '/admin/backups') {
-                            $hasBackup = true;
-                        }
-                    }
-                }
-
-                if (! $hasBackup) {
-                    $foundSystemGroup = false;
-                    foreach ($groups as &$group) {
-                        if (trim($group['title']) === 'Pengaturan Sistem') {
-                            if (! $hasBackup) {
-                                $group['items'][] = [
-                                    'title' => 'Backup & Restore',
-                                    'url' => '/admin/backups',
-                                    'description' => 'Pencadangan & pemulihan data sistem',
-                                    'icon' => 'Database',
-                                    'sequence' => 101,
-                                ];
-                            }
-                            // Sort items of this group after appending
-                            usort($group['items'], function ($a, $b) {
-                                $orderA = $a['sequence'] ?? 9999;
-                                $orderB = $b['sequence'] ?? 9999;
-                                if ($orderA === $orderB) {
-                                    return strcmp($a['title'], $b['title']);
-                                }
-
-                                return $orderA <=> $orderB;
-                            });
-                            $foundSystemGroup = true;
-                            break;
-                        }
-                    }
-                    unset($group);
-
-                    if (! $foundSystemGroup) {
-                        $newItems = [];
-                        if (! $hasBackup) {
-                            $newItems[] = [
-                                'title' => 'Backup & Restore',
-                                'url' => '/admin/backups',
-                                'description' => 'Pencadangan & pemulihan data sistem',
-                                'icon' => 'Database',
-                                'sequence' => 101,
-                            ];
-                        }
-                        $groups[] = [
-                            'title' => 'Pengaturan Sistem',
-                            'sequence' => 99,
-                            'items' => $newItems,
-                        ];
-                    }
-                }
-            }
 
             return array_values($groups);
         });

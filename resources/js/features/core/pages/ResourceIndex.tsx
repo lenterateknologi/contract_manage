@@ -429,9 +429,6 @@ export default function ResourceIndex({
                 // ignore
             }
         }
-        if (resourceSlug === 'users') {
-            return ['nik'];
-        }
         return [];
     });
 
@@ -471,11 +468,7 @@ export default function ResourceIndex({
         } catch {
             // ignore
         }
-        if (resourceSlug === 'users') {
-            setPinnedColumnKeys(['nik']);
-        } else {
-            setPinnedColumnKeys([]);
-        }
+        setPinnedColumnKeys([]);
     }, [resourceSlug, tableSchema]);
 
     const filteredTableSchema = React.useMemo(() => {
@@ -545,6 +538,7 @@ export default function ResourceIndex({
             pinned: isPinned,
             pinOffset,
             isLastPinned,
+            width: COLUMN_WIDTHS[col.name],
             align: isAlignRight ? 'right' : col.align || 'left',
             className: isStatusCol
                 ? 'w-24 text-right px-2.5 py-1.5 whitespace-nowrap'

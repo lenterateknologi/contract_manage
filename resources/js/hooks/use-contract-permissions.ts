@@ -47,7 +47,12 @@ export function useContractPermissions(
 
         const isCreator = Boolean(meId && (contract.created_by === meId || contract.initiated_by_id === meId));
         const isApprover = Boolean((contract as any).can_approve || (contract as any).is_current_actor);
-        const isAssignedPic = Boolean(meId && contract.assigned_pic_id === meId);
+        const isAssignedPic = Boolean(
+            meId &&
+                (contract.assigned_pic_id === meId ||
+                    contract.assigned_pic?.id === meId ||
+                    (contract as any).metadata?.assigned_pic_id === meId),
+        );
         const isAdmin = Boolean(authUser?.is_admin || authUser?.role === 'Admin' || authUser?.role === 'Super Admin');
         const isTerminal = (TERMINAL_STATUSES as readonly string[]).includes(contract.status);
         const isClosed = (CLOSED_STATUSES as readonly string[]).includes(contract.status);

@@ -27,8 +27,8 @@ export function AnalyticsView() {
             {
                 label: 'Tipe Kontrak',
                 key: 'contract_type_ids',
-                type: 'searchable' as const,
-                options: data?.types.map((t) => ({ label: t.name, value: t.id })) || [],
+                type: 'tree' as const,
+                treeItems: data?.types || [],
             },
             {
                 label: 'Alur Kerja (Workflow)',

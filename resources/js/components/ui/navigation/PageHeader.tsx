@@ -92,17 +92,19 @@ export function PageHeader({
             <div className="flex items-center gap-2 md:ml-auto shrink-0">
                 {/* Search Input */}
                 {onSearchChange !== undefined && (
-                    <div className="w-48 sm:w-56 md:w-64 lg:w-72">
-                        <SearchInput
-                            placeholder={searchPlaceholder}
-                            value={localSearch}
-                            onChange={(e) => {
-                                setLocalSearch(e.target.value);
-                                onSearchChange(e.target.value);
-                            }}
-                            className="h-9 text-xs"
-                        />
-                    </div>
+                    <SearchInput
+                        expandable={true}
+                        placeholder={searchPlaceholder}
+                        value={localSearch}
+                        onChange={(e) => {
+                            setLocalSearch(e.target.value);
+                            onSearchChange(e.target.value);
+                        }}
+                        onClear={() => {
+                            setLocalSearch('');
+                            onSearchChange('');
+                        }}
+                    />
                 )}
 
                 {/* Filter Toggle Button */}

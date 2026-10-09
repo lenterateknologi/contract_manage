@@ -16,10 +16,14 @@ use Illuminate\Support\Facades\Mail;
 class ChatService
 {
     /**
-     * Scope query to only contracts where the user is an involved member.
+     * Scope query to only contracts where the user is an involved member or has authorized view access.
      */
     public function applyInvolvedScope($query, User $user)
     {
+        if ($user->isAdmin() || $user->isSuperAdmin() || $user->isLegal() || $user->canViewGlobalContracts()) {
+            return $query;
+        }
+
         return $query->where(function ($q) use ($user) {
             $q->where('created_by', $user->id)
                 ->orWhere('initiated_by_id', $user->id)
@@ -42,10 +46,16 @@ class ChatService
     }
 
     /**
-     * Check whether the user is an involved participant in the contract.
+     * Check whether the user is an involved participant or authorized to access discussion for the contract.
      */
     public function isUserInvolved(Contract $contract, User $user): bool
     {
+        // 1. Admin, Super Admin, Legal, or Global contract viewers can always access discussions
+        if ($user->isAdmin() || $user->isSuperAdmin() || $user->isLegal() || $user->canViewGlobalContracts()) {
+            return true;
+        }
+
+        // 2. Direct participants
         if (
             $contract->created_by === $user->id ||
             $contract->initiated_by_id === $user->id ||
@@ -56,19 +66,28 @@ class ChatService
             return true;
         }
 
+        // 3. Approvers in timeline
         if ($contract->approvals()->where('user_id', $user->id)->exists()) {
             return true;
         }
 
+        // 4. Message participants
         if ($contract->messages()->where('user_id', $user->id)->exists()) {
             return true;
         }
 
+        // 5. Reviewers or history actors
         if ($contract->submissionReviews()->where('user_id', $user->id)->exists()) {
             return true;
         }
 
         if ($contract->histories()->where('actor_id', $user->id)->exists()) {
+            return true;
+        }
+
+        // 6. Contract policy view permission fallback (e.g. organizational scope)
+        $policy = app(\App\Policies\ContractPolicy::class);
+        if ($policy->view($user, $contract)) {
             return true;
         }
 

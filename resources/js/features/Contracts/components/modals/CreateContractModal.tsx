@@ -306,8 +306,8 @@ export default function CreateContractModal({
                 {(() => {
                     const canSelectInitiator = Boolean(
                         pov.isSimulatingNav
-                            ? (pov.activeNavPov?.can_create_on_behalf ?? pov.activeNavPov?.roleName === 'Super Admin')
-                            : auth?.user?.can_create_on_behalf || auth?.user?.is_admin || auth?.user?.role === 'Super Admin',
+                            ? pov.activeNavPov?.can_create_on_behalf
+                            : auth?.user?.can_create_on_behalf,
                     );
 
                     if (!canSelectInitiator) return null;

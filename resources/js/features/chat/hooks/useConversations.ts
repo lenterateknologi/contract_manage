@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { chatService } from '../services/chatService';
 import { Conversation, ConversationCategory, ConversationCategoryCounts } from '../types/conversation.types';
 import { calculateCategoryCounts, filterConversations } from '../utils/conversationUtils';
@@ -12,6 +12,9 @@ export function useConversations(initialContractId?: string) {
     const [dateFrom, setDateFrom] = useState<string>('');
     const [dateTo, setDateTo] = useState<string>('');
     const [showChatSearch, setShowChatSearch] = useState<boolean>(false);
+
+    // Track previous initialContractId so we only sync when prop really changes externally
+    const prevInitialRef = useRef<string | undefined>(initialContractId);
 
     // Fetch conversation list
     const fetchConversations = useCallback(async (isBackground = false) => {
@@ -39,17 +42,20 @@ export function useConversations(initialContractId?: string) {
         return () => clearInterval(interval);
     }, [fetchConversations]);
 
-    // Sync selectedId when initialContractId changes via navigation
+    // Sync selectedId ONLY when initialContractId changes externally (e.g. browser navigation)
     useEffect(() => {
-        if (initialContractId && initialContractId !== selectedId) {
-            setSelectedId(initialContractId);
+        if (initialContractId !== prevInitialRef.current) {
+            prevInitialRef.current = initialContractId;
+            if (initialContractId) {
+                setSelectedId(initialContractId);
+            }
         }
-    }, [initialContractId, selectedId]);
+    }, [initialContractId]);
 
     // Auto-switch category if selected contract is not in the currently selected specific category
     useEffect(() => {
         if (selectedId && activeCategory !== 'all') {
-            const found = conversations.find((c) => c.id === selectedId);
+            const found = conversations.find((c) => String(c.id) === String(selectedId));
             if (found && found.parent_category && found.parent_category !== activeCategory) {
                 setActiveCategory('all');
             }
@@ -61,7 +67,7 @@ export function useConversations(initialContractId?: string) {
         if (selectedId) {
             chatService.markConversationAsRead(selectedId);
             setConversations((prev) =>
-                prev.map((c) => (c.id === selectedId ? { ...c, unread_count: 0 } : c)),
+                prev.map((c) => (String(c.id) === String(selectedId) ? { ...c, unread_count: 0 } : c)),
             );
             const newUrl = `/admin/chat/${selectedId}`;
             if (window.location.pathname !== newUrl) {
@@ -92,7 +98,7 @@ export function useConversations(initialContractId?: string) {
     );
 
     const selectedConversation = useMemo(
-        () => conversations.find((c) => c.id === selectedId) || null,
+        () => (selectedId ? conversations.find((c) => String(c.id) === String(selectedId)) || null : null),
         [conversations, selectedId],
     );
 

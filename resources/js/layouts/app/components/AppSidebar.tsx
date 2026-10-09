@@ -15,6 +15,7 @@ import {
     ArrowLeft,
     ArrowRightLeft,
     BarChart3,
+    Briefcase,
     Building2,
     ChevronDown,
     ChevronRight,
@@ -34,6 +35,7 @@ import {
     LayoutDashboard,
     LayoutGrid,
     MessageSquare,
+    Network,
     ScanEye,
     ScanLine,
     Search,
@@ -54,6 +56,7 @@ import { memo, useEffect, useMemo, useRef, useState } from 'react';
 
 const iconMap: Record<string, LucideIcon> = {
     Archive,
+    Briefcase,
     LayoutGrid,
     FileText,
     FileCheck,
@@ -72,6 +75,7 @@ const iconMap: Record<string, LucideIcon> = {
     UserCheck,
     FolderClosed,
     FileCode,
+    Network,
     ScanLine,
     Workflow,
     UserCog,
@@ -517,13 +521,7 @@ export const AppSidebar = memo(function AppSidebar() {
     const pov = usePov(povOptions);
     const [isUserSwitchOpen, setIsUserSwitchOpen] = useState(false);
 
-    const isSuperAdmin = Boolean(
-        auth?.user?.role === 'Super Admin' ||
-        auth?.user?.role === 'Admin' ||
-        auth?.user?.is_admin ||
-        auth?.user?.role?.toLowerCase()?.includes('admin'),
-    );
-    const canImpersonate = Boolean(isSuperAdmin || auth?.impersonation?.can_impersonate);
+    const canImpersonate = Boolean(auth?.impersonation?.can_impersonate);
 
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -596,20 +594,6 @@ export const AppSidebar = memo(function AppSidebar() {
         const rawGroups = ((sidebarNavGroups as NavGroup[]) ?? []).map((group) => {
             const items = group.items.map(mapItem);
 
-            // Hardcode Backup & Restore inside Pengaturan Sistem if user is admin / super admin
-            if (isSuperAdmin && (group.title.toLowerCase().includes('pengaturan') || group.title.toLowerCase().includes('system'))) {
-                const hasBackup = items.some((i) => i.url === '/admin/backups');
-                if (!hasBackup) {
-                    items.push({
-                        title: 'Backup & Restore',
-                        url: '/admin/backups',
-                        description: 'Manajemen pencadangan dan pemulihan database sistem',
-                        icon: Database,
-                        sequence: 99,
-                    });
-                }
-            }
-
             // Prefer the group's own icon field, fall back to first item's icon
             const groupIconName = (group as any).icon as string | null | undefined;
             const primaryIcon = groupIconName ? (iconMap[groupIconName] ?? LayoutDashboard) : (items.find((i) => i.icon)?.icon ?? LayoutDashboard);
@@ -621,23 +605,6 @@ export const AppSidebar = memo(function AppSidebar() {
             };
         });
 
-        // If Pengaturan Sistem doesn't exist at all in groups for Admin, add it
-        if (isSuperAdmin && !rawGroups.some((g) => g.title.toLowerCase().includes('pengaturan') || g.title.toLowerCase().includes('system'))) {
-            rawGroups.push({
-                title: 'Pengaturan Sistem',
-                icon: Settings2,
-                items: [
-                    {
-                        title: 'Backup & Restore',
-                        url: '/admin/backups',
-                        description: 'Manajemen pencadangan dan pemulihan database sistem',
-                        icon: Database,
-                        sequence: 99,
-                    },
-                ],
-            } as any);
-        }
-
         if (!pov.activeNavPov.allowedRoutes) {
             return rawGroups;
         }
@@ -646,7 +613,6 @@ export const AppSidebar = memo(function AppSidebar() {
         return rawGroups
             .map((group) => {
                 const filteredItems = group.items.filter((item) => {
-                    if (isSuperAdmin && item.url === '/admin/backups') return true;
                     const basePath = item.url.split('?')[0];
                     return allowedSet.has(basePath) || allowedSet.has(item.url);
                 });
@@ -656,7 +622,7 @@ export const AppSidebar = memo(function AppSidebar() {
                 };
             })
             .filter((group) => group.items.length > 0);
-    }, [sidebarNavGroups, pov.activeNavPov, isSuperAdmin]);
+    }, [sidebarNavGroups, pov.activeNavPov]);
 
     // Active group detection
     const activeGroupTitle = useMemo(() => {

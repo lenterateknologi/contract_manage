@@ -95,11 +95,8 @@ export function WorkflowManagement({ workflows, contractTypes, filters }: Readon
             {
                 key: 'contract_type_id',
                 label: 'Tipe Pengajuan',
-                type: 'searchable' as const,
-                options: (contractTypes || []).map((ct: any) => ({
-                    label: ct.name,
-                    value: String(ct.id),
-                })),
+                type: 'tree' as const,
+                treeItems: contractTypes || [],
                 placeholder: 'Semua Tipe Pengajuan',
             },
             {

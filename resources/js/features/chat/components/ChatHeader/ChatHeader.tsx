@@ -28,7 +28,7 @@ export function ChatHeader({
     const status = conversation.status || 'draft';
 
     return (
-        <div className="flex flex-col border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 shadow-2xs">
+        <div className="flex flex-col border-b border-border bg-card shadow-2xs">
             <div className="flex h-14 items-center justify-between px-4">
                 <div className="flex items-center gap-3 min-w-0">
                     {onBack && (

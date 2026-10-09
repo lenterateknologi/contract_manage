@@ -582,3 +582,41 @@ export const RowActions = ({
         </DropdownMenuContent>
     </DropdownMenu>
 );
+
+export const UserDecisionCell = memo(({ c }: Readonly<{ c: Contract }>) => {
+    const approval = c.my_last_approval;
+    if (!approval) {
+        return <span className="text-text-desc text-[11px]">—</span>;
+    }
+
+    const status = (approval.status || '').toLowerCase();
+    const isApproved = status === 'approved';
+    const isRejected = status === 'rejected';
+    const isRevision = status === 'revision';
+
+    const label = isApproved ? 'Disetujui' : isRejected ? 'Ditolak' : isRevision ? 'Minta Revisi' : status;
+    const colorClass = isApproved
+        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+        : isRejected
+        ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20'
+        : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20';
+
+    return (
+        <div className="flex flex-col gap-0.5">
+            <div className="flex items-center gap-1.5">
+                <span className={cn('inline-flex items-center px-1.5 py-0.5 rounded-[4px] text-[10px] font-bold uppercase border', colorClass)}>
+                    {label}
+                </span>
+            </div>
+            {approval.decided_at_formatted && (
+                <span className="text-[10px] text-text-desc font-medium">
+                    {approval.decided_at_formatted}
+                </span>
+            )}
+        </div>
+    );
+});
+UserDecisionCell.displayName = 'UserDecisionCell';
+
+export const renderUserDecision = (c: Contract) => <UserDecisionCell c={c} />;
+

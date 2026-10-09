@@ -188,16 +188,8 @@ function WorkloadSkeletonGrid({ count = 12 }: { count?: number }) {
 }
 
 export function WorkloadTab({ data, onNavigate }: WorkloadTabProps) {
-    const { auth } = usePage<any>().props;
-    const loginUserRole = auth?.user?.role;
-    const isAdmin = loginUserRole === 'Admin' || loginUserRole === 'Super Admin';
-
     const userWorkloads = data?.userWorkloads;
     const isLoading = !userWorkloads;
-
-    const userGroupId = auth?.user?.company_group_id;
-    const userLocationId = auth?.user?.location_id;
-    const userDivisionId = auth?.user?.division_id;
 
     const [searchQuery, setSearchQuery] = useState('');
     const debouncedSearch = useDebounce(searchQuery, 250);
@@ -209,22 +201,9 @@ export function WorkloadTab({ data, onNavigate }: WorkloadTabProps) {
     const [currentPage, setCurrentPage] = useState<number>(1);
     const [perPage, setPerPage] = useState<number>(12);
 
-    // Scoped workloads based on permissions
     const scopedWorkloads = useMemo(() => {
-        if (!userWorkloads) return [];
-        return userWorkloads.filter((user) => {
-            if (!isAdmin && userDivisionId && user.division_id && user.division_id !== userDivisionId) {
-                return false;
-            }
-            if (!isAdmin && userLocationId && user.location_id && user.location_id !== userLocationId) {
-                return false;
-            }
-            if (!isAdmin && userGroupId && user.company_group_id && user.company_group_id !== userGroupId) {
-                return false;
-            }
-            return true;
-        });
-    }, [userWorkloads, isAdmin, userDivisionId, userLocationId, userGroupId]);
+        return userWorkloads || [];
+    }, [userWorkloads]);
 
     const handleSort = (column: 'load' | 'name') => {
         if (sortBy === column) {

@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { Search, ChevronsUpDown, Check, X, Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/dialogs/Popover';
 
 import type { SearchableSelectOption } from './SearchableSelect';
 export type { SearchableSelectOption };
@@ -16,6 +17,7 @@ interface SearchableMultiSelectProps {
     emptyText?: string;
     disabled?: boolean;
     showOrder?: boolean;
+    align?: 'start' | 'end' | 'center';
 }
 
 export function SearchableMultiSelect({
@@ -29,10 +31,9 @@ export function SearchableMultiSelect({
     emptyText = 'Tidak ada hasil ditemukan',
     disabled = false,
     showOrder = false,
+    align = 'start',
 }: SearchableMultiSelectProps) {
-    const [open, setOpen] = React.useState(false);
     const [search, setSearch] = React.useState('');
-    const containerRef = React.useRef<HTMLDivElement>(null);
 
     const validValues = React.useMemo(() => {
         return (values || []).filter(val => Boolean(val) && val !== 'null' && val !== 'undefined');
@@ -88,184 +89,152 @@ export function SearchableMultiSelect({
         onValuesChange((values || []).filter(v => v !== val));
     };
 
-    // Close dropdown on outside click
-    React.useEffect(() => {
-        function handleClickOutside(e: MouseEvent) {
-            if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-                setOpen(false);
-                setSearch('');
-            }
-        }
-        if (open) {
-            document.addEventListener('mousedown', handleClickOutside);
-        }
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, [open]);
-
     return (
-        <div
-            ref={containerRef}
-            className={cn('relative w-full', open ? 'z-50' : 'z-auto', disabled && 'cursor-not-allowed', className)}
-        >
-            {/* Trigger Button (shadcn style) */}
-            <div
-                role="button"
-                tabIndex={disabled ? -1 : 0}
-                onClick={() => {
-                    if (!disabled) {
-                        setOpen(prev => !prev);
-                        setSearch('');
-                    }
-                }}
-                className={cn(
-                    'flex min-h-[38px] w-full items-center justify-between rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-1.5 text-left text-xs font-medium text-slate-800 dark:text-zinc-100 transition-all outline-none select-none shadow-2xs',
-                    !disabled && 'cursor-pointer hover:border-slate-300 dark:hover:border-zinc-600 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary',
-                    open && 'border-primary ring-2 ring-primary/20 dark:border-primary',
-                    disabled && 'bg-slate-100/70 dark:bg-zinc-900/80 border-slate-200 dark:border-zinc-800 text-slate-500 dark:text-zinc-400 cursor-not-allowed shadow-none',
-                    triggerClassName
-                )}
-            >
-                <div className="flex flex-wrap gap-1.5 pr-2 min-w-0 flex-1 max-h-[120px] overflow-y-auto custom-scrollbar">
-                    {validValues.length === 0 ? (
-                        <span className="text-slate-400 dark:text-zinc-500 py-0.5 text-xs font-normal truncate">
-                            {placeholder}
-                        </span>
-                    ) : (
-                        validValues.map((val, idx) => {
-                            const option = mergedOptions.find(o => o.value === val);
-                            const displayLabel = option ? option.label : val;
-                            return (
-                                <span
-                                    key={val}
-                                    onMouseDown={(e) => e.stopPropagation()}
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="inline-flex items-center gap-1 rounded-md border border-slate-200/80 bg-slate-100 dark:border-zinc-700/80 dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 px-2 py-0.5 text-[11px] font-medium transition-colors hover:bg-slate-200/70 dark:hover:bg-zinc-700/70 cursor-default"
-                                >
-                                    <span className="truncate max-w-[180px]">
-                                        {showOrder ? `${idx + 1}. ${displayLabel}` : displayLabel}
-                                    </span>
-                                    {!disabled && (
+        <div className={cn('relative w-full', disabled && 'cursor-not-allowed', className)}>
+            <Popover className="w-full">
+                {({ open }) => (
+                    <>
+                        <PopoverTrigger asChild disabled={disabled}>
+                            <div
+                                role="button"
+                                tabIndex={disabled ? -1 : 0}
+                                className={cn(
+                                    'flex min-h-[38px] w-full items-center justify-between rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-1.5 text-left text-xs font-medium text-slate-800 dark:text-zinc-100 transition-all outline-none select-none shadow-2xs',
+                                    !disabled && 'cursor-pointer hover:border-slate-300 dark:hover:border-zinc-600 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary',
+                                    open && 'border-primary ring-2 ring-primary/20 dark:border-primary',
+                                    disabled && 'bg-slate-100/70 dark:bg-zinc-900/80 border-slate-200 dark:border-zinc-800 text-slate-500 dark:text-zinc-400 cursor-not-allowed shadow-none',
+                                    triggerClassName
+                                )}
+                            >
+                                <div className="flex flex-wrap gap-1.5 pr-2 min-w-0 flex-1 max-h-[120px] overflow-y-auto custom-scrollbar">
+                                    {validValues.length === 0 ? (
+                                        <span className="text-slate-400 dark:text-zinc-500 py-0.5 text-xs font-normal truncate">
+                                            {placeholder}
+                                        </span>
+                                    ) : (
+                                        validValues.map((val, idx) => {
+                                            const option = mergedOptions.find(o => o.value === val);
+                                            const displayLabel = option ? option.label : val;
+                                            return (
+                                                <span
+                                                    key={val}
+                                                    onClick={(e) => e.stopPropagation()}
+                                                    className="inline-flex items-center gap-1 rounded-md border border-slate-200/80 bg-slate-100 dark:border-zinc-700/80 dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 px-2 py-0.5 text-[11px] font-medium transition-colors hover:bg-slate-200/70 dark:hover:bg-zinc-700/70 cursor-default"
+                                                >
+                                                    <span className="truncate max-w-[180px]">
+                                                        {showOrder ? `${idx + 1}. ${displayLabel}` : displayLabel}
+                                                    </span>
+                                                    {!disabled && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => removeOption(e, val)}
+                                                            className="text-slate-400 hover:text-slate-700 dark:text-zinc-400 dark:hover:text-zinc-100 transition-colors focus:outline-none ml-0.5 cursor-pointer rounded-sm"
+                                                        >
+                                                            <X size={11} />
+                                                        </button>
+                                                    )}
+                                                </span>
+                                            );
+                                        })
+                                    )}
+                                </div>
+                                {disabled ? (
+                                    <Lock size={13} className="text-slate-400 dark:text-zinc-500 shrink-0 ml-1.5 opacity-70" />
+                                ) : (
+                                    <ChevronsUpDown size={14} className="text-slate-400 dark:text-zinc-500 shrink-0 ml-1.5 opacity-60" />
+                                )}
+                            </div>
+                        </PopoverTrigger>
+
+                        <PopoverContent
+                            align={align}
+                            className="w-[var(--button-width)] min-w-[240px] max-w-[360px] p-1 bg-white dark:bg-zinc-950 border border-slate-200/90 dark:border-zinc-800 shadow-2xl rounded-xl z-[999999]"
+                        >
+                            {/* Search Input */}
+                            {mergedOptions.length > 3 && (
+                                <div className="flex items-center border-b border-slate-100 dark:border-zinc-800/80 px-2.5 py-1.5">
+                                    <Search size={13} className="mr-2 shrink-0 opacity-40 text-slate-500 dark:text-zinc-400" />
+                                    <input
+                                        autoFocus
+                                        value={search}
+                                        onChange={e => setSearch(e.target.value)}
+                                        onKeyDown={(e) => e.stopPropagation()}
+                                        placeholder={searchPlaceholder}
+                                        className="h-7 w-full bg-transparent text-xs font-medium text-slate-900 dark:text-zinc-100 outline-none placeholder:text-slate-400 dark:placeholder:text-zinc-500"
+                                    />
+                                    {search && (
                                         <button
                                             type="button"
-                                            onMouseDown={(e) => removeOption(e, val)}
-                                            onClick={(e) => removeOption(e, val)}
-                                            className="text-slate-400 hover:text-slate-700 dark:text-zinc-400 dark:hover:text-zinc-100 transition-colors focus:outline-none ml-0.5 cursor-pointer rounded-sm"
+                                            onClick={() => setSearch('')}
+                                            className="text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 p-0.5 cursor-pointer"
                                         >
                                             <X size={11} />
                                         </button>
                                     )}
-                                </span>
-                            );
-                        })
-                    )}
-                </div>
-                {disabled ? (
-                    <Lock size={13} className="text-slate-400 dark:text-zinc-500 shrink-0 ml-1.5 opacity-70" />
-                ) : (
-                    <ChevronsUpDown size={14} className="text-slate-400 dark:text-zinc-500 shrink-0 ml-1.5 opacity-60" />
-                )}
-            </div>
-
-            {/* Dropdown Panel (Inline relative/absolute) */}
-            {open && (
-                <div
-                    onClick={(e) => e.stopPropagation()}
-                    className="absolute left-0 right-0 top-[calc(100%+4px)] z-50 rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-slate-900 dark:text-zinc-100 shadow-2xl overflow-hidden focus:outline-none animate-in fade-in-0 zoom-in-95 duration-150 p-1"
-                >
-                    {/* Search Input (Command header style) */}
-                    {mergedOptions.length > 3 && (
-                        <div className="flex items-center border-b border-slate-100 dark:border-zinc-800/80 px-2.5 py-1">
-                            <Search size={13} className="mr-2 shrink-0 opacity-40 text-slate-500 dark:text-zinc-400" />
-                            <input
-                                autoFocus
-                                value={search}
-                                onChange={e => setSearch(e.target.value)}
-                                onKeyDown={(e) => e.stopPropagation()}
-                                onClick={(e) => e.stopPropagation()}
-                                placeholder={searchPlaceholder}
-                                className="h-7.5 w-full bg-transparent text-xs font-medium text-slate-900 dark:text-zinc-100 outline-none placeholder:text-slate-400 dark:placeholder:text-zinc-500"
-                            />
-                            {search && (
-                                <button
-                                    type="button"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setSearch('');
-                                    }}
-                                    className="text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 p-0.5 cursor-pointer"
-                                >
-                                    <X size={11} />
-                                </button>
-                            )}
-                        </div>
-                    )}
-
-                    {/* Select All Toolbar */}
-                    {filtered.length > 0 && (
-                        <div className="flex items-center justify-between px-2.5 py-1 text-[10.5px] font-medium text-slate-500 dark:text-zinc-400 border-b border-slate-100 dark:border-zinc-800/60 bg-slate-50/60 dark:bg-zinc-900/40 rounded-t-md">
-                            <span>
-                                {search ? `${filtered.length} ditemukan` : `${mergedOptions.length} opsi`}
-                            </span>
-                            <button
-                                type="button"
-                                onMouseDown={(e) => handleSelectAllFiltered(e)}
-                                className="text-[11px] font-semibold text-primary hover:text-primary/80 transition-colors cursor-pointer select-none"
-                            >
-                                {allFilteredSelected
-                                    ? 'Batal Pilih Semua'
-                                    : search
-                                    ? `Pilih Semua (${filtered.length})`
-                                    : 'Pilih Semua'}
-                            </button>
-                        </div>
-                    )}
-
-                    {/* Option list (Command Item style) */}
-                    <div className="max-h-[190px] overflow-y-auto p-1 custom-scrollbar space-y-0.5">
-                        {filtered.length === 0 && (
-                            <div className="py-6 text-center text-xs font-normal text-slate-400 dark:text-zinc-500">
-                                {emptyText}
-                            </div>
-                        )}
-                        {filtered.slice(0, 100).map(opt => {
-                            const isSelected = (values || []).includes(opt.value);
-                            return (
-                                <div
-                                    key={opt.value}
-                                    role="button"
-                                    onMouseDown={(e) => toggleOption(opt.value, e)}
-                                    className={cn(
-                                        'relative flex w-full cursor-pointer select-none items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-medium outline-hidden transition-colors',
-                                        isSelected
-                                            ? 'bg-primary/10 text-primary font-semibold dark:bg-primary/20 dark:text-primary-foreground'
-                                            : 'text-slate-700 dark:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800/80',
-                                        opt.italic && 'italic text-slate-500 dark:text-zinc-400'
-                                    )}
-                                >
-                                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                                        <div className={cn(
-                                            "flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border transition-colors",
-                                            isSelected
-                                                ? "border-primary bg-primary text-white"
-                                                : "border-slate-300 dark:border-zinc-600 bg-transparent"
-                                        )}>
-                                            {isSelected && <Check size={11} className="stroke-[3]" />}
-                                        </div>
-                                        <span className="truncate">{opt.label}</span>
-                                    </div>
                                 </div>
-                            );
-                        })}
-                        {filtered.length > 100 && (
-                            <div className="py-2 text-center text-[11px] font-medium text-slate-400 dark:text-zinc-500 italic bg-slate-50/50 dark:bg-zinc-900/30 rounded-md">
-                                Menampilkan 100 dari {filtered.length} opsi. Ketik untuk memfilter lebih spesifik.
+                            )}
+
+                            {/* Select All Toolbar */}
+                            {filtered.length > 0 && (
+                                <div className="flex items-center justify-between px-2.5 py-1 text-[10.5px] font-medium text-slate-500 dark:text-zinc-400 border-b border-slate-100 dark:border-zinc-800/60 bg-slate-50/60 dark:bg-zinc-900/40 rounded-t-md">
+                                    <span>
+                                        {search ? `${filtered.length} ditemukan` : `${mergedOptions.length} opsi`}
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={(e) => handleSelectAllFiltered(e)}
+                                        className="text-[11px] font-semibold text-primary hover:text-primary/80 transition-colors cursor-pointer select-none"
+                                    >
+                                        {allFilteredSelected
+                                            ? 'Batal Pilih Semua'
+                                            : search
+                                            ? `Pilih Semua (${filtered.length})`
+                                            : 'Pilih Semua'}
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* Option list */}
+                            <div className="max-h-[220px] overflow-y-auto p-1 custom-scrollbar space-y-0.5">
+                                {filtered.length === 0 && (
+                                    <div className="py-6 text-center text-xs font-normal text-slate-400 dark:text-zinc-500">
+                                        {emptyText}
+                                    </div>
+                                )}
+                                {filtered.map(opt => {
+                                    const isSelected = (values || []).includes(opt.value);
+                                    return (
+                                        <div
+                                            key={opt.value}
+                                            role="button"
+                                            onClick={(e) => toggleOption(opt.value, e)}
+                                            className={cn(
+                                                'relative flex w-full cursor-pointer select-none items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-medium outline-hidden transition-colors',
+                                                isSelected
+                                                    ? 'bg-primary/10 text-primary font-semibold dark:bg-primary/20 dark:text-primary-foreground'
+                                                    : 'text-slate-700 dark:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800/80',
+                                                opt.italic && 'italic text-slate-500 dark:text-zinc-400'
+                                            )}
+                                        >
+                                            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                                                <div className={cn(
+                                                    "flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border transition-colors",
+                                                    isSelected
+                                                        ? "border-primary bg-primary text-white"
+                                                        : "border-slate-300 dark:border-zinc-600 bg-transparent"
+                                                )}>
+                                                    {isSelected && <Check size={11} className="stroke-[3]" />}
+                                                </div>
+                                                <span className="truncate">{opt.label}</span>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                             </div>
-                        )}
-                    </div>
-                </div>
-            )}
+                        </PopoverContent>
+                    </>
+                )}
+            </Popover>
         </div>
     );
 }

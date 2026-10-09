@@ -194,15 +194,19 @@ export function DataTable<T extends { id?: any } = Record<string, unknown>>({
                                     const pinOffset = col.pinOffset;
                                     const isLastPinned = col.isLastPinned;
 
-                                    const thStyles: React.CSSProperties = isPinnedRight ? {
-                                        position: 'sticky',
-                                        right: pinOffset !== undefined ? `${pinOffset}px` : '0px',
-                                        zIndex: 25,
-                                    } : isPinnedLeft ? {
-                                        position: 'sticky',
-                                        left: pinOffset !== undefined ? `${pinOffset}px` : '0px',
-                                        zIndex: 25,
-                                    } : {};
+                                    const widthStyle = col.width ? (typeof col.width === 'number' ? `${col.width}px` : col.width) : undefined;
+                                    const thStyles: React.CSSProperties = {
+                                        ...(widthStyle ? { width: widthStyle, minWidth: widthStyle } : {}),
+                                        ...(isPinnedRight ? {
+                                            position: 'sticky',
+                                            right: pinOffset !== undefined ? `${pinOffset}px` : '0px',
+                                            zIndex: 25,
+                                        } : isPinnedLeft ? {
+                                            position: 'sticky',
+                                            left: pinOffset !== undefined ? `${pinOffset}px` : '0px',
+                                            zIndex: 25,
+                                        } : {})
+                                    };
 
                                     return (
                                         <th
@@ -320,15 +324,19 @@ export function DataTable<T extends { id?: any } = Record<string, unknown>>({
                                                     const pinOffset = col.pinOffset;
                                                     const isLastPinned = col.isLastPinned;
 
-                                                    const tdStyles: React.CSSProperties = isPinnedRight ? {
-                                                        position: 'sticky',
-                                                        right: pinOffset !== undefined ? `${pinOffset}px` : '0px',
-                                                        zIndex: 15,
-                                                    } : isPinnedLeft ? {
-                                                        position: 'sticky',
-                                                        left: pinOffset !== undefined ? `${pinOffset}px` : '0px',
-                                                        zIndex: 15,
-                                                    } : {};
+                                                    const widthStyle = col.width ? (typeof col.width === 'number' ? `${col.width}px` : col.width) : undefined;
+                                                    const tdStyles: React.CSSProperties = {
+                                                        ...(widthStyle ? { width: widthStyle, minWidth: widthStyle } : {}),
+                                                        ...(isPinnedRight ? {
+                                                            position: 'sticky',
+                                                            right: pinOffset !== undefined ? `${pinOffset}px` : '0px',
+                                                            zIndex: 15,
+                                                        } : isPinnedLeft ? {
+                                                            position: 'sticky',
+                                                            left: pinOffset !== undefined ? `${pinOffset}px` : '0px',
+                                                            zIndex: 15,
+                                                        } : {})
+                                                    };
 
                                                     return (
                                                         <td

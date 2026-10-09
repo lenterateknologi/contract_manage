@@ -21,7 +21,7 @@ export function UserMenuContent({ user }: UserMenuContentProps) {
     }
 
     const isImpersonating = auth?.impersonation?.is_impersonating;
-    const canImpersonate = auth?.impersonation?.can_impersonate || auth?.user?.role === 'Super Admin';
+    const canImpersonate = Boolean(auth?.impersonation?.can_impersonate);
 
     const handleLeave = () => {
         cleanup();

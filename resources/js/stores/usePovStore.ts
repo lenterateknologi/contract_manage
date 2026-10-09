@@ -60,6 +60,7 @@ export const FALLBACK_NAV_OPTIONS: NavPovOption[] = [
         description: 'Akses operasional, master data & portal',
         allowedRoutes: [
             '/dashboard',
+            '/contracts/activity',
             '/contracts',
             '/contracts/organization',
             '/contracts/mine',
@@ -94,6 +95,7 @@ export const FALLBACK_NAV_OPTIONS: NavPovOption[] = [
         description: 'Persetujuan pengajuan, monitoring dan laporan',
         allowedRoutes: [
             '/dashboard',
+            '/contracts/activity',
             '/contracts',
             '/contracts/organization',
             '/contracts/mine',
@@ -112,6 +114,7 @@ export const FALLBACK_NAV_OPTIONS: NavPovOption[] = [
         description: 'Pembuatan pengajuan baru, dokumen & diskusi',
         allowedRoutes: [
             '/dashboard',
+            '/contracts/activity',
             '/contracts/organization',
             '/contracts/mine',
             '/contracts/pending',

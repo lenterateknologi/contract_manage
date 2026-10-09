@@ -21,6 +21,7 @@ use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class ContractDashboardQuery
 {
@@ -44,15 +45,41 @@ class ContractDashboardQuery
 
         [$createdFrom, $createdTo, $period] = $this->resolveDateRange($request);
 
-        $cleanFn = fn ($id) => preg_replace('/^(g|r|c)_/', '', trim($id));
-        $regionIds = array_values(array_map($cleanFn, $this->normalizeArray($request->input('region_ids', $request->input('region_id', [])))));
-        $companyGroupIds = array_values(array_map($cleanFn, $this->normalizeArray($request->input('company_group_ids', $request->input('company_group_id', [])))));
-        $companyIds = array_values(array_map($cleanFn, $this->normalizeArray($request->input('company_ids', $request->input('company_id', [])))));
-        $vendorIds = $this->normalizeArray($request->input('vendor_ids', []));
-        $statuses = $this->normalizeArray($request->input('statuses', []));
-        $contractTypeIds = $this->normalizeArray($request->input('contract_type_ids', []));
-        $picIds = $this->normalizeArray($request->input('pic_ids', []));
-        $departmentIds = $this->normalizeArray($request->input('department_ids', $request->input('department_id', [])));
+        $cleanFn = fn ($id) => preg_replace('/^(g|r|c|d)_/', '', trim(explode('|', (string) $id)[0]));
+        $regionIds = array_values(array_filter(array_map($cleanFn, $this->normalizeArray($request->input('region_ids', $request->input('region_id', []))))));
+        $companyGroupIds = array_values(array_filter(array_map($cleanFn, $this->normalizeArray($request->input('company_group_ids', $request->input('company_group_id', []))))));
+        $companyIds = array_values(array_filter(array_map($cleanFn, $this->normalizeArray($request->input('company_ids', $request->input('company_id', []))))));
+        $departmentIds = array_values(array_filter(array_map($cleanFn, $this->normalizeArray($request->input('department_ids', $request->input('department_id', []))))));
+        $vendorIds = $this->normalizeArray($request->input('vendor_ids', $request->input('vendor_id', [])));
+        $statuses = $this->normalizeArray($request->input('statuses', $request->input('status', [])));
+        $picIds = $this->normalizeArray($request->input('pic_ids', $request->input('pic_id', [])));
+
+        // Resolve contractTypeIds including categories and contract_type_ids from DashboardType / Request
+        $contractTypeInput = $this->normalizeArray($request->input('contract_type_ids', $request->input('contract_type_id', [])));
+        $categoryInput = $this->normalizeArray($request->input('categories', $request->input('category', [])));
+
+        $allTypes = ContractType::all();
+        $getDescendants = function ($parentId) use (&$getDescendants, $allTypes) {
+            $ids = [$parentId];
+            foreach ($allTypes->where('parent_id', $parentId) as $child) {
+                $ids = array_merge($ids, $getDescendants($child->id));
+            }
+
+            return array_unique(array_filter($ids));
+        };
+
+        $resolvedTypeIds = [];
+        if (! empty($categoryInput) && ! in_array('all', $categoryInput, true)) {
+            foreach ($categoryInput as $cat) {
+                $resolvedTypeIds = array_merge($resolvedTypeIds, $this->resolveCategoryTypeIds(trim((string) $cat)));
+            }
+        }
+        if (! empty($contractTypeInput) && ! in_array('all', $contractTypeInput, true)) {
+            foreach ($contractTypeInput as $tid) {
+                $resolvedTypeIds = array_merge($resolvedTypeIds, $getDescendants($tid));
+            }
+        }
+        $contractTypeIds = array_values(array_unique(array_filter($resolvedTypeIds)));
 
         // ponytail: Query against the materialized view for maximum speed
         $baseQuery = $this->buildBaseQuery(
@@ -112,12 +139,22 @@ class ContractDashboardQuery
             }
         }
 
+        $filterSettings = $dashboardConfig && $user ? $dashboardConfig->getFilterSettings($user) : ($user ? $user->getContractFilterSettings() : []);
+
         return [
             'has_setting' => (bool) $dashboardConfig,
+            'id' => $dashboardConfig?->id,
             'name' => $dashboardConfig ? $dashboardConfig->name : null,
+            'description' => $dashboardConfig ? $dashboardConfig->description : null,
             'show_overview' => $dashboardConfig ? (bool) $dashboardConfig->show_overview : true,
+            'show_overview_contract' => $dashboardConfig ? (bool) $dashboardConfig->show_overview_contract : true,
+            'show_overview_non_contract' => $dashboardConfig ? (bool) $dashboardConfig->show_overview_non_contract : true,
+            'show_overview_nda' => $dashboardConfig ? (bool) $dashboardConfig->show_overview_nda : true,
             'show_workload' => $dashboardConfig ? (bool) $dashboardConfig->show_workload : false,
             'show_master_data' => $dashboardConfig ? (bool) $dashboardConfig->show_master_data : false,
+            'categories' => $filterSettings['categories'] ?? [],
+            'contract_type_ids' => $filterSettings['contract_type_ids'] ?? [],
+            'filter_settings' => $filterSettings,
         ];
     }
 
@@ -167,9 +204,14 @@ class ContractDashboardQuery
         $renewedContractsCount = (int) ($kpiAggregates->renewed ?? 0);
 
         $myTotalContracts = DB::table('t_contracts')
-            ->where('created_by', Auth::id())
+            ->where(function ($q) {
+                $q->where('created_by', Auth::id())
+                    ->orWhere('initiated_by_id', Auth::id());
+            })
             ->whereNull('deleted_at')
             ->where('status', '!=', 'draft')
+            ->whereRaw("UPPER(status) != 'ARCHIVED'")
+            ->whereNull('closed_at')
             ->count();
 
         $pendingApprovalsForMe = DB::table('t_approvals')
@@ -177,7 +219,8 @@ class ContractDashboardQuery
             ->where('t_approvals.user_id', Auth::id())
             ->where('t_approvals.status', 'pending')
             ->whereNull('t_contracts.deleted_at')
-            ->whereRaw("UPPER(t_contracts.status) != 'DRAFT'")
+            ->whereNull('t_contracts.closed_at')
+            ->whereIn('t_contracts.status', ['in_review', 'pending', 'locked', 'revision', 'waiting'])
             ->whereColumn('t_approvals.workflow_step_id', 't_contracts.workflow_step_id')
             ->when(! empty($statuses), fn ($q) => $q->whereIn('t_contracts.status', $statuses))
             ->when(! empty($contractTypeIds), fn ($q) => $q->whereIn('t_contracts.contract_type_id', $contractTypeIds))
@@ -237,7 +280,8 @@ class ContractDashboardQuery
                 'avgCycleTime' => $avgDays,
             ],
             'summary' => [
-                'total' => $todayTotal,
+                'total' => $totalContracts,
+                'today_total' => $todayTotal,
                 'my_total' => $myTotalContracts,
                 'archived_total' => $archivedTotalContracts,
                 'in_process' => $inProcessContracts,
@@ -259,14 +303,27 @@ class ContractDashboardQuery
         $ctx = $this->resolveContext($request);
         $baseQuery = $ctx['baseQuery'];
 
-        return [
+        $allTypes = ContractType::all();
+        $rootTypes = $allTypes->filter(fn ($t) => empty($t->parent_id) || $t->parent_id === $t->id);
+
+        $scopedCategories = [];
+        $extraData = [];
+
+        foreach ($rootTypes as $rt) {
+            $slug = Str::slug($rt->name, '_');
+            $camel = Str::camel($slug).'Data';
+            $scopedOverview = $this->getCategoryScopedOverview($baseQuery, $rt->name);
+            $scopedCategories[$slug] = $scopedOverview;
+            $extraData[$slug] = $scopedOverview;
+            $extraData[$camel] = $scopedOverview;
+        }
+
+        return array_merge([
             'activePeriod' => $ctx['period'],
             'overviewDailyTrend' => $this->getOverviewDailyTrend($baseQuery),
             'overviewCategoryDistribution' => $this->getOverviewCategoryDistribution($baseQuery),
-            'contractData' => $this->getCategoryScopedOverview($baseQuery, 'contract'),
-            'nonContractData' => $this->getCategoryScopedOverview($baseQuery, 'non_contract'),
-            'ndaData' => $this->getCategoryScopedOverview($baseQuery, 'nda'),
-        ];
+            'scopedCategories' => $scopedCategories,
+        ], $extraData);
     }
 
     /**
@@ -785,46 +842,27 @@ class ContractDashboardQuery
         array $companyGroupIds,
         array $companyIds,
     ): void {
-        if (! empty($departmentIds)) {
-            $this->applyDepartmentScopeFilter($query, $departmentIds);
-        }
-        if (! empty($regionIds)) {
-            $query->where(function (QueryBuilder $q) use ($regionIds): void {
-                $q->whereIn('initiator_region_id', $regionIds)
-                    ->orWhere(function (QueryBuilder $sq) use ($regionIds): void {
-                        $sq->whereNull('initiated_by_id')
-                            ->whereIn('creator_region_id', $regionIds);
-                    });
-            });
-        }
-        if (! empty($companyGroupIds)) {
-            $query->where(function (QueryBuilder $q) use ($companyGroupIds): void {
-                $q->whereIn('initiator_company_group_id', $companyGroupIds)
-                    ->orWhere(function (QueryBuilder $sq) use ($companyGroupIds): void {
-                        $sq->whereNull('initiated_by_id')
-                            ->whereIn('creator_company_group_id', $companyGroupIds);
-                    });
-            });
-        }
-        if (! empty($companyIds)) {
-            $query->where(function (QueryBuilder $q) use ($companyIds): void {
-                $q->whereIn('initiator_company_id', $companyIds)
-                    ->orWhere(function (QueryBuilder $sq) use ($companyIds): void {
-                        $sq->whereNull('initiated_by_id')
-                            ->whereIn('creator_company_id', $companyIds);
-                    });
-            });
-        }
+        $this->applyMvOrgFilter($query, 'department_id', $departmentIds);
+        $this->applyMvOrgFilter($query, 'region_id', $regionIds);
+        $this->applyMvOrgFilter($query, 'company_group_id', $companyGroupIds);
+        $this->applyMvOrgFilter($query, 'company_id', $companyIds);
     }
 
-    /** @param array<string> $departmentIds */
-    private function applyDepartmentScopeFilter(QueryBuilder $query, array $departmentIds): void
+    /** @param array<string> $values */
+    private function applyMvOrgFilter(QueryBuilder $query, string $field, array $values): void
     {
-        $query->where(function (QueryBuilder $q) use ($departmentIds): void {
-            $q->whereIn('initiator_department_id', $departmentIds)
-                ->orWhere(function (QueryBuilder $sq) use ($departmentIds): void {
+        if (empty($values)) {
+            return;
+        }
+
+        $initCol = 'initiator_'.$field;
+        $creatCol = 'creator_'.$field;
+
+        $query->where(function (QueryBuilder $q) use ($initCol, $creatCol, $values): void {
+            $q->whereIn($initCol, $values)
+                ->orWhere(function (QueryBuilder $sq) use ($creatCol, $values): void {
                     $sq->whereNull('initiated_by_id')
-                        ->whereIn('creator_department_id', $departmentIds);
+                        ->whereIn($creatCol, $values);
                 });
         });
     }
@@ -1005,10 +1043,11 @@ class ContractDashboardQuery
             ->where('status', 'pending')
             ->whereHas('contract', function ($q) {
                 $q->whereNull('deleted_at')
-                    ->whereRaw("UPPER(status) != 'DRAFT'")
+                    ->whereNull('closed_at')
+                    ->whereIn('status', array_map(fn ($s) => $s->value, ContractStatusEnum::inProcess()))
                     ->whereColumn('workflow_step_id', 't_approvals.workflow_step_id');
             })
-            ->with(['contract.creator', 'contract.contractType'])
+            ->with(['contract.creator', 'contract.contractType', 'workflowStep'])
             ->orderByDesc('created_at')
             ->limit(5)
             ->get()
@@ -1020,6 +1059,7 @@ class ContractDashboardQuery
                 'title' => $app->contract->title,
                 'creator' => $app->contract->creator?->name,
                 'type' => $app->contract->contractType?->name,
+                'step_name' => $app->workflowStep?->name,
                 'requested_at' => $app->created_at,
             ])
             ->values()
@@ -1032,7 +1072,7 @@ class ContractDashboardQuery
         return DB::table('t_contract_h')
             ->leftJoin('m_users', 't_contract_h.actor_id', '=', 'm_users.id')
             ->leftJoin('t_contracts', 't_contract_h.contract_id', '=', 't_contracts.id')
-            ->when(! $isAdmin, fn ($q) => $q->where('t_contracts.created_by', $user->id))
+            ->when(! $isAdmin && $user, fn ($q) => $q->where('t_contracts.created_by', $user->id))
             ->select(
                 't_contract_h.id',
                 't_contract_h.action',
@@ -1065,35 +1105,27 @@ class ContractDashboardQuery
     private function getOverviewCategoryDistribution(QueryBuilder $baseQuery): array
     {
         $allTypes = ContractType::all();
+        $rootTypes = $allTypes->filter(fn ($t) => empty($t->parent_id) || $t->parent_id === $t->id);
+
         $rootTypeMap = [];
-        $rootTypeIds = ['Kontrak' => null, 'Non Kontrak' => null, 'NDA' => null];
+        $rootTypeIds = [];
+        $counts = [];
+
+        foreach ($rootTypes as $rt) {
+            $rootTypeIds[$rt->name] = $rt->id;
+            $counts[$rt->name] = 0;
+        }
 
         foreach ($allTypes as $t) {
             $curr = $t;
-            while ($curr && $curr->parent_id) {
+            while ($curr && ! empty($curr->parent_id) && $curr->parent_id !== $curr->id) {
                 $curr = $allTypes->firstWhere('id', $curr->parent_id);
             }
-            $rootName = $curr ? $curr->name : 'Lainnya';
-            if (str_contains(strtolower($rootName), 'nda') || strtolower($rootName) === 'perjanjian kerahasiaan (nda)') {
-                $rootCat = 'NDA';
-            } elseif (strtolower($rootName) === 'non kontrak') {
-                $rootCat = 'Non Kontrak';
-            } elseif (strtolower($rootName) === 'kontrak') {
-                $rootCat = 'Kontrak';
-            } else {
-                $rootCat = 'Kontrak';
-            }
-            $rootTypeMap[$t->id] = $rootCat;
-        }
-
-        foreach ($allTypes->whereNull('parent_id') as $rt) {
-            $name = strtolower($rt->name);
-            if (str_contains($name, 'nda') || $name === 'perjanjian kerahasiaan (nda)') {
-                $rootTypeIds['NDA'] = $rt->id;
-            } elseif ($name === 'non kontrak') {
-                $rootTypeIds['Non Kontrak'] = $rt->id;
-            } elseif ($name === 'kontrak') {
-                $rootTypeIds['Kontrak'] = $rt->id;
+            $rootName = $curr ? $curr->name : $t->name;
+            $rootTypeMap[$t->id] = $rootName;
+            if (! isset($counts[$rootName])) {
+                $counts[$rootName] = 0;
+                $rootTypeIds[$rootName] = $curr ? $curr->id : $t->id;
             }
         }
 
@@ -1102,31 +1134,86 @@ class ContractDashboardQuery
             ->whereNull('closed_at')
             ->get(['contract_type_id']);
 
-        $counts = ['Kontrak' => 0, 'Non Kontrak' => 0, 'NDA' => 0];
-
         foreach ($contracts as $c) {
-            $cat = $rootTypeMap[$c->contract_type_id] ?? 'Kontrak';
-            if (isset($counts[$cat])) {
-                $counts[$cat]++;
-            } else {
-                $counts['Kontrak']++;
+            $cat = $rootTypeMap[$c->contract_type_id] ?? 'Lainnya';
+            if (! isset($counts[$cat])) {
+                $counts[$cat] = 0;
+            }
+            $counts[$cat]++;
+        }
+
+        $distribution = [];
+        foreach ($counts as $catName => $count) {
+            $distribution[$catName] = [
+                'count' => $count,
+                'type_id' => $rootTypeIds[$catName] ?? null,
+            ];
+        }
+
+        return $distribution;
+    }
+
+    public function resolveCategoryRoot(string $rootCodeOrName): ?ContractType
+    {
+        $allTypes = ContractType::all();
+        $rootClean = trim($rootCodeOrName);
+        $rootNormalized = strtolower(str_replace(['_', '-'], '', $rootClean));
+        $rootSlug = Str::slug($rootClean);
+
+        $root = $allTypes->first(function ($t) use ($rootClean, $rootNormalized, $rootSlug) {
+            if ($t->id === $rootClean) {
+                return true;
+            }
+            $codeClean = trim($t->code ?? '');
+            if (! empty($codeClean)) {
+                $codeNormalized = strtolower(str_replace(['_', '-'], '', $codeClean));
+                if ($codeNormalized === $rootNormalized || Str::slug($codeClean) === $rootSlug) {
+                    return true;
+                }
+            }
+            $nameClean = trim($t->name ?? '');
+            if (! empty($nameClean)) {
+                $nameNormalized = strtolower(str_replace(['_', '-'], '', $nameClean));
+                if ($nameNormalized === $rootNormalized || Str::slug($nameClean) === $rootSlug) {
+                    return true;
+                }
+            }
+
+            return false;
+        });
+
+        if (! $root) {
+            if ($rootCodeOrName === 'contract' || $rootCodeOrName === 'kontrak') {
+                $root = $allTypes->first(fn ($t) => (empty($t->parent_id) || $t->parent_id === $t->id) && (strtoupper($t->code ?? '') === 'A-1' || (stripos($t->name, 'non') === false && stripos($t->name, 'kontrak') !== false)));
+            } elseif ($rootCodeOrName === 'non_contract' || $rootCodeOrName === 'non_kontrak' || $rootCodeOrName === 'non-contract') {
+                $root = $allTypes->first(fn ($t) => (empty($t->parent_id) || $t->parent_id === $t->id) && (strtoupper($t->code ?? '') === 'A-2' || stripos($t->name, 'non') !== false));
+            } elseif ($rootCodeOrName === 'nda') {
+                $root = $allTypes->first(fn ($t) => (empty($t->parent_id) || $t->parent_id === $t->id) && (strtoupper($t->code ?? '') === 'NDA' || stripos($t->name, 'nda') !== false || stripos($t->name, 'kerahasiaan') !== false));
             }
         }
 
-        return [
-            'Kontrak' => [
-                'count' => $counts['Kontrak'],
-                'type_id' => $rootTypeIds['Kontrak'] ?? null,
-            ],
-            'Non Kontrak' => [
-                'count' => $counts['Non Kontrak'],
-                'type_id' => $rootTypeIds['Non Kontrak'] ?? null,
-            ],
-            'NDA' => [
-                'count' => $counts['NDA'],
-                'type_id' => $rootTypeIds['NDA'] ?? null,
-            ],
-        ];
+        return $root;
+    }
+
+    /** @return array<string> */
+    public function resolveCategoryTypeIds(string $rootCodeOrName): array
+    {
+        $root = $this->resolveCategoryRoot($rootCodeOrName);
+        if (! $root) {
+            return [];
+        }
+
+        $allTypes = ContractType::all();
+        $getDescendants = function ($parentId) use (&$getDescendants, $allTypes) {
+            $ids = [$parentId];
+            foreach ($allTypes->where('parent_id', $parentId) as $child) {
+                $ids = array_merge($ids, $getDescendants($child->id));
+            }
+
+            return array_unique(array_filter($ids));
+        };
+
+        return $getDescendants($root->id);
     }
 
     private function getCategoryScopedOverview(QueryBuilder $baseQuery, string $rootCodeOrName): array
@@ -1141,14 +1228,7 @@ class ContractDashboardQuery
             return array_unique(array_filter($ids));
         };
 
-        $root = null;
-        if ($rootCodeOrName === 'contract') {
-            $root = $allTypes->first(fn ($t) => $t->code === 'A-1' || strtolower($t->name) === 'kontrak');
-        } elseif ($rootCodeOrName === 'non_contract') {
-            $root = $allTypes->first(fn ($t) => $t->code === 'A-2' || strtolower($t->name) === 'non kontrak');
-        } elseif ($rootCodeOrName === 'nda') {
-            $root = $allTypes->first(fn ($t) => $t->code === 'NDA' || str_contains(strtolower($t->name), 'nda'));
-        }
+        $root = $this->resolveCategoryRoot($rootCodeOrName);
 
         if (! $root) {
             return [
@@ -1179,10 +1259,15 @@ class ContractDashboardQuery
         // Metrics for this category
         $totalContracts = (clone $scopedQuery)->whereRaw("UPPER(status) != 'ARCHIVED'")->whereNull('closed_at')->count();
         $myTotal = DB::table('t_contracts')
-            ->where('created_by', Auth::id())
+            ->where(function ($q) {
+                $q->where('created_by', Auth::id())
+                    ->orWhere('initiated_by_id', Auth::id());
+            })
             ->whereIn('contract_type_id', $typeIds)
             ->whereNull('deleted_at')
             ->where('status', '!=', 'draft')
+            ->whereRaw("UPPER(status) != 'ARCHIVED'")
+            ->whereNull('closed_at')
             ->count();
         $archivedTotal = (clone $scopedQuery)
             ->where(fn (QueryBuilder $q) => $q->where('status', 'archived')->orWhereNotNull('closed_at'))
@@ -1197,7 +1282,8 @@ class ContractDashboardQuery
             ->where('t_approvals.status', 'pending')
             ->whereIn('t_contracts.contract_type_id', $typeIds)
             ->whereNull('t_contracts.deleted_at')
-            ->whereRaw("UPPER(t_contracts.status) != 'DRAFT'")
+            ->whereNull('t_contracts.closed_at')
+            ->whereIn('t_contracts.status', array_map(fn ($s) => $s->value, ContractStatusEnum::inProcess()))
             ->whereColumn('t_approvals.workflow_step_id', 't_contracts.workflow_step_id')
             ->distinct('t_contracts.id')
             ->count('t_contracts.id');
@@ -1305,6 +1391,7 @@ class ContractDashboardQuery
         return [
             'typeId' => $root->id,
             'typeName' => $root->name,
+            'typeSlug' => Str::slug($root->name, '_'),
             'metrics' => [
                 'totalContracts' => $totalContracts,
             ],
@@ -1329,11 +1416,12 @@ class ContractDashboardQuery
             ->where('status', 'pending')
             ->whereHas('contract', function ($q) use ($typeIds) {
                 $q->whereNull('deleted_at')
-                    ->whereRaw("UPPER(status) != 'DRAFT'")
+                    ->whereNull('closed_at')
+                    ->whereIn('status', array_map(fn ($s) => $s->value, ContractStatusEnum::inProcess()))
                     ->whereIn('contract_type_id', $typeIds)
                     ->whereColumn('workflow_step_id', 't_approvals.workflow_step_id');
             })
-            ->with(['contract.creator', 'contract.contractType'])
+            ->with(['contract.creator', 'contract.contractType', 'workflowStep'])
             ->orderByDesc('created_at')
             ->limit(5)
             ->get()
@@ -1345,6 +1433,7 @@ class ContractDashboardQuery
                 'title' => $app->contract->title,
                 'creator' => $app->contract->creator?->name,
                 'type' => $app->contract->contractType?->name,
+                'step_name' => $app->workflowStep?->name,
                 'requested_at' => $app->created_at,
             ])
             ->values()
@@ -1380,23 +1469,20 @@ class ContractDashboardQuery
         $endDate = now();
 
         $allTypes = ContractType::all();
+        $rootTypes = $allTypes->filter(fn ($t) => empty($t->parent_id) || $t->parent_id === $t->id);
+        $rootNames = $rootTypes->pluck('name')->values()->all();
+        if (empty($rootNames)) {
+            $rootNames = ['Kontrak', 'Non Kontrak', 'NDA'];
+        }
+
         $rootTypeMap = [];
         foreach ($allTypes as $t) {
             $curr = $t;
-            while ($curr && $curr->parent_id) {
+            while ($curr && ! empty($curr->parent_id) && $curr->parent_id !== $curr->id) {
                 $curr = $allTypes->firstWhere('id', $curr->parent_id);
             }
-            $rootName = $curr ? $curr->name : 'Lainnya';
-            if (str_contains(strtolower($rootName), 'nda') || strtolower($rootName) === 'perjanjian kerahasiaan (nda)') {
-                $rootCat = 'NDA';
-            } elseif (strtolower($rootName) === 'non kontrak') {
-                $rootCat = 'Non Kontrak';
-            } elseif (strtolower($rootName) === 'kontrak') {
-                $rootCat = 'Kontrak';
-            } else {
-                $rootCat = 'Kontrak';
-            }
-            $rootTypeMap[$t->id] = $rootCat;
+            $rootName = $curr ? $curr->name : $t->name;
+            $rootTypeMap[$t->id] = $rootName;
         }
 
         $contracts = (clone $baseQuery)
@@ -1408,7 +1494,7 @@ class ContractDashboardQuery
         $byDayAndCategory = [];
         foreach ($contracts as $c) {
             $day = Carbon::parse($c->created_at)->toDateString();
-            $cat = $rootTypeMap[$c->contract_type_id] ?? 'Kontrak';
+            $cat = $rootTypeMap[$c->contract_type_id] ?? 'Lainnya';
             $byDayAndCategory[$day][$cat] = ($byDayAndCategory[$day][$cat] ?? 0) + 1;
         }
 
@@ -1417,16 +1503,18 @@ class ContractDashboardQuery
         while ($current->lte($endDate)) {
             $dateKey = $current->toDateString();
 
-            $trend[] = [
+            $point = [
                 'date' => $current->format('d M'),
                 'raw_date' => $dateKey,
                 'full_date' => $current->translatedFormat('d M Y'),
                 'month_key' => $current->format('Y-m'),
-                'Kontrak' => (int) ($byDayAndCategory[$dateKey]['Kontrak'] ?? 0),
-                'Non Kontrak' => (int) ($byDayAndCategory[$dateKey]['Non Kontrak'] ?? 0),
-                'NDA' => (int) ($byDayAndCategory[$dateKey]['NDA'] ?? 0),
             ];
 
+            foreach ($rootNames as $rName) {
+                $point[$rName] = (int) ($byDayAndCategory[$dateKey][$rName] ?? 0);
+            }
+
+            $trend[] = $point;
             $current->addDay();
         }
 
@@ -1829,23 +1917,29 @@ class ContractDashboardQuery
         mixed $completedContractsThisMonth
     ): array {
         $userQuery = User::where('is_used', true)
-            ->with(['department', 'company', 'division', 'location']);
+            ->with(['department', 'company', 'division', 'location', 'companyGroup']);
 
         // ponytail: Scope to user division if not full access
-        if (! $hasFullAccess && $user->division_id) {
+        if (! $hasFullAccess && $user?->division_id) {
             $userQuery->where('division_id', $user->division_id);
-        } elseif ($isManager && $user->company_id) {
+        } elseif ($isManager && $user?->company_id) {
             $userQuery->where('company_id', $user->company_id);
-        } elseif ($hasDepartmentAccess && $user->department_id) {
+        } elseif ($hasDepartmentAccess && $user?->department_id) {
             $userQuery->where('department_id', $user->department_id);
         }
 
         if ($hasFullAccess) {
             if (! empty($regionIds)) {
-                $userQuery->whereHas('company', fn ($q) => $q->whereIn('region_id', $regionIds));
+                $userQuery->where(function ($q) use ($regionIds) {
+                    $q->whereIn('region_id', $regionIds)
+                        ->orWhereHas('company', fn ($cq) => $cq->whereIn('region_id', $regionIds));
+                });
             }
             if (! empty($companyGroupIds)) {
-                $userQuery->whereHas('company', fn ($q) => $q->whereIn('company_group_id', $companyGroupIds));
+                $userQuery->where(function ($q) use ($companyGroupIds) {
+                    $q->whereIn('company_group_id', $companyGroupIds)
+                        ->orWhereHas('company', fn ($cq) => $cq->whereIn('company_group_id', $companyGroupIds));
+                });
             }
             if (! empty($companyIds)) {
                 $userQuery->whereIn('company_id', $companyIds);
@@ -1866,6 +1960,10 @@ class ContractDashboardQuery
                 $pendingCount = (int) $pendingCounts->get($u->id, 0);
                 $initiatedCount = (int) $initiatedCounts->get($u->id, 0);
 
+                $pMonth = (int) $pendingThisMonth->get($u->id, 0);
+                $aMonth = (int) $activeThisMonth->get($u->id, 0);
+                $cMonth = ((int) $completedApprovalsThisMonth->get($u->id, 0)) + ((int) $completedContractsThisMonth->get($u->id, 0));
+
                 return [
                     'id' => $u->id,
                     'name' => $u->name,
@@ -1881,17 +1979,17 @@ class ContractDashboardQuery
                     'company_id' => $u->company_id,
                     'company_name' => $u->company?->name,
                     'company_group_id' => $u->company_group_id ?? $u->company?->company_group_id,
-                    'company_group_name' => $u->company_group_name ?? $u->company?->companyGroup?->name,
+                    'company_group_name' => $u->companyGroup?->name ?? $u->company_group_name ?? $u->company?->companyGroup?->name ?? $u->company?->company_group_name,
                     'org_group_name' => $u->org_group_name ?? $u->department?->org_group_name,
                     'region_id' => $u->region_id ?? $u->company?->region_id,
                     'active_contracts_count' => $activeCount,
                     'pending_tasks_count' => $pendingCount,
                     'initiated_contracts_count' => $initiatedCount,
-                    'load_status' => $activeCount >= 10 ? 'Sibuk' : 'Ready',
+                    'load_status' => ($aMonth + $pMonth) >= 10 ? 'Sibuk' : 'Ready',
                     'stats_this_month' => [
-                        'pending' => (int) $pendingThisMonth->get($u->id, 0),
-                        'active' => (int) $activeThisMonth->get($u->id, 0),
-                        'completed' => ((int) $completedApprovalsThisMonth->get($u->id, 0)) + ((int) $completedContractsThisMonth->get($u->id, 0)),
+                        'pending' => $pMonth,
+                        'active' => $aMonth,
+                        'completed' => $cMonth,
                     ],
                 ];
             })

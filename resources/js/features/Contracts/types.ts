@@ -472,6 +472,13 @@ export interface Contract {
         bg_color?: string;
         icon?: string | null;
     } | null;
+    my_last_approval?: {
+        id: string;
+        status: 'pending' | 'waiting' | 'approved' | 'rejected' | 'revision' | string;
+        comment?: string | null;
+        decided_at?: string | null;
+        decided_at_formatted?: string | null;
+    } | null;
 }
 
 export type ContractStatus = 'draft' | 'in_review' | 'revision' | 'approved' | 'locked' | 'archived';

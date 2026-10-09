@@ -31,12 +31,12 @@ Route::controller(ContractController::class)->group(function () {
 
     Route::prefix('contracts')->group(function () {
         Route::get('/', 'contractsView')->defaults('view', 'contracts')->name('contracts');
+        Route::get('/activity', 'activityView')->name('contracts.activity');
         Route::get('/mine', 'contractsView')->defaults('view', 'mine')->name('contracts.mine');
+        Route::get('/duty', 'contractsView')->defaults('view', 'duty')->name('contracts.duty');
         Route::get('/organization', 'contractsView')->defaults('view', 'organization')->name('contracts.organization');
         Route::get('/org-group', 'contractsView')->defaults('view', 'organization');
         Route::get('/pending', 'contractsView')->defaults('view', 'pending')->name('pending');
-        Route::get('/f1', 'contractsView')->defaults('view', 'f1')->name('f1');
-        Route::get('/f2', 'contractsView')->defaults('view', 'f2')->name('f2');
         Route::get('/expiry', 'contractsView')->defaults('view', 'expiry')->name('contracts.expiry');
         Route::get('/archived', 'contractsView')->defaults('view', 'archived')->name('contracts.archived');
         Route::get('/in-progress', 'contractsView')->defaults('view', 'in_progress')->name('contracts.in_progress');

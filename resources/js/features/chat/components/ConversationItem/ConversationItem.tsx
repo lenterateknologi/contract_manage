@@ -1,6 +1,7 @@
 import { cn } from '@/lib/utils';
 import { FileText } from 'lucide-react';
 import React from 'react';
+import { prefetchMessages } from '../../hooks/useMessages';
 import { Conversation } from '../../types/conversation.types';
 import { formatMessageTime } from '../../utils/messageUtils';
 
@@ -22,8 +23,9 @@ export function ConversationItem({ conversation, isSelected, onSelect }: Convers
         <button
             type="button"
             onClick={() => onSelect(conversation.id)}
+            onMouseEnter={() => prefetchMessages(conversation.id)}
             className={cn(
-                'group relative flex w-full items-start gap-3 rounded-xl p-3 text-left transition-all',
+                'group relative flex w-full items-start gap-3 rounded-xl p-3 text-left transition-all cursor-pointer',
                 isSelected
                     ? 'bg-primary/10 border-primary/20 text-slate-900 shadow-xs dark:bg-primary/20 dark:text-slate-100'
                     : 'hover:bg-slate-100/80 border-transparent text-slate-700 dark:hover:bg-slate-800/60 dark:text-slate-300',

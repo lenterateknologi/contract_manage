@@ -1,4 +1,5 @@
 import { MasterPageLayout } from '@/components/ui/navigation/MasterPageLayout';
+import { cn } from '@/lib/utils';
 import { Head, usePage } from '@inertiajs/react';
 import React, { useState } from 'react';
 import { useChat } from '../../hooks/useChat';
@@ -39,6 +40,7 @@ export function Chat({ initialContractId, breadcrumbs }: ChatProps) {
         setThreadSearchQuery,
         isSearchingInThread,
         setIsSearchingInThread,
+        mentionUsers,
     } = useChat(initialContractId);
 
     // Attachment Preview Modal state
@@ -53,15 +55,16 @@ export function Chat({ initialContractId, breadcrumbs }: ChatProps) {
     };
 
     return (
-        <MasterPageLayout breadcrumbs={breadcrumbs}>
+        <MasterPageLayout>
             <Head title="Chat Diskusi Kontrak" />
 
-            <div className="flex h-[calc(100vh-4rem)] overflow-hidden bg-slate-50 dark:bg-slate-950">
+            <div className="flex h-full min-h-0 w-full min-w-0 flex-1 overflow-hidden bg-background">
                 {/* Left Sidebar: Conversation List */}
                 <div
-                    className={`w-full md:w-80 lg:w-96 shrink-0 h-full ${
-                        selectedId ? 'hidden md:block' : 'block'
-                    }`}
+                    className={cn(
+                        'w-full md:w-80 lg:w-96 shrink-0 h-full flex flex-col border-r border-border bg-card',
+                        selectedId ? 'hidden md:flex' : 'flex',
+                    )}
                 >
                     <ConversationList
                         conversations={conversations}
@@ -82,9 +85,10 @@ export function Chat({ initialContractId, breadcrumbs }: ChatProps) {
 
                 {/* Right Panel: Active Conversation Thread */}
                 <div
-                    className={`flex-1 flex flex-col h-full bg-white dark:bg-slate-900 overflow-hidden ${
-                        !selectedId ? 'hidden md:flex' : 'flex'
-                    }`}
+                    className={cn(
+                        'flex-1 flex flex-col h-full min-h-0 min-w-0 bg-card overflow-hidden',
+                        !selectedId ? 'hidden md:flex' : 'flex',
+                    )}
                 >
                     {selectedConversation ? (
                         <>
@@ -115,14 +119,15 @@ export function Chat({ initialContractId, breadcrumbs }: ChatProps) {
                                     await sendMessage(text, file);
                                 }}
                                 isSending={isSending}
+                                users={mentionUsers}
                             />
                         </>
                     ) : (
-                        <div className="flex flex-1 flex-col items-center justify-center p-8 text-center text-slate-400">
-                            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                        <div className="flex flex-1 flex-col items-center justify-center p-8 text-center text-muted-foreground">
+                            <h3 className="text-sm font-semibold text-foreground">
                                 Pilih Percakapan
                             </h3>
-                            <p className="mt-1 max-w-sm text-xs text-slate-400">
+                            <p className="mt-1 max-w-sm text-xs text-muted-foreground">
                                 Pilih dokumen kontrak dari daftar di sebelah kiri untuk melihat dan mengirim pesan diskusi.
                             </p>
                         </div>

@@ -11,6 +11,7 @@ use App\Models\Master\Workflow;
 use App\Models\Master\WorkflowStep;
 use App\Services\Utils\ShortIdService;
 use App\Traits\HasContractMeta;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -18,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -384,6 +386,68 @@ class Contract extends Model
             $q->whereRaw('UPPER(status) != ?', ['ARCHIVED'])
                 ->whereNull('closed_at');
         });
+    }
+
+    /**
+     * Scope query ke tiket/kontrak yang dibuat atau diinisiasi oleh user (default: logged-in user).
+     */
+    public function scopeMine(Builder $query, ?string $userId = null): Builder
+    {
+        $userId = $userId ?? Auth::id();
+
+        return $query->where(function (Builder $q) use ($userId): void {
+            $q->where('created_by', $userId)
+                ->orWhere('initiated_by_id', $userId);
+        });
+    }
+
+    /**
+     * Scope query ke tiket/kontrak aktif yang membutuhkan aksi persetujuan user (default: logged-in user).
+     */
+    public function scopePendingApprovalFor(Builder $query, ?string $userId = null): Builder
+    {
+        $userId = $userId ?? Auth::id();
+
+        return $query->whereNull('closed_at')
+            ->whereIn('status', ['in_review', 'pending', 'locked', 'revision', 'waiting'])
+            ->whereHas('approvals', function (Builder $q) use ($userId): void {
+                $q->where('user_id', $userId)
+                    ->where('status', 'pending')
+                    ->whereColumn('workflow_step_id', 't_contracts.workflow_step_id');
+            });
+    }
+
+    /**
+     * Scope query ke kontrak yang pernah ditindaklanjuti/diproses oleh user (approved, rejected, revision).
+     */
+    public function scopeActedBy(Builder $query, ?string $userId = null, ?array $actionStatuses = null): Builder
+    {
+        $userId = $userId ?? Auth::id();
+        $statuses = $actionStatuses ?? ['approved', 'rejected', 'revision'];
+
+        return $query->whereRaw('UPPER(status) != ?', ['DRAFT'])
+            ->whereHas('approvals', function (Builder $q) use ($userId, $statuses): void {
+                $q->where('user_id', $userId)
+                    ->whereIn('status', $statuses);
+            });
+    }
+
+    /**
+     * Scope query ke tiket/kontrak yang ditugaskan kepada PIC user (default: logged-in user).
+     */
+    public function scopeDuty(Builder $query, ?string $userId = null): Builder
+    {
+        $userId = $userId ?? Auth::id();
+
+        return $query->where('assigned_pic_id', $userId);
+    }
+
+    /**
+     * Alias untuk scopeDuty.
+     */
+    public function scopeAssignedTo(Builder $query, ?string $userId = null): Builder
+    {
+        return $this->scopeDuty($query, $userId);
     }
 
     public function meta(): HasOne

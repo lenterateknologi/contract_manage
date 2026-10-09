@@ -69,3 +69,61 @@ export function filterConversations(
         return true;
     });
 }
+
+export interface DateGroupedConversations {
+    label: string;
+    conversations: Conversation[];
+}
+
+export function groupConversationsByDate(conversations: Conversation[]): DateGroupedConversations[] {
+    if (!conversations || conversations.length === 0) return [];
+
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const yesterday = today - 86400000;
+    const last7Days = today - 7 * 86400000;
+    const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+
+    const groupsMap: Record<string, Conversation[]> = {
+        'Hari Ini': [],
+        'Kemarin': [],
+        'Minggu Ini': [],
+        'Bulan Ini': [],
+        'Lebih Lama': [],
+    };
+
+    conversations.forEach((conv) => {
+        const rawDate = conv.last_message?.created_at || conv.updated_at || conv.created_at;
+        if (!rawDate) {
+            groupsMap['Lebih Lama'].push(conv);
+            return;
+        }
+
+        const dateObj = new Date(rawDate);
+        const time = isNaN(dateObj.getTime()) ? 0 : dateObj.getTime();
+
+        if (time >= today) {
+            groupsMap['Hari Ini'].push(conv);
+        } else if (time >= yesterday) {
+            groupsMap['Kemarin'].push(conv);
+        } else if (time >= last7Days) {
+            groupsMap['Minggu Ini'].push(conv);
+        } else if (time >= thisMonth) {
+            groupsMap['Bulan Ini'].push(conv);
+        } else {
+            groupsMap['Lebih Lama'].push(conv);
+        }
+    });
+
+    const result: DateGroupedConversations[] = [];
+    ['Hari Ini', 'Kemarin', 'Minggu Ini', 'Bulan Ini', 'Lebih Lama'].forEach((label) => {
+        if (groupsMap[label] && groupsMap[label].length > 0) {
+            result.push({
+                label,
+                conversations: groupsMap[label],
+            });
+        }
+    });
+
+    return result;
+}

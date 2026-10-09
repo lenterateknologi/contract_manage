@@ -45,6 +45,63 @@ export const chatService = {
             apiClient.post(API_ENDPOINTS.DISCUSSIONS.CONTRACT_MESSAGES_READ(contractId)),
         ).catch(console.error);
     },
+
+    async fetchUsers(): Promise<any[]> {
+        try {
+            const res: any = await unwrapResponse(
+                apiClient.get(API_ENDPOINTS.CONTRACTS.USERS),
+            );
+            return Array.isArray(res) ? res : (res?.data ?? []);
+        } catch {
+            return [];
+        }
+    },
+
+    async fetchContractMembers(contractId: string): Promise<any[]> {
+        try {
+            const res: any = await unwrapResponse(
+                apiClient.get(API_ENDPOINTS.SUBRESOURCES.MEMBERS(contractId)),
+            );
+            const list = Array.isArray(res) ? res : (res?.data ?? []);
+            return list.map((item: any) => {
+                const u = item.user || item;
+                const roleStr = Array.isArray(item.roles) ? item.roles.join(', ') : (item.roles || u.role);
+                return {
+                    ...u,
+                    role: roleStr || u.role,
+                };
+            });
+        } catch {
+            return [];
+        }
+    },
+
+    async getMentionableUsers(contractId?: string | null): Promise<any[]> {
+        try {
+            const [membersRes, usersRes] = await Promise.allSettled([
+                contractId ? this.fetchContractMembers(contractId) : Promise.resolve([]),
+                this.fetchUsers(),
+            ]);
+
+            const members = membersRes.status === 'fulfilled' ? membersRes.value : [];
+            const users = usersRes.status === 'fulfilled' ? usersRes.value : [];
+
+            const userMap = new Map<string, any>();
+            members.forEach((m: any) => {
+                if (m?.id) userMap.set(String(m.id), m);
+            });
+            users.forEach((u: any) => {
+                if (u?.id && !userMap.has(String(u.id))) {
+                    userMap.set(String(u.id), u);
+                }
+            });
+
+            return Array.from(userMap.values());
+        } catch (e) {
+            console.error('Failed to load mentionable users', e);
+            return [];
+        }
+    },
 };
 
 export default chatService;

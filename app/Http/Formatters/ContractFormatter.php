@@ -112,6 +112,26 @@ class ContractFormatter
                 'pending_approval_id' => $c->relationLoaded('approvals')
                     ? $c->approvals->where('workflow_step_id', $c->workflow_step_id)->where('status', 'pending')->where('user_id', Auth::id())->first()?->id
                     : null,
+                'my_last_approval' => (function () use ($c) {
+                    if (! Auth::check() || ! $c->relationLoaded('approvals')) {
+                        return null;
+                    }
+                    $myApproval = $c->approvals
+                        ->where('user_id', Auth::id())
+                        ->sortByDesc(fn ($a) => $a->decided_at ?? $a->updated_at)
+                        ->first();
+                    if (! $myApproval) {
+                        return null;
+                    }
+
+                    return [
+                        'id' => $myApproval->id,
+                        'status' => $myApproval->status,
+                        'comment' => $myApproval->comment,
+                        'decided_at' => $myApproval->decided_at?->toIso8601String(),
+                        'decided_at_formatted' => $myApproval->decided_at ? $myApproval->decided_at->translatedFormat('j M Y, H:i') : ($myApproval->updated_at ? $myApproval->updated_at->translatedFormat('j M Y, H:i') : null),
+                    ];
+                })(),
                 'unread_count' => (int) ($c->unread_count ?? 0),
             ];
         }
