@@ -58,6 +58,7 @@ type View =
     'contracts' | 'organization' | 'pending' | 'audit' | 'profile' | 'mine' | 'duty' | 'expiry' | 'archived' | 'in_progress';
 
 import { ConfirmationModal, StatusBadge } from '@/components/ui';
+import { ContractContextMenu } from '@/features/Contracts/components/ContractContextMenu';
 import { ContractCardSkeleton, ContractTableSkeleton } from './ContractSkeleton';
 import LoadingLottie from '@/components/ui/feedback/LoadingLottie';
 import { FloatingPanel } from '@/components/ui/navigation/FloatingPanel';
@@ -677,6 +678,20 @@ export function ContractList({
         setSelected(initialSelected ?? null);
     }, [initialSelected]);
 
+    const [contextMenu, setContextMenu] = useState<{
+        contract: Contract;
+        position: { x: number; y: number };
+    } | null>(null);
+
+    const handleRowContextMenu = useCallback((c: Contract, e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setContextMenu({
+            contract: c,
+            position: { x: e.clientX, y: e.clientY },
+        });
+    }, []);
+
     const updateContract = useCallback((c: Contract) => {
         setSelected(c);
     }, []);
@@ -685,6 +700,11 @@ export function ContractList({
         setSelected(c);
         const targetId = (c as unknown as { short_id?: string }).short_id || c.id;
         router.get(route('contracts.show', targetId), {}, { preserveState: true, preserveScroll: true });
+    }, []);
+
+    const handleOpenEdit = useCallback((c: Contract) => {
+        setSelected(c);
+        setEditOpen(true);
     }, []);
 
     const closeDetail = useCallback(() => {
@@ -1448,6 +1468,7 @@ export function ContractList({
                                                         loading={processing}
                                                         skeleton={<ContractTableSkeleton />}
                                                         onRowClick={openDetail}
+                                                        onRowContextMenu={handleRowContextMenu}
                                                         onSelectionChange={hasAnyBulkAction ? setSelectedRows : undefined}
                                                         selectedRows={hasAnyBulkAction ? selectedRows : []}
                                                         bulkActions={hasAnyBulkAction ? renderBulkActions(selectedRows) : undefined}
@@ -1481,6 +1502,7 @@ export function ContractList({
                                                                     <div
                                                                         key={c.id}
                                                                         onClick={() => openDetail(c)}
+                                                                        onContextMenu={(e) => handleRowContextMenu(c, e)}
                                                                         className="group border-border/70 bg-card hover:border-primary/50 relative flex cursor-pointer flex-col justify-between overflow-hidden rounded-xl border text-left transition-all duration-200 hover:shadow-md"
                                                                     >
                                                                         {/* Top Section: Header & Numbers */}
@@ -1760,6 +1782,16 @@ export function ContractList({
                         </div>
                     </div>
                 </div>
+            )}
+
+            {contextMenu && (
+                <ContractContextMenu
+                    contract={contextMenu.contract}
+                    position={contextMenu.position}
+                    onClose={() => setContextMenu(null)}
+                    onOpenDetail={openDetail}
+                    onEdit={handleOpenEdit}
+                />
             )}
         </>
     );

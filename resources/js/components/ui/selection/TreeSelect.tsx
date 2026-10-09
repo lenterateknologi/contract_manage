@@ -1,7 +1,8 @@
-import * as React from 'react';
-import { Search, ChevronDown, Check, Lock, X } from 'lucide-react';
+import { useFloatingDropdown } from '@/hooks/use-floating-dropdown';
 import { cn } from '@/lib/utils';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/dialogs/Popover';
+import { Check, ChevronDown, Lock, Search, X } from 'lucide-react';
+import * as React from 'react';
+import ReactDOM from 'react-dom';
 
 export interface TreeSelectItem {
     id: string | number;
@@ -23,6 +24,7 @@ interface TreeSelectProps {
     inline?: boolean;
     defaultExpandAll?: boolean;
     disableParentSelection?: boolean;
+    showRootOption?: boolean;
     sortBy?: 'code' | 'name' | 'none';
     size?: 'default' | 'sm';
     allowClear?: boolean;
@@ -30,6 +32,77 @@ interface TreeSelectProps {
     disabledId?: string | number;
     align?: 'start' | 'center' | 'end';
 }
+
+interface TreeSearchInputProps {
+    value: string;
+    onSearch: (value: string) => void;
+    placeholder?: string;
+    autoFocus?: boolean;
+}
+
+const TreeSearchInput = React.memo(function TreeSearchInput({
+    value,
+    onSearch,
+    placeholder = 'Cari...',
+    autoFocus = true,
+}: TreeSearchInputProps) {
+    const [localValue, setLocalValue] = React.useState(value);
+    const inputRef = React.useRef<HTMLInputElement>(null);
+
+    React.useEffect(() => {
+        setLocalValue(value);
+    }, [value]);
+
+    React.useEffect(() => {
+        const timer = setTimeout(() => {
+            onSearch(localValue);
+        }, 200);
+        return () => clearTimeout(timer);
+    }, [localValue, onSearch]);
+
+    React.useEffect(() => {
+        if (autoFocus) {
+            const timer = setTimeout(() => {
+                inputRef.current?.focus();
+            }, 50);
+            return () => clearTimeout(timer);
+        }
+    }, [autoFocus]);
+
+    return (
+        <div className="flex items-center px-3 shrink-0 bg-background rounded-md border border-border">
+            <Search size={14} className="mr-2 shrink-0 text-muted-foreground" />
+            <input
+                ref={inputRef}
+                type="text"
+                value={localValue}
+                onChange={e => setLocalValue(e.target.value)}
+                onPointerDown={(e) => e.stopPropagation()}
+                onMouseDown={(e) => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
+                onKeyDown={(e) => e.stopPropagation()}
+                onKeyUp={(e) => e.stopPropagation()}
+                placeholder={placeholder}
+                className="flex h-8 w-full bg-transparent py-1 text-xs outline-none placeholder:text-muted-foreground focus:outline-none"
+            />
+            {localValue && (
+                <button
+                    type="button"
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setLocalValue('');
+                        onSearch('');
+                        inputRef.current?.focus();
+                    }}
+                    className="p-0.5 text-muted-foreground hover:text-foreground cursor-pointer shrink-0 ml-1"
+                >
+                    <X size={12} />
+                </button>
+            )}
+        </div>
+    );
+});
 
 export function TreeSelect({
     value,
@@ -42,8 +115,9 @@ export function TreeSelect({
     multiple = false,
     disabled = false,
     inline = false,
-    defaultExpandAll = false,
+    defaultExpandAll = true,
     disableParentSelection = false,
+    showRootOption = false,
     sortBy = 'code',
     size = 'default',
     allowClear = true,
@@ -51,10 +125,53 @@ export function TreeSelect({
     disabledId,
     align = 'start',
 }: TreeSelectProps) {
+    const [open, setOpen] = React.useState(false);
     const [search, setSearch] = React.useState('');
     const [filterTab, setFilterTab] = React.useState<'all' | 'selected'>('all');
     const [expandedParents, setExpandedParents] = React.useState<Record<string, boolean>>({});
+    const containerRef = React.useRef<HTMLDivElement>(null);
+    const dropdownRef = React.useRef<HTMLDivElement>(null);
     const isSmall = size === 'sm';
+
+    const coords = useFloatingDropdown(containerRef, open, {
+        align,
+        preferredMaxHeight: 500,
+    });
+
+    // Handle outside click & escape key
+    React.useEffect(() => {
+        function handleClickOutside(e: MouseEvent | PointerEvent) {
+            const target = e.target as HTMLElement | null;
+            if (!target) return;
+            if (
+                containerRef.current?.contains(target) ||
+                dropdownRef.current?.contains(target)
+            ) {
+                return;
+            }
+            setOpen(false);
+            setSearch('');
+        }
+
+        function handleKeyDown(e: KeyboardEvent) {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                setOpen(false);
+                setSearch('');
+            }
+        }
+
+        if (open) {
+            document.addEventListener('pointerdown', handleClickOutside);
+            document.addEventListener('keydown', handleKeyDown, true);
+        }
+        return () => {
+            document.removeEventListener('pointerdown', handleClickOutside);
+            document.removeEventListener('keydown', handleKeyDown, true);
+        };
+    }, [open]);
 
     // Value handling
     const selectedIds = React.useMemo(() => {
@@ -138,7 +255,7 @@ export function TreeSelect({
     // Selection logic
     const handleSelect = (item: TreeSelectItem, closePopover?: () => void) => {
         const id = String(item.id);
-        const pId = String(item.parent_id);
+        const pId = item.parent_id !== null && item.parent_id !== undefined ? String(item.parent_id) : null;
 
         if (!multiple) {
             onValueChange(id, pId);
@@ -276,23 +393,40 @@ export function TreeSelect({
         return treeData.map(filterSubtree).filter(Boolean);
     }, [treeData, search, filterTab, selectedIds]);
 
-    // Auto expand parents if searching or if filterTab is selected or defaultExpandAll
+    const prevOpenRef = React.useRef(open);
+    const prevSearchRef = React.useRef(search);
+    const prevFilterTabRef = React.useRef(filterTab);
+
+    // Auto expand parents if searching or if filterTab is selected or on initial open with defaultExpandAll
     React.useEffect(() => {
-        if (search.trim() || filterTab === 'selected' || defaultExpandAll) {
+        const justOpened = open && !prevOpenRef.current;
+        const searchChanged = search !== prevSearchRef.current;
+        const filterTabChanged = filterTab !== prevFilterTabRef.current;
+
+        prevOpenRef.current = open;
+        prevSearchRef.current = search;
+        prevFilterTabRef.current = filterTab;
+
+        if (!open) return;
+
+        if ((justOpened && defaultExpandAll) || (searchChanged && search.trim()) || filterTabChanged) {
             const newExpanded: Record<string, boolean> = {};
             const expandAll = (nodes: any[]) => {
                 nodes.forEach(n => {
                     newExpanded[String(n.id)] = true;
-                    if (n.children) expandAll(n.children);
+                    if (n.children && n.children.length > 0) expandAll(n.children);
                 });
             };
             expandAll(filteredTree);
-            setExpandedParents(prev => ({...prev, ...newExpanded}));
+            setExpandedParents(prev => ({ ...prev, ...newExpanded }));
         }
-    }, [search, filteredTree, filterTab, defaultExpandAll]);
+    }, [defaultExpandAll, filteredTree, search, filterTab, open]);
 
-    const toggleParentExpansion = (pId: string, e: React.MouseEvent) => {
-        e.stopPropagation();
+    const toggleParentExpansion = (pId: string, e?: React.MouseEvent | React.SyntheticEvent) => {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
         setExpandedParents(prev => ({
             ...prev,
             [pId]: !prev[pId]
@@ -343,10 +477,13 @@ export function TreeSelect({
                         <button
                             type="button"
                             disabled={isDisabled}
+                            onPointerDown={(e) => e.stopPropagation()}
                             onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
                                 if (isDisabled) return;
                                 if (disableParentSelection && hasChildren) {
-                                    toggleParentExpansion(nId, e as any);
+                                    toggleParentExpansion(nId, e);
                                 } else {
                                     handleSelect(node, closePopover);
                                 }
@@ -401,8 +538,13 @@ export function TreeSelect({
                         {hasChildren && (
                             <button
                                 type="button"
-                                onClick={(e) => toggleParentExpansion(nId, e)}
-                                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors cursor-pointer"
+                                onPointerDown={(e) => e.stopPropagation()}
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    toggleParentExpansion(nId, e);
+                                }}
+                                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors cursor-pointer"
                             >
                                 <ChevronDown 
                                     size={14} 
@@ -423,33 +565,19 @@ export function TreeSelect({
     };
 
     const renderInnerDropdown = (closePopover?: () => void) => (
-        <div className="flex flex-col text-popover-foreground w-full space-y-1.5">
+        <div className="flex flex-col text-popover-foreground w-full space-y-1.5 flex-1 min-h-0 overflow-hidden">
             {/* Search & Filter Header */}
-            <div className="flex flex-col gap-1.5 pb-1">
-                <div className="flex items-center px-3 shrink-0 bg-background rounded-md border border-border">
-                    <Search size={14} className="mr-2 shrink-0 text-muted-foreground" />
-                    <input
-                        autoFocus={!inline}
-                        value={search}
-                        onChange={e => setSearch(e.target.value)}
-                        onKeyDown={e => e.stopPropagation()}
-                        placeholder={searchPlaceholder}
-                        className="flex h-8 w-full bg-transparent py-1 text-xs outline-none placeholder:text-muted-foreground"
-                    />
-                    {search && (
-                        <button
-                            type="button"
-                            onClick={() => setSearch('')}
-                            className="p-0.5 text-muted-foreground hover:text-foreground cursor-pointer"
-                        >
-                            <X size={12} />
-                        </button>
-                    )}
-                </div>
+            <div className="flex flex-col gap-1.5 pb-1 shrink-0">
+                <TreeSearchInput
+                    value={search}
+                    onSearch={setSearch}
+                    placeholder={searchPlaceholder}
+                    autoFocus={open || inline}
+                />
 
                 {/* Filter Tabs (when multiple is enabled) */}
                 {multiple && (
-                    <div className="flex items-center justify-between bg-muted/50 p-1 rounded-md border border-border/50 text-xs">
+                    <div className="flex items-center justify-between bg-muted/50 p-1 rounded-md border border-border/50 text-xs shrink-0">
                         <div className="flex items-center gap-1">
                             <button
                                 type="button"
@@ -505,12 +633,19 @@ export function TreeSelect({
                 )}
             </div>
 
-            <div className={cn("p-0.5", inline ? "w-full" : "flex-1 overflow-y-auto max-h-[280px] [scrollbar-width:thin] custom-scrollbar")}>
-                {!multiple && allowClear && (!search.trim() || 'tanpa parent root kategori utama'.toLowerCase().includes(search.toLowerCase().trim())) && (
+            <div 
+                data-scroll-locked="allow"
+                onWheel={(e) => e.stopPropagation()}
+                className={cn("p-0.5", inline ? "w-full" : "flex-1 min-h-0 overflow-y-auto [scrollbar-width:thin] custom-scrollbar overscroll-contain")}
+            >
+                {!multiple && showRootOption && (!search.trim() || 'tanpa parent root kategori utama'.toLowerCase().includes(search.toLowerCase().trim())) && (
                     <div className="pb-1 mb-1 border-b border-border/60">
                         <button
                             type="button"
-                            onClick={() => {
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
                                 onValueChange(null, null);
                                 if (closePopover) closePopover();
                             }}
@@ -556,60 +691,78 @@ export function TreeSelect({
     }
 
     return (
-        <div className="relative w-full space-y-1">
-            <Popover className="w-full">
-                {({ open, close }) => (
-                    <>
-                        <PopoverTrigger asChild disabled={disabled}>
-                            <button
-                                type="button"
-                                disabled={disabled}
-                                className={cn(
-                                    'flex w-full items-center justify-between rounded-lg border border-border bg-surface-base font-normal ring-offset-background transition-all outline-hidden text-left',
-                                    isSmall ? 'h-9 px-3 text-xs' : 'h-10 px-3.5 py-2 text-sm',
-                                    !disabled && 'cursor-pointer hover:border-primary/50 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary',
-                                    disabled && 'cursor-not-allowed bg-slate-100/70 dark:bg-zinc-900/80 border-slate-200 dark:border-zinc-800 text-slate-500 dark:text-zinc-400 shadow-none',
-                                    open && 'border-primary ring-1 ring-primary',
-                                    triggerClassName
-                                )}
-                            >
-                                <span className={cn('truncate', isSmall ? 'text-xs' : 'text-sm', selectedDisplay ? 'text-foreground font-normal' : 'text-muted-foreground font-normal')}>
-                                    {selectedDisplay || placeholder}
-                                </span>
-                                <div className="flex items-center shrink-0 ml-2">
-                                    {selectedDisplay && !disabled && allowClear && (
-                                        <span
-                                            role="button"
-                                            tabIndex={0}
-                                            onClick={(e) => {
-                                                e.preventDefault();
-                                                e.stopPropagation();
-                                                onValueChange(multiple ? [] : null, null);
-                                            }}
-                                            className="p-0.5 mr-1 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted/80 transition-colors cursor-pointer"
-                                            title="Hapus pilihan"
-                                        >
-                                            <X size={isSmall ? 12 : 13} />
-                                        </span>
-                                    )}
-                                    {disabled ? (
-                                        <Lock size={isSmall ? 13 : 14} className="text-slate-400 dark:text-zinc-500 opacity-70" />
-                                    ) : (
-                                        <ChevronDown size={15} className={cn('text-muted-foreground transition-transform duration-200', open && 'rotate-180')} />
-                                    )}
-                                </div>
-                            </button>
-                        </PopoverTrigger>
-
-                        <PopoverContent
-                            align={align}
-                            className="w-[var(--button-width)] min-w-[300px] max-w-[460px] p-2 bg-white dark:bg-zinc-950 border border-border shadow-2xl rounded-xl z-[999999]"
-                        >
-                            {renderInnerDropdown(close)}
-                        </PopoverContent>
-                    </>
+        <div ref={containerRef} className="relative w-full space-y-1">
+            <button
+                type="button"
+                disabled={disabled}
+                onClick={() => {
+                    if (!disabled) {
+                        setOpen(!open);
+                        setSearch('');
+                    }
+                }}
+                className={cn(
+                    'flex w-full items-center justify-between rounded-lg border border-border bg-surface-base font-normal ring-offset-background transition-all outline-hidden text-left',
+                    isSmall ? 'h-9 px-3 text-xs' : 'h-10 px-3.5 py-2 text-sm',
+                    !disabled && 'cursor-pointer hover:border-primary/50 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary',
+                    disabled && 'cursor-not-allowed bg-slate-100/70 dark:bg-zinc-900/80 border-slate-200 dark:border-zinc-800 text-slate-500 dark:text-zinc-400 shadow-none',
+                    open && 'border-primary ring-1 ring-primary',
+                    triggerClassName
                 )}
-            </Popover>
+            >
+                <span className={cn('truncate', isSmall ? 'text-xs' : 'text-sm', selectedDisplay ? 'text-foreground font-normal' : 'text-muted-foreground font-normal')}>
+                    {selectedDisplay || placeholder}
+                </span>
+                <div className="flex items-center shrink-0 ml-2">
+                    {selectedDisplay && !disabled && allowClear && (
+                        <span
+                            role="button"
+                            tabIndex={0}
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                onValueChange(multiple ? [] : null, null);
+                            }}
+                            className="p-0.5 mr-1 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted/80 transition-colors cursor-pointer"
+                            title="Hapus pilihan"
+                        >
+                            <X size={isSmall ? 12 : 13} />
+                        </span>
+                    )}
+                    {disabled ? (
+                        <Lock size={isSmall ? 13 : 14} className="text-slate-400 dark:text-zinc-500 opacity-70" />
+                    ) : (
+                        <ChevronDown size={15} className={cn('text-muted-foreground transition-transform duration-200', open && 'rotate-180')} />
+                    )}
+                </div>
+            </button>
+
+            {open && coords && typeof document !== 'undefined' && ReactDOM.createPortal(
+                <div
+                    data-portal-dropdown="true"
+                    ref={dropdownRef}
+                    style={{
+                        position: 'fixed',
+                        top: coords.placement === 'top' ? undefined : `${coords.top}px`,
+                        bottom: coords.placement === 'top' ? `${window.innerHeight - coords.top}px` : undefined,
+                        left: `${coords.left}px`,
+                        width: `${coords.width}px`,
+                        maxHeight: `${coords.maxHeight}px`,
+                        zIndex: 99999,
+                        pointerEvents: 'auto',
+                    }}
+                    className="flex flex-col p-2 bg-white dark:bg-zinc-950 border border-border shadow-2xl rounded-xl animate-in fade-in zoom-in-95 duration-100 overflow-hidden pointer-events-auto"
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    {renderInnerDropdown(() => {
+                        setOpen(false);
+                        setSearch('');
+                    })}
+                </div>,
+                (containerRef.current?.closest('[role="dialog"]') as HTMLElement) || document.body
+            )}
         </div>
     );
 }

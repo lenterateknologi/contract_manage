@@ -72,7 +72,7 @@ export function DashboardMetrics({
                         </div>
                     )}
 
-                    {activeTab === 'workload' && config?.show_workload && (
+                    {activeTab === 'workload' && (
                         <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
                             <WorkloadTab data={metrics} onNavigate={handleNavigate} />
                         </div>

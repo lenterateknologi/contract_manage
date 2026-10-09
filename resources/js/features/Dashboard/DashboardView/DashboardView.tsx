@@ -9,7 +9,6 @@ import { usePov } from '@/stores/usePovStore';
 import { usePage } from '@inertiajs/react';
 import React, { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { DashboardMetrics } from '../components/DashboardMetrics';
-import { DashboardTab } from '../components/DashboardTab';
 
 const {
     Briefcase,
@@ -194,7 +193,7 @@ export function DashboardView({
 
         return {
             show_overview: true,
-            show_workload: false,
+            show_workload: true,
             show_master_data: false,
         };
     }, [metrics?.dashboardConfig, dashboardConfig, userFilterSettings, pov.isSimulatingDashboard, pov.activeDashboardPov]);
@@ -205,7 +204,7 @@ export function DashboardView({
         if (config) {
             const isTabAllowed =
                 (dashboardTab === 'overview' && config.show_overview) ||
-                (dashboardTab === 'workload' && config.show_workload) ||
+                (dashboardTab === 'workload' && (config.show_workload ?? true)) ||
                 (dashboardTab === 'master_data' && config.show_master_data);
 
             if (!isTabAllowed) {
@@ -216,57 +215,36 @@ export function DashboardView({
         }
     }, [effectiveDashboardConfig, dashboardTab]);
 
-    const headerActions = useMemo(() => {
-        const config = effectiveDashboardConfig;
-        const showOverview = config ? !!config.show_overview : true;
-        const showWorkload = config ? !!config.show_workload : false;
-        const showMasterData = config ? !!config.show_master_data : false;
-
-        const hasMultipleTabs = [showOverview, showWorkload, showMasterData].filter(Boolean).length > 1;
-
-        if (!hasMultipleTabs && showOverview) {
-            return undefined;
+    const pageMeta = useMemo(() => {
+        if (dashboardTab === 'workload') {
+            return {
+                title: 'Beban Kerja',
+                subtitle: 'Statistik beban kerja dan distribusi penugasan tim.',
+                icon: Briefcase,
+            };
         }
-
-        return (
-            <div className="custom-scrollbar flex items-center gap-2 overflow-x-auto pb-0.5">
-                {showOverview && (
-                    <DashboardTab
-                        active={dashboardTab === 'overview'}
-                        onClick={() => handleDashboardTabChange('overview')}
-                        label="Ringkasan"
-                        icon={LayoutDashboard}
-                    />
-                )}
-                {showWorkload && (
-                    <DashboardTab
-                        active={dashboardTab === 'workload'}
-                        onClick={() => handleDashboardTabChange('workload')}
-                        label="Beban Kerja"
-                        icon={Briefcase}
-                    />
-                )}
-                {showMasterData && (
-                    <DashboardTab
-                        active={dashboardTab === 'master_data'}
-                        onClick={() => handleDashboardTabChange('master_data')}
-                        label="Master Data"
-                        icon={Layers}
-                    />
-                )}
-            </div>
-        );
-    }, [effectiveDashboardConfig, dashboardTab, handleDashboardTabChange]);
+        if (dashboardTab === 'master_data') {
+            return {
+                title: 'Master Data',
+                subtitle: 'Ringkasan master data pendukung kontrak.',
+                icon: Layers,
+            };
+        }
+        return {
+            title: 'Dashboard Kontrak',
+            subtitle: 'Statistik dan ringkasan aktivitas kontrak.',
+            icon: LayoutGrid,
+        };
+    }, [dashboardTab]);
 
     return (
         <MasterPageLayout>
             <FloatingPanel className="flex min-w-0 flex-1 flex-col">
                 <PageTable
                     standalone={false}
-                    title="Dashboard Kontrak"
-                    subtitle="Statistik dan ringkasan aktivitas kontrak."
-                    icon={LayoutGrid}
-                    actions={headerActions}
+                    title={pageMeta.title}
+                    subtitle={pageMeta.subtitle}
+                    icon={pageMeta.icon}
                     showFooter={false}
                 >
                     <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">

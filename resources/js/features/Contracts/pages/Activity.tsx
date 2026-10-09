@@ -57,6 +57,7 @@ import { ContractDetailView } from '@/features/Contracts/ContractDetail/Contract
 import CreateContractModal from '@/features/Contracts/components/modals/CreateContractModal';
 import { EditContractModal } from '@/features/Contracts/components/modals/EditContractModal';
 import PreviewModal from '@/features/Contracts/components/modals/PreviewModal';
+import { ContractContextMenu } from '@/features/Contracts/components/ContractContextMenu';
 import { ConfirmationModal } from '@/components/ui';
 import { contractApi } from '@/features/Contracts/utils';
 
@@ -77,6 +78,17 @@ interface ActivityPageProps {
     types: DBContractType[];
     submissionTypes?: SubmissionType[];
     counts?: Record<string, any>;
+    activityCounts?: {
+        pending?: number;
+        history?: number;
+        in_progress?: number;
+        draft?: number;
+    };
+    pendingCounts?: {
+        pending?: number;
+        history?: number;
+    };
+    mineCounts?: Record<string, any>;
     filters?: Record<string, any>;
     breadcrumbs?: Array<{ title: string; href: string; icon?: string; description?: string }>;
     users?: UserProfile[];
@@ -200,6 +212,9 @@ export function ActivityViewContent({
     types = [],
     submissionTypes = [],
     counts,
+    activityCounts,
+    pendingCounts,
+    mineCounts,
     filters = {},
     breadcrumbs,
     users = [],
@@ -227,6 +242,19 @@ export function ActivityViewContent({
     const [previewTitle, setPreviewTitle] = useState('');
     const [previewUrl, setPreviewUrl] = useState('');
     const [previewHasFile, setPreviewHasFile] = useState(false);
+    const [contextMenu, setContextMenu] = useState<{
+        contract: Contract;
+        position: { x: number; y: number };
+    } | null>(null);
+
+    const handleRowContextMenu = (c: Contract, e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setContextMenu({
+            contract: c,
+            position: { x: e.clientX, y: e.clientY },
+        });
+    };
 
     // Search state per table
     const [searchPending, setSearchPending] = useState(filters.search_pending || '');
@@ -468,7 +496,7 @@ export function ActivityViewContent({
                                     <ArrowUpRight size={11} className="text-text-desc opacity-0 group-hover:opacity-100 group-hover:text-primary transition-all" />
                                 </div>
                                 <div className="text-lg font-black text-text-main">
-                                    {pendingContracts?.total || counts?.pending || 0}
+                                    {activityCounts?.pending ?? counts?.pending ?? pendingCounts?.pending ?? pendingContracts?.total ?? 0}
                                 </div>
                                 <p className="text-[10px] text-text-desc">
                                     Menunggu persetujuan
@@ -491,7 +519,7 @@ export function ActivityViewContent({
                                     <ArrowUpRight size={11} className="text-text-desc opacity-0 group-hover:opacity-100 group-hover:text-primary transition-all" />
                                 </div>
                                 <div className="text-lg font-black text-text-main">
-                                    {counts?.history || 0}
+                                    {activityCounts?.history ?? counts?.history ?? pendingCounts?.history ?? 0}
                                 </div>
                                 <p className="text-[10px] text-text-desc">
                                     Riwayat persetujuan Anda
@@ -514,7 +542,7 @@ export function ActivityViewContent({
                                     <ArrowUpRight size={11} className="text-text-desc opacity-0 group-hover:opacity-100 group-hover:text-primary transition-all" />
                                 </div>
                                 <div className="text-lg font-black text-text-main">
-                                    {inProgressContracts?.total || 0}
+                                    {activityCounts?.in_progress ?? counts?.in_progress ?? mineCounts?.in_progress ?? inProgressContracts?.total ?? 0}
                                 </div>
                                 <p className="text-[10px] text-text-desc">
                                     Pengajuan aktif Anda
@@ -537,7 +565,7 @@ export function ActivityViewContent({
                                     <ArrowUpRight size={11} className="text-text-desc opacity-0 group-hover:opacity-100 group-hover:text-primary transition-all" />
                                 </div>
                                 <div className="text-lg font-black text-text-main">
-                                    {draftContracts?.total || 0}
+                                    {activityCounts?.draft ?? counts?.draft ?? mineCounts?.draft ?? draftContracts?.total ?? 0}
                                 </div>
                                 <p className="text-[10px] text-text-desc">
                                     Belum diajukan
@@ -669,6 +697,7 @@ export function ActivityViewContent({
                                             <tr
                                                 key={c.id}
                                                 onClick={() => openDetail(c)}
+                                                onContextMenu={(e) => handleRowContextMenu(c, e)}
                                                 className="group hover:bg-surface-muted/20 transition-colors cursor-pointer"
                                             >
                                                 <td className="px-3 py-1.5">
@@ -826,6 +855,7 @@ export function ActivityViewContent({
                                             <tr
                                                 key={c.id}
                                                 onClick={() => openDetail(c)}
+                                                onContextMenu={(e) => handleRowContextMenu(c, e)}
                                                 className="group hover:bg-surface-muted/20 transition-colors cursor-pointer"
                                             >
                                                 <td className="px-3 py-1.5">
@@ -975,6 +1005,7 @@ export function ActivityViewContent({
                                                 <tr
                                                     key={c.id}
                                                     onClick={() => openDetail(c)}
+                                                    onContextMenu={(e) => handleRowContextMenu(c, e)}
                                                     className="group hover:bg-surface-muted/20 transition-colors cursor-pointer"
                                                 >
                                                     <td className="px-3 py-1.5 font-semibold text-text-main">
@@ -1063,6 +1094,16 @@ export function ActivityViewContent({
                     types={types as any}
                     submissionTypes={submissionTypes}
                     vendors={vendors}
+                />
+            )}
+
+            {contextMenu && (
+                <ContractContextMenu
+                    contract={contextMenu.contract}
+                    position={contextMenu.position}
+                    onClose={() => setContextMenu(null)}
+                    onOpenDetail={openDetail}
+                    onEdit={openEdit}
                 />
             )}
         </>

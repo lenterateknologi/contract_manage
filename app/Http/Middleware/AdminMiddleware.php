@@ -52,6 +52,6 @@ class AdminMiddleware
             }
         }
 
-        return redirect('/dashboard');
+        return redirect('/contracts/activity');
     }
 }

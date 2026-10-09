@@ -19,7 +19,7 @@ const DialogOverlay = React.forwardRef<
     <DialogPrimitive.Overlay
         ref={ref}
         className={cn(
-            'fixed inset-0 z-[99999] bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
+            'fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
             className,
         )}
         {...props}
@@ -30,23 +30,58 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 const DialogContent = React.forwardRef<
     React.ElementRef<typeof DialogPrimitive.Content>,
     React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, ...props }, ref) => (
+>(({ className, children, onPointerDownOutside, onInteractOutside, onFocusOutside, ...props }, ref) => (
     <DialogPortal>
         <DialogOverlay />
-        <DialogPrimitive.Content
-            ref={ref}
-            className={cn(
-                'fixed left-[50%] top-[50%] z-[99999] flex flex-col w-full max-w-lg max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-3.5rem)] translate-x-[-50%] translate-y-[-50%] border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-900 dark:text-zinc-100 shadow-2xl duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 rounded-[8px] overflow-hidden',
-                className,
-            )}
-            {...props}
-        >
-            {children}
-            <DialogPrimitive.Close className="absolute right-3.5 top-3.5 flex h-7 w-7 items-center justify-center rounded-full bg-white/20 dark:bg-zinc-700/80 hover:bg-white/30 dark:hover:bg-zinc-600 text-white dark:text-zinc-200 border border-white/20 dark:border-zinc-600/50 transition-all z-10 cursor-pointer">
-                <X className="h-4 w-4 stroke-[2.5]" />
-                <span className="sr-only">Close</span>
-            </DialogPrimitive.Close>
-        </DialogPrimitive.Content>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+            <DialogPrimitive.Content
+                ref={ref}
+                onPointerDownOutside={(e) => {
+                    const originalEvent = (e.detail as any)?.originalEvent;
+                    const target = originalEvent?.target || (e.target as HTMLElement | null);
+                    if (
+                        target?.closest?.('[data-portal-dropdown], [data-dropdown-container], [data-radix-popper-content-wrapper], [data-radix-portal]')
+                    ) {
+                        e.preventDefault();
+                        return;
+                    }
+                    onPointerDownOutside?.(e);
+                }}
+                onInteractOutside={(e) => {
+                    const originalEvent = (e.detail as any)?.originalEvent;
+                    const target = originalEvent?.target || (e.target as HTMLElement | null);
+                    if (
+                        target?.closest?.('[data-portal-dropdown], [data-dropdown-container], [data-radix-popper-content-wrapper], [data-radix-portal]')
+                    ) {
+                        e.preventDefault();
+                        return;
+                    }
+                    onInteractOutside?.(e);
+                }}
+                onFocusOutside={(e) => {
+                    const originalEvent = (e.detail as any)?.originalEvent;
+                    const target = originalEvent?.target || originalEvent?.relatedTarget || document.activeElement;
+                    if (
+                        target?.closest?.('[data-portal-dropdown], [data-dropdown-container], [data-radix-popper-content-wrapper], [data-radix-portal]')
+                    ) {
+                        e.preventDefault();
+                        return;
+                    }
+                    onFocusOutside?.(e);
+                }}
+                className={cn(
+                    'pointer-events-auto relative flex flex-col w-full max-w-lg max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-3.5rem)] border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-900 dark:text-zinc-100 shadow-2xl duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 rounded-[8px] overflow-hidden',
+                    className,
+                )}
+                {...props}
+            >
+                {children}
+                <DialogPrimitive.Close className="absolute right-3.5 top-3.5 flex h-7 w-7 items-center justify-center rounded-full bg-white/20 dark:bg-zinc-700/80 hover:bg-white/30 dark:hover:bg-zinc-600 text-white dark:text-zinc-200 border border-white/20 dark:border-zinc-600/50 transition-all z-10 cursor-pointer">
+                    <X className="h-4 w-4 stroke-[2.5]" />
+                    <span className="sr-only">Close</span>
+                </DialogPrimitive.Close>
+            </DialogPrimitive.Content>
+        </div>
     </DialogPortal>
 ));
 DialogContent.displayName = DialogPrimitive.Content.displayName;

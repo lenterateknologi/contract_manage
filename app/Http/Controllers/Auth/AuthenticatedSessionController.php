@@ -57,7 +57,7 @@ class AuthenticatedSessionController extends Controller
             ], 'Logged in successfully');
         }
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        return redirect()->intended(route('contracts.activity', absolute: false));
     }
 
     /**

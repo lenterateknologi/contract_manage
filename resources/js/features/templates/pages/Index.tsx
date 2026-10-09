@@ -109,7 +109,7 @@ export default function TemplatesPage({ folders = [], templates = [], permission
             <Head title="Template Kontrak" />
             <MasterPageLayout>
                 {/* ── LEFT SIDEBAR: FOLDER TREE MAP NAVIGATION ── */}
-                <FloatingPanel className="border-surface-border bg-surface-card/50 flex h-full w-72 shrink-0 flex-col overflow-hidden border-r">
+                <FloatingPanel className="border-border bg-background flex h-full w-64 shrink-0 flex-col overflow-hidden border-r">
                     <FolderTreePanel
                         folderTree={nav.folderTree}
                         totalAllTemplates={nav.totalAllTemplates}
@@ -161,13 +161,13 @@ export default function TemplatesPage({ folders = [], templates = [], permission
                             handleFilesDropped(e.dataTransfer.files);
                         }
                     }}
-                    className="relative flex h-full min-w-0 flex-1 flex-col overflow-hidden"
+                    className="relative flex h-full min-w-0 flex-1 flex-col overflow-hidden bg-background"
                 >
                     <DragDropOverlay isDragging={isDragging} folderName={nav.currentFolder?.name || 'Root Repository'} />
 
                     <PageTable
                         title={nav.currentFolder ? nav.currentFolder.name : 'Repository Template Kontrak'}
-                        description={
+                        subtitle={
                             nav.currentFolder
                                 ? `Berisi berkas template dan sub-folder di dalam folder ${nav.currentFolder.name}.`
                                 : 'Kelola dokumen baku, format perjanjian hukum, dan berkas acuan kontrak.'
@@ -175,14 +175,14 @@ export default function TemplatesPage({ folders = [], templates = [], permission
                         searchPlaceholder="Cari template atau folder..."
                         searchValue={nav.searchQuery}
                         onSearchChange={nav.setSearchQuery}
-                        filterCategories={filterCategories}
-                        filterValues={{
+                        filters={filterCategories}
+                        activeFilters={{
                             file_type: nav.fileTypeFilter,
                             visibility: nav.visibilityFilter,
                         }}
                         onFilterChange={handleFilterChange}
-                        onClearFilters={handleClearAllFilters}
-                        activeFilterCount={activeFilterCount}
+                        onResetFilters={handleClearAllFilters}
+                        standalone={false}
                         actions={
                             <div className="flex items-center gap-2">
                                 {canUpload && (

@@ -170,19 +170,6 @@ const NavTreeItem = memo(function NavTreeItem({
                             </span>
                         )}
                     </div>
-                    {item.badge !== undefined && item.badge !== null && (
-                        <span
-                            className={cn(
-                                'ml-auto shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold tabular-nums transition-colors',
-                                isSelfActive
-                                    ? 'bg-primary text-primary-foreground dark:bg-primary dark:text-primary-foreground'
-                                    : 'bg-sidebar-accent/80 text-sidebar-foreground/70 group-hover:text-sidebar-foreground dark:bg-zinc-800 dark:text-zinc-300 dark:group-hover:text-white',
-                            )}
-                            title={`${item.badge} data sistem aktif`}
-                        >
-                            {item.badge}
-                        </span>
-                    )}
                 </Link>
 
                 <a
@@ -268,19 +255,6 @@ const NavTreeItem = memo(function NavTreeItem({
                                             </span>
                                         )}
                                     </div>
-                                    {child.badge !== undefined && child.badge !== null && (
-                                        <span
-                                            className={cn(
-                                                'ml-auto shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums transition-colors',
-                                                isSubActive
-                                                    ? 'bg-primary text-primary-foreground dark:bg-primary dark:text-primary-foreground'
-                                                    : 'bg-sidebar-accent/80 text-sidebar-foreground/70 group-hover:bg-sidebar-accent group-hover:text-sidebar-foreground dark:bg-zinc-800 dark:text-zinc-300 dark:group-hover:text-white',
-                                            )}
-                                            title={`${child.badge} data aktif`}
-                                        >
-                                            {child.badge}
-                                        </span>
-                                    )}
                                 </Link>
 
                                 <a
@@ -466,27 +440,6 @@ const DetailNavTreeItem = memo(function DetailNavTreeItem({
                                     >
                                         {child.label}
                                     </span>
-                                    {child.badge && (
-                                        <span
-                                            className={cn(
-                                                'py-0.2 ml-auto shrink-0 rounded-md px-1.5 text-[9.5px] font-semibold tabular-nums transition-colors',
-                                                child.badgeVariant === 'success' || child.isReviewed
-                                                    ? isThisChildActive
-                                                        ? 'bg-emerald-500 font-bold text-white'
-                                                        : 'bg-emerald-500/15 font-bold text-emerald-600 dark:text-emerald-400'
-                                                    : child.badgeVariant === 'warning'
-                                                      ? isThisChildActive
-                                                          ? 'bg-amber-400 font-bold text-amber-950'
-                                                          : 'bg-amber-500/15 font-bold text-amber-600 dark:text-amber-400'
-                                                      : isThisChildActive
-                                                        ? 'bg-primary text-primary-foreground dark:bg-primary dark:text-primary-foreground font-bold'
-                                                        : 'bg-sidebar-accent/80 text-sidebar-foreground/70 dark:bg-zinc-800 dark:text-zinc-300',
-                                            )}
-                                            title={child.isReviewed ? 'Sudah direview' : 'Perlu direview'}
-                                        >
-                                            {child.badge}
-                                        </span>
-                                    )}
                                 </button>
 
                                 <a
@@ -765,14 +718,14 @@ export const AppSidebar = memo(function AppSidebar() {
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Link
-                                        href="/dashboard"
+                                        href="/contracts/activity"
                                         className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/10 transition-all hover:scale-105 hover:bg-white/20"
                                     >
                                         <img src={appLogo} alt="Logo" className="size-9 object-contain brightness-0 invert" />
                                     </Link>
                                 </TooltipTrigger>
                                 <TooltipContent side="right" sideOffset={10} className="font-semibold">
-                                    Dashboard
+                                    Aktivitas Kontrak
                                 </TooltipContent>
                             </Tooltip>
                         </div>
@@ -1066,11 +1019,8 @@ export const AppSidebar = memo(function AppSidebar() {
                                 </div>
 
                                 {/* Sub Header: Tabs Pengajuan */}
-                                <div className="border-primary/20 bg-primary text-primary-foreground flex h-11 shrink-0 items-center justify-between border-b px-4 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
+                                <div className="border-primary/20 bg-primary text-primary-foreground flex h-11 shrink-0 items-center border-b px-4 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
                                     <span className="truncate text-[11.5px] font-bold tracking-wider text-white uppercase">Menu Pengajuan</span>
-                                    <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-semibold text-white tabular-nums dark:bg-white/10">
-                                        {detailSidebar.tabs.length} tabs
-                                    </span>
                                 </div>
 
                                 {/* Detail Tab Items with Tree hierarchy */}
@@ -1120,12 +1070,9 @@ export const AppSidebar = memo(function AppSidebar() {
                                 </div>
 
                                 {/* Sub Header: Group Title (Colored Primary with h-11 matching table header proportion) */}
-                                <div className="border-primary/20 bg-primary text-primary-foreground flex h-11 shrink-0 items-center justify-between border-b px-4 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
+                                <div className="border-primary/20 bg-primary text-primary-foreground flex h-11 shrink-0 items-center border-b px-4 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
                                     <span className="truncate text-[11.5px] font-bold tracking-wider text-white uppercase">
                                         {currentGroup?.title ?? 'Menu'}
-                                    </span>
-                                    <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-semibold text-white tabular-nums dark:bg-white/10">
-                                        {currentGroup?.items.length ?? 0} menu
                                     </span>
                                 </div>
 

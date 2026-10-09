@@ -350,6 +350,7 @@ export function ResourceFieldRenderer({
                         multiple={field.multiple ?? false}
                         inline={field.inline ?? false}
                         disableParentSelection={field.disableParentSelection ?? false}
+                        showRootOption={field.showRootOption ?? (field.name === 'parent_id')}
                         allowClear={field.allowClear ?? true}
                         rootOptionLabel={
                             field.rootOptionLabel || (field.name === 'parent_id' ? 'Tanpa Parent (Jadikan Kategori Utama / Root)' : undefined)

@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return redirect()->route('dashboard');
+    return redirect()->route('contracts.activity');
 })->name('home');
 
 Route::middleware(['auth'])->group(function () {

@@ -58,39 +58,43 @@ export function FolderTreePanel({
     }, [folderTree, treeSearch]);
 
     return (
-        <div className="border-surface-border bg-surface-card flex h-full w-64 shrink-0 flex-col border-r">
-            {/* Header with Search */}
-            <div className="border-surface-border space-y-2 border-b p-3">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                        <FolderTree size={14} className="text-primary" />
-                        <span>Folder Explorer</span>
+        <div className="flex h-full w-full flex-col bg-background overflow-hidden">
+            {/* Header */}
+            <div className="flex h-16 min-h-[64px] max-h-[64px] shrink-0 items-center justify-between border-b border-border bg-background px-4 dark:bg-zinc-900/50 box-border">
+                <div className="flex items-center gap-2 min-w-0">
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                        <FolderTree size={16} />
                     </div>
-                    {canCreateFolder && (
-                        <button
-                            type="button"
-                            onClick={() => onOpenCreateFolder(currentFolderId)}
-                            className="text-primary hover:bg-primary/10 flex h-6 w-6 cursor-pointer items-center justify-center rounded-md transition-colors"
-                            title="Buat Folder Baru"
-                        >
-                            <FolderPlus size={14} />
-                        </button>
-                    )}
+                    <span className="text-[13.5px] font-bold tracking-tight text-foreground truncate">Folder Explorer</span>
                 </div>
+                {canCreateFolder && (
+                    <button
+                        type="button"
+                        onClick={() => onOpenCreateFolder(currentFolderId)}
+                        className="text-primary hover:bg-primary/10 flex h-7 w-7 cursor-pointer items-center justify-center rounded-md transition-colors shrink-0"
+                        title="Buat Folder Baru"
+                    >
+                        <FolderPlus size={15} />
+                    </button>
+                )}
+            </div>
 
+            {/* Search Bar */}
+            <div className="border-b border-border bg-muted/20 px-3 py-2 shrink-0">
                 <div className="relative">
-                    <Search size={12} className="text-text-desc absolute top-1/2 left-2 -translate-y-1/2" />
+                    <Search size={13} className="text-muted-foreground absolute top-1/2 left-2.5 -translate-y-1/2" />
                     <input
                         type="text"
                         value={treeSearch}
                         onChange={(e) => setTreeSearch(e.target.value)}
                         placeholder="Cari folder..."
-                        className="border-surface-border bg-surface-muted/50 focus:border-primary focus:bg-surface-card h-7 w-full rounded-md border pr-6 pl-7 text-[11px] focus:outline-none"
+                        className="border-border bg-background focus:border-primary focus:bg-background h-7 w-full rounded-md border pr-7 pl-8 text-xs focus:outline-none placeholder:text-muted-foreground"
                     />
                     {treeSearch && (
                         <button
+                            type="button"
                             onClick={() => setTreeSearch('')}
-                            className="text-text-desc hover:text-text-main absolute top-1/2 right-1.5 -translate-y-1/2"
+                            className="text-muted-foreground hover:text-foreground absolute top-1/2 right-1.5 -translate-y-1/2 p-0.5 cursor-pointer"
                         >
                             <X size={12} />
                         </button>
@@ -108,7 +112,7 @@ export function FolderTreePanel({
                         'group flex cursor-pointer items-center justify-between rounded-lg border border-transparent px-2.5 py-1.5 text-xs font-medium transition-all select-none',
                         isRootSelected
                             ? 'bg-primary/10 text-primary border-primary/20 font-bold'
-                            : 'text-text-main hover:bg-surface-muted/70 hover:text-text-main',
+                            : 'text-foreground hover:bg-muted/70 hover:text-foreground',
                     )}
                 >
                     <div className="flex min-w-0 flex-1 items-center gap-2">
@@ -124,7 +128,7 @@ export function FolderTreePanel({
                             'rounded-full px-1.5 py-0.5 text-[10px] font-semibold',
                             isRootSelected
                                 ? 'bg-primary text-primary-foreground'
-                                : 'bg-surface-muted text-text-desc group-hover:bg-surface-border/80',
+                                : 'bg-muted text-muted-foreground group-hover:bg-border/80',
                         )}
                     >
                         {totalAllTemplates}
@@ -148,18 +152,18 @@ export function FolderTreePanel({
                 ))}
 
                 {filteredTree.length === 0 && treeSearch && (
-                    <div className="text-text-desc py-4 text-center text-[11px]">Folder tidak ditemukan</div>
+                    <div className="text-muted-foreground py-4 text-center text-[11px]">Folder tidak ditemukan</div>
                 )}
             </div>
 
             {/* Quick Create Folder Footer */}
             {canCreateFolder && (
-                <div className="border-surface-border border-t p-2">
+                <div className="border-border border-t p-2">
                     <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => onOpenCreateFolder(currentFolderId)}
-                        className="text-primary hover:bg-primary/10 h-7 w-full justify-start gap-1.5 text-[11px] font-semibold"
+                        className="text-primary hover:bg-primary/10 h-7 w-full justify-start gap-1.5 text-[11px] font-semibold cursor-pointer"
                     >
                         <FolderPlus size={13} />
                         <span>+ Folder Baru</span>

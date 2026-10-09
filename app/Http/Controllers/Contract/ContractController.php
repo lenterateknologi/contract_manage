@@ -295,6 +295,18 @@ class ContractController extends Controller
             ->through(fn ($c) => ContractFormatter::formatContract($c, false));
 
         $counts = $this->getCachedContractCounts($userId);
+        $activityCounts = [
+            'pending' => Contract::pendingApprovalFor($userId)->count(),
+            'history' => Contract::actedBy($userId)->count(),
+            'in_progress' => Contract::mine($userId)
+                ->whereIn('status', ['in_review', 'revision', 'pending', 'locked'])
+                ->whereRaw('UPPER(status) != ?', ['DRAFT'])
+                ->whereNull('closed_at')
+                ->count(),
+            'draft' => Contract::mine($userId)
+                ->whereRaw('UPPER(status) = ?', ['DRAFT'])
+                ->count(),
+        ];
         $loaders = $this->contractOptionsQuery->getLoaders();
 
         if ($request->wantsJson() && ! $request->header('X-Inertia')) {
@@ -303,15 +315,18 @@ class ContractController extends Controller
                 'pending' => $pendingContracts,
                 'in_progress' => $inProgressContracts,
                 'draft' => $draftContracts,
-                'counts' => $counts,
+                'counts' => $activityCounts,
+                'activityCounts' => $activityCounts,
             ]);
         }
 
-        $data = [
+        $data = array_merge([
             'currentView' => 'activity',
             'pendingContracts' => $pendingContracts,
             'inProgressContracts' => $inProgressContracts,
             'draftContracts' => $draftContracts,
+            'activityCounts' => $activityCounts,
+            'counts' => $activityCounts,
             'types' => $loaders['types'](),
             'submissionTypes' => $loaders['submissionTypes'](),
             'users' => Inertia::defer(fn () => $loaders['users']()),
@@ -325,7 +340,6 @@ class ContractController extends Controller
             'companyGroups' => $loaders['companyGroups'](),
             'companies' => $loaders['companies'](),
             'contractStatuses' => $loaders['contractStatuses'](),
-            'counts' => $counts,
             'filters' => $request->only([
                 'search_pending', 'search_progress', 'search_draft',
                 'page_pending', 'page_progress', 'page_draft',
@@ -337,7 +351,7 @@ class ContractController extends Controller
                 ['title' => 'Manajemen Kontrak', 'href' => route('contracts'), 'icon' => 'FileText'],
                 ['title' => 'Aktivitas Pengajuan', 'href' => '#', 'description' => 'Ringkasan pengajuan yang perlu tindakan, sedang diproses, dan draft.', 'icon' => 'Layers'],
             ],
-        ];
+        ], $counts);
 
         return Inertia::render('contracts/Activity', $data);
     }
@@ -725,10 +739,16 @@ class ContractController extends Controller
         $targetUserId = $request->query('user_id');
         $user = $authUser;
 
-        if ($targetUserId && $authUser && ($authUser->id === $targetUserId || $authUser->isAdmin())) {
-            $targetUser = User::find($targetUserId);
-            if ($targetUser) {
-                $user = $targetUser;
+        if ($targetUserId && $authUser) {
+            $isAuthorized = (string) $authUser->id === (string) $targetUserId
+                || $authUser->isAdmin()
+                || (bool) $authUser->can_create_on_behalf;
+
+            if ($isAuthorized) {
+                $targetUser = User::find($targetUserId);
+                if ($targetUser) {
+                    $user = $targetUser;
+                }
             }
         }
 

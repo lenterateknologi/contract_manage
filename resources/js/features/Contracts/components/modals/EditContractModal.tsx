@@ -90,10 +90,9 @@ export function EditContractModal({
                 </div>
             }
         >
-            <div className="space-y-3.5 pt-1">
+            <div className="space-y-4 pt-1 pb-4">
                 <FormInput
                     label="Judul Pengajuan"
-                    labelClassName="font-extrabold text-[10.5px] uppercase"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="Masukkan judul pengajuan"
@@ -103,14 +102,12 @@ export function EditContractModal({
                 <div className="grid grid-cols-1 gap-3.5 md:grid-cols-2">
                     <FormInput
                         label="No. Pengajuan"
-                        labelClassName="font-extrabold text-[10.5px] uppercase"
                         value={formNo}
                         onChange={(e) => setFormNo(e.target.value)}
                         placeholder="CTR/2026/..."
                     />
                     <FormInput
                         label="Tanggal"
-                        labelClassName="font-extrabold text-[10.5px] uppercase"
                         type="date"
                         value={date}
                         onChange={(e) => setDate(e.target.value)}
@@ -118,17 +115,17 @@ export function EditContractModal({
                     />
                 </div>
 
-                <div className="space-y-1">
-                    <label className="flex items-center gap-1 text-[10.5px] font-extrabold text-slate-700 uppercase dark:text-zinc-200">
+                <div className="space-y-1.5">
+                    <label className="flex items-center gap-0.5 px-0.5 text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-zinc-200">
                         Klasifikasi & Jenis Dokumen
-                        {!!contract?.require_category && <span className="font-black text-rose-500">*</span>}
+                        {!!contract?.require_category && <span className="text-rose-500 ml-0.5">*</span>}
                     </label>
                     <TreeSelect value={typeId} onValueChange={(val) => setTypeId(val)} items={types} placeholder="Pilih Kategori Dokumen" />
                 </div>
 
                 <div className="grid grid-cols-1 gap-3.5 md:grid-cols-2">
-                    <div className="space-y-1">
-                        <label className="text-[10.5px] font-extrabold text-slate-700 uppercase dark:text-zinc-200">Jenis Perjanjian</label>
+                    <div className="space-y-1.5">
+                        <label className="px-0.5 text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-zinc-200">Jenis Perjanjian</label>
                         <PortalSelect
                             value={submissionTypeId}
                             onValueChange={(val) => setSubmissionTypeId(val)}
@@ -137,10 +134,10 @@ export function EditContractModal({
                         />
                     </div>
 
-                    <div className="space-y-1">
-                        <label className="flex items-center gap-1 text-[10.5px] font-extrabold text-slate-700 uppercase dark:text-zinc-200">
+                    <div className="space-y-1.5">
+                        <label className="flex items-center gap-0.5 px-0.5 text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-zinc-200">
                             Pihak Kedua
-                            {!!contract?.require_vendor && <span className="font-black text-rose-500">*</span>}
+                            {!!contract?.require_vendor && <span className="text-rose-500 ml-0.5">*</span>}
                         </label>
                         <PortalSelect
                             value={vendorId}
@@ -153,7 +150,6 @@ export function EditContractModal({
 
                 <FormTextarea
                     label="Deskripsi"
-                    labelClassName="font-extrabold text-[10.5px] uppercase"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="Penjelasan singkat kontrak..."

@@ -11,13 +11,26 @@ import { AlertCircle, Check, FilePlus2, Loader2, ShieldCheck } from 'lucide-reac
 import { useEffect, useMemo, useState } from 'react';
 
 interface Props {
-    open: boolean;
-    onClose: () => void;
-    onSubmit: (data: FormData) => Promise<void>;
+    open?: boolean;
+    isOpen?: boolean;
+    onClose?: () => void;
+    onOpenChange?: (open: boolean) => void;
+    onSubmit?: (data: FormData) => Promise<void>;
     types?: any[];
     submissionTypes?: any[];
     users?: any[];
     vendors?: any[];
+    departments?: any[];
+    divisions?: any[];
+    roles?: any[];
+    regions?: any[];
+    locations?: any[];
+    companyGroups?: any[];
+    companies?: any[];
+    organizationTree?: any;
+    formTemplates?: any[];
+    currentUserId?: string | number;
+    processing?: boolean;
     activeTab?: string;
     activeContractTypeId?: string;
     dashboardConfig?: {
@@ -72,19 +85,28 @@ function resolveTypeCategory(typeId: string, types: any[], activeTab?: string): 
 }
 
 export default function CreateContractModal({
-    open,
-    onClose,
+    open: propOpen,
+    isOpen: propIsOpen,
+    onClose: propOnClose,
+    onOpenChange,
     onSubmit,
     types = [],
     users = [],
     activeTab,
     activeContractTypeId,
 }: Props) {
+    const isModalOpen = Boolean(propOpen ?? propIsOpen);
+    const handleClose = () => {
+        if (propOnClose) propOnClose();
+        if (onOpenChange) onOpenChange(false);
+    };
+
     const { auth, povOptions } = usePage<SharedData>().props;
     const pov = usePov(povOptions);
     const [title, setTitle] = useState('');
     const [parentTypeId, setParentTypeId] = useState('');
     const [typeId, setTypeId] = useState('');
+    const [, setCategory] = useState('contract');
     const [transactionType] = useState('Perjanjian Baru');
     const [taxRequired] = useState(true);
     const [initiatedById, setInitiatedById] = useState('');
@@ -153,7 +175,7 @@ export default function CreateContractModal({
 
     // Reset and initialize state when modal opens
     useEffect(() => {
-        if (open) {
+        if (isModalOpen) {
             setTitle('');
             setTypeId('');
             setParentTypeId('');
@@ -181,16 +203,16 @@ export default function CreateContractModal({
                 }
             }
         }
-    }, [open, auth, activeTab, activeContractTypeId, filteredTypes, types]);
+    }, [isModalOpen, auth, activeTab, activeContractTypeId, filteredTypes, types]);
 
     useEffect(() => {
-        if (open && typeId) {
+        if (isModalOpen && typeId) {
             fetchWorkflows(typeId, initiatedById);
         } else if (!typeId) {
             setWorkflows([]);
             setWorkflowId('');
         }
-    }, [open, typeId, initiatedById]);
+    }, [isModalOpen, typeId, initiatedById]);
 
     const fetchWorkflows = async (tId: string, initId?: string) => {
         setFetchingWorkflows(true);
@@ -254,8 +276,8 @@ export default function CreateContractModal({
 
         setLoading(true);
         try {
-            await onSubmit(fd);
-            onClose();
+            await onSubmit?.(fd);
+            handleClose();
         } catch (err) {
             console.error('Failed to create contract', err);
         } finally {
@@ -277,19 +299,19 @@ export default function CreateContractModal({
 
     return (
         <Modal
-            isOpen={open}
-            onClose={onClose}
+            isOpen={isModalOpen}
+            onClose={handleClose}
             headerVariant="primary"
             headerIcon={<FilePlus2 size={18} />}
             title={modalTitle}
             description={modalDesc}
             maxWidth="3xl"
-            className="flex max-h-[85vh] min-h-[620px] flex-col"
+            className="flex max-h-[90vh] min-h-[600px] flex-col"
             footer={
                 <div className="flex w-full justify-end gap-2.5">
                     <Button
                         variant="ghost"
-                        onClick={onClose}
+                        onClick={handleClose}
                         disabled={loading}
                         className="h-9 border border-rose-200 bg-rose-50 text-xs font-semibold text-rose-600 hover:bg-rose-100 hover:text-rose-700 dark:border-rose-800/50 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-900/50"
                     >
@@ -302,19 +324,17 @@ export default function CreateContractModal({
                 </div>
             }
         >
-            <div className="space-y-4 pt-1.5 pb-6">
+            <div className="space-y-4 pt-1.5 pb-4">
                 {(() => {
                     const canSelectInitiator = Boolean(
-                        pov.isSimulatingNav
-                            ? pov.activeNavPov?.can_create_on_behalf
-                            : auth?.user?.can_create_on_behalf,
+                        pov.isSimulatingNav ? pov.activeNavPov?.can_create_on_behalf : auth?.user?.can_create_on_behalf,
                     );
 
                     if (!canSelectInitiator) return null;
 
                     return (
-                        <div className="border-primary/20 bg-primary/5 dark:bg-primary/10 space-y-2 rounded-lg border p-3">
-                            <label className="text-primary flex items-center gap-1.5 text-[10.5px] font-extrabold uppercase">
+                        <div className="space-y-1.5">
+                            <label className="text-primary flex items-center gap-1.5 px-0.5 text-[11px] font-bold tracking-wider uppercase">
                                 <ShieldCheck size={13} /> Dibuat Untuk (Initiator)
                             </label>
                             <PortalSelect
@@ -322,16 +342,19 @@ export default function CreateContractModal({
                                 onValueChange={(val) => setInitiatedById(val)}
                                 options={initiatorOptions}
                                 placeholder="Pilih Initiator"
+                                disabled={initiatorOptions.length <= 1}
                             />
-                            <p className="text-text-soft mt-1 text-[11px] leading-relaxed font-normal">
-                                Workflow akan disesuaikan dengan departemen dan otoritas initiator yang dipilih.
+                            <p className="text-text-soft px-0.5 text-[11px] leading-relaxed font-normal">
+                                {initiatorOptions.length <= 1
+                                    ? 'Pengajuan dibuat atas nama akun Anda sendiri.'
+                                    : 'Workflow akan disesuaikan dengan departemen dan otoritas initiator yang dipilih.'}
                             </p>
                         </div>
                     );
                 })()}
 
-                <div className="space-y-1">
-                    <label className="text-[10.5px] font-extrabold text-slate-700 uppercase dark:text-zinc-200">
+                <div className="space-y-1.5">
+                    <label className="flex items-center gap-0.5 px-0.5 text-[11px] font-bold tracking-wider text-slate-700 uppercase dark:text-zinc-200">
                         Klasifikasi & Jenis Dokumen <span className="text-rose-500">*</span>
                     </label>
                     <TreeSelect
@@ -371,11 +394,13 @@ export default function CreateContractModal({
                         }
                         disableParentSelection={true}
                     />
-                    {errors.contract_type_id && <div className="mt-0.5 text-[10px] font-medium text-rose-500">{errors.contract_type_id}</div>}
+                    {errors.contract_type_id && (
+                        <span className="mt-1 block px-0.5 text-[10px] font-bold text-rose-500 uppercase">{errors.contract_type_id}</span>
+                    )}
                 </div>
 
-                <div className="animate-in fade-in slide-in-from-top-2 space-y-1">
-                    <label className="text-[10.5px] font-extrabold text-slate-700 uppercase dark:text-zinc-200">
+                <div className="animate-in fade-in slide-in-from-top-2 space-y-1.5">
+                    <label className="flex items-center gap-0.5 px-0.5 text-[11px] font-bold tracking-wider text-slate-700 uppercase dark:text-zinc-200">
                         Pilih Alur Kerja <span className="text-rose-500">*</span>
                     </label>
                     <PortalSelect
@@ -387,14 +412,20 @@ export default function CreateContractModal({
                             disabled: w.is_eligible === false,
                         }))}
                         placeholder={!typeId ? 'Pilih jenis dokumen dulu...' : fetchingWorkflows ? 'Memuat...' : 'Pilih Alur Kerja'}
-                        disabled={!typeId || fetchingWorkflows}
+                        disabled={!typeId || fetchingWorkflows || workflows.length <= 1}
                     />
-                    {errors.workflow_id && <div className="mt-0.5 text-[10px] font-medium text-rose-500">{errors.workflow_id}</div>}
+                    {workflows.length === 1 && !fetchingWorkflows && typeId && (
+                        <p className="text-[11px] text-text-soft px-0.5 font-normal">
+                            Alur kerja otomatis ditentukan sesuai departemen dan otoritas initiator yang dipilih.
+                        </p>
+                    )}
+                    {errors.workflow_id && (
+                        <span className="mt-1 block px-0.5 text-[10px] font-bold text-rose-500 uppercase">{errors.workflow_id}</span>
+                    )}
                 </div>
 
                 <FormInput
                     label="Nama Project / Judul Dokumen"
-                    labelClassName="font-extrabold text-[10.5px] uppercase"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="Masukkan nama project atau judul dokumen"

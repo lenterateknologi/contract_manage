@@ -106,7 +106,7 @@ class ContractListQuery
     {
         $query->mine();
 
-        $mineTab = $request->input('mine_tab', 'all');
+        $mineTab = $request->input('mine_tab', $request->input('parent_tab', 'all'));
         $this->applyParentTabState($query, $mineTab, $request);
     }
 

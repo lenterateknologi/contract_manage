@@ -334,198 +334,30 @@ class HandleInertiaRequests extends Middleware
                 $modules = $modules->reject(fn ($m) => in_array($m->route, ['/contracts/organization', '/contracts/org-group']));
             }
 
-            // compute is_used AND is_active counts for Portal master data
-            $getPortalCount = function (string $table): string {
-                $hasIsUsed = Schema::hasColumn($table, 'is_used');
-                $hasIsActive = Schema::hasColumn($table, 'is_active');
-
-                $condition = match (true) {
-                    $hasIsUsed && $hasIsActive => 'is_used = true AND is_active = true',
-                    $hasIsUsed => 'is_used = true',
-                    $hasIsActive => 'is_active = true',
-                    default => '1=1',
-                };
-
-                $res = DB::table($table)
-                    ->whereNull('deleted_at')
-                    ->selectRaw("COUNT(*) as total, COUNT(CASE WHEN {$condition} THEN 1 END) as used")
-                    ->first();
-
-                return ($res->used ?? 0).'/'.($res->total ?? 0);
-            };
-
-            $portalUsedCounts = [
-                '/admin/core/departments' => $getPortalCount('m_departments'),
-                '/admin/core/company-groups' => $getPortalCount('m_company_groups'),
-                '/admin/core/companies' => $getPortalCount('m_companies'),
-                '/admin/core/users' => $getPortalCount('m_users'),
-                '/admin/core/regions' => $getPortalCount('m_regions'),
-                '/admin/core/business-units' => $getPortalCount('m_business_units'),
-                '/admin/core/locations' => $getPortalCount('m_locations'),
-                '/admin/core/job-levels' => $getPortalCount('m_job_levels'),
-                '/admin/core/job-titles' => $getPortalCount('m_job_titles'),
-            ];
-
-            $userId = $request->user()?->id;
-
-            // Dynamic counts for Pengajuan modules & children
-            $contractCounts = (function () use ($userId) {
-                $allTypes = DB::table('m_contract_types')->whereNull('deleted_at')->get();
-
-                $getDescendantIds = function ($parentId) use (&$getDescendantIds, $allTypes) {
-                    if (! $parentId) {
-                        return [];
-                    }
-                    $children = $allTypes->where('parent_id', $parentId)->pluck('id')->all();
-                    $descendants = $children;
-                    foreach ($children as $childId) {
-                        $descendants = array_merge($descendants, $getDescendantIds($childId));
-                    }
-
-                    return array_values(array_unique(array_merge([$parentId], $descendants)));
-                };
-
-                $roots = $allTypes->whereNull('parent_id');
-                $kontrakParent = $roots->first(fn ($p) => strtoupper($p->code) === 'A-1' || (stripos($p->name, 'non') === false && stripos($p->name, 'kontrak') !== false));
-                $nonKontrakParent = $roots->first(fn ($p) => strtoupper($p->code) === 'A-2' || stripos($p->name, 'non') !== false);
-                $ndaParent = $roots->first(fn ($p) => strtoupper($p->code) === 'NDA' || stripos($p->name, 'nda') !== false || stripos($p->name, 'kerahasiaan') !== false);
-
-                $kontrakIds = $getDescendantIds($kontrakParent?->id);
-                $nonKontrakIds = $getDescendantIds($nonKontrakParent?->id);
-                $ndaIds = $getDescendantIds($ndaParent?->id);
-
-                // Scoped base query for all contracts and expiry respecting user organization permissions
-                $scopedAllQuery = app(ContractListQuery::class)->build(new Request, 'all', false);
-                $scopedActiveQuery = (clone $scopedAllQuery)->whereRaw("UPPER(status) != 'ARCHIVED'")->whereNull('closed_at');
-
-                $allTotal = (clone $scopedActiveQuery)->count();
-                $allKontrak = (clone $scopedActiveQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $kontrakIds)->orWhereIn('contract_type_parent_id', $kontrakIds))->count();
-                $allNonKontrak = (clone $scopedActiveQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $nonKontrakIds)->orWhereIn('contract_type_parent_id', $nonKontrakIds))->count();
-                $allNda = (clone $scopedActiveQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $ndaIds)->orWhereIn('contract_type_parent_id', $ndaIds))->count();
-
-                $myActiveQuery = Contract::mine($userId)->whereRaw("UPPER(status) != 'ARCHIVED'")->whereNull('closed_at');
-                $myTotal = (clone $myActiveQuery)->count();
-                $myKontrak = (clone $myActiveQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $kontrakIds)->orWhereIn('contract_type_parent_id', $kontrakIds))->count();
-                $myNonKontrak = (clone $myActiveQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $nonKontrakIds)->orWhereIn('contract_type_parent_id', $nonKontrakIds))->count();
-                $myNda = (clone $myActiveQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $ndaIds)->orWhereIn('contract_type_parent_id', $ndaIds))->count();
-
-                $pendingApprovalCount = 0;
-                $historyApprovalCount = 0;
-                if ($userId) {
-                    $pendingApprovalCount = Contract::pendingApprovalFor($userId)->count();
-
-                    $historyApprovalCount = DB::table('t_approvals')
-                        ->join('t_contracts', 't_approvals.contract_id', '=', 't_contracts.id')
-                        ->where('t_approvals.user_id', $userId)
-                        ->whereIn('t_approvals.status', ['approved', 'rejected', 'revision'])
-                        ->whereNull('t_contracts.deleted_at')
-                        ->whereRaw("UPPER(t_contracts.status) != 'DRAFT'")
-                        ->distinct('t_contracts.id')
-                        ->count('t_contracts.id');
-                }
-
-                $scopedExpiryQuery = (clone $scopedAllQuery)
-                    ->whereNotNull('end_date')
-                    ->whereDate('end_date', '<=', now()->addDays(30)->toDateString());
-                $expiryTotal = (clone $scopedExpiryQuery)->count();
-                $expiryKontrak = (clone $scopedExpiryQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $kontrakIds)->orWhereIn('contract_type_parent_id', $kontrakIds))->count();
-                $expiryNonKontrak = (clone $scopedExpiryQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $nonKontrakIds)->orWhereIn('contract_type_parent_id', $nonKontrakIds))->count();
-                $expiryNda = (clone $scopedExpiryQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $ndaIds)->orWhereIn('contract_type_parent_id', $ndaIds))->count();
-
-                // Scoped base query for organization group contracts
-                $scopedOrgQuery = app(ContractListQuery::class)->build(new Request, 'organization', false);
-                $scopedOrgActiveQuery = (clone $scopedOrgQuery)->whereRaw("UPPER(status) != 'ARCHIVED'")->whereNull('closed_at');
-                $orgTotal = (clone $scopedOrgActiveQuery)->count();
-                $orgKontrak = (clone $scopedOrgActiveQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $kontrakIds)->orWhereIn('contract_type_parent_id', $kontrakIds))->count();
-                $orgNonKontrak = (clone $scopedOrgActiveQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $nonKontrakIds)->orWhereIn('contract_type_parent_id', $nonKontrakIds))->count();
-                $orgNda = (clone $scopedOrgActiveQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $ndaIds)->orWhereIn('contract_type_parent_id', $ndaIds))->count();
-
-                $dutyActiveQuery = Contract::duty($userId)->whereRaw("UPPER(status) != 'ARCHIVED'")->whereNull('closed_at');
-                $dutyTotal = (clone $dutyActiveQuery)->count();
-
-                return [
-                    'all' => [
-                        'total' => $allTotal,
-                        'kontrak' => $allKontrak,
-                        'non_kontrak' => $allNonKontrak,
-                        'nda' => $allNda,
-                    ],
-                    'organization' => [
-                        'total' => $orgTotal,
-                        'kontrak' => $orgKontrak,
-                        'non_kontrak' => $orgNonKontrak,
-                        'nda' => $orgNda,
-                    ],
-                    'mine' => [
-                        'total' => $myTotal,
-                        'kontrak' => $myKontrak,
-                        'non_kontrak' => $myNonKontrak,
-                        'nda' => $myNda,
-                    ],
-                    'duty' => [
-                        'total' => $dutyTotal,
-                    ],
-                    'pending' => [
-                        'total' => $pendingApprovalCount + $historyApprovalCount,
-                        'pending' => $pendingApprovalCount,
-                        'history' => $historyApprovalCount,
-                    ],
-                    'expiry' => [
-                        'total' => $expiryTotal,
-                        'kontrak' => $expiryKontrak,
-                        'non_kontrak' => $expiryNonKontrak,
-                        'nda' => $expiryNda,
-                    ],
-                ];
-            })();
-
             $groups = $modules->groupBy(fn ($item) => trim($item->group_title))
-                ->map(function ($items, $title) use ($portalUsedCounts, $contractCounts) {
+                ->map(function ($items, $title) {
                     $first = $items->first();
-                    $sortedItems = $items->map(function ($module) use ($portalUsedCounts, $contractCounts) {
+                    $sortedItems = $items->map(function ($module) {
                         $route = $module->route;
-                        $meta = match ($route) {
-                            '/contracts', '/admin/contracts' => [
-                                'title' => 'Semua Pengajuan',
-                                'badge' => $contractCounts['all']['total'] ?? 0,
-                            ],
-                            '/contracts/organization', '/contracts/org-group' => [
-                                'title' => 'Semua Pengajuan',
-                                'badge' => $contractCounts['organization']['total'] ?? 0,
-                            ],
-                            '/contracts/activity' => [
-                                'title' => 'Aktivitas Pengajuan',
-                                'badge' => $contractCounts['pending']['pending'] ?? 0,
-                            ],
-                            '/contracts/mine' => [
-                                'title' => 'Pengajuan Saya',
-                                'badge' => $contractCounts['mine']['total'] ?? 0,
-                            ],
-                            '/contracts/duty' => [
-                                'title' => 'Tugas Saya',
-                                'badge' => $contractCounts['duty']['total'] ?? 0,
-                            ],
-                            '/contracts/pending' => [
-                                'title' => 'Persetujuan Saya',
-                                'badge' => $contractCounts['pending']['pending'] ?? 0,
-                            ],
-                            '/contracts/expiry' => [
-                                'title' => 'Masa Berlaku Dokumen',
-                                'badge' => $contractCounts['expiry']['total'] ?? 0,
-                            ],
-                            default => [
-                                'title' => $module->name,
-                                'badge' => $portalUsedCounts[$route] ?? null,
-                            ],
+                        $menuTitle = match ($route) {
+                            '/contracts', '/admin/contracts' => 'Semua Pengajuan',
+                            '/contracts/organization', '/contracts/org-group' => 'Semua Pengajuan',
+                            '/contracts/activity' => 'Aktivitas Pengajuan',
+                            '/contracts/mine' => 'Pengajuan Saya',
+                            '/contracts/duty' => 'Tugas Saya',
+                            '/contracts/pending' => 'Persetujuan Saya',
+                            '/contracts/expiry' => 'Masa Berlaku Dokumen',
+                            '/dashboard/beban-kerja', '/dashboard/workload' => 'Beban Kerja',
+                            default => $module->name,
                         };
 
                         return [
-                            'title' => $meta['title'],
+                            'title' => $menuTitle,
                             'url' => $route,
                             'description' => $module->description,
                             'icon' => $module->icon,
                             'sequence' => $module->module_sequence,
-                            'badge' => $meta['badge'],
+                            'badge' => null,
                             'children' => null,
                         ];
                     })->values()->all();
