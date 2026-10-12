@@ -108,6 +108,7 @@ class ActionAutofillHandler
                     // ── OPSI RESET / REGENERASI ──
                 case 'reset_form_no':
                 case 'regenerate_form_no':
+                    $oldFormNo = $contract->form_no;
                     $initiator = $contract->initiator ?: ($contract->initiated_by_id ? User::with('department')->find($contract->initiated_by_id) : null);
                     $contractType = $contract->contractType ?: ($contract->contract_type_id ? ContractType::find($contract->contract_type_id) : null);
                     $deptCode = $initiator?->department?->code ?? $contract->initiator_dept ?? 'GEN';
@@ -120,6 +121,17 @@ class ActionAutofillHandler
                     $metadata['form_no'] = $newFormNo;
                     $metadata['meta_nomor'] = $newFormNo;
                     $metaUpdated = true;
+
+                    if ($oldFormNo !== $newFormNo) {
+                        \App\Models\Transaction\ContractHistory::create([
+                            'contract_id' => $contract->id,
+                            'action' => 'CONTRACT_UPDATED',
+                            'description' => $oldFormNo
+                                ? "Nomor Form diperbarui dari \"{$oldFormNo}\" menjadi \"{$newFormNo}\""
+                                : "Nomor Form digenerate: \"{$newFormNo}\"",
+                            'actor_id' => Auth::id() ?: $contract->initiated_by_id,
+                        ]);
+                    }
                     break;
 
                 case 'generate_form_no_if_empty':
@@ -136,6 +148,13 @@ class ActionAutofillHandler
                         $metadata['form_no'] = $newFormNo;
                         $metadata['meta_nomor'] = $newFormNo;
                         $metaUpdated = true;
+
+                        \App\Models\Transaction\ContractHistory::create([
+                            'contract_id' => $contract->id,
+                            'action' => 'CONTRACT_UPDATED',
+                            'description' => "Nomor Form digenerate: \"{$newFormNo}\"",
+                            'actor_id' => Auth::id() ?: $contract->initiated_by_id,
+                        ]);
                     }
                     break;
 
