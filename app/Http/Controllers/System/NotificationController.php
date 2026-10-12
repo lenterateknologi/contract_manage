@@ -66,51 +66,6 @@ class NotificationController extends Controller
             ->pluck('id')
             ->toArray();
 
-        // 1. Contract updates (History)
-        $updates = empty($involvedContractIds) ? collect() : ContractHistory::query()
-            ->select(['id', 'contract_id', 'actor_id', 'action', 'description', 'created_at'])
-            ->whereIn('contract_id', $involvedContractIds)
-            ->where('actor_id', '!=', $user->id)
-            ->with(['contract', 'actor'])
-            ->latest()
-            ->limit(30)
-            ->get()
-            ->map(function ($h) {
-                $actorName = $h->actor->name ?? 'Sistem';
-                $contractTitle = $h->contract->title ?? $h->contract->form_no ?? 'Kontrak';
-
-                $actionLabel = match ($h->action) {
-                    'APPROVAL_APPROVED' => 'Disetujui',
-                    'APPROVAL_REJECTED' => 'Ditolak / Perlu Revisi',
-                    'WORKFLOW_ADVANCED' => 'Lanjut Tahap Berikutnya',
-                    'CONTRACT_APPROVED' => 'Kontrak Selesai & Disetujui',
-                    'CONTRACT_COMPLETED' => 'Kontrak Diarsipkan',
-                    'WORKFLOW_ASSIGNED' => 'Penugasan PIC',
-                    'SIGNING_SETUP' => 'Penandatanganan Disiapkan',
-                    'SIGNING_STEP_COMPLETE' => 'Selesai Ditandatangani',
-                    'CONTRACT_SENT' => 'Pengajuan Dikirim',
-                    'DOC_REVISED' => 'Dokumen Direvisi',
-                    default => 'Aktivitas Kontrak',
-                };
-
-                return [
-                    'id' => 'update-'.$h->id,
-                    'type' => 'contract_update',
-                    'category' => $h->action,
-                    'badge' => $actionLabel,
-                    'title' => $contractTitle,
-                    'actor_name' => $actorName,
-                    'description' => $h->description,
-                    'contract_id' => $h->contract_id,
-                    'contract_title' => $contractTitle,
-                    'contract_no' => $h->contract->form_no ?? $h->contract->contract_no ?? '',
-                    'is_read' => false,
-                    'created_at' => $h->created_at->toIso8601String(),
-                    'created_at_formatted' => $h->created_at->diffForHumans(),
-                    'created_at_exact' => $h->created_at->format('d M Y, H:i'),
-                ];
-            });
-
         // 2. Pending approvals (Action Required)
         $approvals = Approval::query()
             ->select(['id', 'contract_id', 'user_id', 'status', 'role', 'workflow_step_id', 'created_at'])
@@ -144,6 +99,71 @@ class NotificationController extends Controller
                     'created_at' => $a->created_at->toIso8601String(),
                     'created_at_formatted' => $a->created_at->diffForHumans(),
                     'created_at_exact' => $a->created_at->format('d M Y, H:i'),
+                ];
+            });
+
+        $pendingApprovalContractIds = $approvals->pluck('contract_id')->filter()->unique()->toArray();
+
+        // 1. Contract updates (History) - Only meaningful major lifecycle events, excluded if contract is already in pending approvals
+        $meaningfulActions = [
+            'APPROVAL_APPROVED',
+            'APPROVAL_REJECTED',
+            'CONTRACT_APPROVED',
+            'CONTRACT_COMPLETED',
+            'WORKFLOW_ASSIGNED',
+            'SIGNING_SETUP',
+            'SIGNING_STEP_COMPLETE',
+            'DOC_REVISED',
+        ];
+
+        $updatesQuery = empty($involvedContractIds) ? collect() : ContractHistory::query()
+            ->select(['id', 'contract_id', 'actor_id', 'action', 'description', 'created_at'])
+            ->whereIn('contract_id', $involvedContractIds)
+            ->where('actor_id', '!=', $user->id)
+            ->whereIn('action', $meaningfulActions);
+
+        if (! empty($pendingApprovalContractIds)) {
+            $updatesQuery->whereNotIn('contract_id', $pendingApprovalContractIds);
+        }
+
+        $updates = $updatesQuery->with(['contract', 'actor'])
+            ->latest()
+            ->limit(30)
+            ->get()
+            ->unique('contract_id') // 1 notifikasi update terbaru per kontrak agar tidak spamming
+            ->map(function ($h) {
+                $actorName = $h->actor->name ?? 'Sistem';
+                $contractTitle = $h->contract->title ?? $h->contract->form_no ?? 'Kontrak';
+
+                $actionLabel = match ($h->action) {
+                    'APPROVAL_APPROVED' => 'Disetujui',
+                    'APPROVAL_REJECTED' => 'Ditolak / Perlu Revisi',
+                    'WORKFLOW_ADVANCED' => 'Lanjut Tahap Berikutnya',
+                    'CONTRACT_APPROVED' => 'Kontrak Selesai & Disetujui',
+                    'CONTRACT_COMPLETED' => 'Kontrak Diarsipkan',
+                    'WORKFLOW_ASSIGNED' => 'Penugasan PIC',
+                    'SIGNING_SETUP' => 'Penandatanganan Disiapkan',
+                    'SIGNING_STEP_COMPLETE' => 'Selesai Ditandatangani',
+                    'CONTRACT_SENT' => 'Pengajuan Dikirim',
+                    'DOC_REVISED' => 'Dokumen Direvisi',
+                    default => 'Aktivitas Kontrak',
+                };
+
+                return [
+                    'id' => 'update-'.$h->id,
+                    'type' => 'contract_update',
+                    'category' => $h->action,
+                    'badge' => $actionLabel,
+                    'title' => $contractTitle,
+                    'actor_name' => $actorName,
+                    'description' => $h->description,
+                    'contract_id' => $h->contract_id,
+                    'contract_title' => $contractTitle,
+                    'contract_no' => $h->contract->form_no ?? $h->contract->contract_no ?? '',
+                    'is_read' => false,
+                    'created_at' => $h->created_at->toIso8601String(),
+                    'created_at_formatted' => $h->created_at->diffForHumans(),
+                    'created_at_exact' => $h->created_at->format('d M Y, H:i'),
                 ];
             });
 
@@ -214,14 +234,26 @@ class NotificationController extends Controller
             ->concat($updates)
             ->concat($messages);
 
-        // Compute summary before filter
-        $approvalsCount = $approvals->count();
-        $updatesCount = $updates->count();
-        $messagesCount = $messages->where('is_read', false)->count();
-        $unreadCount = $approvalsCount + $updatesCount + $messagesCount;
+        // Exclude dismissed notifications for this user
+        $dismissedCacheKey = "dismissed_notifications_user_{$user->id}";
+        $dismissedIds = Cache::get($dismissedCacheKey, []);
+        if (! is_array($dismissedIds)) {
+            $dismissedIds = [];
+        }
 
-        // Apply filters
+        // Apply dismissed filters
         $filtered = $all;
+
+        if (! empty($dismissedIds)) {
+            $dismissedLookup = array_flip($dismissedIds);
+            $filtered = $filtered->filter(fn ($item) => ! isset($dismissedLookup[$item['id']]));
+        }
+
+        // Compute summary after dismissed exclusions
+        $approvalsCount = $filtered->where('type', 'approval_required')->count();
+        $updatesCount = $filtered->where('type', 'contract_update')->count();
+        $messagesCount = $filtered->whereIn('type', ['new_message', 'mention'])->where('is_read', false)->count();
+        $unreadCount = $approvalsCount + $updatesCount + $messagesCount;
 
         if ($typeFilter !== 'all') {
             $filtered = $filtered->filter(function ($item) use ($typeFilter) {
@@ -453,9 +485,99 @@ class NotificationController extends Controller
             return $this->errorResponse('Unauthenticated. Token otentikasi diperlukan.', 401);
         }
 
+        // If it's a message notification, also mark the message as read
+        if (str_starts_with($id, 'message-')) {
+            $messageId = substr($id, 8);
+            $msg = ContractMessage::find($messageId);
+            if ($msg) {
+                $readBy = $msg->read_by;
+                if (is_string($readBy)) {
+                    $readBy = json_decode($readBy, true) ?: [];
+                }
+                if (! is_array($readBy)) {
+                    $readBy = [];
+                }
+                if (! in_array($user->id, $readBy, true)) {
+                    $readBy[] = $user->id;
+                    $msg->update(['read_by' => $readBy]);
+                }
+            }
+        }
+
+        $dismissedCacheKey = "dismissed_notifications_user_{$user->id}";
+        $dismissedIds = Cache::get($dismissedCacheKey, []);
+        if (! is_array($dismissedIds)) {
+            $dismissedIds = [];
+        }
+
+        if (! in_array($id, $dismissedIds, true)) {
+            $dismissedIds[] = $id;
+            if (count($dismissedIds) > 500) {
+                $dismissedIds = array_slice($dismissedIds, -500);
+            }
+            Cache::forever($dismissedCacheKey, $dismissedIds);
+        }
+
+        Cache::forget("notifications_payload_user_{$user->id}");
+
         return $this->successResponse([
             'id' => $id,
             'dismissed' => true,
         ], 'Notification dismissed successfully');
+    }
+
+    /**
+     * Clear / dismiss all notifications for the user.
+     */
+    public function clearAll(Request $request): JsonResponse
+    {
+        $user = Auth::user();
+        if (! $user) {
+            return $this->errorResponse('Unauthenticated. Token otentikasi diperlukan.', 401);
+        }
+
+        $inputIds = $request->input('ids');
+        $dismissedCacheKey = "dismissed_notifications_user_{$user->id}";
+        $dismissedIds = Cache::get($dismissedCacheKey, []);
+        if (! is_array($dismissedIds)) {
+            $dismissedIds = [];
+        }
+
+        if (is_array($inputIds) && ! empty($inputIds)) {
+            // Mark any message IDs as read too
+            foreach ($inputIds as $nid) {
+                if (is_string($nid) && str_starts_with($nid, 'message-')) {
+                    $messageId = substr($nid, 8);
+                    $msg = ContractMessage::find($messageId);
+                    if ($msg) {
+                        $readBy = $msg->read_by;
+                        if (is_string($readBy)) {
+                            $readBy = json_decode($readBy, true) ?: [];
+                        }
+                        if (! is_array($readBy)) {
+                            $readBy = [];
+                        }
+                        if (! in_array($user->id, $readBy, true)) {
+                            $readBy[] = $user->id;
+                            $msg->update(['read_by' => $readBy]);
+                        }
+                    }
+                }
+            }
+            $dismissedIds = array_unique(array_merge($dismissedIds, array_map('strval', $inputIds)));
+        }
+
+        // Limit stored dismissed IDs to last 1000 items
+        if (count($dismissedIds) > 1000) {
+            $dismissedIds = array_slice($dismissedIds, -1000);
+        }
+        Cache::forever($dismissedCacheKey, $dismissedIds);
+
+        Cache::forget("notifications_payload_user_{$user->id}");
+
+        return $this->successResponse([
+            'cleared' => true,
+            'count' => count($inputIds ?? []),
+        ], 'All notifications cleared successfully');
     }
 }

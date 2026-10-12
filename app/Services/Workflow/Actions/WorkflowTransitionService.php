@@ -206,12 +206,11 @@ class WorkflowTransitionService
         }
 
         if ($nextStep) {
-            $statusStr = $statusStr ?? ($stepAction?->target_status
-                ?: ($nextStep->id === $approval->workflow_step_id
-                    ? $contract->status
-                    : ($nextStep->meta['target_status']
-                        ?? $nextStep->actions()->where('action_code', 'approve')->value('target_status')
-                        ?? ($contract->status === 'draft' ? 'in_review' : $contract->status))));
+            // Prioritaskan status target dari tahapan (step) tujuan, bukan dari aksi pengirim
+            $statusStr = $statusStr ?? ($nextStep->meta['target_status']
+                ?? $nextStep->actions()->where('action_code', 'approve')->value('target_status')
+                ?? $stepAction?->target_status
+                ?? ($nextStep->id === $approval->workflow_step_id ? $contract->status : ($contract->status === 'draft' ? 'in_review' : $contract->status)));
             $nextStatus = ContractStatus::where('code', $statusStr)->first();
 
             $isSameStep = $nextStep->id === $approval->workflow_step_id;

@@ -20,5 +20,6 @@ Route::prefix('notifications')->controller(NotificationController::class)->group
     Route::post('/{id}/read', 'markSingleRead')->name('api.notifications.mark-single-read');
 
     // 3. Dismiss Notification
+    Route::post('/clear-all', 'clearAll')->name('api.notifications.clear-all');
     Route::delete('/{id}', 'destroy')->name('api.notifications.destroy');
 });

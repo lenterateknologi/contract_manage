@@ -9,6 +9,7 @@ use App\Models\Master\ContractType;
 use App\Models\Master\NumberingFormat;
 use App\Models\Master\User;
 use App\Models\Master\Vendor;
+use App\Models\Master\Workflow;
 use App\Models\Transaction\Contract;
 use App\Models\Transaction\ContractHistory;
 use App\Services\Workflow\ContractWorkflowService;
@@ -47,6 +48,35 @@ class StoreContractAction
                 }
             }
             $contractType = ContractType::find($validated['contract_type_id']);
+            if (! $contractType) {
+                throw ValidationException::withMessages([
+                    'contract_type_id' => 'Jenis dokumen / kontrak tidak ditemukan.',
+                ]);
+            }
+
+            // Validasi: Alur kerja (workflow) harus ada, aktif, dan dapat dipilih
+            $workflowId = $validated['workflow_id'] ?? null;
+            $workflow = null;
+            if ($workflowId) {
+                $workflow = Workflow::where('is_active', true)->where('is_selectable', true)->find($workflowId);
+            }
+
+            if (! $workflow) {
+                $taxRequiredVal = (bool) ($validated['tax_required'] ?? false);
+                $workflow = Workflow::getDefaultByContractType($validated['contract_type_id'], $taxRequiredVal);
+            }
+
+            if (! $workflow) {
+                throw ValidationException::withMessages([
+                    'workflow_id' => 'Tidak ada alur kerja (workflow) aktif yang tersedia untuk jenis dokumen ini. Pengajuan tidak dapat dibuat.',
+                ]);
+            }
+
+            if ($workflow->steps()->count() === 0) {
+                throw ValidationException::withMessages([
+                    'workflow_id' => "Alur kerja ({$workflow->name}) belum memiliki tahapan yang dikonfigurasi. Pengajuan tidak dapat dibuat.",
+                ]);
+            }
 
             $form_no = NumberingFormat::generateNextNumber('contract', [
                 'kode_departemen' => $initiator?->department?->code ?? 'GEN',
@@ -115,7 +145,7 @@ class StoreContractAction
 
             // AUTOMATION: Automatically assign workflow and set to Step 1 (Drafting)
             try {
-                $contract = $this->workflowService->sendForApproval($contract, $validated['workflow_id'] ?? null);
+                $contract = $this->workflowService->sendForApproval($contract, $workflow->id);
             } catch (\Exception $e) {
                 throw ValidationException::withMessages([
                     'workflow_id' => [$e->getMessage()],

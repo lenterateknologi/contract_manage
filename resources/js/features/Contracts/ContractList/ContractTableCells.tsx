@@ -395,14 +395,25 @@ export const InitiatorCell = memo(({ c }: Readonly<{ c: Contract }>) => {
 InitiatorCell.displayName = 'InitiatorCell';
 
 export const StatusAndStepCell = memo(({ c }: Readonly<{ c: Contract }>) => {
-    let stepDesc = c.workflow_step?.description || c.workflow_step?.role || '';
-    if (!stepDesc && c.status === 'draft') {
-        stepDesc = c.initiator?.role || '';
-    }
+    const stepLabel = c.workflow_step?.label || c.workflow_step?.name || c.workflow_step?.description || (c.status === 'draft' ? (c.initiator?.role || '') : '');
+    const stepNumber = c.workflow_step?.step;
+    const fullStepText = stepLabel
+        ? (stepNumber ? `Tahap ${stepNumber}: ${stepLabel}` : stepLabel)
+        : '';
 
     return (
-        <div className="flex items-center py-0.5" title={stepDesc ? `Tahapan / Step: ${stepDesc}` : undefined}>
-            <StatusBadge status={c.status} statusInfo={(c as any).status_info} />
+        <div className="flex max-w-[190px] min-w-0 flex-col gap-0.5 py-0.5 leading-tight">
+            <div className="flex items-center">
+                <StatusBadge status={c.status} statusInfo={(c as any).status_info} />
+            </div>
+            {fullStepText ? (
+                <span
+                    className="text-text-desc truncate text-[10px] font-medium"
+                    title={fullStepText}
+                >
+                    {fullStepText}
+                </span>
+            ) : null}
         </div>
     );
 });

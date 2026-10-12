@@ -697,6 +697,11 @@ export function ContractList({
     }, []);
 
     const openDetail = useCallback((c: Contract) => {
+        // Save current list path and query so back button returns exactly here
+        if (typeof window !== 'undefined') {
+            const currentFullPath = window.location.pathname + window.location.search;
+            sessionStorage.setItem('contract_detail_previous_url', currentFullPath);
+        }
         setSelected(c);
         const targetId = (c as unknown as { short_id?: string }).short_id || c.id;
         router.get(route('contracts.show', targetId), {}, { preserveState: true, preserveScroll: true });
@@ -709,6 +714,18 @@ export function ContractList({
 
     const closeDetail = useCallback(() => {
         setSelected(null);
+        if (typeof window !== 'undefined') {
+            const prevUrl = sessionStorage.getItem('contract_detail_previous_url');
+            if (prevUrl && prevUrl !== window.location.pathname + window.location.search) {
+                sessionStorage.removeItem('contract_detail_previous_url');
+                router.get(prevUrl, {}, { preserveState: true, preserveScroll: true });
+                return;
+            }
+            if (window.history.length > 1) {
+                window.history.back();
+                return;
+            }
+        }
         router.get(route('contracts'), {}, { preserveState: true, preserveScroll: true });
     }, []);
 
@@ -1206,20 +1223,36 @@ export function ContractList({
                     ),
                     align: 'center',
                     pinned: 'right',
-                    className: 'w-16 text-center px-2 py-1.5',
-                    cell: (c: Contract) => (
-                        <div className="flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
-                            <a
-                                href={`/contracts/${c.id}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-text-muted hover:text-primary hover:bg-primary/10 hover:border-primary/20 inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg border border-transparent transition-all"
-                                title="Buka di Tab Baru"
-                            >
-                                <ExternalLink size={14} />
-                            </a>
-                        </div>
-                    ),
+                    className: 'w-20 text-center px-2 py-1.5',
+                    cell: (c: Contract) => {
+                        const isDraft = (c.status || '').toLowerCase() === 'draft';
+                        return (
+                            <div className="flex items-center justify-center gap-1" onClick={(e) => e.stopPropagation()}>
+                                <a
+                                    href={`/contracts/${c.id}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-text-muted hover:text-primary hover:bg-primary/10 hover:border-primary/20 inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg border border-transparent transition-all"
+                                    title="Buka di Tab Baru"
+                                >
+                                    <ExternalLink size={14} />
+                                </a>
+                                {isDraft && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setSelected(c);
+                                            setDeleteOpen(true);
+                                        }}
+                                        className="text-text-muted hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 hover:border-rose-200 dark:hover:border-rose-800 inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg border border-transparent transition-all"
+                                        title="Hapus Draft"
+                                    >
+                                        <Trash2 size={14} />
+                                    </button>
+                                )}
+                            </div>
+                        );
+                    },
                 }
             );
 
@@ -1386,32 +1419,20 @@ export function ContractList({
                                         <ProfileView meUser={meUser} showToast={showToast} />
                                     ) : (
                                         <div className="bg-surface-base/20 border-surface-border flex h-full min-h-0 flex-1 flex-col gap-0 overflow-hidden">
-                                            {view === 'pending' && (
-                                                <div className="flex items-center gap-1.5 border-b border-surface-border bg-surface-base/60 px-3 py-2 shrink-0">
+                                             {view === 'pending' && (
+                                                <div className="flex items-center gap-1.5 border-b border-surface-border bg-surface-base/60 dark:bg-zinc-900/60 dark:border-zinc-800 px-3 py-2 shrink-0">
                                                     <button
                                                         type="button"
                                                         onClick={() => handleFilterChange({ approval_status: 'pending', page: 1 })}
                                                         className={cn(
                                                             'flex items-center gap-2 px-3 py-1.5 rounded-[4px] text-xs font-semibold transition-all cursor-pointer',
                                                             (!filters?.approval_status || filters?.approval_status === 'pending')
-                                                                ? 'bg-primary text-primary-foreground shadow-sm'
-                                                                : 'bg-surface-muted text-text-desc hover:text-text-main hover:bg-surface-muted/80',
+                                                                ? 'bg-primary text-primary-foreground dark:bg-primary dark:text-primary-foreground shadow-sm'
+                                                                : 'bg-surface-muted text-text-desc hover:text-text-main hover:bg-surface-muted/80 dark:bg-zinc-800/80 dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-zinc-800',
                                                         )}
                                                     >
                                                         <Clock size={13} />
                                                         <span>Butuh Tindakan Saya</span>
-                                                        {typeof pendingCounts?.pending === 'number' && (
-                                                            <span
-                                                                className={cn(
-                                                                    'px-1.5 py-0.2 rounded-[4px] text-[10px] font-black',
-                                                                    (!filters?.approval_status || filters?.approval_status === 'pending')
-                                                                        ? 'bg-white text-primary'
-                                                                        : 'bg-primary/10 text-primary',
-                                                                )}
-                                                            >
-                                                                {pendingCounts.pending}
-                                                            </span>
-                                                        )}
                                                     </button>
 
                                                     <button
@@ -1420,24 +1441,12 @@ export function ContractList({
                                                         className={cn(
                                                             'flex items-center gap-2 px-3 py-1.5 rounded-[4px] text-xs font-semibold transition-all cursor-pointer',
                                                             filters?.approval_status === 'history' || ['approved', 'rejected', 'revision'].includes(filters?.approval_status as string)
-                                                                ? 'bg-primary text-primary-foreground shadow-sm'
-                                                                : 'bg-surface-muted text-text-desc hover:text-text-main hover:bg-surface-muted/80',
+                                                                ? 'bg-primary text-primary-foreground dark:bg-primary dark:text-primary-foreground shadow-sm'
+                                                                : 'bg-surface-muted text-text-desc hover:text-text-main hover:bg-surface-muted/80 dark:bg-zinc-800/80 dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-zinc-800',
                                                         )}
                                                     >
                                                         <History size={13} />
                                                         <span>Pernah Saya Tindak Lanjuti</span>
-                                                        {typeof pendingCounts?.history === 'number' && (
-                                                            <span
-                                                                className={cn(
-                                                                    'px-1.5 py-0.2 rounded-[4px] text-[10px] font-black',
-                                                                    filters?.approval_status === 'history' || ['approved', 'rejected', 'revision'].includes(filters?.approval_status as string)
-                                                                        ? 'bg-white text-primary'
-                                                                        : 'bg-surface-base border border-surface-border text-text-desc',
-                                                                )}
-                                                            >
-                                                                {pendingCounts.history}
-                                                            </span>
-                                                        )}
                                                     </button>
                                                 </div>
                                             )}
@@ -1791,6 +1800,10 @@ export function ContractList({
                     onClose={() => setContextMenu(null)}
                     onOpenDetail={openDetail}
                     onEdit={handleOpenEdit}
+                    onDelete={(c) => {
+                        setSelected(c);
+                        setDeleteOpen(true);
+                    }}
                 />
             )}
         </>

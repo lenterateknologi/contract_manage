@@ -51,6 +51,12 @@ export const notificationsService = {
      */
     dismiss: (id: string): Promise<any> =>
         unwrapResponse(apiClient.delete(API_ENDPOINTS.NOTIFICATIONS.DISMISS(id))),
+
+    /**
+     * Clear all notifications
+     */
+    clearAll: (ids?: string[]): Promise<any> =>
+        unwrapResponse(apiClient.post(API_ENDPOINTS.NOTIFICATIONS.CLEAR_ALL, { ids })),
 };
 
 export const notificationsApi = notificationsService;

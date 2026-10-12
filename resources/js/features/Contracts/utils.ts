@@ -446,8 +446,8 @@ export const validateContractForm = (data: ContractFormData, hasWorkflows: boole
         errors.contract_type_id = 'Tipe kontrak harus dipilih';
     }
 
-    if (hasWorkflows && !data.workflow_id) {
-        errors.workflow_id = 'Alur kerja harus dipilih';
+    if (!hasWorkflows || !data.workflow_id) {
+        errors.workflow_id = 'Alur kerja tidak ditemukan atau belum dipilih';
     }
 
     return errors;

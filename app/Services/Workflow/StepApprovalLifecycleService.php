@@ -49,13 +49,15 @@ class StepApprovalLifecycleService
 
         // Stale pending/waiting approver cleanup: remove regular approvals for users who are no longer approvers for this step
         $approverUserIds = $approvers->pluck('id')->filter()->toArray();
+        $cleanupQuery = Approval::where('contract_id', $contract->id)
+            ->where('workflow_step_id', $step->id)
+            ->whereNotIn('role', ['Persetujuan Tambahan', 'Penandatangan', 'Pihak 1', 'Pihak 2'])
+            ->whereIn('status', ['pending', 'waiting']);
+
         if (! empty($approverUserIds)) {
-            Approval::where('contract_id', $contract->id)
-                ->where('workflow_step_id', $step->id)
-                ->whereNotIn('role', ['Persetujuan Tambahan', 'Penandatangan', 'Pihak 1', 'Pihak 2'])
-                ->whereIn('status', ['pending', 'waiting'])
-                ->whereNotIn('user_id', $approverUserIds)
-                ->delete();
+            $cleanupQuery->whereNotIn('user_id', $approverUserIds)->delete();
+        } else {
+            $cleanupQuery->delete();
         }
 
         $stageSla = $this->slaService->resolveStageSla($contract, $contract->status, now());

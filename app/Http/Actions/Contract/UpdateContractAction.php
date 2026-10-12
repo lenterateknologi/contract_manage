@@ -57,6 +57,7 @@ class UpdateContractAction
         // Capture old values before updating
         $oldContract = $contract->replicate();
         $oldContract->id = $contract->id;
+        $oldAttributes = $contract->getAttributes();
         // Sync tax_required and metadata
         if (array_key_exists('tax_required', $validated)) {
             $metadata = $contract->metadata ?? [];

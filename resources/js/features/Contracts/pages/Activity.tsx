@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
     AlertCircle,
@@ -253,6 +253,33 @@ export function ActivityViewContent({
         });
     };
 
+    // Smart background polling from ENV (default: 15s, 0 to disable)
+    useEffect(() => {
+        const rawInterval = import.meta.env.VITE_ACTIVITY_POLLING_INTERVAL;
+        const intervalMs = rawInterval !== undefined ? parseInt(String(rawInterval), 10) : 15000;
+        if (!intervalMs || isNaN(intervalMs) || intervalMs <= 0) return;
+
+        const intervalId = setInterval(() => {
+            // Hanya poll ketika tab browser aktif dan tidak sedang proses form/modal
+            if (document.visibilityState === 'visible' && !createOpen && !editOpen) {
+                router.reload({
+                    only: [
+                        'pendingContracts',
+                        'dutyContracts',
+                        'inProgressContracts',
+                        'draftContracts',
+                        'activityCounts',
+                        'counts',
+                        'pendingCounts',
+                        'mineCounts',
+                    ],
+                });
+            }
+        }, intervalMs);
+
+        return () => clearInterval(intervalId);
+    }, [createOpen, editOpen]);
+
     // Search state per table
     const [searchPending, setSearchPending] = useState(filters.search_pending || '');
     const [searchDuty, setSearchDuty] = useState(filters.search_duty || '');
@@ -316,6 +343,9 @@ export function ActivityViewContent({
     };
 
     const openDetail = (contract: Contract) => {
+        if (typeof window !== 'undefined') {
+            sessionStorage.setItem('contract_detail_previous_url', window.location.pathname + window.location.search);
+        }
         router.get(`/contracts/${contract.id}`);
     };
 
@@ -1136,11 +1166,21 @@ export function ActivityViewContent({
                                                     className="group hover:bg-surface-muted/20 transition-colors cursor-pointer"
                                                 >
                                                     <td className="px-3 py-1.5 font-semibold text-text-main">
-                                                        <div className="flex items-center gap-1.5">
-                                                            <span>{c.title}</span>
-                                                            <span className="px-1.5 py-0.2 rounded-[4px] bg-surface-muted text-text-desc text-[9.5px] font-bold">
-                                                                Draft
-                                                            </span>
+                                                        <div className="flex max-w-[340px] flex-col gap-0.5 leading-tight">
+                                                            <div className="flex items-center gap-1.5">
+                                                                <span className="truncate">{c.title}</span>
+                                                                <span className="px-1.5 py-0.2 rounded-[4px] bg-surface-muted text-text-desc text-[9.5px] font-bold shrink-0">
+                                                                    Draft
+                                                                </span>
+                                                            </div>
+                                                            {c.workflow_step && (
+                                                                <span
+                                                                    className="text-[10px] text-text-desc font-normal truncate"
+                                                                    title={c.workflow_step.label || c.workflow_step.name || c.workflow_step.description}
+                                                                >
+                                                                    Tahap {c.workflow_step.step}: {c.workflow_step.label || c.workflow_step.name || c.workflow_step.description}
+                                                                </span>
+                                                            )}
                                                         </div>
                                                     </td>
                                                     <td className="px-3 py-1.5 text-text-desc font-medium">

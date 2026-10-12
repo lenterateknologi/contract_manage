@@ -424,10 +424,12 @@ export interface Contract {
     workflow_step?: {
         id: string;
         step: number;
-        role: string;
+        role?: string;
+        label?: string;
+        name?: string;
         description: string;
-        step_type: string;
-        step_category: string | null;
+        step_type?: string;
+        step_category?: string | null;
         target_approvers?: string | null;
         meta?: {
             allow_info_edit?: boolean;

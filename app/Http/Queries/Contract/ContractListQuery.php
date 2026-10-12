@@ -24,7 +24,7 @@ class ContractListQuery
         'submissionType:id,name',
         'statusDetail:code,label,color,bg_color,icon',
         'workflow:id,name,contract_type_id,meta',
-        'workflowStep:id,step,description,step_category,workflow_id,meta,is_visible,is_active,approver_type',
+        'workflowStep:id,step,label,description,step_category,workflow_id,meta,is_visible,is_active,approver_type',
         'workflowStep.actions',
         'vendor:id,vendor_code,vendor_name,vendor_detail',
         'initiator:id,name,role_id,department_id,division_id,company_id,email,nik,jobtitle_name,phone_number,mobile_no',

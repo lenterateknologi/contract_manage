@@ -257,6 +257,10 @@ export const ContractDetailView = ({
             if (hasFormChanges && saveFormRef.current) {
                 await saveFormRef.current();
             }
+            // ponytail: show toast feedback upon explicit save
+            showToast?.('Perubahan berhasil disimpan.', 'success');
+        } catch (error) {
+            showToast?.(parseApiErrorMessage(error, 'Gagal menyimpan perubahan.'), 'danger');
         } finally {
             setInfoSaving(false);
         }
@@ -924,6 +928,7 @@ export const ContractDetailView = ({
                 isAnyDirty={isAnyDirty}
                 infoSaving={infoSaving}
                 isAdmin={isAdmin}
+                onClose={onClose}
                 onOpenAdminWorkflowModal={() => setAdminWorkflowModalOpen(true)}
                 onUpdateTitle={(newTitle) => handleUpdate({ title: newTitle }, true)}
                 onResetAllChanges={onResetAllChanges}

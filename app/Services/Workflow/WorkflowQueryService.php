@@ -45,7 +45,8 @@ class WorkflowQueryService
      */
     public function getAvailableWorkflows(?User $user, ?string $contractType = null): Collection
     {
-        $query = Workflow::where('is_active', true);
+        $query = Workflow::where('is_active', true)
+            ->where('is_selectable', true);
 
         if ($contractType) {
             $isUuid = preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $contractType);

@@ -57,7 +57,7 @@ class AuthenticatedSessionController extends Controller
             ], 'Logged in successfully');
         }
 
-        return redirect()->intended(route('home', absolute: false));
+        return redirect('/');
     }
 
     /**

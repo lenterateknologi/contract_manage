@@ -3,7 +3,7 @@ import { StatusBadge } from '@/components/ui/feedback/StatusBadge';
 import { cn } from '@/lib/utils';
 import { HeaderTaskList } from '@/features/Contracts/components/parts/HeaderTaskList';
 import { Contract } from '@/features/Contracts/types';
-import { Check, GitFork, Loader2 } from 'lucide-react';
+import { ArrowLeft, Check, GitFork, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface ContractDetailHeaderProps {
@@ -14,6 +14,7 @@ interface ContractDetailHeaderProps {
     isAnyDirty: boolean;
     infoSaving: boolean;
     isAdmin?: boolean;
+    onClose?: () => void;
     onUpdateTitle: (newTitle: string) => void;
     onResetAllChanges?: () => void;
     onSaveAllChanges?: () => void;
@@ -29,6 +30,7 @@ export function ContractDetailHeader({
     isAnyDirty,
     infoSaving,
     isAdmin = false,
+    onClose,
     onUpdateTitle,
     onResetAllChanges,
     onSaveAllChanges,
@@ -58,6 +60,16 @@ export function ContractDetailHeader({
         <div className="bg-background border-border sticky top-0 z-50 box-border flex h-16 max-h-[64px] min-h-[64px] shrink-0 items-center justify-between gap-3 border-b px-5 transition-all duration-200">
             {/* Left Side: Document Title (Editable) + Section Breadcrumb */}
             <div className="flex min-w-0 flex-shrink items-center gap-2.5">
+                {onClose && (
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="text-muted-foreground hover:text-foreground hover:bg-muted -ml-1.5 flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border/60 transition-all hover:scale-105 active:scale-95"
+                        title="Kembali ke Halaman Sebelumnya"
+                    >
+                        <ArrowLeft size={16} strokeWidth={2.2} />
+                    </button>
+                )}
                 <div className="flex min-w-0 flex-col justify-center">
                     {isEditingTitle && canEditTitle ? (
                         <input
@@ -115,7 +127,10 @@ export function ContractDetailHeader({
             <div className="flex shrink-0 items-center gap-3">
                 <HeaderTaskList contract={contract} onNavigateTab={onNavigateTab} />
 
-                <StatusBadge status={effectiveStatus} statusInfo={contract.status_info} />
+                <StatusBadge
+                    status={effectiveStatus}
+                    statusInfo={(contract.workflow_step?.meta as any)?.target_status ? null : contract.status_info}
+                />
 
                 {isAdmin && onOpenAdminWorkflowModal && (
                     <button

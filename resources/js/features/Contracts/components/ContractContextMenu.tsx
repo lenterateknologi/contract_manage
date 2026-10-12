@@ -7,6 +7,7 @@ import {
     FileEdit,
     Check,
     FileText,
+    Trash2,
 } from 'lucide-react';
 import { Contract } from '@/features/Contracts/types';
 import { cn } from '@/lib/utils';
@@ -18,6 +19,7 @@ export interface ContractContextMenuProps {
     onClose: () => void;
     onOpenDetail?: (contract: Contract) => void;
     onEdit?: (contract: Contract) => void;
+    onDelete?: (contract: Contract) => void;
 }
 
 export function ContractContextMenu({
@@ -26,6 +28,7 @@ export function ContractContextMenu({
     onClose,
     onOpenDetail,
     onEdit,
+    onDelete,
 }: ContractContextMenuProps) {
     const menuRef = useRef<HTMLDivElement>(null);
     const { showToast } = useToast();
@@ -227,17 +230,34 @@ export function ContractContextMenu({
                     </button>
                 )}
 
-                {isDraft && onEdit && (
+                {isDraft && (onEdit || onDelete) && (
                     <>
                         <div className="border-t border-surface-border my-1" />
-                        <button
-                            type="button"
-                            onClick={handleEdit}
-                            className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-amber-600 dark:text-amber-400 transition-colors hover:bg-amber-500 hover:text-white group"
-                        >
-                            <FileEdit size={14} className="group-hover:text-white transition-colors" />
-                            <span>Lanjutkan Edit Draft</span>
-                        </button>
+                        {onEdit && (
+                            <button
+                                type="button"
+                                onClick={handleEdit}
+                                className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-amber-600 dark:text-amber-400 transition-colors hover:bg-amber-500 hover:text-white group"
+                            >
+                                <FileEdit size={14} className="group-hover:text-white transition-colors" />
+                                <span>Lanjutkan Edit Draft</span>
+                            </button>
+                        )}
+                        {onDelete && (
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    onDelete(contract);
+                                    onClose();
+                                }}
+                                className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-rose-600 dark:text-rose-400 transition-colors hover:bg-rose-500 hover:text-white group"
+                            >
+                                <Trash2 size={14} className="group-hover:text-white transition-colors" />
+                                <span>Hapus Draft</span>
+                            </button>
+                        )}
                     </>
                 )}
             </div>

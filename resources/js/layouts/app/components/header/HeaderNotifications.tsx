@@ -15,7 +15,9 @@ import {
     Inbox,
     MessageSquare,
     RefreshCw,
+    Trash2,
     UserCheck,
+    X,
     XCircle,
 } from 'lucide-react';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
@@ -44,7 +46,9 @@ export const HeaderNotifications = memo(function HeaderNotifications({ variant =
     const pageProps = usePage().props;
     const currentUserId = (pageProps.auth as any)?.user?.id || 'guest';
     const storageKey = `read_notifications_${currentUserId}`;
+    const dismissedStorageKey = `dismissed_notifications_${currentUserId}`;
 
+    const [open, setOpen] = useState(false);
     const [notifications, setNotifications] = useState<NotificationItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState<'all' | 'unread' | 'approvals'>('all');
@@ -61,6 +65,13 @@ export const HeaderNotifications = memo(function HeaderNotifications({ variant =
             return [];
         }
     });
+    const [dismissedIds, setDismissedIds] = useState<string[]>(() => {
+        try {
+            return JSON.parse(localStorage.getItem(dismissedStorageKey) || '[]');
+        } catch {
+            return [];
+        }
+    });
 
     const isInitialLoadRef = useRef(true);
     const knownIdsRef = useRef<Set<string>>(new Set());
@@ -71,45 +82,165 @@ export const HeaderNotifications = memo(function HeaderNotifications({ variant =
         } catch {
             setReadIds([]);
         }
-    }, [storageKey]);
+        try {
+            setDismissedIds(JSON.parse(localStorage.getItem(dismissedStorageKey) || '[]'));
+        } catch {
+            setDismissedIds([]);
+        }
+    }, [storageKey, dismissedStorageKey]);
+
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+
+    const playNotificationSound = () => {
+        try {
+            // Using Web Audio API for a crisp, gentle push chime (no external audio file required)
+            const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+            if (AudioContext) {
+                const ctx = new AudioContext();
+                const now = ctx.currentTime;
+                
+                // Tone 1 (High bell chime)
+                const osc1 = ctx.createOscillator();
+                const gain1 = ctx.createGain();
+                osc1.type = 'sine';
+                osc1.frequency.setValueAtTime(587.33, now); // D5
+                osc1.frequency.exponentialRampToValueAtTime(880, now + 0.12); // A5
+                gain1.gain.setValueAtTime(0.15, now);
+                gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+                osc1.connect(gain1);
+                gain1.connect(ctx.destination);
+                osc1.start(now);
+                osc1.stop(now + 0.4);
+
+                // Tone 2 (Harmonic echo)
+                const osc2 = ctx.createOscillator();
+                const gain2 = ctx.createGain();
+                osc2.type = 'sine';
+                osc2.frequency.setValueAtTime(880, now + 0.08); // A5
+                osc2.frequency.exponentialRampToValueAtTime(1174.66, now + 0.22); // D6
+                gain2.gain.setValueAtTime(0.12, now + 0.08);
+                gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+                osc2.connect(gain2);
+                gain2.connect(ctx.destination);
+                osc2.start(now + 0.08);
+                osc2.stop(now + 0.6);
+            }
+        } catch {
+            // Audio Context not allowed or unsupported
+        }
+    };
+
+    const [floatingAlert, setFloatingAlert] = useState<{
+        id: string;
+        title: string;
+        description: string;
+        badge?: string;
+        actor_name?: string;
+        targetUrl: string;
+    } | null>(null);
+    const floatingAlertTimeoutRef = useRef<any>(null);
 
     const showDesktopNotification = useCallback((item: NotificationItem) => {
-        if (typeof window === 'undefined' || !('Notification' in window) || Notification.permission !== 'granted') {
+        if (typeof window === 'undefined') {
             return;
         }
 
+        playNotificationSound();
+
+        const title = item.badge ? `[${item.badge}] ${item.title}` : item.title;
+        const body = `${item.actor_name ? item.actor_name + ': ' : ''}${item.description}`;
+        const targetUrl = item.type === 'new_message' ? `/admin/chat/${item.contract_id}` : `/contracts/${item.contract_id}`;
+
+        // 1. Show floating in-app banner alert (guaranteed visible on screen regardless of OS / Brave shield blocking)
+        setFloatingAlert({
+            id: item.id,
+            title,
+            description: body,
+            badge: item.badge,
+            actor_name: item.actor_name,
+            targetUrl,
+        });
+
+        if (floatingAlertTimeoutRef.current) {
+            clearTimeout(floatingAlertTimeoutRef.current);
+        }
+        floatingAlertTimeoutRef.current = setTimeout(() => {
+            setFloatingAlert(null);
+        }, 8000);
+
+        // 2. Also trigger native OS desktop notification
+        if ('Notification' in window && Notification.permission === 'granted') {
+            const notifOptions: NotificationOptions = {
+                body,
+                icon: '/favicon.ico',
+                badge: '/favicon.ico',
+                tag: item.id,
+                requireInteraction: true,
+                silent: false,
+                data: { url: targetUrl },
+            };
+
+            // Spawn directly via Notification constructor first (most immediate on desktop)
+            spawnStandardNotification(title, body, targetUrl, item.id);
+
+            // Also try Service Worker registration
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.ready
+                    .then((reg) => {
+                        reg.showNotification(title, notifOptions);
+                    })
+                    .catch(() => {});
+            }
+        }
+    }, []);
+
+    const spawnStandardNotification = (title: string, body: string, targetUrl: string, tag: string) => {
         try {
-            const title = item.badge ? `[${item.badge}] ${item.title}` : item.title;
-            const body = `${item.actor_name ? item.actor_name + ': ' : ''}${item.description}`;
             const notif = new Notification(title, {
                 body,
                 icon: '/favicon.ico',
-                tag: item.id,
+                tag,
+                requireInteraction: true,
             });
 
             notif.onclick = () => {
                 window.focus();
-                const link = item.type === 'new_message' ? `/admin/chat/${item.contract_id}` : `/contracts/${item.contract_id}`;
-                window.location.href = link;
+                if (targetUrl) {
+                    window.location.href = targetUrl;
+                }
                 notif.close();
             };
-        } catch (e) {
-            console.error('Desktop notification error', e);
+        } catch (err) {
+            console.warn('Fallback desktop notification failed', err);
         }
-    }, []);
+    };
+
+    const triggerTestPushAlert = () => {
+        showDesktopNotification({
+            id: `test-${Date.now()}`,
+            type: 'contract_update',
+            badge: 'Test Web Push',
+            title: 'Notifikasi Web Push Aktif',
+            actor_name: 'Sistem Corixa',
+            description: 'Alert mengambang desktop berhasil diaktifkan dan siap menerima pembaruan.',
+            contract_id: '',
+            contract_title: 'Sistem Notifikasi',
+            created_at_formatted: 'Baru saja',
+        });
+    };
 
     const requestPushPermission = async () => {
         if (typeof window === 'undefined' || !('Notification' in window)) {
+            alert('Browser ini tidak mendukung Web Push Notification.');
             return;
         }
         try {
             const permission = await Notification.requestPermission();
             setPushPermission(permission);
             if (permission === 'granted') {
-                new Notification('Notifikasi Desktop Aktif', {
-                    body: 'Anda akan menerima pemberitahuan otomatis saat ada persetujuan atau pesan baru.',
-                    icon: '/favicon.ico',
-                });
+                triggerTestPushAlert();
+            } else {
+                alert('Izin notifikasi ditolak oleh browser/sistem. Silakan izinkan di icon gembok (kiri address bar browser) atau pengaturan OS.');
             }
         } catch (err) {
             console.error('Failed to request notification permission', err);
@@ -120,64 +251,60 @@ export const HeaderNotifications = memo(function HeaderNotifications({ variant =
         try {
             const res: any = await notificationsService.list();
             const items: NotificationItem[] = Array.isArray(res) ? res : (res?.data ?? res?.items ?? []);
-            setNotifications(items);
+            
+            // Filter out locally dismissed items if any
+            const activeItems = items.filter((n) => !dismissedIds.includes(n.id));
+            setNotifications(activeItems);
 
-            // Trigger desktop push notification for newly arrived unread items
-            if (!isInitialLoadRef.current && pushPermission === 'granted') {
-                const newItems = items.filter((n) => !knownIdsRef.current.has(n.id) && !readIds.includes(n.id));
-                newItems.slice(0, 3).forEach((item) => {
-                    showDesktopNotification(item);
-                });
+            const isPermitted = typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted';
+
+            const notifiedStorageKey = `notified_desktop_${currentUserId}`;
+            let notifiedIds: string[] = [];
+            try {
+                notifiedIds = JSON.parse(sessionStorage.getItem(notifiedStorageKey) || '[]');
+            } catch {
+                notifiedIds = [];
+            }
+            const notifiedSet = new Set([...notifiedIds, ...Array.from(knownIdsRef.current)]);
+
+            // Trigger desktop push notification for unread items that haven't been popped up yet
+            if (isPermitted) {
+                const newItems = activeItems.filter((n) => !notifiedSet.has(n.id) && !readIds.includes(n.id));
+                if (newItems.length > 0) {
+                    newItems.slice(0, 3).forEach((item) => {
+                        showDesktopNotification(item);
+                        notifiedSet.add(item.id);
+                    });
+                    try {
+                        sessionStorage.setItem(notifiedStorageKey, JSON.stringify(Array.from(notifiedSet)));
+                    } catch {}
+                }
             }
 
             // Record known IDs
-            items.forEach((n) => knownIdsRef.current.add(n.id));
+            activeItems.forEach((n) => knownIdsRef.current.add(n.id));
             isInitialLoadRef.current = false;
         } catch (err) {
             console.error('Failed to fetch notifications', err);
         } finally {
             setLoading(false);
         }
-    }, [pushPermission, readIds, showDesktopNotification]);
+    }, [dismissedIds, readIds, showDesktopNotification]);
 
     useEffect(() => {
         fetchNotifications();
 
-        let interval: NodeJS.Timeout | null = null;
-
-        const startPolling = () => {
-            if (!interval) {
-                interval = setInterval(fetchNotifications, 4000);
-            }
-        };
-
-        const stopPolling = () => {
-            if (interval) {
-                clearInterval(interval);
-                interval = null;
-            }
-        };
-
-        const handleVisibilityChange = () => {
-            if (document.hidden) {
-                stopPolling();
-            } else {
-                fetchNotifications();
-                startPolling();
-            }
-        };
+        // Polling setiap 4 detik (tetap berjalan di background tab agar notifikasi desktop mengambang ter-trigger)
+        const interval = setInterval(fetchNotifications, 4000);
 
         const handleWindowFocus = () => {
             fetchNotifications();
         };
 
-        startPolling();
-        document.addEventListener('visibilitychange', handleVisibilityChange);
         window.addEventListener('focus', handleWindowFocus);
 
         return () => {
-            stopPolling();
-            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            clearInterval(interval);
             window.removeEventListener('focus', handleWindowFocus);
         };
     }, [fetchNotifications]);
@@ -185,6 +312,29 @@ export const HeaderNotifications = memo(function HeaderNotifications({ variant =
     const saveReadIds = (ids: string[]) => {
         setReadIds(ids);
         localStorage.setItem(storageKey, JSON.stringify(ids));
+    };
+
+    const saveDismissedIds = (ids: string[]) => {
+        setDismissedIds(ids);
+        localStorage.setItem(dismissedStorageKey, JSON.stringify(ids));
+    };
+
+    const handleDismissNotification = async (id: string, e?: React.MouseEvent) => {
+        if (e) {
+            e.stopPropagation();
+            e.preventDefault();
+        }
+
+        // Optimistically remove from state and store locally
+        setNotifications((prev) => prev.filter((n) => n.id !== id));
+        const newDismissedIds = [...new Set([...dismissedIds, id])];
+        saveDismissedIds(newDismissedIds);
+
+        try {
+            await notificationsService.dismiss(id);
+        } catch (err) {
+            console.error('Failed to dismiss notification', err);
+        }
     };
 
     const handleNotificationClick = (item: NotificationItem) => {
@@ -195,6 +345,12 @@ export const HeaderNotifications = memo(function HeaderNotifications({ variant =
             const newReadIds = [...readIds, item.id];
             saveReadIds(newReadIds);
         }
+
+        // Otomatis hapus / sembunyikan notifikasi saat dibuka
+        handleDismissNotification(item.id);
+
+        // Tutup dialog notifikasi
+        setOpen(false);
     };
 
     const markAllRead = async () => {
@@ -206,6 +362,22 @@ export const HeaderNotifications = memo(function HeaderNotifications({ variant =
             fetchNotifications();
         } catch (err) {
             console.error('Failed to mark notifications as read', err);
+        }
+    };
+
+    const clearAllNotifications = async () => {
+        const allIds = notifications.map((n) => n.id);
+        if (allIds.length === 0) return;
+
+        // Optimistically clear all notifications from local view
+        setNotifications([]);
+        const newDismissedIds = [...new Set([...dismissedIds, ...allIds])];
+        saveDismissedIds(newDismissedIds);
+
+        try {
+            await notificationsService.clearAll(allIds);
+        } catch (err) {
+            console.error('Failed to clear all notifications', err);
         }
     };
 
@@ -282,7 +454,8 @@ export const HeaderNotifications = memo(function HeaderNotifications({ variant =
     });
 
     return (
-        <DropdownMenu>
+        <>
+        <DropdownMenu open={open} onOpenChange={setOpen}>
             <DropdownMenuTrigger asChild>
                 <Button
                     variant="ghost"
@@ -325,16 +498,29 @@ export const HeaderNotifications = memo(function HeaderNotifications({ variant =
                                 </span>
                             )}
                         </div>
-                        {unreadNotifications.length > 0 && (
-                            <button
-                                type="button"
-                                onClick={markAllRead}
-                                className="text-primary hover:text-primary/80 inline-flex cursor-pointer items-center gap-1 text-[10.5px] font-medium transition-colors"
-                            >
-                                <CheckCheck className="size-3" />
-                                <span>Tandai dibaca</span>
-                            </button>
-                        )}
+                        <div className="flex items-center gap-2">
+                            {unreadNotifications.length > 0 && (
+                                <button
+                                    type="button"
+                                    onClick={markAllRead}
+                                    className="text-primary hover:text-primary/80 inline-flex cursor-pointer items-center gap-1 text-[10.5px] font-medium transition-colors"
+                                    title="Tandai semua telah dibaca"
+                                >
+                                    <CheckCheck className="size-3" />
+                                    <span>Tandai dibaca</span>
+                                </button>
+                            )}
+                            {notifications.length > 0 && (
+                                <button
+                                    type="button"
+                                    onClick={clearAllNotifications}
+                                    className="text-muted-foreground hover:text-rose-600 inline-flex cursor-pointer items-center text-[10.5px] font-medium transition-colors"
+                                    title="Bersihkan semua notifikasi"
+                                >
+                                    <span>Hapus semua</span>
+                                </button>
+                            )}
+                        </div>
                     </div>
 
                     {/* Filter Pills */}
@@ -373,12 +559,12 @@ export const HeaderNotifications = memo(function HeaderNotifications({ variant =
                         )}
                     </div>
 
-                    {/* Push Notification Opt-in Banner */}
+                    {/* Push Notification Opt-in / Status Banner */}
                     {pushPermission === 'default' && (
                         <div className="flex items-center justify-between rounded-lg bg-indigo-50/70 p-1.5 text-[10.5px] dark:bg-indigo-950/30">
                             <div className="flex items-center gap-1.5 font-medium text-indigo-900 dark:text-indigo-200">
                                 <BellRing className="size-3 shrink-0 text-indigo-600 dark:text-indigo-400" />
-                                <span>Aktifkan notifikasi</span>
+                                <span>Web Push Alert: Belum aktif</span>
                             </div>
                             <Button
                                 size="sm"
@@ -386,8 +572,33 @@ export const HeaderNotifications = memo(function HeaderNotifications({ variant =
                                 onClick={requestPushPermission}
                                 className="h-5 cursor-pointer rounded bg-indigo-600 px-2 text-[9.5px] font-semibold text-white hover:bg-indigo-700"
                             >
-                                Izinkan
+                                Izinkan Pop-up
                             </Button>
+                        </div>
+                    )}
+                    {pushPermission === 'granted' && (
+                        <div className="flex items-center justify-between rounded-lg bg-emerald-50/70 p-1.5 text-[10.5px] dark:bg-emerald-950/30">
+                            <div className="flex items-center gap-1.5 font-medium text-emerald-900 dark:text-emerald-200">
+                                <CheckCircle2 className="size-3 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                                <span>Web Push Desktop: Aktif</span>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={triggerTestPushAlert}
+                                className="text-emerald-700 dark:text-emerald-300 hover:underline cursor-pointer text-[9.5px] font-medium"
+                                title="Kirim notifikasi uji coba ke layar desktop Anda sekarang"
+                            >
+                                Tes Notifikasi
+                            </button>
+                        </div>
+                    )}
+                    {pushPermission === 'denied' && (
+                        <div className="flex items-center justify-between rounded-lg bg-rose-50/70 p-1.5 text-[10.5px] dark:bg-rose-950/30">
+                            <div className="flex items-center gap-1.5 font-medium text-rose-900 dark:text-rose-200">
+                                <XCircle className="size-3 shrink-0 text-rose-600 dark:text-rose-400" />
+                                <span>Notifikasi diblokir browser</span>
+                            </div>
+                            <span className="text-muted-foreground text-[9px]">Ubah di ikon gembok URL</span>
                         </div>
                     )}
                 </div>
@@ -476,6 +687,16 @@ export const HeaderNotifications = memo(function HeaderNotifications({ variant =
                                             </div>
                                         )}
                                     </div>
+
+                                    {/* Action button: Hapus notifikasi */}
+                                    <button
+                                        type="button"
+                                        title="Hapus notifikasi"
+                                        onClick={(e) => handleDismissNotification(item.id, e)}
+                                        className="text-muted-foreground/40 hover:text-rose-500 hover:bg-rose-500/10 dark:hover:bg-rose-500/20 -mr-1 flex size-5.5 shrink-0 cursor-pointer items-center justify-center rounded-md opacity-0 transition-all group-hover:opacity-100"
+                                    >
+                                        <X className="size-3" />
+                                    </button>
                                 </Link>
                             );
                         })
@@ -486,6 +707,7 @@ export const HeaderNotifications = memo(function HeaderNotifications({ variant =
                 <div className="p-2 text-center">
                     <Link
                         href="/contracts"
+                        onClick={() => setOpen(false)}
                         className="text-primary hover:text-primary/80 inline-flex items-center justify-center gap-1 text-[10.5px] font-medium transition-colors"
                     >
                         <span>Buka Daftar Kontrak</span>
@@ -494,5 +716,60 @@ export const HeaderNotifications = memo(function HeaderNotifications({ variant =
                 </div>
             </DropdownMenuContent>
         </DropdownMenu>
+
+        {/* Floating Web Push Alert Card (Always Visible on Screen when Notification fires) */}
+        {floatingAlert && (
+            <div
+                role="alert"
+                className="fixed bottom-6 right-6 z-[999999] max-w-[380px] w-[calc(100vw-2rem)] animate-in slide-in-from-bottom-5 fade-in duration-300 pointer-events-auto"
+            >
+                <div className="flex items-start gap-3 rounded-2xl border border-primary/20 bg-background/95 p-4 shadow-2xl backdrop-blur-md ring-1 ring-black/5 dark:bg-zinc-900/95 dark:ring-white/10 dark:shadow-black/70">
+                    <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                        <BellRing className="size-5 animate-bounce" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-1 mb-1">
+                            <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[9px] font-bold text-primary uppercase">
+                                {floatingAlert.badge || 'Notifikasi Baru'}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground">Baru saja</span>
+                        </div>
+                        <h4 className="text-[12px] font-bold text-foreground leading-snug line-clamp-1">
+                            {floatingAlert.title}
+                        </h4>
+                        <p className="mt-0.5 text-[11px] text-muted-foreground line-clamp-2 leading-relaxed">
+                            {floatingAlert.description}
+                        </p>
+                        <div className="mt-2.5 flex items-center gap-2">
+                            {floatingAlert.targetUrl && (
+                                <Link
+                                    href={floatingAlert.targetUrl}
+                                    onClick={() => setFloatingAlert(null)}
+                                    className="inline-flex items-center justify-center rounded-lg bg-primary px-3 py-1.5 text-[11px] font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 transition-colors"
+                                >
+                                    Buka Kontrak
+                                </Link>
+                            )}
+                            <button
+                                type="button"
+                                onClick={() => setFloatingAlert(null)}
+                                className="inline-flex items-center justify-center rounded-lg border border-border px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+                            >
+                                Tutup
+                            </button>
+                        </div>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => setFloatingAlert(null)}
+                        className="text-muted-foreground/60 hover:text-foreground p-1 rounded-md cursor-pointer transition-colors"
+                        aria-label="Tutup notifikasi"
+                    >
+                        <X className="size-4" />
+                    </button>
+                </div>
+            </div>
+        )}
+        </>
     );
 });

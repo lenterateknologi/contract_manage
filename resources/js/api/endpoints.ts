@@ -112,6 +112,7 @@ export const API_ENDPOINTS = {
         MARK_ALL_READ: '/api/notifications/mark-all-read',
         MARK_READ: (id: string) => `/api/notifications/${id}/read`,
         DISMISS: (id: string) => `/api/notifications/${id}`,
+        CLEAR_ALL: '/api/notifications/clear-all',
     },
 
     // 6. Discussions & Chat

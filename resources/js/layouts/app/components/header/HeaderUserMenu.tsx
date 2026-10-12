@@ -18,11 +18,11 @@ export const HeaderUserMenu = memo(function HeaderUserMenu() {
             <DropdownMenuTrigger asChild>
                 <Button
                     variant="ghost"
-                    className="relative h-9 w-9 cursor-pointer overflow-hidden rounded-full p-0 shadow-xs ring-1 ring-white/25 transition-all hover:ring-2 hover:ring-white/50"
+                    className="relative h-9 w-9 cursor-pointer overflow-hidden rounded-full p-0 shadow-xs ring-1 ring-white/25 transition-all hover:ring-2 hover:ring-white/50 dark:ring-white/15 dark:hover:ring-white/30"
                 >
-                    <Avatar className="h-8 w-8 rounded-full">
+                    <Avatar className="h-8 w-8 rounded-full bg-white/10 dark:bg-zinc-800">
                         <AvatarImage src={auth.user.avatar} alt={auth.user.name} />
-                        <AvatarFallback className="text-primary rounded-full bg-white text-xs font-bold">
+                        <AvatarFallback className="text-primary rounded-full bg-white text-xs font-bold dark:bg-zinc-800 dark:text-zinc-100">
                             {getInitials(auth.user.name)}
                         </AvatarFallback>
                     </Avatar>

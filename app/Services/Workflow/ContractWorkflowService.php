@@ -61,31 +61,23 @@ class ContractWorkflowService
 
         $workflow = null;
         if ($workflowId) {
-            $workflow = Workflow::find($workflowId);
+            $workflow = Workflow::where('is_active', true)->find($workflowId);
         }
 
         if (! $workflow) {
             $taxRequired = (bool) ($metadata['tax_required'] ?? ($contract->metadata['tax_required'] ?? false));
             $typeStr = $contract->contract_type_id ?: ($contract->contractType->code ?? 'General');
 
-            // 1. Try specific match
+            // Try specific default match for this contract type
             $workflow = Workflow::getDefaultByContractType($typeStr, $taxRequired);
-
-            // 2. Fallback: Try any default workflow regardless of tax if specific fails
-            if (! $workflow) {
-                $workflow = Workflow::where('is_active', true)
-                    ->where('is_default', true)
-                    ->first();
-            }
-
-            // 3. Last Resort: Just take any active workflow
-            if (! $workflow) {
-                $workflow = Workflow::where('is_active', true)->first();
-            }
         }
 
         if (! $workflow) {
-            throw new \Exception('Alur kerja tidak ditemukan dan tidak ada alur default untuk tipe kontrak ini.');
+            throw new \Exception('Alur kerja aktif tidak ditemukan untuk tipe dokumen ini. Pengajuan tidak dapat diproses.');
+        }
+
+        if ($workflow->steps()->count() === 0) {
+            throw new \Exception("Alur kerja ({$workflow->name}) belum memiliki tahapan yang dikonfigurasi.");
         }
 
         $workflow->loadMissing('steps');
@@ -379,10 +371,11 @@ class ContractWorkflowService
 
                 $nextStep = $this->evaluateTransition($contract, $step, $action);
                 if ($nextStep && $nextStep->id !== $step->id) {
-                    $statusStr = $action->target_status
-                        ?: ($nextStep->meta['target_status']
-                            ?? $nextStep->actions()->where('action_code', 'approve')->value('target_status')
-                            ?? $contract->status);
+                    // Prioritaskan status target dari tahapan (step) tujuan
+                    $statusStr = ($nextStep->meta['target_status'] ?? null)
+                        ?: $nextStep->actions()->where('action_code', 'approve')->value('target_status')
+                        ?: $action->target_status
+                        ?: $contract->status;
                     $nextStatus = ContractStatus::where('code', $statusStr)->first();
 
                     $contract->approvals()

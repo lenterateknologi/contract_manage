@@ -225,17 +225,42 @@ export default function CreateContractModal({
             if (eligibleWorkflows.length > 0) {
                 const defaultWf = eligibleWorkflows.find((w: any) => w.is_default) || eligibleWorkflows[0];
                 setWorkflowId(String(defaultWf.id));
+                setErrors((prev) => {
+                    const next = { ...prev };
+                    delete next.workflow_id;
+                    return next;
+                });
             } else {
                 setWorkflowId('');
+                if (selectableWorkflows.length === 0) {
+                    setErrors((prev) => ({
+                        ...prev,
+                        workflow_id: 'Alur kerja tidak ditemukan untuk jenis dokumen ini. Pengajuan tidak dapat dibuat.',
+                    }));
+                }
             }
         } catch (err) {
             console.error('Failed to fetch workflows', err);
+            setWorkflows([]);
+            setWorkflowId('');
         } finally {
             setFetchingWorkflows(false);
         }
     };
 
     const handleSubmit = async () => {
+        if (!typeId) {
+            setErrors({ contract_type_id: 'Tipe kontrak harus dipilih' });
+            return;
+        }
+
+        if (workflows.length === 0 || !workflowId) {
+            setErrors({
+                workflow_id: 'Alur kerja tidak ditemukan untuk jenis dokumen ini. Pengajuan tidak dapat dibuat.',
+            });
+            return;
+        }
+
         const validationErrors = validateContractForm({ title, contract_type_id: typeId, workflow_id: workflowId }, workflows.length > 0);
 
         if (Object.keys(validationErrors).length > 0) {
@@ -258,9 +283,7 @@ export default function CreateContractModal({
         if (initiatedById) {
             fd.append('initiated_by_id', initiatedById);
         }
-        if (vendorId) {
-            fd.append('vendor_id', vendorId);
-        }
+        // ponytail: removed dead vendorId check; vendor selection is handled in contract detail/draft edit
         fd.append('category', detectedCat);
         if (workflowId) {
             fd.append('workflow_id', workflowId);
@@ -285,7 +308,7 @@ export default function CreateContractModal({
         }
     };
 
-    const isFormValid = Boolean(title && typeId && (!workflows.length || workflowId));
+    const isFormValid = Boolean(title.trim() && typeId && workflows.length > 0 && workflowId && !fetchingWorkflows);
 
     const modalTitle =
         activeTab === 'non_kontrak' ? 'Buat Pengajuan Non Kontrak' : activeTab === 'nda' ? 'Buat Pengajuan NDA' : 'Buat Pengajuan Baru';
@@ -418,6 +441,17 @@ export default function CreateContractModal({
                         <p className="text-[11px] text-text-soft px-0.5 font-normal">
                             Alur kerja otomatis ditentukan sesuai departemen dan otoritas initiator yang dipilih.
                         </p>
+                    )}
+                    {workflows.length === 0 && !fetchingWorkflows && typeId && (
+                        <div className="flex items-start gap-2.5 rounded-md border border-rose-200 bg-rose-50/80 p-2.5 text-xs text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/20 dark:text-rose-400">
+                            <AlertCircle size={15} className="mt-0.5 shrink-0 text-rose-600 dark:text-rose-400" />
+                            <div className="space-y-0.5">
+                                <p className="font-bold text-[11px]">Alur Kerja Tidak Tersedia</p>
+                                <p className="text-[10.5px] font-normal leading-relaxed text-rose-600/90 dark:text-rose-400/90">
+                                    Tidak ada alur kerja (workflow) aktif yang tersedia untuk jenis dokumen ini atau kewenangan pemohon Anda. Pengajuan tidak dapat dibuat.
+                                </p>
+                            </div>
+                        </div>
                     )}
                     {errors.workflow_id && (
                         <span className="mt-1 block px-0.5 text-[10px] font-bold text-rose-500 uppercase">{errors.workflow_id}</span>

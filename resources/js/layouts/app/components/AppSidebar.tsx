@@ -1,10 +1,13 @@
 import { UserSwitchModal } from '@/components/impersonation/UserSwitchModal';
+import { UserMenuContent } from '@/components/profile/UserMenuContent';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialogs/Dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/feedback/Tooltip';
 import { Sidebar, useSidebar } from '@/components/ui/navigation/Sidebar';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/selection/DropdownMenu';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/user/Avatar';
 import { HighlightingCell } from '@/components/ui/utilities/Highlighter';
+import { useInitials } from '@/hooks/use-initials';
 import { HeaderNotifications } from '@/layouts/app/components/header/HeaderNotifications';
-import { HeaderUserMenu } from '@/layouts/app/components/header/HeaderUserMenu';
 import { cn } from '@/lib/utils';
 import { useDetailSidebar, type DetailSidebarTabItem } from '@/stores/useDetailSidebarStore';
 import { usePov } from '@/stores/usePovStore';
@@ -475,6 +478,7 @@ export const AppSidebar = memo(function AppSidebar() {
     const [isUserSwitchOpen, setIsUserSwitchOpen] = useState(false);
 
     const canImpersonate = Boolean(auth?.impersonation?.can_impersonate);
+    const getInitials = useInitials();
 
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -948,8 +952,44 @@ export const AppSidebar = memo(function AppSidebar() {
                                 </TooltipContent>
                             </Tooltip>
 
-                            {/* Exact HeaderUserMenu Component as in Navbar */}
-                            <HeaderUserMenu />
+                            {/* User Avatar Menu with dark mode support */}
+                            {auth?.user && (
+                                <Tooltip>
+                                    <DropdownMenu>
+                                        <TooltipTrigger asChild>
+                                            <DropdownMenuTrigger asChild>
+                                                <button
+                                                    type="button"
+                                                    className="relative flex size-9 cursor-pointer items-center justify-center overflow-hidden rounded-full p-0 shadow-xs ring-1 ring-white/25 transition-all hover:ring-2 hover:ring-white/50 focus:outline-hidden dark:ring-white/15 dark:hover:ring-white/30"
+                                                    aria-label="Menu Profil Pengguna"
+                                                >
+                                                    <Avatar className="size-8 rounded-full bg-white/10 dark:bg-zinc-800">
+                                                        <AvatarImage src={auth.user.avatar} alt={auth.user.name} />
+                                                        <AvatarFallback className="rounded-full bg-white text-xs font-bold text-primary dark:bg-zinc-800 dark:text-zinc-100">
+                                                            {getInitials(auth.user.name)}
+                                                        </AvatarFallback>
+                                                    </Avatar>
+                                                </button>
+                                            </DropdownMenuTrigger>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="right" sideOffset={10}>
+                                            <div className="flex flex-col gap-0.5">
+                                                <span className="font-semibold">{auth.user.name}</span>
+                                                <span className="text-muted-foreground text-[11px]">{auth.user.role || 'Profil Akun'}</span>
+                                            </div>
+                                        </TooltipContent>
+                                        <DropdownMenuContent
+                                            className="border-border z-[99999] w-56 rounded-2xl border shadow-2xl"
+                                            side="right"
+                                            align="end"
+                                            sideOffset={14}
+                                            forceMount
+                                        >
+                                            <UserMenuContent user={auth.user} />
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </Tooltip>
+                            )}
                         </div>
                     </div>
 
