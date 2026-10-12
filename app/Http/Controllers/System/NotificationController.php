@@ -66,7 +66,7 @@ class NotificationController extends Controller
             ->pluck('id')
             ->toArray();
 
-        // 2. Pending approvals (Action Required)
+        // 1. Pending approvals (Action Required) - ONLY if contract is active (not draft) and at the approval's current workflow step
         $approvals = Approval::query()
             ->select(['id', 'contract_id', 'user_id', 'status', 'role', 'workflow_step_id', 'created_at'])
             ->where(function ($q) use ($user, $lowerName) {
@@ -76,6 +76,10 @@ class NotificationController extends Controller
                 }
             })
             ->where('status', 'pending')
+            ->whereHas('contract', function ($q) {
+                $q->whereColumn('t_contracts.workflow_step_id', 't_approvals.workflow_step_id')
+                    ->where('status', '!=', 'draft');
+            })
             ->with(['contract', 'contract.initiator', 'workflowStep'])
             ->latest()
             ->limit(30)
@@ -104,7 +108,16 @@ class NotificationController extends Controller
 
         $pendingApprovalContractIds = $approvals->pluck('contract_id')->filter()->unique()->toArray();
 
-        // 1. Contract updates (History) - Only meaningful major lifecycle events, excluded if contract is already in pending approvals
+        // 2. Contract updates (History) - Only for contracts where the user is directly targeted (initiator, creator, or assigned PIC)
+        $actionTargetContractIds = Contract::query()
+            ->where(function ($query) use ($user) {
+                $query->where('initiated_by_id', $user->id)
+                    ->orWhere('created_by', $user->id)
+                    ->orWhere('assigned_pic_id', $user->id);
+            })
+            ->pluck('id')
+            ->toArray();
+
         $meaningfulActions = [
             'APPROVAL_APPROVED',
             'APPROVAL_REJECTED',
@@ -116,9 +129,9 @@ class NotificationController extends Controller
             'DOC_REVISED',
         ];
 
-        $updatesQuery = empty($involvedContractIds) ? collect() : ContractHistory::query()
+        $updatesQuery = empty($actionTargetContractIds) ? collect() : ContractHistory::query()
             ->select(['id', 'contract_id', 'actor_id', 'action', 'description', 'created_at'])
-            ->whereIn('contract_id', $involvedContractIds)
+            ->whereIn('contract_id', $actionTargetContractIds)
             ->where('actor_id', '!=', $user->id)
             ->whereIn('action', $meaningfulActions);
 
@@ -167,13 +180,13 @@ class NotificationController extends Controller
                 ];
             });
 
-        // 3. Unread messages (Chat/Discussion & Mentions)
+        // 3. Unread messages - strictly for direct @mentions OR contracts where user is initiator/creator/assigned PIC
         $rawMessages = ContractMessage::query()
             ->select(['id', 'contract_id', 'user_id', 'message', 'attachment_name', 'read_by', 'created_at'])
             ->where('user_id', '!=', $user->id)
-            ->where(function ($query) use ($involvedContractIds, $lowerName, $lowerFirst, $userIdStr) {
-                if (! empty($involvedContractIds)) {
-                    $query->whereIn('contract_id', $involvedContractIds);
+            ->where(function ($query) use ($actionTargetContractIds, $lowerName, $lowerFirst, $userIdStr) {
+                if (! empty($actionTargetContractIds)) {
+                    $query->whereIn('contract_id', $actionTargetContractIds);
                 } else {
                     $query->whereRaw('1 = 0');
                 }
@@ -323,6 +336,10 @@ class NotificationController extends Controller
                 }
             })
             ->where('status', 'pending')
+            ->whereHas('contract', function ($q) {
+                $q->whereColumn('t_contracts.workflow_step_id', 't_approvals.workflow_step_id')
+                    ->where('status', '!=', 'draft');
+            })
             ->count();
 
         $unreadMessagesCount = ContractMessage::query()
@@ -331,16 +348,17 @@ class NotificationController extends Controller
                 $q->whereJsonDoesntContain('read_by', $user->id)
                     ->whereJsonDoesntContain('read_by', $userIdStr);
             })
-            ->whereHas('contract', function ($q) use ($user, $lowerName) {
-                $q->where('created_by', $user->id)
-                    ->orWhere('initiated_by_id', $user->id)
-                    ->orWhere('assigned_pic_id', $user->id)
-                    ->orWhereHas('approvals', function ($sq) use ($user, $lowerName) {
-                        $sq->where('user_id', $user->id);
-                        if (! empty($lowerName)) {
-                            $sq->orWhereRaw('LOWER(approver_name) LIKE ?', ['%'.$lowerName.'%']);
-                        }
-                    });
+            ->where(function ($query) use ($user, $lowerName, $userIdStr) {
+                $query->whereHas('contract', function ($q) use ($user) {
+                    $q->where('created_by', $user->id)
+                        ->orWhere('initiated_by_id', $user->id)
+                        ->orWhere('assigned_pic_id', $user->id);
+                })
+                ->orWhere('message', 'LIKE', '%data-mention-id="'.$userIdStr.'"%');
+                if (! empty($lowerName)) {
+                    $query->orWhereRaw('LOWER(message) LIKE ?', ['%@'.$lowerName.'%'])
+                        ->orWhereRaw('LOWER(message) LIKE ?', ['%data-name="'.strtolower($lowerName).'"%']);
+                }
             })
             ->count();
 
