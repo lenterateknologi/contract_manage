@@ -234,6 +234,14 @@ class WorkflowTransitionService
                     ->whereIn('status', ['approved', 'rejected'])
                     ->update(['is_active' => false]);
 
+                // If jumping or rolling back to an earlier step (e.g. rejection/revision back to initial step),
+                // invalidate/deactivate any obsolete subsequent approval records from the previous run
+                if ($approval->workflowStep && $nextStep->step < $approval->workflowStep->step) {
+                    Approval::where('contract_id', $contract->id)
+                        ->where('sequence', '>', $nextStep->step)
+                        ->update(['is_active' => false]);
+                }
+
                 $workflowService->createApprovalForStep($contract, $nextStep);
 
                 $nextStepLabel = $nextStep->name ?: $nextStep->description ?: "Tahap {$nextStep->step}";

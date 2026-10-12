@@ -107,16 +107,36 @@ class ActionAutofillHandler
 
                     // ── OPSI RESET / REGENERASI ──
                 case 'reset_form_no':
+                case 'regenerate_form_no':
                     $initiator = $contract->initiator ?: ($contract->initiated_by_id ? User::with('department')->find($contract->initiated_by_id) : null);
                     $contractType = $contract->contractType ?: ($contract->contract_type_id ? ContractType::find($contract->contract_type_id) : null);
+                    $deptCode = $initiator?->department?->code ?? $contract->initiator_dept ?? 'GEN';
+                    $typeCode = $contractType?->code ?? 'KTR';
                     $newFormNo = NumberingFormat::generateNextNumber('contract', [
-                        'kode_departemen' => $initiator?->department?->code ?? 'GEN',
-                        'kode_perjanjian' => $contractType?->code ?? 'KTR',
+                        'kode_departemen' => $deptCode,
+                        'kode_perjanjian' => $typeCode,
                     ]);
                     $updates['form_no'] = $newFormNo;
                     $metadata['form_no'] = $newFormNo;
                     $metadata['meta_nomor'] = $newFormNo;
                     $metaUpdated = true;
+                    break;
+
+                case 'generate_form_no_if_empty':
+                    if (empty($contract->form_no) && empty($updates['form_no'])) {
+                        $initiator = $contract->initiator ?: ($contract->initiated_by_id ? User::with('department')->find($contract->initiated_by_id) : null);
+                        $contractType = $contract->contractType ?: ($contract->contract_type_id ? ContractType::find($contract->contract_type_id) : null);
+                        $deptCode = $initiator?->department?->code ?? $contract->initiator_dept ?? 'GEN';
+                        $typeCode = $contractType?->code ?? 'KTR';
+                        $newFormNo = NumberingFormat::generateNextNumber('contract', [
+                            'kode_departemen' => $deptCode,
+                            'kode_perjanjian' => $typeCode,
+                        ]);
+                        $updates['form_no'] = $newFormNo;
+                        $metadata['form_no'] = $newFormNo;
+                        $metadata['meta_nomor'] = $newFormNo;
+                        $metaUpdated = true;
+                    }
                     break;
 
                     // ── OPSI HAPUS / CLEAR VALUES ──

@@ -31,7 +31,8 @@ class ApprovalTimelineFormatter
         $resolveAttachmentName = fn (?string $path) => $path ? ($attachmentNameByPath[$path] ?? basename($path)) : null;
 
         // 1. Build chronological execution chunks based on real approval timestamps
-        $executedApprovals = $c->approvals->sort(function ($a, $b) use ($c) {
+        $activeApprovals = $c->approvals->filter(fn ($a) => (bool) $a->is_active);
+        $executedApprovals = $activeApprovals->sort(function ($a, $b) use ($c) {
             if ($a->created_at && $b->created_at && $a->created_at->ne($b->created_at)) {
                 return $a->created_at <=> $b->created_at;
             }

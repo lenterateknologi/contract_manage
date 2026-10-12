@@ -36,7 +36,8 @@ export const AUTOFILLED_PARAMS = [
     { value: 'clear_origin_workflow', label: 'Hapus / Reset Origin Workflow' },
 
     // ── Opsi Reset / Regenerasi ──
-    { value: 'reset_form_no', label: 'Reset / Generate Nomor Pengajuan Baru' },
+    { value: 'reset_form_no', label: 'Regenerate Otomatis Nomor Pengajuan (form_no)' },
+    { value: 'generate_form_no_if_empty', label: 'Generate Nomor Pengajuan (Hanya Jika Masih Kosong)' },
 
     // ── Opsi Hapus Otomatis (Clear Value) ──
     { value: 'clear_received_at', label: 'Hapus Waktu Diterima' },

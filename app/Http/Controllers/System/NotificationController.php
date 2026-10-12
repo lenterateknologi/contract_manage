@@ -129,22 +129,27 @@ class NotificationController extends Controller
             'DOC_REVISED',
         ];
 
-        $updatesQuery = empty($actionTargetContractIds) ? collect() : ContractHistory::query()
-            ->select(['id', 'contract_id', 'actor_id', 'action', 'description', 'created_at'])
-            ->whereIn('contract_id', $actionTargetContractIds)
-            ->where('actor_id', '!=', $user->id)
-            ->whereIn('action', $meaningfulActions);
+        if (empty($actionTargetContractIds)) {
+            $updates = collect();
+        } else {
+            $updatesQuery = ContractHistory::query()
+                ->select(['id', 'contract_id', 'actor_id', 'action', 'description', 'created_at'])
+                ->whereIn('contract_id', $actionTargetContractIds)
+                ->where('actor_id', '!=', $user->id)
+                ->whereIn('action', $meaningfulActions);
 
-        if (! empty($pendingApprovalContractIds)) {
-            $updatesQuery->whereNotIn('contract_id', $pendingApprovalContractIds);
+            if (! empty($pendingApprovalContractIds)) {
+                $updatesQuery->whereNotIn('contract_id', $pendingApprovalContractIds);
+            }
+
+            $updates = $updatesQuery->with(['contract', 'actor'])
+                ->latest()
+                ->limit(30)
+                ->get()
+                ->unique('contract_id'); // 1 notifikasi update terbaru per kontrak agar tidak spamming
         }
 
-        $updates = $updatesQuery->with(['contract', 'actor'])
-            ->latest()
-            ->limit(30)
-            ->get()
-            ->unique('contract_id') // 1 notifikasi update terbaru per kontrak agar tidak spamming
-            ->map(function ($h) {
+        $updates = $updates->map(function ($h) {
                 $actorName = $h->actor->name ?? 'Sistem';
                 $contractTitle = $h->contract->title ?? $h->contract->form_no ?? 'Kontrak';
 
