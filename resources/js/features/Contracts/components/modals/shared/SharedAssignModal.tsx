@@ -1,3 +1,4 @@
+import { getActionConfig } from '@/components/ui';
 import { Button } from '@/components/ui/buttons/Button';
 import { Modal } from '@/components/ui/dialogs/Modal';
 import { FormTextarea } from '@/components/ui/inputs/FormTextarea';
@@ -14,7 +15,7 @@ interface Props {
     onClose: () => void;
     contract: any;
     onUpdate: (c: any) => void;
-    showToast: (msg: string, type: any) => void;
+    showToast: (msg: any, type?: any) => void;
     actionCode?: string;
     actionAlias?: string;
     actionId?: string;
@@ -172,7 +173,21 @@ export function SharedAssignModal({ open, onClose, contract, onUpdate, showToast
             const updatedContract = await contractApi.assignPic(contract.id, selectedUserIds[0], note || undefined, undefined, actionCode, actionId);
 
             onUpdate(updatedContract);
-            showToast(`Penugasan ${ROLE_NAME} berhasil diperbarui.`, 'success');
+            const actionConfig = getActionConfig(
+                actionCode || 'assign',
+                actionAlias || `Tugaskan ${ROLE_NAME}`,
+                false,
+                false,
+                'active',
+            );
+            const ActionIcon = actionConfig.icon;
+            showToast({
+                title: actionConfig.label || `Penugasan ${ROLE_NAME}`,
+                message: `Penugasan ${ROLE_NAME} berhasil diperbarui.`,
+                type: 'success',
+                color: actionConfig.hexColor || '#3b82f6',
+                icon: ActionIcon ? <ActionIcon className="h-5 w-5 shrink-0" /> : undefined,
+            });
             onClose();
         } catch (error: any) {
             const msg = parseApiErrorMessage(error, 'Gagal memperbarui penugasan.');

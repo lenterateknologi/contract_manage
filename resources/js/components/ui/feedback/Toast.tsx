@@ -9,6 +9,8 @@ export interface ToastOptions {
     title?: string;
     message: string;
     type?: ToastType | string;
+    color?: string;
+    icon?: React.ReactNode;
 }
 
 export type ToastInput = string | ToastOptions;
@@ -16,7 +18,10 @@ export type ToastInput = string | ToastOptions;
 interface ToastMsg {
     id: number;
     msg: string;
+    title?: string;
     type: ToastType;
+    color?: string;
+    icon?: React.ReactNode;
 }
 
 interface ProgressToast {
@@ -48,15 +53,22 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     const showToast = useCallback((msg: ToastInput, type: ToastType = 'info') => {
         let text = '';
         let finalType: ToastType = type;
+        let title: string | undefined = undefined;
+        let color: string | undefined = undefined;
+        let icon: React.ReactNode | undefined = undefined;
+
         if (typeof msg === 'object' && msg !== null) {
-            text = msg.message || msg.title || '';
+            text = msg.message || '';
+            title = msg.title;
+            color = msg.color;
+            icon = msg.icon;
             if (msg.type && ['success', 'danger', 'info', 'error', 'warning'].includes(msg.type)) {
                 finalType = msg.type as ToastType;
             }
         } else {
             text = String(msg);
         }
-        setToast({ id: Date.now(), msg: text, type: finalType });
+        setToast({ id: Date.now(), msg: text, title, type: finalType, color, icon });
         if (timerRef.current) window.clearTimeout(timerRef.current);
         timerRef.current = window.setTimeout(() => setToast(null), 4000);
     }, []);
@@ -123,12 +135,34 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             {toast && (
                 <div
                     key={toast.id}
-                    className={`animate-in slide-in-from-bottom-5 fade-in zoom-in-95 fixed bottom-6 right-6 z-[1000] flex items-center gap-4 rounded-xl border border-surface-border bg-surface-card p-4 pr-8 shadow-xl shadow-black/5 dark:shadow-black/40 border-l-4 ${borderMap[toast.type] || borderMap.info} duration-500 ease-out`}
+                    style={toast.color ? { borderLeftColor: toast.color } : undefined}
+                    className={`animate-in slide-in-from-bottom-5 fade-in zoom-in-95 fixed bottom-6 right-6 z-[1000] flex items-center gap-4 rounded-xl border border-surface-border bg-surface-card p-4 pr-8 shadow-xl shadow-black/5 dark:shadow-black/40 border-l-4 ${
+                        toast.color ? '' : (borderMap[toast.type] || borderMap.info)
+                    } duration-500 ease-out`}
                 >
-                    {iconMap[toast.type] || iconMap.info}
+                    {toast.icon ? (
+                        <div
+                            className="shrink-0 flex items-center justify-center"
+                            style={toast.color ? { color: toast.color } : undefined}
+                        >
+                            {toast.icon}
+                        </div>
+                    ) : toast.color ? (
+                        <div
+                            className="shrink-0 flex items-center justify-center [&>svg]:h-5 [&>svg]:w-5"
+                            style={{ color: toast.color }}
+                        >
+                            {iconMap[toast.type] || iconMap.info}
+                        </div>
+                    ) : (
+                        iconMap[toast.type] || iconMap.info
+                    )}
                     <div className="flex flex-col">
-                        <span className="text-[11px] font-bold text-text-main uppercase tracking-wider">
-                            {typeLabelMap[toast.type] || 'Info'}
+                        <span
+                            className="text-[11px] font-bold uppercase tracking-wider"
+                            style={toast.color ? { color: toast.color } : undefined}
+                        >
+                            {toast.title || typeLabelMap[toast.type] || 'Info'}
                         </span>
                         <span className="text-[12px] text-text-desc">{toast.msg}</span>
                     </div>

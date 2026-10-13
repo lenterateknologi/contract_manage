@@ -1,4 +1,4 @@
-import { Icons } from '@/components/ui';
+import { getActionConfig, Icons } from '@/components/ui';
 import { parseApiErrorMessage } from '@/lib/utils';
 import { ContractActionSection } from '@/features/Contracts/components/parts/ContractActionSection';
 import { ContractDetailHeader } from '@/features/Contracts/components/parts/ContractDetailHeader';
@@ -312,13 +312,36 @@ export const ContractDetailView = ({
         actionId?: string,
     ) => {
         const resolvedCode = actionCode || activeActionCode;
+        const resolvedAction =
+            activeStepAction ||
+            applicableStepActions.find((a: any) => (actionId && a.id === actionId) || a.action_code === resolvedCode) ||
+            availableCustomActions.find((a: any) => (actionId && a.id === actionId) || a.action_code === resolvedCode);
+
+        const actionConfig = getActionConfig(
+            resolvedAction || resolvedCode,
+            resolvedAction?.alias,
+            resolvedCode === 'approve',
+            resolvedCode === 'reject',
+            resolvedAction?.target_status,
+            resolvedAction?.target_status_info,
+            masterContractStatuses,
+        );
 
         if (resolvedCode === 'reject') {
             try {
                 await autoSaveDirtyDataBeforeAction();
                 const updated = await contractApi.reject(contract.id, note, attachment, actionId || activeStepAction?.id);
                 handleContractUpdate(updated);
-                showToast('Pengajuan ditolak.', 'info');
+
+                const ActionIcon = actionConfig.icon;
+                showToast({
+                    title: actionConfig.label || 'Tolak Kontrak',
+                    message: note ? `Aksi berhasil diproses: ${note}` : 'Pengajuan ditolak.',
+                    type: 'danger',
+                    color: actionConfig.hexColor || '#ef4444',
+                    icon: ActionIcon ? <ActionIcon className="h-5 w-5 shrink-0" /> : undefined,
+                } as any);
+
                 setActiveActionCode(undefined);
                 setActiveStepAction(null);
             } catch (error) {
@@ -345,11 +368,19 @@ export const ContractDetailView = ({
             let msg =
                 contract.status === 'draft' && contract.workflow_step?.step === 1
                     ? 'Pengajuan persetujuan berhasil dikirim.'
-                    : 'Pengajuan disetujui.';
+                    : `Aksi ${actionConfig.label || 'Persetujuan'} berhasil diproses.`;
             if (assignedPicId) msg = 'PIC ditugaskan dan pengajuan disetujui.';
             if (isFinal) msg = 'Penandatanganan selesai dikonfigurasi sebagai final.';
 
-            showToast(msg, 'success');
+            const ActionIcon = actionConfig.icon;
+            showToast({
+                title: actionConfig.label || 'Persetujuan Berhasil',
+                message: msg,
+                type: 'success',
+                color: actionConfig.hexColor || '#10b981',
+                icon: ActionIcon ? <ActionIcon className="h-5 w-5 shrink-0" /> : undefined,
+            } as any);
+
             setActiveActionCode(undefined);
             setActiveStepAction(null);
         } catch (error: any) {

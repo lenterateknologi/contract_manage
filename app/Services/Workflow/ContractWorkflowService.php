@@ -231,10 +231,7 @@ class ContractWorkflowService
         if ($currentStep && $approval->sub_step === null && $approval->role !== 'Persetujuan Tambahan') {
             $this->validateRequiredFields($contract, $currentStep, $stepAction, $assignedPicId);
         }
-
-        if ($stepAction && ! empty($stepAction->autofilled_fields)) {
-            $this->applyAutofilledFields($contract, $stepAction->autofilled_fields);
-        }
+        // ponytail: autofilled fields applied once during transition in WorkflowTransitionService
 
         $actionIdToSave = ($stepAction?->id && Str::isUuid($stepAction->id)) ? $stepAction->id : (Str::isUuid($actionId) ? $actionId : null);
         $actionCodeToSave = $stepAction?->action_code instanceof WorkflowAction ? $stepAction->action_code->value : ($stepAction?->action_code ?? (string) $actionCode);
