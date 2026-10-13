@@ -55,7 +55,7 @@ import {
     StatusAndStepCell,
 } from '@/features/Contracts/ContractList/ContractTableCells';
 import CreateContractModal from '@/features/Contracts/components/modals/CreateContractModal';
-import { EditContractModal } from '@/features/Contracts/components/modals/EditContractModal';
+// ponytail: remove EditContractModal (contracts are edited on workflow detail page, not via popup dialog)
 import { ContractContextMenu } from '@/features/Contracts/components/ContractContextMenu';
 import { contractApi } from '@/features/Contracts/utils';
 
@@ -236,8 +236,6 @@ export function ActivityViewContent({
     const { showToast } = useToast();
 
     const [createOpen, setCreateOpen] = useState(false);
-    const [editOpen, setEditOpen] = useState(false);
-    const [contractToEdit, setContractToEdit] = useState<Contract | null>(null);
     const [processing, setProcessing] = useState(false);
     const [contextMenu, setContextMenu] = useState<{
         contract: Contract;
@@ -261,7 +259,7 @@ export function ActivityViewContent({
 
         const intervalId = setInterval(() => {
             // Hanya poll ketika tab browser aktif dan tidak sedang proses form/modal
-            if (document.visibilityState === 'visible' && !createOpen && !editOpen) {
+            if (document.visibilityState === 'visible' && !createOpen) {
                 router.reload({
                     only: [
                         'pendingContracts',
@@ -278,7 +276,7 @@ export function ActivityViewContent({
         }, intervalMs);
 
         return () => clearInterval(intervalId);
-    }, [createOpen, editOpen]);
+    }, [createOpen]);
 
     // Search state per table
     const [searchPending, setSearchPending] = useState(filters.search_pending || '');
@@ -349,14 +347,8 @@ export function ActivityViewContent({
         router.get(`/contracts/${contract.id}`);
     };
 
-    const openEdit = (contract: Contract, e?: React.MouseEvent) => {
+    const handleDeleteDraft = async (contract: Contract, e?: React.MouseEvent) => {
         e?.stopPropagation();
-        setContractToEdit(contract);
-        setEditOpen(true);
-    };
-
-    const handleDeleteDraft = async (contract: Contract, e: React.MouseEvent) => {
-        e.stopPropagation();
         if (!confirm(`Apakah Anda yakin ingin menghapus draft "${contract.title}"?`)) return;
 
         setProcessing(true);
@@ -384,21 +376,6 @@ export function ActivityViewContent({
             }
         } catch {
             showToast('Gagal membuat pengajuan.', 'danger');
-        } finally {
-            setProcessing(false);
-        }
-    };
-
-    const handleUpdate = async (data: Parameters<typeof contractApi.update>[1]) => {
-        if (!contractToEdit) return;
-        setProcessing(true);
-        try {
-            await contractApi.update(contractToEdit.id, data);
-            showToast('Pengajuan berhasil diperbarui.', 'success');
-            setEditOpen(false);
-            router.reload();
-        } catch {
-            showToast('Gagal memperbarui pengajuan.', 'danger');
         } finally {
             setProcessing(false);
         }
@@ -1192,13 +1169,13 @@ export function ActivityViewContent({
                                                     <td className="w-[80px] min-w-[80px] max-w-[80px] px-3 py-1.5 text-center" onClick={(e) => e.stopPropagation()}>
                                                         <div className="flex items-center justify-center gap-1">
                                                             <Button
-                                                                variant="primary"
+                                                                variant="outline"
                                                                 size="sm"
-                                                                onClick={(e) => openEdit(c, e)}
+                                                                onClick={() => openDetail(c)}
                                                                 className="h-6 w-6 p-0 rounded-[4px] shadow-none cursor-pointer"
-                                                                title="Lanjutkan Edit"
+                                                                title="Buka Draft"
                                                             >
-                                                                <FileEdit size={12} />
+                                                                <Eye size={12} />
                                                             </Button>
                                                             <Button
                                                                 variant="ghost"
@@ -1248,29 +1225,13 @@ export function ActivityViewContent({
                 />
             )}
 
-            {editOpen && contractToEdit && (
-                <EditContractModal
-                    contract={contractToEdit}
-                    open={editOpen}
-                    onClose={() => {
-                        setEditOpen(false);
-                        setContractToEdit(null);
-                    }}
-                    onSubmit={handleUpdate}
-                    processing={processing}
-                    types={types as any}
-                    submissionTypes={submissionTypes}
-                    vendors={vendors}
-                />
-            )}
-
             {contextMenu && (
                 <ContractContextMenu
                     contract={contextMenu.contract}
                     position={contextMenu.position}
                     onClose={() => setContextMenu(null)}
                     onOpenDetail={openDetail}
-                    onEdit={openEdit}
+                    onDelete={handleDeleteDraft}
                 />
             )}
         </>
