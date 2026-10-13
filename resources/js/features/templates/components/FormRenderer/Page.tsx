@@ -30,7 +30,7 @@ export const Page: React.FC<PageProps> = ({
     return (
         <div
             className={cn(
-                'relative w-full last:mb-0 print:m-0',
+                'relative w-full last:mb-0 print:m-0 print:p-0',
                 isContinuous ? 'mt-4 mb-6' : 'mt-10 mb-20',
                 pageNumber > 1 && 'print:break-before-page',
             )}
@@ -50,9 +50,9 @@ export const Page: React.FC<PageProps> = ({
             {/* The A4 Paper Container */}
             <div
                 className={cn(
-                    'force-light relative mx-auto flex w-[210mm] flex-col bg-white text-slate-900 transition-all print:m-0 print:border-none print:shadow-none print:ring-0',
+                    'force-light relative mx-auto flex w-[210mm] flex-col bg-white text-slate-900 transition-all print:m-0 print:border-none print:shadow-none print:ring-0 print:min-h-0 print:my-0',
                     'my-4 shrink-0 rounded-none border border-slate-300 shadow-md',
-                    isBuilder && !isContinuous ? 'h-[297mm] max-h-[297mm] overflow-hidden' : 'min-h-[297mm]',
+                    isBuilder && !isContinuous ? 'h-[297mm] max-h-[297mm] overflow-hidden' : 'min-h-[297mm] print:min-h-0',
                     className,
                 )}
                 style={{

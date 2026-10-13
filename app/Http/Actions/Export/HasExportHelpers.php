@@ -181,4 +181,54 @@ trait HasExportHelpers
 
         return $formData;
     }
+
+    /**
+     * Convert an image path/URL to Base64 to prevent network deadlocks in PDF generation.
+     */
+    public function getLogoBase64(?string $logoUrl): ?string
+    {
+        if (! $logoUrl) {
+            return null;
+        }
+
+        try {
+            $path = null;
+
+            $localUrl = config('app.url') ?: 'http://127.0.0.1:8000';
+            if (str_starts_with($logoUrl, $localUrl)) {
+                $trimmedPath = str_replace($localUrl.'/storage/', '', $logoUrl);
+                if ($trimmedPath === $logoUrl) {
+                    $trimmedPath = str_replace($localUrl.'/', '', $logoUrl);
+                }
+                $path = storage_path('app/public/'.$trimmedPath);
+
+                if (! file_exists($path)) {
+                    $path = public_path($trimmedPath);
+                }
+            } elseif (str_starts_with($logoUrl, '/storage/')) {
+                $trimmedPath = str_replace('/storage/', '', $logoUrl);
+                $path = storage_path('app/public/'.$trimmedPath);
+            } elseif (file_exists(public_path($logoUrl))) {
+                $path = public_path($logoUrl);
+            } elseif (str_starts_with($logoUrl, 'http')) {
+                $content = @file_get_contents($logoUrl);
+                if ($content !== false) {
+                    $type = pathinfo(parse_url($logoUrl, PHP_URL_PATH), PATHINFO_EXTENSION) ?: 'png';
+
+                    return 'data:image/'.$type.';base64,'.base64_encode($content);
+                }
+            }
+
+            if ($path && file_exists($path)) {
+                $type = pathinfo($path, PATHINFO_EXTENSION) ?: 'png';
+                $data = file_get_contents($path);
+
+                return 'data:image/'.$type.';base64,'.base64_encode($data);
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::warning('PDF Logo Base64 failed: '.$e->getMessage());
+        }
+
+        return null;
+    }
 }

@@ -28,7 +28,7 @@ export const GroupLayout: React.FC<LayoutProps> = ({ field, children, isBuilder 
             }}
         >
             <div
-                className="flex flex-wrap gap-0"
+                className="flex flex-wrap gap-0 print:block"
                 style={{
                     justifyContent: field.options?.justify_content || 'flex-start',
                     alignItems: field.options?.align_items || 'flex-start',

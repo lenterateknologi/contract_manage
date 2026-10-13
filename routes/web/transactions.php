@@ -7,13 +7,6 @@ use App\Http\Controllers\Contract\ContractFormController;
 use App\Http\Controllers\Dashboard\DashboardController;
 use Illuminate\Support\Facades\Route;
 
-// ── Public Signed Routes for PDF Rendering (Browsershot) ──
-Route::controller(ContractExportController::class)->group(function () {
-    Route::get('/api/contracts/{id}/approval/document/print', 'renderApprovalTimeline')->name('contracts.approval.document.print')->middleware('signed');
-    Route::get('/api/contracts/{id}/audit-trail/document/print', 'renderAuditDocument')->name('contracts.audit.document.print')->middleware('signed');
-    Route::get('/api/contracts/{id}/form-submissions/{type}/print', 'renderFormSubmission')->name('contracts.form-submissions.print')->middleware('signed');
-});
-
 // ── Dashboard Routes (Separated DashboardController) ──
 Route::controller(DashboardController::class)->group(function () {
     Route::prefix('dashboard')->group(function () {

@@ -32,15 +32,23 @@ class ContractFilterScopeService
         $isAdmin = in_array($user->role, ['Admin', 'Super Admin']) || $user->is_admin;
         $globalFullAccess = $isAdmin || in_array($user->role, ['Director', 'CEO', 'VP']);
 
-        // Resolusi region_id user dari company jika tidak tersimpan langsung di user
+        // Resolusi region_id & company_group_id user dari company jika berbeda atau tidak tersimpan langsung
         $userRegionId = $user->region_id;
-        if (! $userRegionId) {
-            if ($user->relationLoaded('company') && $user->company) {
-                $userRegionId = $user->company->region_id;
-            } elseif (! empty($user->company_id)) {
-                $userRegionId = Company::where('id', $user->company_id)->value('region_id');
-            }
+        $userGroupId = $user->company_group_id;
+
+        $compRegionId = null;
+        $compGroupId = null;
+        if ($user->relationLoaded('company') && $user->company) {
+            $compRegionId = $user->company->region_id;
+            $compGroupId = $user->company->company_group_id;
+        } elseif (! empty($user->company_id)) {
+            $comp = Company::where('id', $user->company_id)->first(['region_id', 'company_group_id']);
+            $compRegionId = $comp?->region_id;
+            $compGroupId = $comp?->company_group_id;
         }
+
+        $effectiveRegionIds = array_values(array_unique(array_filter([$userRegionId, $compRegionId])));
+        $effectiveGroupIds = array_values(array_unique(array_filter([$userGroupId, $compGroupId])));
 
         // Tentukan full access per dimensi berdasarkan status admin global atau toggle pengaturan user/role
         // ponytail: Gunakan permission spesifik per dimensi untuk mendukung 3 level scope (Full, Group-only, Division-only)
@@ -51,8 +59,8 @@ class ContractFilterScopeService
         $departmentFull = $globalFullAccess || ($settings['can_change_department'] ?? false);
 
         // Bangun whitelist efektif per dimensi
-        $groups = $this->buildAllowed($user->company_group_id, $settings['allowed_company_groups'] ?? [], $groupFull);
-        $regions = $this->buildAllowed($userRegionId, $settings['allowed_regions'] ?? [], $regionFull);
+        $groups = $this->buildAllowed($effectiveGroupIds, $settings['allowed_company_groups'] ?? [], $groupFull);
+        $regions = $this->buildAllowed($effectiveRegionIds, $settings['allowed_regions'] ?? [], $regionFull);
         $companies = $this->buildAllowed($user->company_id, $settings['allowed_companies'] ?? [], $companyFull);
         $divisions = $this->buildAllowed($user->division_id, $settings['allowed_divisions'] ?? [], $divisionFull);
         $departments = $this->buildAllowed($user->department_id, $settings['allowed_departments'] ?? [], $departmentFull);
@@ -81,14 +89,14 @@ class ContractFilterScopeService
      * @return array|null null  = tidak dibatasi (full access tanpa extra whitelist)
      *                    array = daftar ID yang diizinkan
      */
-    public function buildAllowed(?string $userOwnId, array $extraIds, bool $hasFullAccess): ?array
+    public function buildAllowed(string|array|null $userOwnId, array $extraIds, bool $hasFullAccess): ?array
     {
         // Full access tanpa whitelist tambahan → tidak perlu filter sama sekali
         if ($hasFullAccess && empty($extraIds)) {
             return null;
         }
 
-        $base = array_filter([$userOwnId], fn ($v) => ! empty($v) && $v !== 'null');
+        $base = array_filter(is_array($userOwnId) ? $userOwnId : [$userOwnId], fn ($v) => ! empty($v) && $v !== 'null');
         $extra = array_filter($extraIds, fn ($v) => ! empty($v) && $v !== 'null');
         $combined = array_values(array_unique(array_merge($base, $extra)));
 

@@ -68,9 +68,17 @@ class ExportFormSubmissionPdfAction
             $cacheKey = 'pdf_adhoc_'.$jobId;
             $user = Auth::user();
 
+            $templateData = $template->toArray() + ['fields' => $template->fields->toArray()];
+            if (! empty($templateData['letterhead_json']['logo_url'])) {
+                $logoBase64 = $this->getLogoBase64($templateData['letterhead_json']['logo_url']);
+                if ($logoBase64) {
+                    $templateData['letterhead_json']['logo_url'] = $logoBase64;
+                }
+            }
+
             Log::info("Prepping PDF Cache: {$cacheKey}");
             Cache::put($cacheKey, [
-                'template' => $template->toArray() + ['fields' => $template->fields->toArray()],
+                'template' => $templateData,
                 'formData' => $formData,
                 'printedBy' => [
                     'name' => $user?->name ?? 'System',

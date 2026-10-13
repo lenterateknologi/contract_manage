@@ -7,6 +7,7 @@ use App\Http\Actions\Export\ExportApprovalTimelinePdfAction;
 use App\Http\Actions\Export\ExportAuditExcelAction;
 use App\Http\Actions\Export\ExportAuditPdfAction;
 use App\Http\Actions\Export\ExportFormSubmissionPdfAction;
+use App\Http\Actions\Export\HasExportHelpers;
 use App\Http\Controllers\Controller;
 use App\Http\Formatters\ContractFormatter;
 use App\Http\Queries\Contract\ContractDetailQuery;
@@ -19,6 +20,7 @@ use Inertia\Inertia;
 
 class ContractExportController extends Controller
 {
+    use HasExportHelpers;
     public function __construct(
         protected ContractDetailQuery $contractDetailQuery
     ) {}
@@ -144,6 +146,14 @@ class ContractExportController extends Controller
 
         $formData = $targetVersion ? ($targetVersion->form_data ?? []) : [];
 
+        $templateData = $template->toArray();
+        if (! empty($templateData['letterhead_json']['logo_url'])) {
+            $logoBase64 = $this->getLogoBase64($templateData['letterhead_json']['logo_url']);
+            if ($logoBase64) {
+                $templateData['letterhead_json']['logo_url'] = $logoBase64;
+            }
+        }
+
         $printedBy = [
             'name' => $request->query('user_name') ?: (Auth::user()?->name ?: 'System'),
             'id' => $request->query('user_id') ?: (Auth::user()?->id ?: '-'),
@@ -152,7 +162,7 @@ class ContractExportController extends Controller
         ];
 
         return Inertia::render('form-management/Print', [
-            'template' => $template,
+            'template' => $templateData,
             'formData' => $formData,
             'printedBy' => $printedBy,
         ]);

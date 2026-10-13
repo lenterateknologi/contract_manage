@@ -95,7 +95,7 @@ export const FormElement: React.FC<FormElementProps> = (props) => {
     const isContainer = ['group', 'grid_x', 'grid_y', 'grid_view'].includes(field.type);
 
     const containerStyle = {
-        display: 'inline-block',
+        display: isContainer ? 'block' : 'inline-block',
         verticalAlign: 'top',
         minWidth: 0,
         maxWidth: '100%',
@@ -235,6 +235,7 @@ export const FormElement: React.FC<FormElementProps> = (props) => {
             {...listeners}
             className={cn(
                 'group/element form-element-container relative',
+                isContainer ? 'form-container-element' : 'form-atomic-element',
                 isBuilder &&
                     cn(
                         cat ? cat.borderColor : 'border-primary/20 hover:border-primary/40',
@@ -258,6 +259,7 @@ export const FormElement: React.FC<FormElementProps> = (props) => {
                 diffStatus === 'modified' && 'rounded-md bg-amber-50/50 p-1.5 shadow-sm ring-2 ring-amber-500',
                 diffStatus === 'removed' && 'rounded-md bg-rose-50/50 p-1.5 opacity-60 shadow-sm ring-2 ring-rose-500',
             )}
+            data-field-type={field.type}
             onClick={(e) => {
                 if (isBuilder) {
                     e.stopPropagation();
