@@ -68,7 +68,8 @@ class DashboardTypeSeeder extends Seeder
             'show_overview_contract' => true,
             'show_overview_non_contract' => true,
             'show_overview_nda' => true,
-            'show_workload' => false,
+            // ponytail: show_workload default true so Beban Kerja navigation menu works
+            'show_workload' => true,
             'show_master_data' => false,
         ]);
 

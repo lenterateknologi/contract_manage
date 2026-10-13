@@ -398,16 +398,20 @@ class DashboardType extends Model
         $highestScore = -1;
         $bestPriority = PHP_INT_MAX;
 
+        // ponytail: batch load all authorities once instead of N queries in the loop
+        $authoritiesByContext = Authority::where('context_type', Authority::CONTEXT_DASHBOARD_TYPE)
+            ->whereIn('context_id', $all->pluck('id'))
+            ->where('is_active', true)
+            ->get()
+            ->groupBy('context_id');
+
         foreach ($all as $item) {
             $score = 0;
             $matches = false;
             $hasCriteria = false;
 
             // Check m_authorities first
-            $itemAuthorities = Authority::where('context_type', Authority::CONTEXT_DASHBOARD_TYPE)
-                ->where('context_id', $item->id)
-                ->where('is_active', true)
-                ->get();
+            $itemAuthorities = $authoritiesByContext->get($item->id, collect());
 
             if ($itemAuthorities->isNotEmpty()) {
                 $hasCriteria = true;

@@ -1,5 +1,4 @@
 import { Button } from '@/components/ui/buttons/Button';
-import { Skeleton } from '@/components/ui/feedback/Skeleton';
 import { useDebounce } from '@/hooks/use-debounce';
 import { cn } from '@/lib/utils';
 import { router, usePage } from '@inertiajs/react';
@@ -161,35 +160,8 @@ const WorkloadCard = React.memo(function WorkloadCard({
     );
 });
 
-function WorkloadSkeletonGrid({ count = 12 }: { count?: number }) {
-    return (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-            {[...Array(count)].map((_, i) => (
-                <div key={i} className="border-surface-border bg-surface-base space-y-3 rounded-lg border p-3 shadow-2xs">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2.5">
-                            <Skeleton className="h-8 w-8 rounded-full" />
-                            <div className="space-y-1">
-                                <Skeleton className="h-3.5 w-28" />
-                                <Skeleton className="h-2.5 w-20" />
-                            </div>
-                        </div>
-                        <Skeleton className="h-4 w-12 rounded" />
-                    </div>
-                    <Skeleton className="h-4 w-32 rounded" />
-                    <div className="border-surface-border grid grid-cols-2 gap-2 border-t pt-2">
-                        <Skeleton className="h-9 rounded" />
-                        <Skeleton className="h-9 rounded" />
-                    </div>
-                </div>
-            ))}
-        </div>
-    );
-}
-
 export function WorkloadTab({ data, onNavigate }: WorkloadTabProps) {
-    const userWorkloads = data?.userWorkloads;
-    const isLoading = !userWorkloads;
+    const userWorkloads = data?.userWorkloads ?? [];
 
     const [searchQuery, setSearchQuery] = useState('');
     const debouncedSearch = useDebounce(searchQuery, 250);
@@ -438,10 +410,8 @@ export function WorkloadTab({ data, onNavigate }: WorkloadTabProps) {
                 </div>
             </div>
 
-            {/* Content: Loading Skeleton / Empty State / Grid of Cards */}
-            {isLoading ? (
-                <WorkloadSkeletonGrid count={perPage} />
-            ) : totalItems === 0 ? (
+            {/* Content: Empty State / Grid of Cards */}
+            {totalItems === 0 ? (
                 <div className="border-surface-border bg-surface-base flex flex-col items-center justify-center rounded-lg border border-dashed py-16 text-center">
                     <UserCheck size={28} className="text-text-soft/40 mb-2" />
                     <p className="text-text-main text-xs font-semibold uppercase">PIC Tidak Ditemukan</p>

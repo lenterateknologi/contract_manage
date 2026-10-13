@@ -4,6 +4,7 @@ use App\Http\Controllers\Contract\ContractController;
 use App\Http\Controllers\Contract\ContractExportController;
 use App\Http\Controllers\Contract\ContractFileController;
 use App\Http\Controllers\Contract\ContractFormController;
+use App\Http\Controllers\Dashboard\DashboardController;
 use Illuminate\Support\Facades\Route;
 
 // ── Public Signed Routes for PDF Rendering (Browsershot) ──
@@ -13,22 +14,38 @@ Route::controller(ContractExportController::class)->group(function () {
     Route::get('/api/contracts/{id}/form-submissions/{type}/print', 'renderFormSubmission')->name('contracts.form-submissions.print')->middleware('signed');
 });
 
-Route::controller(ContractController::class)->group(function () {
+// ── Dashboard Routes (Separated DashboardController) ──
+Route::controller(DashboardController::class)->group(function () {
     Route::prefix('dashboard')->group(function () {
-        Route::get('/', 'contractsView')->defaults('view', 'dashboard')->name('dashboard');
-        Route::get('/ringkasan', 'contractsView')->defaults('view', 'dashboard')->defaults('tab', 'overview')->name('dashboard.ringkasan');
-        Route::get('/ringkasan-kontrak', 'contractsView')->defaults('view', 'dashboard')->defaults('tab', 'overview_contract')->name('dashboard.ringkasan-kontrak');
-        Route::get('/kontrak', 'contractsView')->defaults('view', 'dashboard')->defaults('tab', 'overview_contract');
-        Route::get('/ringkasan-non-kontrak', 'contractsView')->defaults('view', 'dashboard')->defaults('tab', 'overview_non_contract')->name('dashboard.ringkasan-non-kontrak');
-        Route::get('/non-kontrak', 'contractsView')->defaults('view', 'dashboard')->defaults('tab', 'overview_non_contract');
-        Route::get('/ringkasan-nda', 'contractsView')->defaults('view', 'dashboard')->defaults('tab', 'overview_nda')->name('dashboard.ringkasan-nda');
-        Route::get('/nda', 'contractsView')->defaults('view', 'dashboard')->defaults('tab', 'overview_nda');
-        Route::get('/beban-kerja', 'contractsView')->defaults('view', 'dashboard')->defaults('tab', 'workload')->name('dashboard.beban-kerja');
-        Route::get('/workload', 'contractsView')->defaults('view', 'dashboard')->defaults('tab', 'workload');
-        Route::get('/master-data', 'contractsView')->defaults('view', 'dashboard')->defaults('tab', 'master_data')->name('dashboard.master-data');
-        Route::get('/masterdata', 'contractsView')->defaults('view', 'dashboard')->defaults('tab', 'master_data');
+        Route::get('/', 'index')->name('dashboard');
+        Route::get('/ringkasan', 'index')->defaults('tab', 'overview')->name('dashboard.ringkasan');
+        Route::get('/ringkasan-kontrak', 'index')->defaults('tab', 'overview_contract')->name('dashboard.ringkasan-kontrak');
+        Route::get('/kontrak', 'index')->defaults('tab', 'overview_contract');
+        Route::get('/ringkasan-non-kontrak', 'index')->defaults('tab', 'overview_non_contract')->name('dashboard.ringkasan-non-kontrak');
+        Route::get('/non-kontrak', 'index')->defaults('tab', 'overview_non_contract');
+        Route::get('/ringkasan-nda', 'index')->defaults('tab', 'overview_nda')->name('dashboard.ringkasan-nda');
+        Route::get('/nda', 'index')->defaults('tab', 'overview_nda');
+        Route::get('/beban-kerja', 'index')->defaults('tab', 'workload')->name('dashboard.beban-kerja');
+        Route::get('/workload', 'index')->defaults('tab', 'workload');
+        Route::get('/master-data', 'index')->defaults('tab', 'master_data')->name('dashboard.master-data');
+        Route::get('/masterdata', 'index')->defaults('tab', 'master_data');
     });
 
+    Route::get('/contracts/dashboard-metrics', 'getDashboardMetrics')->name('contracts.dashboard-metrics');
+    Route::prefix('contracts/dashboard')->group(function () {
+        Route::get('/visibility', 'getDashboardVisibility')->name('contracts.dashboard.visibility');
+        Route::get('/summary', 'getDashboardSummary')->name('contracts.dashboard.summary');
+        Route::get('/overview', 'getDashboardOverview')->name('contracts.dashboard.overview');
+        Route::get('/distributions', 'getDashboardDistributions')->name('contracts.dashboard.distributions');
+        Route::get('/trends', 'getDashboardTrends')->name('contracts.dashboard.trends');
+        Route::get('/analysis', 'getDashboardAnalysis')->name('contracts.dashboard.analysis');
+        Route::get('/workload', 'getDashboardWorkload')->name('contracts.dashboard.workload');
+        Route::get('/master-data', 'getDashboardMasterData')->name('contracts.dashboard.master-data');
+        Route::get('/recent-activity', 'getDashboardRecentActivity')->name('contracts.dashboard.recent-activity');
+    });
+});
+
+Route::controller(ContractController::class)->group(function () {
     Route::get('/admin/contracts/activity', 'activityView')->defaults('withDuty', true)->name('admin.contracts.activity');
 
     Route::prefix('contracts')->group(function () {
@@ -42,18 +59,6 @@ Route::controller(ContractController::class)->group(function () {
         Route::get('/expiry', 'contractsView')->defaults('view', 'expiry')->name('contracts.expiry');
         Route::get('/archived', 'contractsView')->defaults('view', 'archived')->name('contracts.archived');
         Route::get('/in-progress', 'contractsView')->defaults('view', 'in_progress')->name('contracts.in_progress');
-        Route::get('/dashboard-metrics', 'getDashboardMetrics')->name('contracts.dashboard-metrics');
-        Route::prefix('dashboard')->group(function () {
-            Route::get('/visibility', 'getDashboardVisibility')->name('contracts.dashboard.visibility');
-            Route::get('/summary', 'getDashboardSummary')->name('contracts.dashboard.summary');
-            Route::get('/overview', 'getDashboardOverview')->name('contracts.dashboard.overview');
-            Route::get('/distributions', 'getDashboardDistributions')->name('contracts.dashboard.distributions');
-            Route::get('/trends', 'getDashboardTrends')->name('contracts.dashboard.trends');
-            Route::get('/analysis', 'getDashboardAnalysis')->name('contracts.dashboard.analysis');
-            Route::get('/workload', 'getDashboardWorkload')->name('contracts.dashboard.workload');
-            Route::get('/master-data', 'getDashboardMasterData')->name('contracts.dashboard.master-data');
-            Route::get('/recent-activity', 'getDashboardRecentActivity')->name('contracts.dashboard.recent-activity');
-        });
         Route::get('/{id}', 'showView')->name('contracts.show');
 
         // Metadata & Helpers

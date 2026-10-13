@@ -557,8 +557,20 @@ class ContractDashboardQuery
      *
      * @return array<string, mixed>
      */
-    public function getMetrics(Request $request): array
+    public function getMetrics(Request $request, ?string $tab = null): array
     {
+        $resolvedTab = $tab ?? $request->query('tab') ?? $request->query('dashboard_tab');
+        if (! empty($resolvedTab)) {
+            $normalizedTab = strtolower(trim($resolvedTab));
+            // ponytail: only compute metrics needed for the active tab
+            if (in_array($normalizedTab, ['workload', 'beban-kerja', 'beban_kerja'])) {
+                return $this->getWorkloads($request);
+            }
+            if (in_array($normalizedTab, ['master-data', 'master_data', 'masterdata'])) {
+                return $this->getMasterData($request);
+            }
+        }
+
         $section = $request->query('section');
         if ($section) {
             $sections = is_array($section) ? $section : explode(',', $section);
@@ -583,14 +595,13 @@ class ContractDashboardQuery
             }
         }
 
+        // ponytail: for overview tab, only compute overview-related metrics; skip unused workloads & masterData
         return array_merge(
             $this->getSummaryMetrics($request),
             $this->getOverviewMetrics($request),
             $this->getDistributions($request),
             $this->getTrends($request),
             $this->getAnalysis($request),
-            $this->getWorkloads($request),
-            $this->getMasterData($request),
             $this->getRecentActivityMetrics($request)
         );
     }

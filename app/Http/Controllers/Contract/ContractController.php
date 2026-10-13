@@ -7,7 +7,6 @@ use App\Http\Actions\Contract\StoreContractAction;
 use App\Http\Actions\Contract\UpdateContractAction;
 use App\Http\Controllers\Controller;
 use App\Http\Formatters\ContractFormatter;
-use App\Http\Queries\Contract\ContractDashboardQuery;
 use App\Http\Queries\Contract\ContractDetailQuery;
 use App\Http\Queries\Contract\ContractListQuery;
 use App\Http\Queries\Contract\ContractOptionsQuery;
@@ -116,11 +115,8 @@ class ContractController extends Controller
         $loaders = $this->contractOptionsQuery->getLoaders();
         $meta = $this->getViewMetadata($view);
 
-        $resolvedTab = $tab ?? $request->query('tab') ?? $request->query('dashboard_tab');
-
         $data = array_merge([
             'currentView' => $view,
-            'currentDashboardTab' => $resolvedTab,
             'contracts' => $contracts,
             'types' => $loaders['types'](),
             'submissionTypes' => $loaders['submissionTypes'](),
@@ -141,7 +137,6 @@ class ContractController extends Controller
             )),
             'contractStatuses' => $loaders['contractStatuses'](),
             'userFilterSettings' => Auth::user()?->getContractFilterSettings() ?? [],
-            'dashboardConfig' => (new ContractDashboardQuery)->resolveDashboardConfig(Auth::user()),
             'filters' => array_merge($request->only([
                 'search', 'status', 'contract_type_id', 'role_id', 'department_id',
                 'created_from', 'created_to', 'region_ids', 'vendor_ids', 'statuses',
@@ -158,12 +153,6 @@ class ContractController extends Controller
                 ['title' => $meta['title'], 'href' => '#', 'description' => $meta['description'], 'icon' => $meta['icon']],
             ],
         ], $counts);
-
-        if ($view === 'dashboard') {
-            $data['metrics'] = Inertia::defer(fn () => (new ContractDashboardQuery)->getMetrics($request));
-
-            return Inertia::render('dashboard/Index', $data);
-        }
 
         return Inertia::render('contracts/Index', $data);
     }
@@ -642,126 +631,6 @@ class ContractController extends Controller
         $loaders = $this->contractOptionsQuery->getLoaders();
 
         return $this->successResponse($loaders['submissionTypes'](), 'Submission types retrieved successfully');
-    }
-
-    public function getDashboardVisibility(Request $request): JsonResponse
-    {
-        $authUser = $request->user();
-        $userId = $request->query('user_id');
-        $dashboardTypeId = $request->query('dashboard_type_id');
-
-        $user = null;
-        if (! empty($userId)) {
-            if ($authUser && ($authUser->id === $userId || $authUser->isAdmin())) {
-                $user = User::with(['roleRelation', 'division', 'department'])->find($userId);
-            }
-        }
-
-        if (! $user) {
-            $user = $authUser;
-            if ($user && ! $user->relationLoaded('roleRelation')) {
-                $user->load(['roleRelation', 'division', 'department']);
-            }
-        }
-
-        $resolvedType = null;
-        if (! empty($dashboardTypeId)) {
-            $resolvedType = DashboardType::find($dashboardTypeId);
-        }
-
-        if (! $resolvedType && $user) {
-            $resolvedType = DashboardType::resolveForUser($user);
-        }
-
-        $filterSettings = $user ? $user->getContractFilterSettings() : [];
-
-        $data = [
-            'user' => $user ? [
-                'id' => (string) $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'role' => $user->role,
-                'division_id' => $user->division_id,
-                'division_name' => $user->division?->name,
-                'department_id' => $user->department_id,
-                'department_name' => $user->department?->name,
-            ] : null,
-            'profile' => [
-                'id' => $resolvedType ? (string) $resolvedType->id : null,
-                'name' => $resolvedType?->name ?? 'Default (Fallback)',
-                'priority' => $resolvedType?->priority ?? null,
-                'description' => $resolvedType?->description ?? 'Tidak ada profil spesifik, menggunakan konfigurasi default sistem.',
-            ],
-            'visibility' => [
-                'show_overview' => (bool) ($resolvedType?->show_overview ?? true),
-                'show_overview_contract' => (bool) ($resolvedType?->show_overview_contract ?? true),
-                'show_overview_non_contract' => (bool) ($resolvedType?->show_overview_non_contract ?? true),
-                'show_overview_nda' => (bool) ($resolvedType?->show_overview_nda ?? true),
-                'show_workload' => (bool) ($resolvedType?->show_workload ?? false),
-                'show_master_data' => (bool) ($resolvedType?->show_master_data ?? false),
-            ],
-            'template_authority' => [
-                'template_can_read' => (bool) ($resolvedType?->template_can_read ?? true),
-                'template_can_download' => (bool) ($resolvedType?->template_can_download ?? true),
-                'template_can_upload' => (bool) ($resolvedType?->template_can_upload ?? false),
-                'template_can_create_folder' => (bool) ($resolvedType?->template_can_create_folder ?? false),
-                'template_can_edit' => (bool) ($resolvedType?->template_can_edit ?? false),
-                'template_can_toggle_visibility' => (bool) ($resolvedType?->template_can_toggle_visibility ?? false),
-                'template_can_delete' => (bool) ($resolvedType?->template_can_delete ?? false),
-            ],
-            'on_behalf_authority' => [
-                'can_create_on_behalf' => (bool) ($resolvedType?->can_create_on_behalf ?? false),
-                'allowed_on_behalf_user_ids' => $user ? $user->allowed_on_behalf_user_ids : null,
-            ],
-            'filter_settings' => $filterSettings,
-        ];
-
-        return $this->successResponse($data, 'Dashboard visibility configuration retrieved successfully');
-    }
-
-    public function getDashboardMetrics(Request $request): JsonResponse
-    {
-        return $this->successResponse((new ContractDashboardQuery)->getMetrics($request), 'Dashboard metrics retrieved successfully');
-    }
-
-    public function getDashboardSummary(Request $request): JsonResponse
-    {
-        return $this->successResponse((new ContractDashboardQuery)->getSummaryMetrics($request), 'Dashboard summary retrieved successfully');
-    }
-
-    public function getDashboardOverview(Request $request): JsonResponse
-    {
-        return $this->successResponse((new ContractDashboardQuery)->getOverviewMetrics($request), 'Dashboard overview retrieved successfully');
-    }
-
-    public function getDashboardDistributions(Request $request): JsonResponse
-    {
-        return $this->successResponse((new ContractDashboardQuery)->getDistributions($request), 'Dashboard distributions retrieved successfully');
-    }
-
-    public function getDashboardTrends(Request $request): JsonResponse
-    {
-        return $this->successResponse((new ContractDashboardQuery)->getTrends($request), 'Dashboard trends retrieved successfully');
-    }
-
-    public function getDashboardAnalysis(Request $request): JsonResponse
-    {
-        return $this->successResponse((new ContractDashboardQuery)->getAnalysis($request), 'Dashboard analysis retrieved successfully');
-    }
-
-    public function getDashboardWorkload(Request $request): JsonResponse
-    {
-        return $this->successResponse((new ContractDashboardQuery)->getWorkloads($request), 'Dashboard workload retrieved successfully');
-    }
-
-    public function getDashboardMasterData(Request $request): JsonResponse
-    {
-        return $this->successResponse((new ContractDashboardQuery)->getMasterData($request), 'Dashboard master data retrieved successfully');
-    }
-
-    public function getDashboardRecentActivity(Request $request): JsonResponse
-    {
-        return $this->successResponse((new ContractDashboardQuery)->getRecentActivityMetrics($request), 'Dashboard recent activity retrieved successfully');
     }
 
     public function show(string $id): JsonResponse

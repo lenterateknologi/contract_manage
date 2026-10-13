@@ -1,4 +1,3 @@
-import { DashboardLoading } from '@/components/ui/feedback/DashboardLoading';
 import { Icons } from '@/components/ui/icons';
 import { FloatingPanel } from '@/components/ui/navigation/FloatingPanel';
 import { MasterPageLayout } from '@/components/ui/navigation/MasterPageLayout';
@@ -175,7 +174,8 @@ export function DashboardView({
             return {
                 ...cfg,
                 show_overview: cfg.show_overview !== false,
-                show_workload: !!cfg.show_workload,
+                // ponytail: default show_workload to true to support /dashboard/beban-kerja
+                show_workload: Boolean(cfg.show_workload ?? true),
                 show_master_data: !!cfg.show_master_data,
             };
         }
@@ -186,7 +186,7 @@ export function DashboardView({
             return {
                 ...uCfg,
                 show_overview: uCfg.show_overview !== false,
-                show_workload: !!uCfg.show_workload,
+                show_workload: Boolean(uCfg.show_workload ?? true),
                 show_master_data: !!uCfg.show_master_data,
             };
         }
@@ -200,6 +200,12 @@ export function DashboardView({
 
     // Ensure active tab is allowed by configuration
     useEffect(() => {
+        // ponytail: if route explicitly requested this tab (/dashboard/beban-kerja, etc.), do not override to overview
+        const requestedTab = currentDashboardTab && SLUG_TO_DASHBOARD_TAB[currentDashboardTab];
+        if (requestedTab && requestedTab === dashboardTab) {
+            return;
+        }
+
         const config = effectiveDashboardConfig;
         if (config) {
             const isTabAllowed =
@@ -213,7 +219,7 @@ export function DashboardView({
                 else if (config.show_master_data) setDashboardTab('master_data');
             }
         }
-    }, [effectiveDashboardConfig, dashboardTab]);
+    }, [effectiveDashboardConfig, dashboardTab, currentDashboardTab]);
 
     const pageMeta = useMemo(() => {
         if (dashboardTab === 'workload') {
@@ -249,16 +255,13 @@ export function DashboardView({
                 >
                     <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
                         <div className="custom-scrollbar h-full min-h-0 flex-1 overflow-y-auto p-5">
-                            {metrics ? (
-                                <DashboardMetrics
-                                    metrics={{ ...metrics, dashboardConfig: effectiveDashboardConfig }}
-                                    activeTab={dashboardTab}
-                                    meUser={meUser}
-                                    onCreateContract={() => setCreateOpen(true)}
-                                />
-                            ) : (
-                                <DashboardLoading />
-                            )}
+                            {/* ponytail: render metrics instantly with zero loading flash */}
+                            <DashboardMetrics
+                                metrics={{ ...(metrics || {}), dashboardConfig: effectiveDashboardConfig }}
+                                activeTab={dashboardTab}
+                                meUser={meUser}
+                                onCreateContract={() => setCreateOpen(true)}
+                            />
                         </div>
                     </div>
                 </PageTable>

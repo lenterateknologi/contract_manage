@@ -10,6 +10,7 @@ use App\Http\Controllers\Contract\ContractMemberController;
 use App\Http\Controllers\Contract\ContractPurchaseOrderController;
 use App\Http\Controllers\Contract\ContractReferenceController;
 use App\Http\Controllers\Contract\ContractSlaOverdueController;
+use App\Http\Controllers\Dashboard\DashboardController;
 use App\Models\Master\FormTemplate;
 use Illuminate\Support\Facades\Route;
 
@@ -22,14 +23,7 @@ Route::prefix('contracts')->group(function () {
         Route::post('/{id}/notify', 'notifyManager')->name('api.contracts.sla.notify-manager');
     });
 
-    Route::controller(ContractController::class)->group(function () {
-        Route::get('/', 'index');
-        Route::get('/types', 'getTypes');
-        Route::get('/submission-types', 'getSubmissionTypes');
-        Route::post('/', 'store');
-        Route::get('/workflows', 'getWorkflows');
-        Route::get('/users', 'getUsers');
-        Route::get('/roles', 'getRoles');
+    Route::controller(DashboardController::class)->group(function () {
         Route::get('/dashboard-metrics', 'getDashboardMetrics');
         Route::prefix('dashboard')->group(function () {
             Route::get('/visibility', 'getDashboardVisibility');
@@ -42,6 +36,16 @@ Route::prefix('contracts')->group(function () {
             Route::get('/master-data', 'getDashboardMasterData');
             Route::get('/recent-activity', 'getDashboardRecentActivity');
         });
+    });
+
+    Route::controller(ContractController::class)->group(function () {
+        Route::get('/', 'index');
+        Route::get('/types', 'getTypes');
+        Route::get('/submission-types', 'getSubmissionTypes');
+        Route::post('/', 'store');
+        Route::get('/workflows', 'getWorkflows');
+        Route::get('/users', 'getUsers');
+        Route::get('/roles', 'getRoles');
         Route::get('/{id}', 'show');
         Route::patch('/{id}', 'update');
         Route::post('/{id}/review-doc', 'reviewDoc');

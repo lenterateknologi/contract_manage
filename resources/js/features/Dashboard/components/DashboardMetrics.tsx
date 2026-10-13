@@ -1,14 +1,9 @@
-import { DashboardLoading } from '@/components/ui/feedback/DashboardLoading';
 import { router } from '@inertiajs/react';
 import { Briefcase } from 'lucide-react';
-import React, { lazy, Suspense } from 'react';
-
-// Lazy load heavy dashboard tabs
-const OverviewTab = lazy(() => import('./OverviewTab').then((m) => ({ default: m.OverviewTab })));
-const WorkloadTab = lazy(() => import('./WorkloadTab').then((m) => ({ default: m.WorkloadTab })));
-const MasterDataTab = lazy(() => import('./MasterDataTab').then((m) => ({ default: m.MasterDataTab })));
-
-const TabLoading = () => <DashboardLoading message="Memuat Tab Dashboard..." description="Menyiapkan visualisasi data" />;
+import React from 'react';
+import { MasterDataTab } from './MasterDataTab';
+import { OverviewTab } from './OverviewTab';
+import { WorkloadTab } from './WorkloadTab';
 
 export function DashboardMetrics({
     metrics,
@@ -21,9 +16,7 @@ export function DashboardMetrics({
     meUser?: any;
     onCreateContract?: () => void;
 }) {
-    if (!metrics) return null;
-
-    const config = metrics.dashboardConfig;
+    const config = metrics?.dashboardConfig;
 
     const hasAnyTab = config
         ? config.show_overview !== false ||
@@ -33,7 +26,7 @@ export function DashboardMetrics({
 
     if (!hasAnyTab) {
         return (
-            <div className="border-surface-border bg-surface-base animate-in fade-in flex h-[320px] w-full flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center duration-300">
+            <div className="border-surface-border bg-surface-base flex h-[320px] w-full flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
                 <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400 dark:bg-slate-800">
                     <Briefcase size={24} />
                 </div>
@@ -62,29 +55,27 @@ export function DashboardMetrics({
     };
 
     return (
-        <div className="animate-in fade-in slide-in-from-top-4 space-y-6 duration-500 select-none">
-            {/* Tab Contents with Premium Transitions */}
-            <div className="transition-all duration-300">
-                <Suspense fallback={<TabLoading />}>
-                    {activeTab === 'overview' && (config?.show_overview !== false) && (
-                        <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-                            <OverviewTab data={metrics} scope="all" onNavigate={handleNavigate} meUser={meUser} onCreateContract={onCreateContract} />
-                        </div>
-                    )}
+        <div className="space-y-6 select-none">
+            {/* ponytail: synchronous direct render with zero loading spinners or chunk delays */}
+            {activeTab === 'overview' && (config?.show_overview !== false) && (
+                <div>
+                    <OverviewTab data={metrics} scope="all" onNavigate={handleNavigate} meUser={meUser} onCreateContract={onCreateContract} />
+                </div>
+            )}
 
-                    {activeTab === 'workload' && (
-                        <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-                            <WorkloadTab data={metrics} onNavigate={handleNavigate} />
-                        </div>
-                    )}
+            {activeTab === 'workload' && (
+                <div>
+                    <WorkloadTab data={metrics} onNavigate={handleNavigate} />
+                </div>
+            )}
 
-                    {activeTab === 'master_data' && config?.show_master_data && (
-                        <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-                            <MasterDataTab data={metrics} />
-                        </div>
-                    )}
-                </Suspense>
-            </div>
+            {activeTab === 'master_data' && config?.show_master_data && (
+                <div>
+                    <MasterDataTab data={metrics} />
+                </div>
+            )}
         </div>
     );
 }
+
+export default DashboardMetrics;
