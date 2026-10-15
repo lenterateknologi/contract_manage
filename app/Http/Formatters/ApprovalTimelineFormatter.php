@@ -408,6 +408,36 @@ class ApprovalTimelineFormatter
                                     ]
                                 );
                             }
+
+                            $pendingApprovals = $regularApprovals->filter(fn ($a) => in_array($a->status, ['pending', 'waiting']));
+                            if ($pendingApprovals->count() > 1 && $isRoleBased) {
+                                $first = $pendingApprovals->first();
+                                $candidateNames = $pendingApprovals->map(fn ($a) => $a->approver->name ?? $a->approver_name)->implode(', ');
+                                $candidateEmails = $pendingApprovals->map(fn ($a) => $a->approver?->email)->filter()->implode(', ');
+
+                                $timeline[] = self::formatPlaceholderNode(
+                                    'step-group-'.$step->id, $step, $stepLabel, $deptName, $stepWorkflowPayload, $globalOrder, [
+                                        'approver_name' => $first->role,
+                                        'role' => $first->role,
+                                        'target_approvers' => $candidateNames ?: $targetApprovers,
+                                        'target_emails' => $candidateEmails ?: $targetEmails,
+                                        'batch_no' => $first->batch_no ?? ($chunk['batch_no'] ?? 1),
+                                        'status' => 'pending',
+                                        'is_active' => (bool) $first->is_active,
+                                    ]
+                                );
+                            } else {
+                                foreach ($pendingApprovals as $a) {
+                                    $timeline[] = self::formatApprovalNode(
+                                        $a, $step, $stepLabel, $deptName, $stepWorkflowPayload,
+                                        $globalOrder, $resolveAttachmentName, [
+                                            'target_approvers' => $targetApprovers,
+                                            'target_emails' => $a->approver?->email ?: $targetEmails,
+                                            'batch_no' => $a->batch_no ?? ($chunk['batch_no'] ?? 1),
+                                        ]
+                                    );
+                                }
+                            }
                         } elseif ($regularApprovals->every(fn ($a) => $a->status === 'pending') && $regularApprovals->count() > 1 && $isRoleBased) {
                             $first = $regularApprovals->first();
                             $candidateNames = $regularApprovals->map(fn ($a) => $a->approver->name ?? $a->approver_name)->implode(', ');
@@ -564,7 +594,7 @@ class ApprovalTimelineFormatter
             'decided_at' => $a->decided_at?->toIso8601String(),
             'created_at' => $a->created_at?->toIso8601String(),
             'step_entry_at' => $overrides['step_entry_at'] ?? $a->created_at?->toIso8601String(),
-            'is_active' => $a->is_active,
+            'is_active' => in_array($a->status, ['approved', 'rejected']) ? false : (bool) ($overrides['is_active'] ?? $a->is_active),
             'step_type' => 'APPROVAL',
             'step_name' => $stepName,
             'step_description' => $stepDesc,
