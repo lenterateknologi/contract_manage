@@ -9,7 +9,7 @@ import { resolveContractRequirements } from '@/features/Contracts/utils/requirem
 import { matchUserAgainstWorkflowPool } from '@/features/workflows';
 import { detailSidebarStore, type DetailSidebarTabChild, type DetailSidebarTabItem } from '@/stores/useDetailSidebarStore';
 import { usePage } from '@inertiajs/react';
-import React, { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import React, { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 
 const {
     Building2,

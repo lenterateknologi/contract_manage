@@ -23,6 +23,7 @@ use App\Models\Transaction\SubmissionReview;
 use App\Services\ContractFilterScopeService;
 use App\Services\Workflow\ContractWorkflowService;
 use App\Traits\ApiResponse;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -328,7 +329,87 @@ class ContractController extends Controller
             ->withQueryString()
             ->through(fn ($c) => ContractFormatter::formatContract($c, false));
 
+        // 5. Expired / Mendekati Expired (Masa berlaku <= 30 hari ke depan atau status expired)
+        $expiredQuery = Contract::query();
+        if ($withDuty) {
+            $user = Auth::user();
+            if (! $user || ! $user->canViewGlobalContracts()) {
+                $expiredQuery->where(function (Builder $q) use ($userId) {
+                    $q->duty($userId)
+                        ->orWhere(fn (Builder $sq) => $sq->mine($userId));
+                });
+            }
+        } else {
+            $expiredQuery->mine($userId);
+        }
+
+        $expiredQuery->whereRaw('UPPER(status) != ?', ['DRAFT'])
+            ->where(function (Builder $q) {
+                $q->where(DB::raw('LOWER(status)'), 'expired')
+                    ->orWhere(function (Builder $sub) {
+                        $sub->whereNotNull('end_date')
+                            ->whereDate('end_date', '<=', now()->addDays(30)->toDateString());
+                    });
+            })
+            ->with([
+                'creator.department',
+                'contractType',
+                'submissionType',
+                'statusDetail',
+                'workflow',
+                'workflowStep.actions',
+                'vendor',
+                'initiator.department',
+                'parent',
+                'assignedPic.department',
+                'approvals',
+            ]);
+
+        if ($request->filled('search_expired')) {
+            $search = mb_strtolower(addcslashes($request->search_expired, '%_\\'));
+            $expiredQuery->where(function ($q) use ($search) {
+                $q->where(DB::raw('LOWER(title)'), 'like', "%{$search}%")
+                    ->orWhere(DB::raw('LOWER(form_no)'), 'like', "%{$search}%")
+                    ->orWhere(DB::raw('LOWER(contract_no)'), 'like', "%{$search}%");
+            });
+        }
+
+        $this->applyActivitySort(
+            $expiredQuery,
+            $request->input('sort_expired'),
+            $request->input('dir_expired'),
+            'end_date'
+        );
+
+        $expiredContracts = $expiredQuery
+            ->paginate($perPage, ['*'], 'page_expired')
+            ->withQueryString()
+            ->through(fn ($c) => ContractFormatter::formatContract($c, false));
+
         $counts = $this->getCachedContractCounts($userId);
+
+        $expiredCountQuery = Contract::query();
+        if ($withDuty) {
+            $user = Auth::user();
+            if (! $user || ! $user->canViewGlobalContracts()) {
+                $expiredCountQuery->where(function (Builder $q) use ($userId) {
+                    $q->duty($userId)
+                        ->orWhere(fn (Builder $sq) => $sq->mine($userId));
+                });
+            }
+        } else {
+            $expiredCountQuery->mine($userId);
+        }
+        $expiredCount = $expiredCountQuery->whereRaw('UPPER(status) != ?', ['DRAFT'])
+            ->where(function (Builder $q) {
+                $q->where(DB::raw('LOWER(status)'), 'expired')
+                    ->orWhere(function (Builder $sub) {
+                        $sub->whereNotNull('end_date')
+                            ->whereDate('end_date', '<=', now()->addDays(30)->toDateString());
+                    });
+            })
+            ->count();
+
         $activityCounts = [
             'pending' => Contract::pendingApprovalFor($userId)->count(),
             'duty' => $withDuty ? Contract::duty($userId)->whereNotIn(DB::raw('LOWER(status)'), ['draft', 'archived'])->whereNull('closed_at')->count() : 0,
@@ -340,6 +421,7 @@ class ContractController extends Controller
             'draft' => Contract::mine($userId)
                 ->whereRaw('UPPER(status) = ?', ['DRAFT'])
                 ->count(),
+            'expired' => $expiredCount,
         ];
         $loaders = $this->contractOptionsQuery->getLoaders();
 
@@ -351,6 +433,7 @@ class ContractController extends Controller
                 'duty' => $dutyContracts,
                 'in_progress' => $inProgressContracts,
                 'draft' => $draftContracts,
+                'expired' => $expiredContracts,
                 'counts' => $activityCounts,
                 'activityCounts' => $activityCounts,
             ]);
@@ -363,6 +446,7 @@ class ContractController extends Controller
             'dutyContracts' => $dutyContracts,
             'inProgressContracts' => $inProgressContracts,
             'draftContracts' => $draftContracts,
+            'expiredContracts' => $expiredContracts,
             'activityCounts' => $activityCounts,
             'counts' => $activityCounts,
             'breadcrumbs' => $withDuty
@@ -382,16 +466,17 @@ class ContractController extends Controller
             'companies' => $loaders['companies'](),
             'contractStatuses' => $loaders['contractStatuses'](),
             'filters' => $request->only([
-                'search_pending', 'search_duty', 'search_progress', 'search_draft',
-                'page_pending', 'page_duty', 'page_progress', 'page_draft',
+                'search_pending', 'search_duty', 'search_progress', 'search_draft', 'search_expired',
+                'page_pending', 'page_duty', 'page_progress', 'page_draft', 'page_expired',
                 'sort_pending', 'dir_pending',
                 'sort_duty', 'dir_duty',
                 'sort_progress', 'dir_progress',
                 'sort_draft', 'dir_draft',
+                'sort_expired', 'dir_expired',
             ]),
             'breadcrumbs' => [
                 ['title' => 'Manajemen Kontrak', 'href' => route('contracts'), 'icon' => 'FileText'],
-                ['title' => 'Aktivitas Pengajuan', 'href' => '#', 'description' => 'Ringkasan pengajuan yang perlu tindakan, tugas penugasan PIC, sedang diproses, dan draft.', 'icon' => 'Layers'],
+                ['title' => 'Aktivitas Pengajuan', 'href' => '#', 'description' => 'Ringkasan pengajuan yang perlu tindakan, tugas penugasan PIC, sedang diproses, expired, dan draft.', 'icon' => 'Layers'],
             ],
         ], $counts);
 
@@ -421,6 +506,7 @@ class ContractController extends Controller
             'pic', 'assigned_pic', 'assigned_pic_id' => $query->orderBy($userSubquery('t_contracts.assigned_pic_id'), $dir),
             'type', 'contract_type', 'contract_type_id' => $query->orderBy($typeSubquery(), $dir),
             'status' => $query->orderBy('status', $dir),
+            'end_date', 'period' => $query->orderBy('end_date', $dir),
             'created_at' => $query->orderBy('created_at', $dir),
             'updated_at' => $query->orderBy('updated_at', $dir),
             default => $query->orderBy($sortBy, $dir),

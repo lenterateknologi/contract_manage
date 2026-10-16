@@ -54,16 +54,16 @@ class PdfPreviewAction
             }
 
             return response()->view('errors.pdf-preview-error', [
-                'statusCode' => 404,
-                'statusLabel' => 'Berkas Tidak Ditemukan',
+                'statusCode' => 200,
+                'statusLabel' => 'Berkas Belum Tersedia',
                 'title' => 'Dokumen Belum Tersedia',
-                'message' => "Berkas fisik untuk versi {$versionNo} ({$typeLabel}) belum diunggah atau tidak ditemukan di penyimpanan server.",
+                'message' => "Berkas fisik untuk versi {$versionNo} ({$typeLabel}) belum diunggah atau belum tersedia di penyimpanan server.",
                 'details' => [
                     'Nomor Dokumen' => $docNumber,
                     'Tipe Dokumen' => $typeLabel,
                     'Versi Dokumen' => 'Versi '.$versionNo,
                 ],
-            ], 404);
+            ], 200);
         }
 
         $sourcePath = Storage::disk('local')->path($version->file_path);
