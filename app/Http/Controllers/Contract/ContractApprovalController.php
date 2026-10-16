@@ -163,7 +163,7 @@ class ContractApprovalController extends Controller
                 'approver_name' => $pic->name,
             ]);
 
-            if ($wasAlreadyPending && config('notifications.email.enabled', true) && $pic->email) {
+            if ($wasAlreadyPending && config('notifications.email.enabled', true) && $pic->email && (string) $pic->id !== (string) Auth::id()) {
                 Mail::to($pic->email)->queue(new \App\Mail\ContractActionRequiredMail($appr->fresh(['approver', 'contract', 'workflowStep'])));
             }
         }
@@ -736,6 +736,15 @@ class ContractApprovalController extends Controller
 
                 $metadata['branch_from_step_num'] = $contract->workflowStep?->step ?? 1;
                 $metadata['branch_from_step_id'] = $contract->workflow_step_id;
+                $metadata['last_action_label'] = 'Persetujuan Tambahan';
+                $metadata['last_action_by'] = Auth::user()?->name ?: 'Pengguna';
+                $metadata['last_action_at'] = now()->toIso8601String();
+                if ($request->input('note')) {
+                    $metadata['last_action_note'] = $request->input('note');
+                }
+                if ($firstAttachmentPath) {
+                    $metadata['last_attachment_path'] = $firstAttachmentPath;
+                }
 
                 $contract->update([
                     'origin_workflow_id' => $originWfId,

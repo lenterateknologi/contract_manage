@@ -61,10 +61,12 @@ export const chatService = {
         }
     },
 
-    async fetchContractMembers(contractId: string): Promise<any[]> {
+    async fetchContractMembers(contractId: string, type?: string): Promise<any[]> {
         try {
             const res: any = await unwrapResponse(
-                apiClient.get(API_ENDPOINTS.SUBRESOURCES.MEMBERS(contractId)),
+                apiClient.get(API_ENDPOINTS.SUBRESOURCES.MEMBERS(contractId), {
+                    params: { type: type || undefined },
+                }),
             );
             const list = Array.isArray(res) ? res : (res?.data ?? []);
             return list.map((item: any) => {
@@ -80,26 +82,16 @@ export const chatService = {
         }
     },
 
-    async getMentionableUsers(contractId?: string | null): Promise<any[]> {
+    async getMentionableUsers(contractId?: string | null, type?: string): Promise<any[]> {
+        if (!contractId) return [];
         try {
-            const [membersRes, usersRes] = await Promise.allSettled([
-                contractId ? this.fetchContractMembers(contractId) : Promise.resolve([]),
-                this.fetchUsers(),
-            ]);
-
-            const members = membersRes.status === 'fulfilled' ? membersRes.value : [];
-            const users = usersRes.status === 'fulfilled' ? usersRes.value : [];
-
+            const members = await this.fetchContractMembers(contractId, type);
             const userMap = new Map<string, any>();
             members.forEach((m: any) => {
-                if (m?.id) userMap.set(String(m.id), m);
-            });
-            users.forEach((u: any) => {
-                if (u?.id && !userMap.has(String(u.id))) {
-                    userMap.set(String(u.id), u);
+                if (m?.id && !userMap.has(String(m.id))) {
+                    userMap.set(String(m.id), m);
                 }
             });
-
             return Array.from(userMap.values());
         } catch (e) {
             console.error('Failed to load mentionable users', e);

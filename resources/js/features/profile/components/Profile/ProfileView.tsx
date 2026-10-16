@@ -24,6 +24,7 @@ export function ProfileView({ user, department, recentContracts = [] }: ProfileV
         isUploadingPhoto,
         fileInputRef,
         handlePhotoChange,
+        uploadPhotoFile,
         profileForm,
         passwordForm,
         submitProfile,
@@ -46,11 +47,8 @@ export function ProfileView({ user, department, recentContracts = [] }: ProfileV
                         isUploadingPhoto={isUploadingPhoto}
                         fileInputRef={fileInputRef}
                         handlePhotoChange={handlePhotoChange}
+                        onCameraCapture={uploadPhotoFile}
                         activeStats={activeStats}
-                        activeTab={activeTab}
-                        submitProfile={submitProfile}
-                        submitPassword={submitPassword}
-                        isProcessing={profileForm.processing || passwordForm.processing}
                     />
 
                     {/* Tabs navigation */}
@@ -68,6 +66,9 @@ export function ProfileView({ user, department, recentContracts = [] }: ProfileV
                             profileData={profileForm.data}
                             errors={profileForm.errors as Record<string, string>}
                             onFieldChange={(field, value) => profileForm.setData(field, value)}
+                            onSubmit={submitProfile}
+                            isProcessing={profileForm.processing}
+                            isDirty={profileForm.isDirty}
                         />
                     )}
 

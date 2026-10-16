@@ -130,11 +130,17 @@ class Approval extends Model
     protected static function booted()
     {
         static::saved(function ($approval) {
-            // ponytail: send email notification when status becomes pending
             $isNewPending = $approval->wasRecentlyCreated && $approval->status === 'pending';
             $isStatusChangedToPending = $approval->wasChanged('status') && $approval->status === 'pending';
+            $isAutoApprovedAdhoc = $approval->wasRecentlyCreated && $approval->is_adhoc && $approval->status === 'approved' && in_array($approval->action_code, ['auto', 'automation']);
+            $shouldNotify = $isNewPending || $isStatusChangedToPending || $isAutoApprovedAdhoc;
 
-            if ($isNewPending || $isStatusChangedToPending) {
+            if ($shouldNotify) {
+                // Do not send notification to the actor who just performed the action
+                if (Auth::check() && (string) $approval->user_id === (string) Auth::id()) {
+                    return;
+                }
+
                 if (config('notifications.email.enabled', true)) {
                     $approval->loadMissing(['approver', 'contract', 'workflowStep']);
                     if ($approval->approver && $approval->approver->email) {

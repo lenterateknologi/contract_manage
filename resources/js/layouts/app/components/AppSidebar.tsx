@@ -1,4 +1,5 @@
 import { UserSwitchModal } from '@/components/impersonation/UserSwitchModal';
+import { UserAvatar } from '@/components/profile/UserAvatar';
 import { UserMenuContent } from '@/components/profile/UserMenuContent';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialogs/Dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/feedback/Tooltip';
@@ -744,8 +745,6 @@ export const AppSidebar = memo(function AppSidebar() {
                                         onClick={() => setIsSearchOpen(true)}
                                         className={cn(
                                             'group relative flex w-[64px] cursor-pointer flex-col items-center justify-center rounded-xl px-1 py-1 transition-all duration-200',
-                                            isSearchOpen &&
-                                                'dark:before:bg-primary dark:after:bg-primary before:absolute before:top-1 before:-left-1 before:h-9 before:w-2.5 before:rounded-r-full before:bg-white after:absolute after:top-1 after:-right-1 after:h-9 after:w-2.5 after:rounded-l-full after:bg-white',
                                         )}
                                     >
                                         <div
@@ -794,8 +793,6 @@ export const AppSidebar = memo(function AppSidebar() {
                                                 }}
                                                 className={cn(
                                                     'group relative flex w-[64px] cursor-pointer flex-col items-center justify-center rounded-xl px-1 py-1 transition-all duration-200',
-                                                    subMode === 'detail' &&
-                                                        'dark:before:bg-primary dark:after:bg-primary before:absolute before:top-1 before:-left-1 before:h-9 before:w-2.5 before:rounded-r-full before:bg-white after:absolute after:top-1 after:-right-1 after:h-9 after:w-2.5 after:rounded-l-full after:bg-white',
                                                 )}
                                             >
                                                 {/* Icon Card (Active Card on Icon only) */}
@@ -865,8 +862,6 @@ export const AppSidebar = memo(function AppSidebar() {
                                                     }}
                                                     className={cn(
                                                         'group relative flex w-[64px] cursor-pointer flex-col items-center justify-center rounded-xl px-1 py-1 transition-all duration-200',
-                                                        isSelected &&
-                                                            'dark:before:bg-primary dark:after:bg-primary before:absolute before:top-1 before:-left-1 before:h-9 before:w-2.5 before:rounded-r-full before:bg-white after:absolute after:top-1 after:-right-1 after:h-9 after:w-2.5 after:rounded-l-full after:bg-white',
                                                     )}
                                                 >
                                                     {/* Icon Card (Active Card on Icon only) */}
@@ -963,12 +958,7 @@ export const AppSidebar = memo(function AppSidebar() {
                                                     className="relative flex size-9 cursor-pointer items-center justify-center overflow-hidden rounded-full p-0 shadow-xs ring-1 ring-white/25 transition-all hover:ring-2 hover:ring-white/50 focus:outline-hidden dark:ring-white/15 dark:hover:ring-white/30"
                                                     aria-label="Menu Profil Pengguna"
                                                 >
-                                                    <Avatar className="size-8 rounded-full bg-white/10 dark:bg-zinc-800">
-                                                        <AvatarImage src={auth.user.avatar} alt={auth.user.name} />
-                                                        <AvatarFallback className="rounded-full bg-white text-xs font-bold text-primary dark:bg-zinc-800 dark:text-zinc-100">
-                                                            {getInitials(auth.user.name)}
-                                                        </AvatarFallback>
-                                                    </Avatar>
+                                                    <UserAvatar user={auth.user} size="sm" className="size-8" />
                                                 </button>
                                             </DropdownMenuTrigger>
                                         </TooltipTrigger>

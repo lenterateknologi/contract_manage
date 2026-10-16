@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
 import { Label } from '@/components/ui/forms/Label';
 import { Input } from '@/components/ui/inputs/Input';
 import InputError from '@/components/ui/forms/InputError';
@@ -19,20 +20,38 @@ export function FormField({
     type?: string;
     readOnly?: boolean;
 }) {
+    const [showPassword, setShowPassword] = useState(false);
+    const isPassword = type === 'password';
+    const inputType = isPassword ? (showPassword ? 'text' : 'password') : type;
+
     return (
         <div className="space-y-1.5">
             <Label className="text-text-desc block text-xs font-medium">{label}</Label>
-            <Input
-                type={type}
-                value={value ?? ''}
-                readOnly={readOnly}
-                onChange={(e) => onChange?.(e.target.value)}
-                className={cn(
-                    'border-surface-border h-9 rounded-lg text-sm transition-colors',
-                    'focus:border-primary focus:ring-0',
-                    readOnly && 'bg-surface-muted/30 cursor-not-allowed opacity-60',
+            <div className="relative">
+                <Input
+                    type={inputType}
+                    value={value ?? ''}
+                    readOnly={readOnly}
+                    onChange={(e) => onChange?.(e.target.value)}
+                    className={cn(
+                        'border-surface-border h-9 rounded-lg text-sm transition-colors',
+                        'focus:border-primary focus:ring-0',
+                        isPassword && 'pr-10',
+                        readOnly && 'bg-surface-muted/30 cursor-not-allowed opacity-60',
+                    )}
+                />
+                {isPassword && !readOnly && (
+                    <button
+                        type="button"
+                        tabIndex={-1}
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        className="text-text-desc hover:text-text-primary absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer transition-colors"
+                        aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+                    >
+                        {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                    </button>
                 )}
-            />
+            </div>
             {error && <InputError message={error} />}
         </div>
     );

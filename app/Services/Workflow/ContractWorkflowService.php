@@ -263,13 +263,17 @@ class ContractWorkflowService
             }
         }
 
+        $metadata = $contract->metadata ?? [];
+        $metadata['last_action_label'] = $actionLabel ?? ($actionAliasToSave ?: 'Disetujui');
+        $metadata['last_action_by'] = $approval->approver_name;
+        $metadata['last_action_at'] = now()->toIso8601String();
         if ($comment) {
-            $metadata = $contract->metadata ?? [];
             $metadata['last_action_note'] = $comment;
-            $metadata['last_action_by'] = $approval->approver_name;
-            $metadata['last_action_at'] = now()->toIso8601String();
-            $contract->update(['metadata' => $metadata]);
         }
+        if ($attachmentPath) {
+            $metadata['last_attachment_path'] = $attachmentPath;
+        }
+        $contract->update(['metadata' => $metadata]);
 
         $this->activateNextApprovers($contract, $approval);
 

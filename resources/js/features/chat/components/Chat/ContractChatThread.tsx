@@ -31,18 +31,20 @@ export function ContractChatThread({
     const [mentionUsers, setMentionUsers] = useState<any[]>(users);
 
     useEffect(() => {
-        if (users && users.length > 0) {
-            setMentionUsers(users);
-        } else if (contract?.id) {
+        if (contract?.id) {
             let isMounted = true;
-            chatService.getMentionableUsers(contract.id).then((list) => {
-                if (isMounted) setMentionUsers(list);
+            chatService.getMentionableUsers(contract.id, type).then((list) => {
+                if (isMounted) {
+                    setMentionUsers(list.length > 0 ? list : (users || []));
+                }
             });
             return () => {
                 isMounted = false;
             };
+        } else if (users && users.length > 0) {
+            setMentionUsers(users);
         }
-    }, [contract?.id, users]);
+    }, [contract?.id, type, users]);
 
     const {
         messages,

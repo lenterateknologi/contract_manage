@@ -46,18 +46,23 @@ export function useProfileForm(user: UserProfile) {
         password_confirmation: '',
     });
 
-    const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
+    const uploadPhotoFile = (file: File) => {
+        // Read as data URL for instant base64 preview without blob URL
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            if (reader.result) {
+                setPreviewUrl(reader.result as string);
+            }
+        };
+        reader.readAsDataURL(file);
 
-        const objectUrl = URL.createObjectURL(file);
-        setPreviewUrl(objectUrl);
         setIsUploadingPhoto(true);
 
         profileService.updatePhoto(file, profileForm.data, {
             onSuccess: () => {
                 showToast('Foto profil berhasil diperbarui', 'success');
-                setTimeout(() => setPreviewUrl(null), 1000);
+                // Clear temporary preview so avatar renders directly from server path
+                setPreviewUrl(null);
             },
             onError: (errors) => {
                 const firstError = Object.values(errors)[0] as string;
@@ -68,6 +73,12 @@ export function useProfileForm(user: UserProfile) {
                 setIsUploadingPhoto(false);
             },
         });
+    };
+
+    const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        uploadPhotoFile(file);
     };
 
     const submitProfile: FormEventHandler = (e) => {
@@ -119,6 +130,7 @@ export function useProfileForm(user: UserProfile) {
         isUploadingPhoto,
         fileInputRef,
         handlePhotoChange,
+        uploadPhotoFile,
         profileForm,
         passwordForm,
         submitProfile,

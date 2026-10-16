@@ -3,8 +3,8 @@ import { FormInput } from '@/components/ui/inputs/FormInput';
 import TextLink from '@/components/ui/navigation/TextLink';
 import AuthSplitLayout from '@/layouts/auth/auth-split-layout';
 import { Head } from '@inertiajs/react';
-import { AlertCircle, ArrowLeft, LoaderCircle, RefreshCw } from 'lucide-react';
-import React from 'react';
+import { AlertCircle, ArrowLeft, Check, LoaderCircle, RefreshCw, X } from 'lucide-react';
+import React, { useMemo } from 'react';
 import { useResetPasswordForm } from '../hooks/useResetPasswordForm';
 import { ResetPasswordProps } from '../types/auth.types';
 import { AuthErrorAlert } from './AuthErrorAlert';
@@ -12,6 +12,20 @@ import { PasswordField } from './PasswordField';
 
 export function ResetPasswordForm({ token, email, error }: Readonly<ResetPasswordProps>) {
     const { data, setData, errors, processing, wasSuccessful, submit } = useResetPasswordForm(token, email);
+
+    const password = data.password || '';
+    const confirmation = data.password_confirmation || '';
+
+    const checks = useMemo(() => {
+        return {
+            minLength: password.length >= 8,
+            hasLetter: /[a-zA-Z]/.test(password),
+            hasNumber: /[0-9]/.test(password),
+        };
+    }, [password]);
+
+    const isMatch = confirmation.length > 0 && password === confirmation;
+    const isMismatch = confirmation.length > 0 && password !== confirmation;
 
     return (
         <AuthSplitLayout
@@ -75,29 +89,100 @@ export function ResetPasswordForm({ token, email, error }: Readonly<ResetPasswor
                             className="rounded-xl bg-slate-50 text-slate-500 dark:bg-zinc-800/50"
                         />
 
-                        <PasswordField
-                            id="password"
-                            name="password"
-                            label="Kata Sandi Baru"
-                            value={data.password}
-                            onChange={(e) => setData('password', e.target.value)}
-                            placeholder="Minimal 8 karakter"
-                            error={errors.password}
-                            autoComplete="new-password"
-                            required
-                        />
+                        <div className="space-y-2">
+                            <PasswordField
+                                id="password"
+                                name="password"
+                                label="Kata Sandi Baru"
+                                value={data.password}
+                                onChange={(e) => setData('password', e.target.value)}
+                                placeholder="Minimal 8 karakter"
+                                error={errors.password}
+                                autoComplete="new-password"
+                                required
+                            />
 
-                        <PasswordField
-                            id="password_confirmation"
-                            name="password_confirmation"
-                            label="Konfirmasi Kata Sandi Baru"
-                            value={data.password_confirmation}
-                            onChange={(e) => setData('password_confirmation', e.target.value)}
-                            placeholder="Ulangi kata sandi baru"
-                            error={errors.password_confirmation}
-                            autoComplete="new-password"
-                            required
-                        />
+                            {/* Inline real-time validation feedback */}
+                            <div className="rounded-xl border border-slate-200/80 bg-slate-50/70 p-3 dark:border-zinc-800 dark:bg-zinc-900/50">
+                                <p className="text-[11px] font-medium text-slate-600 dark:text-zinc-400">
+                                    Persyaratan Kata Sandi:
+                                </p>
+                                <div className="mt-2 flex flex-col space-y-1.5">
+                                    <div
+                                        className={`flex items-center gap-2 text-[11.5px] transition-colors ${
+                                            checks.minLength
+                                                ? 'font-medium text-emerald-600 dark:text-emerald-400'
+                                                : 'text-slate-500 dark:text-zinc-400'
+                                        }`}
+                                    >
+                                        {checks.minLength ? (
+                                            <Check className="size-3.5 shrink-0 stroke-[2.5]" />
+                                        ) : (
+                                            <span className="mx-1 size-1.5 shrink-0 rounded-full bg-slate-300 dark:bg-zinc-600" />
+                                        )}
+                                        <span>Minimal 8 karakter</span>
+                                    </div>
+
+                                    <div
+                                        className={`flex items-center gap-2 text-[11.5px] transition-colors ${
+                                            checks.hasLetter
+                                                ? 'font-medium text-emerald-600 dark:text-emerald-400'
+                                                : 'text-slate-500 dark:text-zinc-400'
+                                        }`}
+                                    >
+                                        {checks.hasLetter ? (
+                                            <Check className="size-3.5 shrink-0 stroke-[2.5]" />
+                                        ) : (
+                                            <span className="mx-1 size-1.5 shrink-0 rounded-full bg-slate-300 dark:bg-zinc-600" />
+                                        )}
+                                        <span>Mengandung huruf</span>
+                                    </div>
+
+                                    <div
+                                        className={`flex items-center gap-2 text-[11.5px] transition-colors ${
+                                            checks.hasNumber
+                                                ? 'font-medium text-emerald-600 dark:text-emerald-400'
+                                                : 'text-slate-500 dark:text-zinc-400'
+                                        }`}
+                                    >
+                                        {checks.hasNumber ? (
+                                            <Check className="size-3.5 shrink-0 stroke-[2.5]" />
+                                        ) : (
+                                            <span className="mx-1 size-1.5 shrink-0 rounded-full bg-slate-300 dark:bg-zinc-600" />
+                                        )}
+                                        <span>Mengandung angka</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <PasswordField
+                                id="password_confirmation"
+                                name="password_confirmation"
+                                label="Konfirmasi Kata Sandi Baru"
+                                value={data.password_confirmation}
+                                onChange={(e) => setData('password_confirmation', e.target.value)}
+                                placeholder="Ulangi kata sandi baru"
+                                error={errors.password_confirmation}
+                                autoComplete="new-password"
+                                required
+                            />
+
+                            {confirmation.length > 0 && (
+                                <div className="flex items-center gap-1.5 px-0.5 text-[11.5px]">
+                                    {isMatch ? (
+                                        <span className="flex items-center gap-1 font-medium text-emerald-600 dark:text-emerald-400">
+                                            <Check className="size-3.5 stroke-[2.5]" /> Kata sandi cocok
+                                        </span>
+                                    ) : isMismatch ? (
+                                        <span className="flex items-center gap-1 font-medium text-rose-500 dark:text-rose-400">
+                                            <X className="size-3.5 stroke-[2.5]" /> Kata sandi belum cocok
+                                        </span>
+                                    ) : null}
+                                </div>
+                            )}
+                        </div>
 
                         <Button
                             type="submit"

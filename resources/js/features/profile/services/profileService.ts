@@ -13,8 +13,8 @@ export const profileService = {
     ) {
         const formData = new FormData();
         formData.append('photo', file);
-        formData.append('name', profileData.name || '');
-        formData.append('email', profileData.email || '');
+        if (profileData.name) formData.append('name', profileData.name);
+        if (profileData.email) formData.append('email', profileData.email);
         if (profileData.username) formData.append('username', profileData.username);
         if (profileData.phone) formData.append('phone', profileData.phone);
         if (profileData.position) formData.append('position', profileData.position);
