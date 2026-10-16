@@ -111,6 +111,7 @@ export const contractApi = {
         attachments?: File | File[],
         actionId?: string,
         actionCode?: string,
+        newBatch?: boolean,
     ): Promise<Contract> => {
         const uids = Array.isArray(userIds) ? userIds : [userIds];
         const fd = new FormData();
@@ -123,6 +124,7 @@ export const contractApi = {
         if (minApprovals) fd.append('min_approvals', String(minApprovals));
         if (actionId) fd.append('action_id', actionId);
         if (actionCode) fd.append('action_code', actionCode);
+        if (newBatch) fd.append('new_batch', '1');
         if (attachments) {
             if (Array.isArray(attachments)) {
                 attachments.forEach((f) => fd.append('attachments[]', f));

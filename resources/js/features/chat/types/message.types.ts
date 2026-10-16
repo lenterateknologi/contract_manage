@@ -22,6 +22,7 @@ export interface ChatMessage {
     id: string;
     contract_id: string;
     user_id: string;
+    type?: string;
     message: string;
     attachment_path?: string;
     attachment_url?: string;
@@ -36,5 +37,6 @@ export interface ChatMessage {
 export interface SendMessagePayload {
     contractId: string;
     message: string;
+    type?: string;
     file?: File | null;
 }

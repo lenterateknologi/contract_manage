@@ -91,8 +91,15 @@ class WorkflowTransitionService
         }
 
         // 3. Match action code in step actions
-        if (! $stepAction && $approval->workflowStep && $actionCode) {
-            $stepAction = $approval->workflowStep->actions()->where('action_code', $actionCode)->first();
+        if (! $stepAction && $approval->workflowStep) {
+            if ($actionCode) {
+                $stepAction = $approval->workflowStep->actions()->where('action_code', $actionCode)->first();
+            }
+            if (! $stepAction) {
+                // If the step only has an auto action or single action, use it as fallback
+                $stepAction = $approval->workflowStep->actions()->whereIn('action_code', ['auto', 'automation', 'approve'])->first()
+                    ?: $approval->workflowStep->actions()->first();
+            }
         }
 
         return $stepAction;
@@ -171,6 +178,8 @@ class WorkflowTransitionService
                 if ($targetStep) {
                     unset($metadata['branch_from_step_num'], $metadata['branch_from_step_id']);
                     $contract->update([
+                        'workflow_id' => $originWfId,
+                        'origin_workflow_id' => null,
                         'workflow_step_id' => $targetStep->id,
                         'is_in_sub_workflow' => false,
                         'branch_step_number' => null,

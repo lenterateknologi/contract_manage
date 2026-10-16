@@ -46,18 +46,26 @@ class GetContractAvailableActionsAction
 
         $activePendingApproval = $contract->approvals
             ->where('user_id', $user->id)
+            ->where('workflow_step_id', $contract->workflow_step_id)
+            ->where('is_active', true)
             ->where('status', 'pending')
             ->first();
 
         $isSubStepReviewer = (bool) ($activePendingApproval && ($activePendingApproval->sub_step !== null || $activePendingApproval->role === 'Persetujuan Tambahan'));
 
+        $hasActiveAdhoc = $contract->approvals
+            ->where('workflow_step_id', $contract->workflow_step_id)
+            ->where('is_adhoc', true)
+            ->where('is_active', true)
+            ->isNotEmpty();
+
         $isStepAuthorized = false;
-        if ($effectiveStep) {
+        if ($effectiveStep && ! $hasActiveAdhoc) {
             $approvers = app(ContractWorkflowService::class)->resolveApproversForStep($contract, $effectiveStep);
             $isStepAuthorized = collect($approvers['approvers'] ?? [])->pluck('id')->contains($user->id);
         }
 
-        $canApprove = (bool) $activePendingApproval || $isStepAuthorized || $user->isAdmin() || ($contract->status === 'in_review' && ! empty($contract->workflow_step_id));
+        $canApprove = (bool) $activePendingApproval || $isStepAuthorized || $user->isAdmin();
 
         // 1. Custom Actions
         $customActionsPool = data_get($contract->workflow?->meta, 'custom_actions', [])

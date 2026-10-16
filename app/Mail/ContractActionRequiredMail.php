@@ -27,10 +27,18 @@ class ContractActionRequiredMail extends Mailable implements ShouldQueue
 
     public function content(): Content
     {
+        $contract = $this->approval->contract;
+        $note = $this->approval->comment
+            ?? ($contract->metadata['assigned_pic_note'] ?? null)
+            ?? ($contract->metadata['last_action_note'] ?? null)
+            ?? ($contract->approvals()->whereIn('status', ['approved', 'rejected'])->whereNotNull('comment')->where('comment', '!=', '')->latest('decided_at')->value('comment'))
+            ?? null;
+
         return new Content(
             view: 'emails.contract-action-required',
             with: [
                 'approval' => $this->approval,
+                'note' => $note,
             ],
         );
     }

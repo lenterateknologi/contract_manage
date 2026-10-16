@@ -101,7 +101,7 @@ class ActionTransitionHandler
 
                         // Dynamic return: if returning to origin from sub-workflow, calculate target step from branch point
                         $returnMode = $transition['return_mode'] ?? '';
-                        $originWfId = $contract->origin_workflow_id ?: $contract->workflow_id;
+                        $originWfId = ($contract->is_in_sub_workflow && $contract->origin_workflow_id) ? $contract->origin_workflow_id : $contract->workflow_id;
                         $originStepNum = $contract->branch_step_number ?? (isset($metadata['branch_from_step_num']) ? (int) $metadata['branch_from_step_num'] : null);
                         $originStepId = $contract->origin_workflow_step_id ?? (isset($metadata['branch_from_step_id']) ? $metadata['branch_from_step_id'] : null);
 
@@ -161,6 +161,8 @@ class ActionTransitionHandler
                                 }
 
                                 $contract->update([
+                                    'workflow_id' => $originWfId,
+                                    'origin_workflow_id' => null,
                                     'workflow_step_id' => $targetStep->id,
                                     'is_in_sub_workflow' => false,
                                     'branch_step_number' => null,

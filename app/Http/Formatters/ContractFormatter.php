@@ -102,7 +102,12 @@ class ContractFormatter
                     }
                     $userId = Auth::id();
                     if ($c->relationLoaded('approvals')) {
-                        return $c->approvals->where('workflow_step_id', $c->workflow_step_id)->where('status', 'pending')->where('user_id', $userId)->isNotEmpty();
+                        return $c->approvals
+                            ->where('workflow_step_id', $c->workflow_step_id)
+                            ->where('is_active', true)
+                            ->where('status', 'pending')
+                            ->where('user_id', $userId)
+                            ->isNotEmpty();
                     }
 
                     return false;
@@ -113,13 +118,18 @@ class ContractFormatter
                     }
                     $userId = Auth::id();
                     if ($c->relationLoaded('approvals')) {
-                        return $c->approvals->where('workflow_step_id', $c->workflow_step_id)->where('status', 'pending')->where('user_id', $userId)->isNotEmpty();
+                        return $c->approvals
+                            ->where('workflow_step_id', $c->workflow_step_id)
+                            ->where('is_active', true)
+                            ->where('status', 'pending')
+                            ->where('user_id', $userId)
+                            ->isNotEmpty();
                     }
 
                     return false;
                 })(),
                 'pending_approval_id' => $c->relationLoaded('approvals')
-                    ? $c->approvals->where('workflow_step_id', $c->workflow_step_id)->where('status', 'pending')->where('user_id', Auth::id())->first()?->id
+                    ? $c->approvals->where('workflow_step_id', $c->workflow_step_id)->where('is_active', true)->where('status', 'pending')->where('user_id', Auth::id())->first()?->id
                     : null,
                 'my_last_approval' => (function () use ($c) {
                     if (! Auth::check() || ! $c->relationLoaded('approvals')) {
@@ -483,9 +493,24 @@ class ContractFormatter
                 }
                 $userId = Auth::id();
                 if ($c->relationLoaded('approvals')) {
-                    $hasPending = $c->approvals->where('workflow_step_id', $c->workflow_step_id)->where('status', 'pending')->where('user_id', $userId)->isNotEmpty();
+                    $hasPending = $c->approvals
+                        ->where('workflow_step_id', $c->workflow_step_id)
+                        ->where('is_active', true)
+                        ->where('status', 'pending')
+                        ->where('user_id', $userId)
+                        ->isNotEmpty();
                     if ($hasPending) {
                         return true;
+                    }
+
+                    $hasActiveAdhoc = $c->approvals
+                        ->where('workflow_step_id', $c->workflow_step_id)
+                        ->where('is_adhoc', true)
+                        ->where('is_active', true)
+                        ->isNotEmpty();
+
+                    if ($hasActiveAdhoc) {
+                        return false;
                     }
                 }
                 $isActiveWorkflow = $c->workflow_step_id && $c->workflowStep && ! in_array($c->status, ['approved', 'rejected', 'finished', 'cancelled', 'draft']);
@@ -503,9 +528,24 @@ class ContractFormatter
                 }
                 $userId = Auth::id();
                 if ($c->relationLoaded('approvals')) {
-                    $hasPending = $c->approvals->where('workflow_step_id', $c->workflow_step_id)->where('status', 'pending')->where('user_id', $userId)->isNotEmpty();
+                    $hasPending = $c->approvals
+                        ->where('workflow_step_id', $c->workflow_step_id)
+                        ->where('is_active', true)
+                        ->where('status', 'pending')
+                        ->where('user_id', $userId)
+                        ->isNotEmpty();
                     if ($hasPending) {
                         return true;
+                    }
+
+                    $hasActiveAdhoc = $c->approvals
+                        ->where('workflow_step_id', $c->workflow_step_id)
+                        ->where('is_adhoc', true)
+                        ->where('is_active', true)
+                        ->isNotEmpty();
+
+                    if ($hasActiveAdhoc) {
+                        return false;
                     }
                 }
                 $isActiveWorkflow = $c->workflow_step_id && $c->workflowStep && ! in_array($c->status, ['approved', 'rejected', 'finished', 'cancelled', 'draft']);
@@ -518,8 +558,8 @@ class ContractFormatter
                 return false;
             })(),
             'pending_approval_id' => $c->relationLoaded('approvals')
-                ? ($c->approvals->where('workflow_step_id', $c->workflow_step_id)->where('status', 'pending')->where('user_id', Auth::id())->first()?->id
-                    ?? $c->approvals->where('workflow_step_id', $c->workflow_step_id)->where('user_id', Auth::id())->first()?->id)
+                ? ($c->approvals->where('workflow_step_id', $c->workflow_step_id)->where('is_active', true)->where('status', 'pending')->where('user_id', Auth::id())->first()?->id
+                    ?? $c->approvals->where('workflow_step_id', $c->workflow_step_id)->where('is_active', true)->where('user_id', Auth::id())->first()?->id)
                 : null,
             'unread_count' => (int) ($c->unread_count ?? 0),
             'doc_reviews' => $isDetail ? (function () use ($c) {

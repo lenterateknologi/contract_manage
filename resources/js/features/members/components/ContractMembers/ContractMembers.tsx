@@ -6,8 +6,64 @@ import { Building2, Mail, Search, ShieldCheck, Users } from 'lucide-react';
 import { useContractMembers } from '../../hooks/useContractMembers';
 import { ContractMembersProps } from '../../types';
 
+import React, { useMemo, useState } from 'react';
+import { usePage } from '@inertiajs/react';
+
 export default function ContractMembers({ contract }: ContractMembersProps) {
-    const { search, setSearch, activeMembersList, filteredMembers } = useContractMembers(contract);
+    const { auth } = usePage<any>().props;
+    const currentUser = auth?.user;
+    const currentUserId = currentUser?.id;
+
+    const [memberFilterTab, setMemberFilterTab] = useState<'all' | 'team'>('all');
+    const { search, setSearch, activeMembersList } = useContractMembers(contract);
+
+    const userOrgGroup = (currentUser as any)?.idorg_group
+        || (currentUser as any)?.department?.idorg_group
+        || (currentUser as any)?.organization_group_id
+        || (currentUser as any)?.org_group_name;
+
+    const tabFilteredMembers = useMemo(() => {
+        if (memberFilterTab === 'all') {
+            return activeMembersList;
+        }
+
+        return activeMembersList.filter((m) => {
+            const memberUser = m.user;
+            if (!memberUser) return false;
+
+            if (userOrgGroup) {
+                const memberOrgGroup = memberUser.idorg_group
+                    || memberUser.department?.idorg_group
+                    || memberUser.organization_group_id
+                    || memberUser.org_group_name;
+
+                if (memberOrgGroup && String(memberOrgGroup).toLowerCase() === String(userOrgGroup).toLowerCase()) {
+                    return true;
+                }
+            }
+
+            const isVendor = m.roles?.some((r: string) => r.toLowerCase().includes('vendor') || r.toLowerCase().includes('pihak kedua'));
+            if (isVendor) return false;
+
+            if (memberUser.id === currentUserId) return true;
+
+            return false;
+        });
+    }, [activeMembersList, memberFilterTab, userOrgGroup, currentUserId]);
+
+    const filteredMembers = useMemo(() => {
+        if (!search.trim()) return tabFilteredMembers;
+        const q = search.toLowerCase();
+        return tabFilteredMembers.filter(({ user, roles }) => {
+            return (
+                user.name?.toLowerCase().includes(q) ||
+                user.email?.toLowerCase().includes(q) ||
+                user.department_name?.toLowerCase().includes(q) ||
+                user.role?.toLowerCase().includes(q) ||
+                roles.some((r) => r.toLowerCase().includes(q))
+            );
+        });
+    }, [tabFilteredMembers, search]);
 
     return (
         <div className="animate-in fade-in flex flex-1 flex-col gap-3 overflow-hidden p-3 duration-300 lg:p-4">
@@ -18,9 +74,35 @@ export default function ContractMembers({ contract }: ContractMembersProps) {
                         <Users size={15} className="text-primary-foreground/90" />
                         <h4 className="text-primary-foreground text-xs font-semibold tracking-tight uppercase">Anggota Tim & Personil Terlibat</h4>
                         <span className="rounded border border-white/30 bg-white/20 px-1.5 py-0.5 text-[9px] font-bold text-white">
-                            {activeMembersList.length} Personil
+                            {filteredMembers.length} Personil
                         </span>
                     </div>
+                </div>
+
+                {/* Filter Tabs: All vs Team Internal */}
+                <div className="flex items-center rounded-lg bg-black/20 p-0.5 text-[11px] font-medium">
+                    <button
+                        type="button"
+                        onClick={() => setMemberFilterTab('all')}
+                        className={`rounded-md px-2.5 py-1 transition-all ${
+                            memberFilterTab === 'all'
+                                ? 'bg-white text-primary font-bold shadow-xs'
+                                : 'text-white/80 hover:text-white'
+                        }`}
+                    >
+                        Semua Terlibat ({activeMembersList.length})
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setMemberFilterTab('team')}
+                        className={`rounded-md px-2.5 py-1 transition-all ${
+                            memberFilterTab === 'team'
+                                ? 'bg-white text-primary font-bold shadow-xs'
+                                : 'text-white/80 hover:text-white'
+                        }`}
+                    >
+                        Tim Internal
+                    </button>
                 </div>
             </div>
 
@@ -36,7 +118,7 @@ export default function ContractMembers({ contract }: ContractMembersProps) {
                         />
                     </div>
                     <span className="text-muted-foreground hidden shrink-0 text-[10px] font-semibold tracking-wide uppercase sm:inline-block">
-                        Menampilkan {filteredMembers.length} dari {activeMembersList.length} personil
+                        Menampilkan {filteredMembers.length} personil
                     </span>
                 </div>
 

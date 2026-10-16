@@ -56,12 +56,12 @@ export function ApprovalCard({
     const stepActions: any[] = (matchedStep as any)?.action_configs || (matchedStep as any)?.actions || [];
 
     const isAutoStep = Boolean(
-        a.approver_type === 'auto' ||
-        a.action_code === 'auto' ||
-        a.role === 'Sistem' ||
-        a.approver_name === 'System' ||
-        (matchedStep?.label || '').includes('Kembali ke Alur Utama') ||
-        (a.step_name || '').includes('Kembali ke Alur Utama'),
+        !a.approver &&
+        (a.approver_type === 'auto' ||
+            a.role === 'Sistem' ||
+            a.approver_name === 'System' ||
+            (matchedStep?.label || '').includes('Kembali ke Alur Utama') ||
+            (a.step_name || '').includes('Kembali ke Alur Utama'))
     );
 
     // Cari action spesifik yang dieksekusi approver

@@ -134,8 +134,9 @@ export const ContractDetailView = ({
     );
 
     // Discussion subtab
-    const rawDiscSub = (initialTab === 'discussion' && currentSub) || params.get('discsubtab') || getClientPref<string>('detail_disc_subtab', 'chat');
-    const [discSubTab, setDiscSubTabState] = useState<'chat' | 'members'>((['chat', 'members'].includes(rawDiscSub) ? rawDiscSub : 'chat') as any);
+    const rawDiscSub = (initialTab === 'discussion' && currentSub) || params.get('discsubtab') || getClientPref<string>('detail_disc_subtab', 'all');
+    const initialDiscSub = rawDiscSub === 'chat' ? 'all' : rawDiscSub;
+    const [discSubTab, setDiscSubTabState] = useState<'all' | 'team' | 'members'>((['all', 'team', 'members'].includes(initialDiscSub) ? initialDiscSub : 'all') as any);
 
     // History subtab
     const rawHistSub =
@@ -204,7 +205,7 @@ export const ContractDetailView = ({
         updateUrlParams(detailTab, sub);
     };
 
-    const setDiscSubTab = (sub: 'chat' | 'members') => {
+    const setDiscSubTab = (sub: 'all' | 'team' | 'members') => {
         setDiscSubTabState(sub);
         setClientPref('detail_disc_subtab', sub);
         updateUrlParams(detailTab, sub);
@@ -742,8 +743,13 @@ export const ContractDetailView = ({
         const hasMembers = meta.show_tab_members !== false;
         if (hasChat || hasMembers) {
             const children: DetailSidebarTabChild[] = [];
-            if (hasChat) children.push({ id: 'chat', label: 'Chat & Diskusi', icon: MessageSquare });
-            if (hasMembers) children.push({ id: 'members', label: 'Member / Anggota Tim', icon: Users });
+            if (hasChat) {
+                children.push({ id: 'all', label: 'Semua (All)', icon: MessageSquare });
+                children.push({ id: 'team', label: 'Tim Internal (Team)', icon: Users });
+            }
+            if (hasMembers) {
+                children.push({ id: 'members', label: 'Member / Anggota Tim', icon: Users });
+            }
 
             result.push({
                 id: 'discussion',

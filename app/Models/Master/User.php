@@ -745,6 +745,10 @@ class User extends Authenticatable
             return $src;
         }
 
+        if (! Storage::disk('public')->exists($src)) {
+            return null;
+        }
+
         return Storage::disk('public')->url($src);
     }
 

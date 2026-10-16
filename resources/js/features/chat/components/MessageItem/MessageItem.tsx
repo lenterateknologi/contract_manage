@@ -113,7 +113,10 @@ export function MessageItem({
     const effectiveInitials =
         effectiveUser?.initials ||
         (msg.user?.initials && msg.user.initials !== 'ME' ? msg.user.initials : isCurrentUser ? authUser?.initials : undefined);
-    const effectiveAvatar = msg.user?.avatar || (isCurrentUser ? authUser?.avatar || authUser?.avatar_url || authUser?.image_src : '');
+    const effectiveAvatar =
+        msg.user?.avatar ||
+        (isCurrentUser ? (authUser?.avatar !== undefined ? authUser.avatar : authUser?.avatar_url) : '') ||
+        '';
     const activeReactions = Object.entries(computedReactions).filter(([, count]) => count > 0);
 
     return (

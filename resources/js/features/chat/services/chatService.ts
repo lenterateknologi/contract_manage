@@ -14,19 +14,23 @@ export const chatService = {
         return list as Conversation[];
     },
 
-    async fetchMessages(contractId: string, search?: string): Promise<ChatMessage[]> {
+    async fetchMessages(contractId: string, search?: string, type?: string): Promise<ChatMessage[]> {
         const res: any = await unwrapResponse(
             apiClient.get(API_ENDPOINTS.DISCUSSIONS.CONTRACT_MESSAGES(contractId), {
-                params: { search: search || undefined },
+                params: {
+                    search: search || undefined,
+                    type: type || undefined,
+                },
             }),
         );
         const list = Array.isArray(res) ? res : (res?.data ?? []);
         return list as ChatMessage[];
     },
 
-    async sendMessage({ contractId, message, file }: SendMessagePayload): Promise<ChatMessage> {
+    async sendMessage({ contractId, message, type, file }: SendMessagePayload): Promise<ChatMessage> {
         const fd = new FormData();
         fd.append('message', message);
+        if (type) fd.append('type', type);
         if (file) fd.append('attachment', file);
         const res: any = await unwrapResponse(
             apiClient.post(API_ENDPOINTS.DISCUSSIONS.CONTRACT_MESSAGES(contractId), fd),

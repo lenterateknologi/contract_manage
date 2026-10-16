@@ -28,7 +28,14 @@
             <div class="content">
                 <p>Halo {{ $approval->approver->name }},</p>
 
-                <p>Sebuah kontrak baru telah memasuki tahapan alur kerja yang membutuhkan persetujuan atau tindakan dari Anda:</p>
+                @if(!empty($note))
+                    <p style="font-size: 15px; color: #1f2937; background: #f0fdf4; border-left: 4px solid #16a34a; padding: 12px 16px; border-radius: 6px; margin: 16px 0;">
+                        {{ $note }}
+                    </p>
+                    <p>Kontrak berikut memerlukan tindakan atau persetujuan dari Anda:</p>
+                @else
+                    <p>Sebuah kontrak baru telah memasuki tahapan alur kerja yang membutuhkan persetujuan atau tindakan dari Anda:</p>
+                @endif
 
                 <div class="meta">
                     <p><strong>Judul Kontrak</strong><br>{{ $approval->contract->title }}</p>
@@ -36,6 +43,9 @@
                     <p><strong>Jenis Kontrak</strong><br>{{ $approval->contract->contractType->name ?? $approval->contract->contract_type }}</p>
                     <p><strong>Tahap Alur Kerja</strong><br>Tahap {{ $approval->workflowStep->step }}: {{ $approval->workflowStep->description }} (Peran: {{ $approval->role }})</p>
                     <p><strong>Diajukan Oleh</strong><br>{{ $approval->contract->initiator->name ?? $approval->contract->creator->name }}</p>
+                    @if(!empty($note))
+                        <p><strong>Catatan</strong><br>{{ $note }}</p>
+                    @endif
                 </div>
 
                 <a href="{{ url('/admin/contracts?detail=' . $approval->contract_id) }}" class="button" style="color: #ffffff !important; text-decoration: none;">Lihat & Putuskan Kontrak</a>

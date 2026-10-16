@@ -18,7 +18,7 @@ class ContractMessage extends Model
     use HasUuids, SoftDeletes;
 
     protected $fillable = [
-        'contract_id', 'user_id', 'message', 'read_by', 'reactions', 'attachment_path', 'attachment_name',
+        'contract_id', 'user_id', 'type', 'message', 'read_by', 'reactions', 'attachment_path', 'attachment_name',
     ];
 
     protected $casts = [

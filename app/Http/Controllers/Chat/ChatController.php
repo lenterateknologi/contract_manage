@@ -95,7 +95,8 @@ class ChatController extends Controller
 
         $limit = $request->integer('limit', 100);
         $search = $request->query('search');
-        $messages = $this->chatService->getContractMessages($contract, $limit, Auth::id(), $search);
+        $type = $request->query('type');
+        $messages = $this->chatService->getContractMessages($contract, $limit, Auth::id(), $search, $type);
 
         return $this->successResponse($messages, 'Contract messages retrieved successfully');
     }
@@ -120,6 +121,7 @@ class ChatController extends Controller
     {
         $request->validate([
             'message' => 'nullable|string',
+            'type' => 'nullable|string|max:50',
             'attachment' => 'nullable|file|max:10240', // 10MB limit
         ]);
 
@@ -140,7 +142,8 @@ class ChatController extends Controller
             $contract,
             Auth::user(),
             $request->message,
-            $request->file('attachment')
+            $request->file('attachment'),
+            $request->input('type', 'contract')
         );
 
         return $this->successResponse($this->chatService->formatMessage($msg, Auth::id()), 'Message sent successfully', 201);

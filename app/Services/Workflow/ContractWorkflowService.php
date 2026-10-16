@@ -161,8 +161,10 @@ class ContractWorkflowService
                 ->where('user_id', Auth::id())
                 ->first();
 
+            $submitNote = ! empty($metadata['note']) ? $metadata['note'] : 'Pengajuan draf kontrak dikirim oleh inisiator';
+
             if ($draftingApproval && ($firstStep->step_category === 'drafting' || $firstStep->approver_type === 'initiator')) {
-                $this->approveContract($contract, $draftingApproval, 'Pengajuan draf kontrak dikirim oleh inisiator');
+                $this->approveContract($contract, $draftingApproval, $submitNote);
             } else {
                 $this->handleAutoAdvanceStep($contract, $firstStep);
             }
@@ -261,6 +263,14 @@ class ContractWorkflowService
             }
         }
 
+        if ($comment) {
+            $metadata = $contract->metadata ?? [];
+            $metadata['last_action_note'] = $comment;
+            $metadata['last_action_by'] = $approval->approver_name;
+            $metadata['last_action_at'] = now()->toIso8601String();
+            $contract->update(['metadata' => $metadata]);
+        }
+
         $this->activateNextApprovers($contract, $approval);
 
         if ($assignedPicId) {
@@ -270,6 +280,9 @@ class ContractWorkflowService
             $metadata['assigned_by_id'] = Auth::id();
             $metadata['assigned_at'] = $now->toIso8601String();
             $metadata['pic_assigned_at'] = $now->toIso8601String();
+            if ($comment) {
+                $metadata['assigned_pic_note'] = $comment;
+            }
 
             $contract->update([
                 'assigned_pic_id' => $assignedPicId,
@@ -358,6 +371,24 @@ class ContractWorkflowService
             in_array(strtolower($step->step_category ?? ''), ['auto', 'system', 'automation']) ||
             in_array(strtolower($step->approver_type ?? ''), ['auto', 'system', 'automation']);
 
+        if (! $isAutoStep) {
+            return;
+        }
+
+        // If step is not configured with an explicit 'auto'/'automation' action, but is categorized as auto step,
+        // do not auto-advance if there are pending human approvals.
+        if (! $action) {
+            $hasPendingAdhoc = $contract->approvals()
+                ->where('workflow_step_id', $step->id)
+                ->where('is_adhoc', true)
+                ->whereIn('status', ['pending', 'waiting'])
+                ->exists();
+
+            if ($hasPendingAdhoc) {
+                return;
+            }
+        }
+
         if ($isAutoStep) {
             $action = $action ?: $step->actions()->first();
             if ($action) {
@@ -368,10 +399,9 @@ class ContractWorkflowService
 
                 $nextStep = $this->evaluateTransition($contract, $step, $action);
                 if ($nextStep && $nextStep->id !== $step->id) {
-                    // Prioritaskan status target dari tahapan (step) tujuan
-                    $statusStr = ($nextStep->meta['target_status'] ?? null)
+                    $statusStr = $action->target_status
+                        ?: ($nextStep->meta['target_status'] ?? null)
                         ?: $nextStep->actions()->where('action_code', 'approve')->value('target_status')
-                        ?: $action->target_status
                         ?: $contract->status;
                     $nextStatus = ContractStatus::where('code', $statusStr)->first();
 
@@ -380,15 +410,34 @@ class ContractWorkflowService
                         ->whereIn('status', ['pending', 'waiting'])
                         ->update([
                             'status' => 'approved',
+                            'action_id' => $action->id,
+                            'action_code' => $action->action_code instanceof \App\Enums\WorkflowAction ? $action->action_code->value : ($action->action_code ?? 'auto'),
+                            'action_alias' => $action->alias ?: 'Review',
                             'decided_at' => now(),
-                            'comment' => $action->alias ?: 'Dijalankan otomatis oleh sistem',
+                            'comment' => null,
+                            'updated_by' => Auth::id(),
                         ]);
 
-                    $contract->update([
+                    $updatePayload = [
                         'workflow_id' => $nextStep->workflow_id,
                         'workflow_step_id' => $nextStep->id,
                         'status' => $nextStatus?->code ?: $statusStr,
-                    ]);
+                    ];
+
+                    $isReturningFromSubWorkflow = $contract->is_in_sub_workflow && $nextStep->workflow_id !== $step->workflow_id;
+                    if ($isReturningFromSubWorkflow) {
+                        $metadata = $contract->metadata ?? [];
+                        unset($metadata['branch_from_step_num'], $metadata['branch_from_step_id']);
+                        $updatePayload['is_in_sub_workflow'] = false;
+                        $updatePayload['branch_step_number'] = null;
+                        $updatePayload['origin_workflow_step_id'] = null;
+                        $updatePayload['origin_workflow_id'] = null;
+                        $updatePayload['current_step_number'] = $nextStep->step;
+                        $updatePayload['current_sub_workflow_id'] = null;
+                        $updatePayload['metadata'] = $metadata;
+                    }
+
+                    $contract->update($updatePayload);
 
                     $stepLabel = $step->name ?: $step->description ?: "Tahap {$step->step}";
                     $nextStepLabel = $nextStep->name ?: $nextStep->description ?: "Tahap {$nextStep->step}";

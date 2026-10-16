@@ -346,12 +346,44 @@ class ChatService
     /**
      * Get formatted messages for a contract.
      */
-    public function getContractMessages(Contract $contract, int $limit = 100, ?string $currentUserId = null, ?string $search = null): Collection
+    public function getContractMessages(Contract $contract, int $limit = 100, ?string $currentUserId = null, ?string $search = null, ?string $type = null): Collection
     {
         $query = $contract->messages()
-            ->with(['user'])
+            ->with(['user.department'])
             ->orderBy('created_at', 'asc')
             ->orderBy('id', 'asc');
+
+        if (! empty($type)) {
+            $query->where('type', $type);
+
+            // If querying 'team' messages, restrict visibility strictly to the current user's organization group
+            if ($type === 'team' && $currentUserId) {
+                $currentUser = User::with('department.organizationGroup')->find($currentUserId);
+                if ($currentUser && ! $currentUser->isAdmin() && ! $currentUser->isSuperAdmin()) {
+                    $userOrgGroupId = $currentUser->department?->organizationGroup?->id;
+                    $userOrgName = $currentUser->org_name ?: $currentUser->department?->name;
+
+                    $query->where(function ($q) use ($userOrgGroupId, $userOrgName, $currentUser) {
+                        $q->where('user_id', $currentUser->id);
+                        if ($userOrgGroupId) {
+                            $q->orWhereHas('user.department.organizationGroup', function ($sq) use ($userOrgGroupId) {
+                                $sq->where('id', $userOrgGroupId);
+                            });
+                        }
+                        if ($userOrgName) {
+                            $q->orWhereHas('user', function ($sq) use ($userOrgName) {
+                                $sq->where('org_name', $userOrgName);
+                            });
+                        }
+                        if ($currentUser->department_id) {
+                            $q->orWhereHas('user', function ($sq) use ($currentUser) {
+                                $sq->where('department_id', $currentUser->department_id);
+                            });
+                        }
+                    });
+                }
+            }
+        }
 
         if (! empty($search)) {
             $query->where('message', 'like', '%'.trim($search).'%');
@@ -398,7 +430,9 @@ class ChatService
     {
         return [
             'id' => $m->id,
+            'contract_id' => $m->contract_id,
             'user_id' => $m->user_id,
+            'type' => $m->type ?? 'contract',
             'message' => $m->message,
             'read_by' => $m->read_by ?? [],
             'reactions' => $this->enrichReactionsWithUser($m->reactions, $currentUserId),
@@ -418,7 +452,7 @@ class ChatService
     /**
      * Send a new message.
      */
-    public function sendMessage(Contract $contract, User $user, ?string $messageText, ?UploadedFile $attachmentFile): ContractMessage
+    public function sendMessage(Contract $contract, User $user, ?string $messageText, ?UploadedFile $attachmentFile, string $type = 'contract'): ContractMessage
     {
         $attachmentPath = null;
         $attachmentName = null;
@@ -431,6 +465,7 @@ class ChatService
         $msg = ContractMessage::create([
             'contract_id' => $contract->id,
             'user_id' => $user->id,
+            'type' => $type ?: 'contract',
             'message' => $messageText ?? '',
             'read_by' => [$user->id],
             'reactions' => [],

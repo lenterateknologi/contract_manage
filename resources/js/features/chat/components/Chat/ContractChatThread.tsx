@@ -11,6 +11,7 @@ import { MessageList } from '../MessageList/MessageList';
 interface ContractChatThreadProps {
     contract: Contract;
     meId?: string;
+    type?: string;
     users?: any[];
     onNewMessage?: (c: Contract) => void;
 }
@@ -18,6 +19,7 @@ interface ContractChatThreadProps {
 export function ContractChatThread({
     contract,
     meId,
+    type,
     users = [],
     onNewMessage,
 }: ContractChatThreadProps) {
@@ -49,7 +51,7 @@ export function ContractChatThread({
         sendMessage,
         toggleReaction,
         refresh,
-    } = useMessages(contract.id, isSearchingInThread ? threadSearchQuery : undefined);
+    } = useMessages(contract.id, isSearchingInThread ? threadSearchQuery : undefined, type);
 
     const [previewModal, setPreviewModal] = useState<{ isOpen: boolean; url: string; title: string }>({
         isOpen: false,
@@ -67,6 +69,7 @@ export function ContractChatThread({
             {/* Header */}
             <ChatHeader
                 conversation={contract}
+                type={type}
                 isSearchingInThread={isSearchingInThread}
                 threadSearchQuery={threadSearchQuery}
                 onToggleSearchInThread={() => setIsSearchingInThread((prev) => !prev)}

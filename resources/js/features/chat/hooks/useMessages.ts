@@ -15,21 +15,24 @@ export async function prefetchMessages(contractId: string) {
     }
 }
 
-export function useMessages(contractId?: string | null, searchQuery?: string) {
+export function useMessages(contractId?: string | null, searchQuery?: string, type?: string) {
+    const cacheKey = contractId ? `${contractId}_${type || 'all'}` : '';
+
     const [messages, setMessages] = useState<ChatMessage[]>(() => {
-        if (contractId && !searchQuery && messageCache.has(contractId)) {
-            return messageCache.get(contractId) || [];
+        if (cacheKey && !searchQuery && messageCache.has(cacheKey)) {
+            return messageCache.get(cacheKey) || [];
         }
         return [];
     });
     const [isLoading, setIsLoading] = useState<boolean>(() => {
         if (!contractId) return false;
-        if (!searchQuery && messageCache.has(contractId)) return false;
+        if (!searchQuery && cacheKey && messageCache.has(cacheKey)) return false;
         return true;
     });
     const [isSending, setIsSending] = useState<boolean>(false);
     const prevContractIdRef = useRef<string | null>(null);
     const prevSearchQueryRef = useRef<string | undefined>(undefined);
+    const prevTypeRef = useRef<string | undefined>(undefined);
 
     const loadMessages = useCallback(
         async (isBackground = false) => {
@@ -39,16 +42,17 @@ export function useMessages(contractId?: string | null, searchQuery?: string) {
                 return;
             }
 
-            const hasCache = !searchQuery && messageCache.has(contractId);
+            const currentCacheKey = `${contractId}_${type || 'all'}`;
+            const hasCache = !searchQuery && messageCache.has(currentCacheKey);
             if (!isBackground && !hasCache) {
                 setIsLoading(true);
             }
 
             try {
-                const list = await chatService.fetchMessages(contractId, searchQuery);
+                const list = await chatService.fetchMessages(contractId, searchQuery, type);
                 setMessages(list);
                 if (!searchQuery) {
-                    messageCache.set(contractId, list);
+                    messageCache.set(currentCacheKey, list);
                 }
             } catch (err) {
                 console.error('Failed to load messages for contract:', contractId, err);
@@ -56,23 +60,26 @@ export function useMessages(contractId?: string | null, searchQuery?: string) {
                 setIsLoading(false);
             }
         },
-        [contractId, searchQuery],
+        [contractId, searchQuery, type],
     );
 
-    // Initial load on mount and handle contractId/searchQuery changes
+    // Initial load on mount and handle contractId/searchQuery/type changes
     useEffect(() => {
         const contractChanged = contractId !== prevContractIdRef.current;
         const searchChanged = searchQuery !== prevSearchQueryRef.current;
+        const typeChanged = type !== prevTypeRef.current;
 
-        if (contractChanged || searchChanged) {
+        if (contractChanged || searchChanged || typeChanged) {
             prevContractIdRef.current = contractId || null;
             prevSearchQueryRef.current = searchQuery;
+            prevTypeRef.current = type;
 
             if (contractId) {
-                const hasCache = !searchQuery && messageCache.has(contractId);
+                const currentCacheKey = `${contractId}_${type || 'all'}`;
+                const hasCache = !searchQuery && messageCache.has(currentCacheKey);
                 if (hasCache) {
                     // Instant load from cache (0ms latency)
-                    setMessages(messageCache.get(contractId)!);
+                    setMessages(messageCache.get(currentCacheKey)!);
                     setIsLoading(false);
                     // Fetch latest in background silently
                     loadMessages(true);
@@ -86,7 +93,7 @@ export function useMessages(contractId?: string | null, searchQuery?: string) {
                 setIsLoading(false);
             }
         }
-    }, [contractId, searchQuery, loadMessages]);
+    }, [contractId, searchQuery, type, loadMessages]);
 
     // Polling active thread every 4s
     useEffect(() => {
@@ -105,12 +112,14 @@ export function useMessages(contractId?: string | null, searchQuery?: string) {
                 const newMsg = await chatService.sendMessage({
                     contractId,
                     message: messageText,
+                    type,
                     file,
                 });
                 setMessages((prev) => {
                     const updated = [...prev, newMsg];
                     if (!searchQuery) {
-                        messageCache.set(contractId, updated);
+                        const currentCacheKey = `${contractId}_${type || 'all'}`;
+                        messageCache.set(currentCacheKey, updated);
                     }
                     return updated;
                 });
@@ -122,7 +131,7 @@ export function useMessages(contractId?: string | null, searchQuery?: string) {
                 setIsSending(false);
             }
         },
-        [contractId, searchQuery],
+        [contractId, searchQuery, type],
     );
 
     const toggleReaction = useCallback(

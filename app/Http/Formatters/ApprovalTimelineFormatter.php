@@ -207,13 +207,14 @@ class ApprovalTimelineFormatter
             }
         }
 
-        // Normalize earlier chunks if contract returned to origin
-        if (! ($c->origin_workflow_id && $c->origin_workflow_id !== $c->workflow_id)) {
-            $lastIdx = count($chunks) - 1;
-            for ($i = 0; $i < $lastIdx; $i++) {
-                if ($chunks[$i]['workflow_id'] === $chunks[$lastIdx]['workflow_id']) {
-                    $resumeStep = $chunks[$lastIdx]['approvals']->map(fn ($a) => $a->workflowStep?->step)->filter()->min() ?? ($c->workflowStep?->step ?? 1);
-                    $chunks[$lastIdx]['from_step'] = $resumeStep;
+        // Normalize later chunks if a workflow appears in multiple execution chunks (e.g. sub-workflow batch 2 or resumed workflow)
+        for ($i = 1; $i < count($chunks); $i++) {
+            for ($j = 0; $j < $i; $j++) {
+                if ($chunks[$j]['workflow_id'] === $chunks[$i]['workflow_id']) {
+                    $resumeStep = $chunks[$i]['approvals']->map(fn ($a) => $a->workflowStep?->step)->filter()->min() ?? ($c->workflowStep?->step ?? 1);
+                    if ($resumeStep > 1) {
+                        $chunks[$i]['from_step'] = $resumeStep;
+                    }
                 }
             }
         }
@@ -360,19 +361,48 @@ class ApprovalTimelineFormatter
                 ];
 
                 // 1. ADD AD-HOC (SUB-STEPS) FIRST
+                // ponytail: dynamically resolve adhoc step action configuration (e.g. "Review") from subworkflow
+                $adhocSubWfAction = null;
+                $customActions = array_merge(
+                    $c->workflow?->meta['custom_actions'] ?? [],
+                    $c->originWorkflow?->meta['custom_actions'] ?? []
+                );
+                foreach ($customActions as $ca) {
+                    if (($ca['action_code'] ?? '') === 'add_adhoc' && ! empty($ca['transition_config']['workflow_id'])) {
+                        $subWf = \App\Models\Master\Workflow::with('steps.actions')->find($ca['transition_config']['workflow_id']);
+                        if ($subWf) {
+                            $adhocSubStep = $subWf->steps->first(fn ($s) => $s->approver_type === 'adhoc' || $s->step === 2);
+                            if ($adhocSubStep && $adhocSubStep->actions->isNotEmpty()) {
+                                $adhocSubWfAction = $adhocSubStep->actions->first();
+                                break;
+                            }
+                        }
+                    }
+                }
+
                 foreach ($adhocApprovals as $a) {
                     $isSigner = $a->role === 'Penandatangan';
                     $approverDeptName = ($a->relationLoaded('approver') && $a->approver?->relationLoaded('department'))
                         ? $a->approver?->department?->name
                         : null;
 
+                    $adhocPayload = [
+                        'is_signer' => $isSigner,
+                        'is_adhoc' => (bool) ($a->is_adhoc ?? ($a->role === 'Persetujuan Tambahan')),
+                        'batch_no' => $a->batch_no ?? 1,
+                    ];
+
+                    if (! $isSigner && $adhocSubWfAction) {
+                        $actionCodeVal = $adhocSubWfAction->action_code instanceof \App\Enums\WorkflowAction 
+                            ? $adhocSubWfAction->action_code->value 
+                            : ($adhocSubWfAction->action_code ?: 'approve');
+                        $adhocPayload['action_alias'] = $a->action_alias ?: $adhocSubWfAction->alias;
+                        $adhocPayload['action_code'] = $a->action_code ?: $actionCodeVal;
+                    }
+
                     $timeline[] = self::formatApprovalNode(
                         $a, $step, $stepLabel, $approverDeptName ?? $deptName, $stepWorkflowPayload,
-                        $globalOrder, $resolveAttachmentName, [
-                            'is_signer' => $isSigner,
-                            'is_adhoc' => (bool) ($a->is_adhoc ?? ($a->role === 'Persetujuan Tambahan')),
-                            'batch_no' => $a->batch_no ?? 1,
-                        ]
+                        $globalOrder, $resolveAttachmentName, $adhocPayload
                     );
                 }
 
@@ -583,9 +613,9 @@ class ApprovalTimelineFormatter
             'batch_no' => $a->batch_no ?? ($overrides['batch_no'] ?? 1),
             'is_adhoc' => $isAdhoc,
             'status' => $a->status,
-            'action_id' => $a->action_id,
-            'action_code' => $a->action_code,
-            'action_alias' => $a->action_alias,
+            'action_id' => $overrides['action_id'] ?? $a->action_id,
+            'action_code' => $overrides['action_code'] ?? $a->action_code,
+            'action_alias' => $overrides['action_alias'] ?? $a->action_alias,
             'comment' => $a->comment,
             'attachment_path' => $a->attachment_path,
             'attachment_name' => $resolveAttachmentName($a->attachment_path),

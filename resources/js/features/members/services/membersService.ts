@@ -7,8 +7,10 @@ export const membersService = {
     /**
      * Get involved members for a specific contract.
      */
-    getContractMembers: async (contractId: string): Promise<ContractMemberEntry[]> => {
-        return unwrapResponse(apiClient.get(API_ENDPOINTS.SUBRESOURCES.MEMBERS(contractId)));
+    getContractMembers: async (contractId: string, type?: string): Promise<ContractMemberEntry[]> => {
+        return unwrapResponse(apiClient.get(API_ENDPOINTS.SUBRESOURCES.MEMBERS(contractId), {
+            params: { type: type || undefined },
+        }));
     },
 
     /**

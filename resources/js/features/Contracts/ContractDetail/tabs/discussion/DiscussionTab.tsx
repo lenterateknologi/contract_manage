@@ -14,12 +14,12 @@ interface DiscussionTabProps {
 
 export function DiscussionTab({
     contract,
-    discSubTab = 'chat',
+    discSubTab = 'all',
     meId,
     users = [],
     onNewMessage,
 }: DiscussionTabProps) {
-    const activeSub = ['chat', 'members'].includes(discSubTab) ? discSubTab : 'chat';
+    const activeSub = ['all', 'team', 'chat', 'members'].includes(discSubTab) ? discSubTab : 'all';
 
     return (
         <Suspense
@@ -30,10 +30,20 @@ export function DiscussionTab({
             }
         >
             <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
-                {activeSub === 'chat' && (
+                {(activeSub === 'all' || activeSub === 'chat') && (
                     <ContractChat
                         contract={contract}
                         meId={meId}
+                        type="all"
+                        users={users || []}
+                        onNewMessage={onNewMessage}
+                    />
+                )}
+                {activeSub === 'team' && (
+                    <ContractChat
+                        contract={contract}
+                        meId={meId}
+                        type="team"
                         users={users || []}
                         onNewMessage={onNewMessage}
                     />

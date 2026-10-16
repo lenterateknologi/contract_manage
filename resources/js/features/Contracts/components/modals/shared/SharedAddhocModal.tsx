@@ -29,6 +29,7 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
     const [users, setUsers] = useState<any[]>([]);
     const [fetchingUsers, setFetchingUsers] = useState(false);
     const [selectedTargetStepId, setSelectedTargetStepId] = useState<string | null>(null);
+    const [newBatch, setNewBatch] = useState(false);
 
     // Helper to accurately resolve target step (supports explicit adhoc step, custom_actions settings, and step authority lookup)
     const resolveTargetStepId = (contractData: any, actCode?: string): string | null => {
@@ -116,9 +117,11 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
             setIsSequential(savedAdhocMeta.is_sequential ?? false);
             setApprovalRule(savedAdhocMeta.approval_rule ?? 'all');
             setMinApprovals(savedAdhocMeta.min_approvals ?? 1);
+            setNewBatch(false);
         } else {
             // Reset state when closed
             setSelectedUserIds([]);
+            setNewBatch(false);
         }
     }, [open, contract?.id]);
 
@@ -261,6 +264,7 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                 undefined,
                 actionId,
                 actionCode,
+                newBatch,
             );
             onUpdate(updatedContract);
             showToast('Persetujuan tambahan berhasil dikaitkan.', 'success');
@@ -350,6 +354,29 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                                     </button>
                                 </div>
                             ))}
+                        </div>
+
+                        <div className="mt-2 flex items-center justify-between border-t border-slate-200/60 pt-2 dark:border-slate-800">
+                            <div className="space-y-0.5 pr-2">
+                                <label htmlFor="new_batch_toggle" className="cursor-pointer text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                                    Mulai Batch Baru (Reset Batch Sebelumnya)
+                                </label>
+                                <p className="text-[10px] text-slate-500">
+                                    Jika dicentang, batch lama dinonaktifkan dan hanya approver baru yang memiliki akses persetujuan.
+                                </p>
+                            </div>
+                            <input
+                                id="new_batch_toggle"
+                                type="checkbox"
+                                checked={newBatch}
+                                onChange={(e) => {
+                                    setNewBatch(e.target.checked);
+                                    if (e.target.checked) {
+                                        setSelectedUserIds([]);
+                                    }
+                                }}
+                                className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 dark:border-slate-700"
+                            />
                         </div>
                     </div>
                 )}
