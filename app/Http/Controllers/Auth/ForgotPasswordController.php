@@ -44,27 +44,37 @@ class ForgotPasswordController extends Controller
             ? User::where('email', $identifier)->first()
             : User::where('username', $identifier)->orWhere('nik', $identifier)->first();
 
-        if ($user && ! empty($user->email) && filter_var($user->email, FILTER_VALIDATE_EMAIL)) {
-            // Create forgot password token
-            $token = hash('sha256', Str::random(40));
-            $expireAt = now()->addMinutes(60); // 1 hour expiry
-
-            ForgotPassword::create([
-                'email' => $user->email,
-                'user_id' => $user->id,
-                'token' => $token,
-                'expire_at' => $expireAt,
+        if (! $user) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'email' => [$isEmail ? 'Email tidak terdaftar dalam sistem.' : 'Username atau NIK tidak terdaftar dalam sistem.'],
             ]);
+        }
 
-            $resetUrl = route('password.reset', ['token' => $token]);
+        if (empty($user->email) || ! filter_var($user->email, FILTER_VALIDATE_EMAIL)) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'email' => ['Pengguna ini belum memiliki alamat email yang valid untuk pemulihan kata sandi.'],
+            ]);
+        }
 
-            if (config('notifications.email.enabled', true)) {
-                try {
-                    Mail::to($user->email)
-                        ->send(new ForgotPasswordResetMail($user, $resetUrl, $expireAt));
-                } catch (\Throwable $e) {
-                    Log::error('Failed sending forgot password reset email: '.$e->getMessage());
-                }
+        // Create forgot password token
+        $token = hash('sha256', Str::random(40));
+        $expireAt = now()->addMinutes(60); // 1 hour expiry
+
+        ForgotPassword::create([
+            'email' => $user->email,
+            'user_id' => $user->id,
+            'token' => $token,
+            'expire_at' => $expireAt,
+        ]);
+
+        $resetUrl = route('password.reset', ['token' => $token]);
+
+        if (config('notifications.email.enabled', true)) {
+            try {
+                Mail::to($user->email)
+                    ->send(new ForgotPasswordResetMail($user, $resetUrl, $expireAt));
+            } catch (\Throwable $e) {
+                Log::error('Failed sending forgot password reset email: '.$e->getMessage());
             }
         }
 

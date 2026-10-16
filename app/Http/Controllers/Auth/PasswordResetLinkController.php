@@ -30,13 +30,23 @@ class PasswordResetLinkController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'email' => 'required|email',
+            'email' => 'required|email|exists:m_users,email',
+        ], [
+            'email.required' => 'Email wajib diisi.',
+            'email.email' => 'Format email tidak valid.',
+            'email.exists' => 'Email tidak terdaftar dalam sistem.',
         ]);
 
-        Password::sendResetLink(
+        $status = Password::sendResetLink(
             $request->only('email'),
         );
 
-        return back()->with('status', __('A reset link will be sent if the account exists.'));
+        if ($status !== Password::RESET_LINK_SENT) {
+            throw ValidationException::withMessages([
+                'email' => [__($status)],
+            ]);
+        }
+
+        return back()->with('status', __($status));
     }
 }
