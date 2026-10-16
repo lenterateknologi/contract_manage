@@ -1,6 +1,6 @@
 import { formatDate } from '@/lib/time-utils';
 import { cn } from '@/lib/utils';
-import { Calendar, ChevronDown } from 'lucide-react';
+import { Calendar, ChevronDown, Lock, Pencil } from 'lucide-react';
 import React from 'react';
 import { getTypographyStyle } from '../../FormBuilder/utils';
 
@@ -64,7 +64,9 @@ export const LabeledValueField: React.FC<FieldProps & { previewData?: any }> = (
         return `repeating-linear-gradient(transparent, transparent ${yOffset}px, ${borderColor} ${yOffset}px, ${borderColor} 24px)`;
     };
 
-    if (readOnly) {
+    const allowDirectEdit = field.options?.allow_direct_edit !== false;
+
+    if (readOnly || !allowDirectEdit) {
         let displayValue = value;
         const valueType = field.options?.value_type || 'text';
 
@@ -110,6 +112,8 @@ export const LabeledValueField: React.FC<FieldProps & { previewData?: any }> = (
 
         const maxLines = field.options?.max_lines ? Number(field.options.max_lines) : valueType === 'textarea' ? 3 : 1;
 
+        const showLockIcon = !allowDirectEdit && !readOnly;
+
         if (maxLines > 1 || valueType === 'textarea') {
             const backgroundStyle = getRepeatingBackground();
 
@@ -124,17 +128,22 @@ export const LabeledValueField: React.FC<FieldProps & { previewData?: any }> = (
                     </span>
                     <div
                         className={cn(
-                            'block w-full min-w-0 flex-1 leading-6 break-words whitespace-pre-wrap',
+                            'relative block w-full min-w-0 flex-1 leading-6 break-words whitespace-pre-wrap',
                             isNoBorder ? '' : !isBox ? 'border-none' : 'rounded border px-2 py-0.5',
                         )}
                         style={{
                             ...lineStyle,
                             minHeight: `${maxLines * 24}px`,
                             lineHeight: '24px',
-                            background: backgroundStyle,
+                            background: backgroundStyle || '#ffffff',
                         }}
                     >
                         {displayValue || '\u00A0'}
+                        {showLockIcon && (
+                            <span className="absolute top-1 right-1 inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-[9px] font-medium text-slate-400 select-none" title="Tidak dapat diedit">
+                                <Lock size={11} className="text-slate-400" />
+                            </span>
+                        )}
                     </div>
                 </div>
             );
@@ -150,10 +159,22 @@ export const LabeledValueField: React.FC<FieldProps & { previewData?: any }> = (
                     {showColon && <span className="ml-1 shrink-0">:</span>}
                 </span>
                 <span
-                    className={cn('min-w-0 flex-1 break-words', isNoBorder ? '' : !isBox ? 'border-b' : 'rounded border px-2 py-0.5')}
-                    style={lineStyle}
+                    className={cn(
+                        'relative min-w-0 flex-1 break-words inline-flex items-center justify-between gap-1 bg-white h-[22px] min-h-[22px] leading-tight',
+                        isNoBorder ? '' : !isBox ? 'border-b' : 'rounded border px-2 py-0.5'
+                    )}
+                    style={{
+                        ...lineStyle,
+                        height: '22px',
+                        backgroundColor: '#ffffff',
+                    }}
                 >
-                    {displayValue || '\u00A0'}
+                    <span>{displayValue || '\u00A0'}</span>
+                    {showLockIcon && (
+                        <span className="inline-flex shrink-0 items-center gap-0.5 rounded px-1 py-0.5 text-[9px] font-medium text-slate-400 select-none" title="Tidak dapat diedit">
+                            <Lock size={11} className="text-slate-400" />
+                        </span>
+                    )}
                 </span>
             </div>
         );
@@ -162,59 +183,85 @@ export const LabeledValueField: React.FC<FieldProps & { previewData?: any }> = (
     const valueType = field.options?.value_type || 'text';
 
     const renderInteractiveInput = () => {
+        // Base styling 100% identical to PDF / readOnly display:
+        // No extra gray background or focus rings that alter the document appearance
         const baseClass = cn(
-            'w-full min-w-0 font-sans text-xs text-slate-900 transition-all',
+            'w-full min-w-0 font-sans text-xs text-slate-900 bg-white transition-all h-[22px] min-h-[22px] leading-tight',
             isNoBorder
-                ? 'border-none bg-transparent px-0 shadow-none outline-none'
+                ? 'border-none bg-white px-2 py-0.5 outline-none focus:outline-none'
                 : !isBox
-                  ? 'focus:border-primary border-t-0 border-r-0 border-b border-l-0 border-slate-300 bg-transparent px-0 shadow-none outline-none'
-                  : 'focus:border-primary rounded-lg border border-solid border-slate-300 bg-white px-3 py-1 text-slate-900 shadow-2xs',
+                  ? 'border-b bg-white px-0 py-0.5 text-slate-900 outline-none focus:outline-none'
+                  : 'rounded border bg-white px-2 py-0.5 text-slate-900 outline-none focus:outline-none',
         );
 
         const allowDirectEdit = field.options?.allow_direct_edit !== false;
         const customPlaceholder = field.placeholder;
+
+        const inputStyle: React.CSSProperties = {
+            ...lineStyle,
+            height: '22px',
+            lineHeight: 'normal',
+            backgroundColor: '#ffffff',
+            borderColor: isNoBorder ? 'transparent' : borderColor,
+        };
+
+        const renderTrailingIcon = () => {
+            if (readOnly) return null;
+            if (allowDirectEdit) {
+                return (
+                    <span
+                        className="pointer-events-none inline-flex shrink-0 items-center gap-0.5 rounded px-1 py-0.5 text-[9px] font-medium text-slate-400 select-none hover:text-slate-600"
+                        title="Dapat diedit"
+                    >
+                        <Pencil size={11} className="text-slate-400" />
+                    </span>
+                );
+            }
+            return (
+                <span
+                    className="pointer-events-none inline-flex shrink-0 items-center gap-0.5 rounded px-1 py-0.5 text-[9px] font-medium text-slate-400 select-none hover:text-slate-600"
+                    title="Tidak dapat diedit"
+                >
+                    <Lock size={11} className="text-slate-400" />
+                </span>
+            );
+        };
 
         if (valueType === 'date') {
             const rawDateStr = typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(value) ? value.split('T')[0] : value || '';
             const isoDateOnly = typeof value === 'string' && /^\d{4}-\d{2}-\d{2}/.test(value) ? value.substring(0, 10) : '';
 
             return (
-                <div className="flex w-full min-w-0 items-center gap-1.5">
+                <div className="relative flex w-full min-w-0 items-center">
                     <input
                         type="text"
                         value={rawDateStr}
                         onChange={(e) => onChange?.(e.target.value)}
                         placeholder={customPlaceholder || (allowDirectEdit ? 'Ketik atau pilih tanggal...' : 'Pilih tanggal dari kalender...')}
                         readOnly={!allowDirectEdit}
-                        className={cn(baseClass, !allowDirectEdit && 'cursor-default bg-transparent opacity-80 select-text')}
-                        style={lineStyle}
+                        className={cn(baseClass, !readOnly ? 'pr-14' : '')}
+                        style={inputStyle}
                     />
-                    {allowDirectEdit && (
-                        <div className="relative flex shrink-0 items-center justify-center">
-                            <button
-                                type="button"
-                                className={cn(
-                                    baseClass,
-                                    'flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-lg border-slate-300 bg-white p-0 text-slate-700 shadow-2xs hover:bg-slate-50',
-                                )}
-                                style={{
-                                    ...lineStyle,
-                                    width: '28px',
-                                    height: '28px',
-                                    padding: 0,
-                                }}
-                                title="Pilih Kalender"
-                            >
-                                <Calendar className="h-3.5 w-3.5 text-slate-600" />
-                            </button>
-                            <input
-                                type="date"
-                                value={isoDateOnly}
-                                onChange={(e) => onChange?.(e.target.value)}
-                                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                            />
-                        </div>
-                    )}
+                    <div className="absolute right-0 flex items-center gap-1 pr-1">
+                        {renderTrailingIcon()}
+                        {allowDirectEdit && (
+                            <div className="relative flex shrink-0 items-center justify-center">
+                                <button
+                                    type="button"
+                                    className="flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded border border-slate-200 bg-white p-0 text-slate-700 hover:bg-slate-50"
+                                    title="Pilih Kalender"
+                                >
+                                    <Calendar className="h-3 w-3 text-slate-500" />
+                                </button>
+                                <input
+                                    type="date"
+                                    value={isoDateOnly}
+                                    onChange={(e) => onChange?.(e.target.value)}
+                                    className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                                />
+                            </div>
+                        )}
+                    </div>
                 </div>
             );
         }
@@ -235,27 +282,33 @@ export const LabeledValueField: React.FC<FieldProps & { previewData?: any }> = (
             const formattedVal = value !== undefined && value !== null && value !== '' ? formatNumber(String(value)) : '';
 
             return (
-                <input
-                    type="text"
-                    value={formattedVal}
-                    onChange={handleNumberChange}
-                    placeholder={customPlaceholder || '0'}
-                    readOnly={!allowDirectEdit}
-                    className={cn(baseClass, !allowDirectEdit && 'cursor-default bg-transparent opacity-80 select-text')}
-                    style={lineStyle}
-                />
+                <div className="relative flex w-full min-w-0 items-center">
+                    <input
+                        type="text"
+                        value={formattedVal}
+                        onChange={handleNumberChange}
+                        placeholder={customPlaceholder || '0'}
+                        readOnly={!allowDirectEdit}
+                        className={cn(baseClass, !readOnly ? 'pr-8' : '')}
+                        style={inputStyle}
+                    />
+                    <div className="absolute right-0 flex items-center pr-1">
+                        {renderTrailingIcon()}
+                    </div>
+                </div>
             );
         }
 
-        const maxLines = field.options?.max_lines ? Number(field.options.max_lines) : 1;
+        const maxLines = field.options?.max_lines ? Number(field.options.max_lines) : valueType === 'textarea' ? 3 : 1;
 
         if (valueType === 'textarea' || maxLines > 1) {
             const backgroundStyle = getRepeatingBackground();
+            const textareaHeight = `${maxLines * 24}px`;
 
             return (
                 <div className="relative w-full">
                     <textarea
-                        rows={maxLines > 1 ? maxLines : 3}
+                        rows={maxLines}
                         value={value || ''}
                         onChange={(e) => {
                             if (!allowDirectEdit) return;
@@ -265,16 +318,22 @@ export const LabeledValueField: React.FC<FieldProps & { previewData?: any }> = (
                         readOnly={!allowDirectEdit}
                         className={cn(
                             baseClass,
-                            'block w-full resize-none bg-transparent py-0 leading-6 ring-0 outline-none focus:ring-0',
-                            !isBox ? 'border-none' : '',
-                            !allowDirectEdit && 'cursor-default opacity-80 select-text',
+                            'block w-full resize-none leading-6 ring-0 outline-none focus:ring-0',
+                            !isBox ? 'border' : '',
+                            !readOnly ? 'pr-8' : '',
+                            'h-auto min-h-0'
                         )}
                         style={{
-                            ...lineStyle,
+                            ...inputStyle,
+                            height: textareaHeight,
+                            minHeight: textareaHeight,
                             lineHeight: '24px',
-                            background: backgroundStyle,
+                            background: backgroundStyle || '#ffffff',
                         }}
                     />
+                    <div className="absolute top-1 right-1 flex items-center">
+                        {renderTrailingIcon()}
+                    </div>
                 </div>
             );
         }
@@ -305,7 +364,7 @@ export const LabeledValueField: React.FC<FieldProps & { previewData?: any }> = (
                                         allowDirectEdit ? 'cursor-pointer' : 'cursor-default opacity-80',
                                         isChecked
                                             ? 'bg-primary text-primary-foreground border-primary'
-                                            : 'bg-background text-foreground border-border hover:bg-muted',
+                                            : 'bg-white text-foreground border-slate-300 hover:bg-slate-50',
                                     )}
                                     style={typographyStyle}
                                 >
@@ -313,6 +372,7 @@ export const LabeledValueField: React.FC<FieldProps & { previewData?: any }> = (
                                 </button>
                             );
                         })}
+                        {renderTrailingIcon()}
                     </div>
                 );
             }
@@ -328,12 +388,10 @@ export const LabeledValueField: React.FC<FieldProps & { previewData?: any }> = (
                         }}
                         className={cn(
                             baseClass,
-                            allowDirectEdit ? 'cursor-pointer' : 'pointer-events-none cursor-default opacity-80',
-                            'appearance-none bg-transparent pr-6 text-slate-900',
-                            isBox ? 'bg-white text-slate-900' : '',
+                            'appearance-none bg-white pr-12 text-slate-900 cursor-pointer shadow-none',
                         )}
                         style={{
-                            ...lineStyle,
+                            ...inputStyle,
                             color: typographyStyle.color || '#0f172a',
                         }}
                     >
@@ -346,7 +404,10 @@ export const LabeledValueField: React.FC<FieldProps & { previewData?: any }> = (
                             </option>
                         ))}
                     </select>
-                    {allowDirectEdit && <ChevronDown className="pointer-events-none absolute right-1 h-3.5 w-3.5 shrink-0 text-slate-400" />}
+                    <div className="absolute right-1 flex items-center gap-1 pointer-events-none">
+                        {renderTrailingIcon()}
+                        {allowDirectEdit && <ChevronDown className="h-3.5 w-3.5 shrink-0 text-slate-400" />}
+                    </div>
                 </div>
             );
         }
@@ -364,7 +425,7 @@ export const LabeledValueField: React.FC<FieldProps & { previewData?: any }> = (
                             onChange?.(e.target.checked);
                         }}
                         className={cn(
-                            'text-primary focus:ring-primary h-4 w-4 rounded border-slate-300',
+                            'text-primary focus:ring-primary h-4 w-4 rounded border-slate-300 bg-white',
                             allowDirectEdit ? 'cursor-pointer' : 'cursor-default opacity-80',
                         )}
                     />
@@ -376,6 +437,7 @@ export const LabeledValueField: React.FC<FieldProps & { previewData?: any }> = (
                     >
                         {isChecked ? 'Ya' : 'Tidak'}
                     </span>
+                    {renderTrailingIcon()}
                 </div>
             );
         }
@@ -383,23 +445,31 @@ export const LabeledValueField: React.FC<FieldProps & { previewData?: any }> = (
         const cleanInputValue = typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(value) ? value.split('T')[0] : value || '';
 
         return (
-            <input
-                type="text"
-                value={cleanInputValue}
-                readOnly={!allowDirectEdit}
-                onChange={(e) => {
-                    if (!allowDirectEdit) return;
-                    onChange?.(e.target.value);
-                }}
-                placeholder={customPlaceholder || ''}
-                className={cn(baseClass, !allowDirectEdit && 'cursor-default bg-transparent opacity-80 select-text')}
-                style={lineStyle}
-            />
+            <div className="relative flex w-full min-w-0 items-center">
+                <input
+                    type="text"
+                    value={cleanInputValue}
+                    readOnly={!allowDirectEdit}
+                    onChange={(e) => {
+                        if (!allowDirectEdit) return;
+                        onChange?.(e.target.value);
+                    }}
+                    placeholder={customPlaceholder || ''}
+                    className={cn(baseClass, !readOnly ? 'pr-8' : '')}
+                    style={inputStyle}
+                />
+                <div className="absolute right-0 flex items-center pr-1">
+                    {renderTrailingIcon()}
+                </div>
+            </div>
         );
     };
 
+    const effectiveMaxLines = field.options?.max_lines ? Number(field.options.max_lines) : valueType === 'textarea' ? 3 : 1;
+    const isMultiLine = valueType === 'textarea' || effectiveMaxLines > 1;
+
     return (
-        <div className={cn('flex w-full min-w-0 gap-1 py-0.5', valueType === 'textarea' ? 'items-start' : 'items-center')}>
+        <div className={cn('flex w-full min-w-0 gap-1 py-0.5', isMultiLine ? 'items-start' : 'items-baseline')}>
             <span
                 className="flex shrink-0 justify-between pt-px pr-1"
                 style={{ width: labelWidth, minWidth: labelWidth, ...getTypographyStyle(field, 0.9, true) }}
@@ -407,7 +477,7 @@ export const LabeledValueField: React.FC<FieldProps & { previewData?: any }> = (
                 <span className="min-w-0 leading-tight break-words whitespace-pre-wrap">{field.label}</span>
                 {showColon && <span className="ml-1 shrink-0">:</span>}
             </span>
-            <div className="relative min-w-0 flex-1">{renderInteractiveInput()}</div>
+            <div className="relative min-w-0 flex-1 leading-tight">{renderInteractiveInput()}</div>
         </div>
     );
 };

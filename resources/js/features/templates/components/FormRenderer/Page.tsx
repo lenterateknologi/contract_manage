@@ -51,7 +51,7 @@ export const Page: React.FC<PageProps> = ({
             <div
                 className={cn(
                     'force-light relative mx-auto flex w-[210mm] flex-col bg-white text-slate-900 transition-all print:m-0 print:border-none print:shadow-none print:ring-0 print:min-h-0 print:my-0',
-                    'my-4 shrink-0 rounded-none border border-slate-300 shadow-md',
+                    'my-4 shrink-0 rounded-none border border-slate-300 shadow-none',
                     isBuilder && !isContinuous ? 'h-[297mm] max-h-[297mm] overflow-hidden' : 'min-h-[297mm] print:min-h-0',
                     className,
                 )}

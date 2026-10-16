@@ -36,6 +36,7 @@ interface DraftEditableInfoCardProps {
     setPreviewOpen: (v: boolean) => void;
     meId?: string;
     onStateChange?: (hasChanges: boolean, saving: boolean) => void;
+    onDraftLiveChange?: (draftData: Record<string, any>) => void;
     saveRef?: React.MutableRefObject<(() => Promise<void>) | null>;
     resetRef?: React.MutableRefObject<(() => void) | null>;
 }
@@ -48,6 +49,7 @@ export function DraftEditableInfoCard({
     onUpdate,
     meId,
     onStateChange,
+    onDraftLiveChange,
     saveRef,
     resetRef,
 }: DraftEditableInfoCardProps) {
@@ -319,6 +321,60 @@ export function DraftEditableInfoCard({
     useEffect(() => {
         onStateChange?.(hasChanges, saving);
     }, [hasChanges, saving, onStateChange]);
+
+    useEffect(() => {
+        if (!onDraftLiveChange || !hasChanges) return;
+
+        const p1Data = resolvePartyDetails(firstPartyId, 'p1');
+        const p2Data = resolvePartyDetails(vendorId, 'p2');
+        const selectedVendor = vendors.find((v) => String(v.id) === String(vendorId));
+
+        onDraftLiveChange({
+            title,
+            description,
+            contract_type_id: typeId || null,
+            vendor_id: vendorId === 'internal' ? null : vendorId || null,
+            vendor: selectedVendor || (vendorId === 'internal' ? null : selected.vendor),
+            submission_type_id: submissionTypeId || null,
+            kop_sub_topik: kopSubTopik || null,
+            contract_no: contractNo || null,
+            contract_date: contractDate || null,
+            end_date: endDate || null,
+            amount: price || null,
+            p1_entity: p1Data.entity,
+            p1_signer: p1Data.signer,
+            p1_signer_position: p1Data.signer_position,
+            p1_address: p1Data.address,
+            p2_entity: p2Data.entity,
+            p2_signer: p2Data.signer,
+            p2_signer_position: p2Data.signer_position,
+            p2_address: p2Data.address,
+            metadata: {
+                ...(selected.metadata || {}),
+                meta_harga: price || null,
+                tax_required: taxRequired,
+                first_party_id: firstPartyId,
+                p1_vendor_id: firstPartyId,
+                second_party_id: vendorId || null,
+                p2_vendor_id: vendorId || null,
+            },
+        });
+    }, [
+        hasChanges,
+        title,
+        description,
+        typeId,
+        firstPartyId,
+        vendorId,
+        submissionTypeId,
+        kopSubTopik,
+        contractNo,
+        contractDate,
+        endDate,
+        price,
+        taxRequired,
+        onDraftLiveChange,
+    ]);
 
     const inputCls =
         'w-full bg-surface-base border-surface-border rounded-lg px-3 py-2 text-sm font-medium text-text-main outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all shadow-xs placeholder:text-text-soft/30';

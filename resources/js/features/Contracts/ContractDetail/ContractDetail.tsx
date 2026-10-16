@@ -243,11 +243,39 @@ export const ContractDetailView = ({
     const [hasInfoChanges, setHasInfoChanges] = useState(false);
     const [infoSaving, setInfoSaving] = useState(false);
     const [hasFormChanges, setHasFormChanges] = useState(false);
+    const [liveDraft, setLiveDraft] = useState<Record<string, any>>({});
     const saveInfoCardRef = React.useRef<(() => Promise<void>) | null>(null);
     const resetInfoCardRef = React.useRef<(() => void) | null>(null);
     const saveFormRef = React.useRef<(() => Promise<void>) | null>(null);
 
+    const handleInfoStateChange = useCallback((hasChanges: boolean, isSaving: boolean) => {
+        setHasInfoChanges((prev) => (prev !== hasChanges ? hasChanges : prev));
+        setInfoSaving((prev) => (prev !== isSaving ? isSaving : prev));
+    }, []);
+
+    const handleDraftLiveChange = useCallback((draft: Record<string, any>) => {
+        setLiveDraft(draft);
+    }, []);
+
+    const handleFormDirty = useCallback((dirty: boolean) => {
+        setHasFormChanges((prev) => (prev !== dirty ? dirty : prev));
+    }, []);
+
     const isAnyDirty = hasInfoChanges || hasFormChanges;
+
+    const liveContract = useMemo(() => {
+        if (!hasInfoChanges || Object.keys(liveDraft).length === 0) {
+            return contract;
+        }
+        return {
+            ...contract,
+            ...liveDraft,
+            metadata: {
+                ...(contract.metadata || {}),
+                ...(liveDraft.metadata || {}),
+            },
+        };
+    }, [contract, hasInfoChanges, liveDraft]);
 
     const onSaveAllChanges = async () => {
         setInfoSaving(true);
@@ -1010,13 +1038,13 @@ export const ContractDetailView = ({
                                     <Suspense fallback={<TabSkeleton />}>
                                         {detailTab === 'documents' && (
                                             <DocumentsTab
-                                                contract={contract}
+                                                contract={liveContract}
                                                 docSubTab={docSubTab}
                                                 formTemplates={formTemplates}
                                                 vendors={vendors}
                                                 meUser={meUser}
                                                 onUpdate={handleContractUpdate}
-                                                onFormDirty={(dirty) => setHasFormChanges(dirty)}
+                                                onFormDirty={handleFormDirty}
                                                 onFormSave={(fn) => {
                                                     saveFormRef.current = fn;
                                                 }}
@@ -1137,10 +1165,8 @@ export const ContractDetailView = ({
                                 setPreviewHasFile={setPreviewHasFile}
                                 setPreviewOpen={setPreviewOpen}
                                 meId={meId}
-                                onStateChange={(hasChanges, isSaving) => {
-                                    setHasInfoChanges(hasChanges);
-                                    setInfoSaving(isSaving);
-                                }}
+                                onStateChange={handleInfoStateChange}
+                                onDraftLiveChange={handleDraftLiveChange}
                                 saveRef={saveInfoCardRef}
                                 resetRef={resetInfoCardRef}
                             />

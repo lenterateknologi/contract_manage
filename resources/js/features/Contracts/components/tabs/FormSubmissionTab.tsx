@@ -206,8 +206,8 @@ function GenericFormTab({
                                 if (!isManual && isDateField && currentVal) {
                                     return;
                                 }
-                                // Update if: value differs AND (field is empty or manual sync)
-                                if (currentVal !== val && (!currentVal || isManual)) {
+                                // Update if: value differs AND (field is empty or manual sync or forceUpdate)
+                                if (currentVal !== val && (!currentVal || isManual || forceUpdate)) {
                                     synced[f.name] = val;
                                     hasChanged = true;
                                 }
@@ -215,9 +215,6 @@ function GenericFormTab({
                         }
                     }
                 });
-                if (hasChanged && !isManual) {
-                    setOriginalData((origPrev) => ({ ...origPrev, ...synced }));
-                }
                 return hasChanged ? synced : prev;
             });
             if (isManual) {
@@ -384,12 +381,15 @@ function GenericFormTab({
         return false;
     }, [formData, originalData]);
 
+    const prevDirtyRef = useRef(false);
     useEffect(() => {
-        if (canEdit) {
+        if (canEdit && prevDirtyRef.current !== isDirty) {
+            prevDirtyRef.current = isDirty;
             onFormDirty?.(isDirty);
         }
     }, [isDirty, canEdit, onFormDirty]);
 
+    const handleSaveRef = useRef<() => Promise<void>>(async () => {});
     const handleSave = async (isNewVersion = false) => {
         if (!matchingTemplate) return;
         setSaving(true);
@@ -403,6 +403,7 @@ function GenericFormTab({
             });
             onContractUpdated(updated);
             setOriginalData({ ...formData });
+            prevDirtyRef.current = false;
             onFormDirty?.(false);
             if (isNewVersion) {
                 showToast(`Versi baru ${docType.toUpperCase()} berhasil disimpan.`, 'success');
@@ -420,11 +421,15 @@ function GenericFormTab({
         }
     };
 
+    handleSaveRef.current = () => handleSave(false);
+
     useEffect(() => {
         if (canEdit && onFormSave) {
-            onFormSave(() => handleSave(false));
+            onFormSave(async () => {
+                await handleSaveRef.current();
+            });
         }
-    }, [canEdit, onFormSave, formData, originalData, matchingTemplate]);
+    }, [canEdit, onFormSave]);
 
     const handleExportPdf = async () => {
         if (!matchingTemplate) return;
@@ -795,18 +800,6 @@ function GenericFormTab({
                             </div>
                         )}
                     </div>
-
-                    {canEdit && isDirty && (
-                        <button
-                            type="button"
-                            onClick={() => handleSave(false)}
-                            disabled={saving}
-                            className="text-primary flex h-7 cursor-pointer items-center gap-1.5 rounded-lg bg-white px-3 text-xs font-bold shadow-xs transition-all hover:bg-white/90 disabled:opacity-50"
-                        >
-                            {saving ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
-                            Simpan
-                        </button>
-                    )}
 
                     {/* Simpan Versi Popup Modal */}
                     <Modal

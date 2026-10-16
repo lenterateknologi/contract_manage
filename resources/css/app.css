@@ -237,7 +237,7 @@
 .force-light input,
 .force-light textarea,
 .force-light select {
-    background-color: #f8fafc !important;
+    /* background-color: #f8fafc !important; */
     color: black !important;
     border-color: #e2e8f0 !important;
 }

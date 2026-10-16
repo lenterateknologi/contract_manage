@@ -92,6 +92,8 @@ export function DocumentsTab({
                         vendors={vendors}
                         meUser={meUser}
                         onUpdate={onUpdate}
+                        onFormDirty={onFormDirty}
+                        onFormSave={onFormSave}
                     />
                 </div>
             )}
