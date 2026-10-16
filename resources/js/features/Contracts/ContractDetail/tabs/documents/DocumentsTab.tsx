@@ -38,6 +38,33 @@ export function DocumentsTab({
 
     const activeSub = docSubTabs.some((t) => t.id === docSubTab) ? docSubTab : docSubTabs[0]?.id || 'f1';
 
+    // Keep track of which sub-tab is dirty and which save function belongs to which docType
+    const dirtyFormsRef = React.useRef<Record<string, boolean>>({});
+    const saveFormsRef = React.useRef<Record<string, (() => Promise<void>) | null>>({});
+
+    const handleSubFormDirty = (type: string, isDirty: boolean) => {
+        dirtyFormsRef.current[type] = isDirty;
+        const anyDirty = Object.values(dirtyFormsRef.current).some(Boolean);
+        onFormDirty?.(anyDirty);
+    };
+
+    const handleSubFormSave = (type: string, saveFn: () => Promise<void>) => {
+        saveFormsRef.current[type] = saveFn;
+    };
+
+    React.useEffect(() => {
+        if (onFormSave) {
+            onFormSave(async () => {
+                // Save only forms that have changes (dirty) or the active form if dirty
+                for (const [type, isDirty] of Object.entries(dirtyFormsRef.current)) {
+                    if (isDirty && saveFormsRef.current[type]) {
+                        await saveFormsRef.current[type]!();
+                    }
+                }
+            });
+        }
+    }, [onFormSave]);
+
     return (
         <div className="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden">
             {hasF1 && (
@@ -54,8 +81,8 @@ export function DocumentsTab({
                         vendors={vendors}
                         meUser={meUser}
                         onUpdate={onUpdate}
-                        onFormDirty={onFormDirty}
-                        onFormSave={onFormSave}
+                        onFormDirty={(dirty) => handleSubFormDirty('f1', dirty)}
+                        onFormSave={(saveFn) => handleSubFormSave('f1', saveFn)}
                     />
                 </div>
             )}
@@ -73,8 +100,8 @@ export function DocumentsTab({
                         vendors={vendors}
                         meUser={meUser}
                         onUpdate={onUpdate}
-                        onFormDirty={onFormDirty}
-                        onFormSave={onFormSave}
+                        onFormDirty={(dirty) => handleSubFormDirty('f2', dirty)}
+                        onFormSave={(saveFn) => handleSubFormSave('f2', saveFn)}
                     />
                 </div>
             )}
@@ -92,8 +119,8 @@ export function DocumentsTab({
                         vendors={vendors}
                         meUser={meUser}
                         onUpdate={onUpdate}
-                        onFormDirty={onFormDirty}
-                        onFormSave={onFormSave}
+                        onFormDirty={(dirty) => handleSubFormDirty('agreement', dirty)}
+                        onFormSave={(saveFn) => handleSubFormSave('agreement', saveFn)}
                     />
                 </div>
             )}

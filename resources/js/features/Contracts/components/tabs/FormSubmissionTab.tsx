@@ -390,7 +390,7 @@ function GenericFormTab({
     }, [isDirty, canEdit, onFormDirty]);
 
     const handleSaveRef = useRef<() => Promise<void>>(async () => {});
-    const handleSave = async (isNewVersion = false) => {
+    const handleSave = async (isNewVersion = true) => {
         if (!matchingTemplate) return;
         setSaving(true);
         try {
@@ -405,11 +405,7 @@ function GenericFormTab({
             setOriginalData({ ...formData });
             prevDirtyRef.current = false;
             onFormDirty?.(false);
-            if (isNewVersion) {
-                showToast(`Versi baru ${docType.toUpperCase()} berhasil disimpan.`, 'success');
-            } else {
-                showToast(`Perubahan ${docType.toUpperCase()} berhasil disimpan.`, 'success');
-            }
+            showToast(`Perubahan ${docType.toUpperCase()} berhasil disimpan.`, 'success');
             const res = await contractApi.formSubmissions.get(selected.id, docType);
             if (res.versions) setVersions(res.versions);
             setVersionNote('');
@@ -421,7 +417,7 @@ function GenericFormTab({
         }
     };
 
-    handleSaveRef.current = () => handleSave(false);
+    handleSaveRef.current = () => handleSave(true);
 
     useEffect(() => {
         if (canEdit && onFormSave) {
@@ -782,6 +778,19 @@ function GenericFormTab({
                                     </a>
                                 )}
 
+                                {canEdit && isDirty && (
+                                    <button
+                                        onClick={() => {
+                                            setShowMoreActions(false);
+                                            setShowNoteModal(true);
+                                        }}
+                                        className="text-text-main hover:bg-surface-muted flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-xs font-semibold transition-all"
+                                    >
+                                        <PlusCircle size={16} className="text-text-soft" />
+                                        Simpan dengan Catatan
+                                    </button>
+                                )}
+
                                 <button
                                     onClick={() => {
                                         handleExportPdf();
@@ -842,13 +851,6 @@ function GenericFormTab({
                             </div>
                         </div>
                     </Modal>
-
-                    {canEdit && (
-                        <Button onClick={() => setShowNoteModal(true)} disabled={saving} className="h-9 px-3 text-xs font-semibold">
-                            <PlusCircle size={14} className="mr-1.5" />
-                            Update Versi
-                        </Button>
-                    )}
                 </div>
             </div>
 
