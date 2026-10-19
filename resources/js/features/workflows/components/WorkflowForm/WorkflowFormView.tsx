@@ -23,6 +23,7 @@ const {
     ArrowDown,
     ArrowUp,
     Bookmark,
+    Building2,
     Check,
     CheckCircle2,
     CheckSquare2,
@@ -70,6 +71,7 @@ export default function WorkflowEditor({
     allWorkflows = [],
     masterWorkflows = [],
     stepPresets = [],
+    vendors = [],
 }: any) {
     const { showToast } = useToast();
 
@@ -240,15 +242,15 @@ export default function WorkflowEditor({
         setExpandedStepIds(nextState);
     }, [form.data?.steps, isAllCollapsed]);
 
-    // State Simulasi Aktor Khusus (Inisiator, PIC Ditugaskan, Pembuat Kontrak, Approver Tambahan)
+    // State Simulasi Aktor Khusus (Inisiator, PIC Ditugaskan, Pembuat Kontrak, Approver Tambahan, Vendor Terpilih)
     const [simActorModalOpen, setSimActorModalOpen] = useState(false);
-    const [simActorType, setSimActorType] = useState<'initiator' | 'assigned_pic' | 'creator' | 'adhoc_approvers'>('initiator');
+    const [simActorType, setSimActorType] = useState<'initiator' | 'assigned_pic' | 'creator' | 'adhoc_approvers' | 'vendor'>('initiator');
     const [simActorSearch, setSimActorSearch] = useState('');
 
     // Key cache client-side untuk simulasi aktor
     const SIM_STORAGE_KEY = `wf_sim_actors_${workflow?.id || 'new'}`;
 
-    // ID User yang terpilih untuk simulasi peran (tersimpan di client-side cache localStorage)
+    // ID User & Vendor yang terpilih untuk simulasi peran (tersimpan di client-side cache localStorage)
     const [simInitiatorId, setSimInitiatorId] = useState<string>(() => {
         try {
             return localStorage.getItem(`${SIM_STORAGE_KEY}_initiator`) || '';
@@ -268,6 +270,14 @@ export default function WorkflowEditor({
     const [simCreatorId, setSimCreatorId] = useState<string>(() => {
         try {
             return localStorage.getItem(`${SIM_STORAGE_KEY}_creator`) || '';
+        } catch {
+            return '';
+        }
+    });
+
+    const [simVendorId, setSimVendorId] = useState<string>(() => {
+        try {
+            return localStorage.getItem(`${SIM_STORAGE_KEY}_vendor`) || '';
         } catch {
             return '';
         }
@@ -327,6 +337,18 @@ export default function WorkflowEditor({
 
     useEffect(() => {
         try {
+            if (simVendorId) {
+                localStorage.setItem(`${SIM_STORAGE_KEY}_vendor`, simVendorId);
+            } else {
+                localStorage.removeItem(`${SIM_STORAGE_KEY}_vendor`);
+            }
+        } catch {
+            // ignore
+        }
+    }, [simVendorId, SIM_STORAGE_KEY]);
+
+    useEffect(() => {
+        try {
             if (simAdhocIds && simAdhocIds.length > 0) {
                 localStorage.setItem(`${SIM_STORAGE_KEY}_adhoc`, JSON.stringify(simAdhocIds));
             } else {
@@ -367,6 +389,25 @@ export default function WorkflowEditor({
         });
     }, [activeSimActorUsers, simActorSearch]);
 
+    // Filter daftar vendor untuk simulasi
+    const filteredSimVendors = useMemo(() => {
+        if (!simActorSearch.trim()) return vendors || [];
+        const q = simActorSearch.toLowerCase().trim();
+        return (vendors || []).filter((v: any) => {
+            const name = (v.name || '').toLowerCase();
+            const code = (v.code || '').toLowerCase();
+            const npwp = (v.npwp || '').toLowerCase();
+            const pic = (v.pic_name || '').toLowerCase();
+            const pkp = (v.pkp_status || '').toLowerCase();
+            return name.includes(q) || code.includes(q) || npwp.includes(q) || pic.includes(q) || pkp.includes(q);
+        });
+    }, [vendors, simActorSearch]);
+
+    // Lookup vendor object untuk simulasi terpilih
+    const selectedSimVendor = useMemo(() => {
+        return (vendors || []).find((v: any) => String(v.id) === String(simVendorId)) || null;
+    }, [simVendorId, vendors]);
+
     // Context simulasi yang diteruskan ke SortableStepItem & AuthorityTableManager
     const simulationContext = useMemo(
         () => ({
@@ -375,8 +416,10 @@ export default function WorkflowEditor({
             creatorId: simCreatorId || undefined,
             adhocId: simAdhocIds[0] || undefined,
             adhocIds: simAdhocIds.length > 0 ? simAdhocIds : undefined,
+            vendorId: simVendorId || undefined,
+            vendor: selectedSimVendor || undefined,
         }),
-        [simInitiatorId, simPicId, simCreatorId, simAdhocIds],
+        [simInitiatorId, simPicId, simCreatorId, simAdhocIds, simVendorId, selectedSimVendor],
     );
 
     // Lookup user objects untuk simulasi terpilih
@@ -1001,11 +1044,11 @@ export default function WorkflowEditor({
                                                 }}
                                                 className={cn(
                                                     'inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 text-xs font-bold transition-all select-none',
-                                                    selectedSimInitiator || selectedSimPic || selectedSimCreator || selectedSimAdhocUsers.length > 0
+                                                    selectedSimInitiator || selectedSimPic || selectedSimCreator || selectedSimAdhocUsers.length > 0 || selectedSimVendor
                                                         ? 'border-indigo-200 bg-indigo-50 text-indigo-700 shadow-2xs dark:border-indigo-800 dark:bg-indigo-950/50 dark:text-indigo-300'
                                                         : 'border-slate-200/80 bg-slate-50 text-slate-700 hover:border-slate-300 hover:bg-white dark:border-zinc-700/80 dark:bg-zinc-800/80 dark:text-zinc-300 dark:hover:bg-zinc-700',
                                                 )}
-                                                title="Atur Pengguna Simulasi (Inisiator, PIC, Pembuat, Approver Tambahan)"
+                                                title="Atur Pengguna & Vendor Simulasi (Inisiator, PIC, Pembuat, Approver Tambahan, Vendor)"
                                             >
                                                 <UsersIcon
                                                     size={13}
@@ -1013,7 +1056,8 @@ export default function WorkflowEditor({
                                                         selectedSimInitiator ||
                                                         selectedSimPic ||
                                                         selectedSimCreator ||
-                                                        selectedSimAdhocUsers.length > 0
+                                                        selectedSimAdhocUsers.length > 0 ||
+                                                        selectedSimVendor
                                                             ? 'text-indigo-600 dark:text-indigo-400'
                                                             : 'text-slate-400 dark:text-zinc-500'
                                                     }
@@ -1022,7 +1066,8 @@ export default function WorkflowEditor({
                                                 {(selectedSimInitiator ||
                                                     selectedSimPic ||
                                                     selectedSimCreator ||
-                                                    selectedSimAdhocUsers.length > 0) && (
+                                                    selectedSimAdhocUsers.length > 0 ||
+                                                    selectedSimVendor) && (
                                                     <span className="ml-0.5 flex items-center gap-1 rounded-md bg-indigo-600 px-1.5 py-0.5 text-[10px] font-medium text-white">
                                                         {
                                                             [
@@ -1030,6 +1075,7 @@ export default function WorkflowEditor({
                                                                 selectedSimPic && 'PIC',
                                                                 selectedSimCreator && 'Pembuat',
                                                                 selectedSimAdhocUsers.length > 0 && 'Ad-Hoc',
+                                                                selectedSimVendor && 'Vendor',
                                                             ].filter(Boolean).length
                                                         }
                                                     </span>
@@ -1076,7 +1122,7 @@ export default function WorkflowEditor({
                                         </div>
                                     </div>
 
-                                    {/* Modal Simulasi Aktor Khusus (Inisiator, PIC, Pembuat, Approver Tambahan) */}
+                                    {/* Modal Simulasi Aktor Khusus (Inisiator, PIC, Pembuat, Approver Tambahan, Vendor) */}
                                     <Dialog open={simActorModalOpen} onOpenChange={setSimActorModalOpen}>
                                         <DialogContent className="overflow-hidden rounded-[12px] border border-slate-200/80 bg-white p-0 text-slate-800 shadow-2xl sm:max-w-3xl dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100">
                                             <div className="border-primary/20 bg-primary flex items-center justify-between rounded-t-[12px] border-b px-6 py-4 text-white dark:border-zinc-700/80 dark:bg-zinc-800/90 dark:text-zinc-200">
@@ -1086,11 +1132,10 @@ export default function WorkflowEditor({
                                                     </div>
                                                     <div>
                                                         <DialogTitle className="text-sm font-bold tracking-tight text-white dark:text-zinc-100">
-                                                            Pengaturan Aktor Simulasi Alur Kerja
+                                                            Pengaturan Aktor & Vendor Simulasi Alur Kerja
                                                         </DialogTitle>
                                                         <DialogDescription className="mt-0.5 text-xs font-medium text-white/80 dark:text-zinc-400">
-                                                            Pilih pengguna simulasi untuk mengevaluasi peran Inisiator, PIC, Pembuat Kontrak, atau
-                                                            Approver Tambahan
+                                                            Pilih pengguna dan vendor simulasi untuk mengevaluasi peran Inisiator, PIC, Pembuat Kontrak, Approver Tambahan, atau Vendor Terpilih
                                                         </DialogDescription>
                                                     </div>
                                                 </div>
@@ -1175,6 +1220,25 @@ export default function WorkflowEditor({
                                                         </span>
                                                     </div>
                                                 </button>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setSimActorType('vendor')}
+                                                    className={cn(
+                                                        'flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border px-3 py-2 text-xs font-bold transition-all',
+                                                        simActorType === 'vendor'
+                                                            ? 'border-sky-600 bg-white text-sky-700 shadow-xs dark:bg-zinc-900 dark:text-sky-400'
+                                                            : 'border-transparent bg-transparent text-slate-600 hover:bg-slate-200/60 dark:text-zinc-400 dark:hover:bg-zinc-700/50',
+                                                    )}
+                                                >
+                                                    <Building2 size={13} className="shrink-0" />
+                                                    <div className="flex flex-col text-left">
+                                                        <span>Vendor Terpilih</span>
+                                                        <span className="max-w-[100px] truncate text-[10px] font-medium text-slate-400 dark:text-zinc-400">
+                                                            {selectedSimVendor ? selectedSimVendor.name : 'Belum dipilih'}
+                                                        </span>
+                                                    </div>
+                                                </button>
                                             </div>
 
                                             <div className="flex items-center justify-between gap-3 border-b border-slate-200/80 bg-slate-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-800/30">
@@ -1184,18 +1248,77 @@ export default function WorkflowEditor({
                                                         type="text"
                                                         value={simActorSearch}
                                                         onChange={(e) => setSimActorSearch(e.target.value)}
-                                                        placeholder={`Cari pengguna untuk ${simActorType === 'initiator' ? 'Inisiator' : simActorType === 'assigned_pic' ? 'PIC' : simActorType === 'creator' ? 'Pembuat' : 'Approver Tambahan (Bisa Multi)'}...`}
+                                                        placeholder={
+                                                            simActorType === 'vendor'
+                                                                ? 'Cari vendor berdasarkan nama, kode, npwp, pic...'
+                                                                : `Cari pengguna untuk ${simActorType === 'initiator' ? 'Inisiator' : simActorType === 'assigned_pic' ? 'PIC' : simActorType === 'creator' ? 'Pembuat' : 'Approver Tambahan (Bisa Multi)'}...`
+                                                        }
                                                         className="focus:border-primary h-9 w-full rounded-lg border border-slate-200 bg-white pr-3 pl-9 text-xs text-slate-800 transition-all outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
                                                         autoFocus
                                                     />
                                                 </div>
                                                 <div className="shrink-0 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
-                                                    {filteredSimActorUsers.length} Pengguna
+                                                    {simActorType === 'vendor' ? `${filteredSimVendors.length} Vendor` : `${filteredSimActorUsers.length} Pengguna`}
                                                 </div>
                                             </div>
 
                                             <div className="max-h-[55vh] space-y-2 overflow-y-auto p-4">
-                                                {filteredSimActorUsers.length === 0 ? (
+                                                {simActorType === 'vendor' ? (
+                                                    filteredSimVendors.length === 0 ? (
+                                                        <div className="py-12 text-center text-slate-400 dark:text-zinc-500">
+                                                            <Building2 size={28} className="mx-auto mb-2 opacity-30" />
+                                                            <p className="text-xs font-medium">Tidak ada data vendor yang cocok.</p>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
+                                                            {filteredSimVendors.map((v: any) => {
+                                                                const isSelected = String(v.id) === String(simVendorId);
+
+                                                                return (
+                                                                    <div
+                                                                        key={v.id}
+                                                                        onClick={() => {
+                                                                            setSimVendorId(isSelected ? '' : String(v.id));
+                                                                        }}
+                                                                        className={cn(
+                                                                            'flex cursor-pointer flex-col justify-between gap-1.5 rounded-xl border p-3 shadow-2xs transition-all',
+                                                                            isSelected
+                                                                                ? 'bg-sky-500/10 border-sky-500 ring-sky-500/20 ring-2'
+                                                                                : 'hover:border-sky-400/50 border-slate-200/80 bg-white hover:bg-slate-50/80 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800/80',
+                                                                        )}
+                                                                    >
+                                                                        <div className="flex items-center justify-between gap-2">
+                                                                            <div className="flex items-center gap-1.5 truncate text-xs font-bold text-slate-800 dark:text-zinc-100">
+                                                                                {isSelected && <Check size={14} className="text-sky-600 dark:text-sky-400 shrink-0" />}
+                                                                                <span className="truncate">{v.name}</span>
+                                                                            </div>
+                                                                            <span
+                                                                                className={cn(
+                                                                                    'shrink-0 rounded-md px-2 py-0.5 text-[10px] font-bold',
+                                                                                    v.is_pkp
+                                                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/50 dark:border-emerald-800 dark:text-emerald-300'
+                                                                                        : 'bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-zinc-400',
+                                                                                )}
+                                                                            >
+                                                                                {v.pkp_status || (v.is_pkp ? 'PKP' : 'NON PKP')}
+                                                                            </span>
+                                                                        </div>
+                                                                        <div className="flex items-center gap-2 truncate text-[11px] text-slate-500 dark:text-zinc-400">
+                                                                            {v.code && <span className="font-mono text-[10px] font-semibold">{v.code}</span>}
+                                                                            {v.pic_name && <span>• PIC: {v.pic_name}</span>}
+                                                                        </div>
+                                                                        {v.npwp && (
+                                                                            <div className="flex items-center gap-1.5 border-t border-slate-100 pt-1 text-[10px] text-slate-500 dark:border-zinc-800/60 dark:text-zinc-400">
+                                                                                <span className="font-semibold text-slate-600 dark:text-zinc-400">NPWP:</span>
+                                                                                <span className="font-mono">{v.npwp}</span>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    )
+                                                ) : filteredSimActorUsers.length === 0 ? (
                                                     <div className="py-12 text-center text-slate-400 dark:text-zinc-500">
                                                         <UsersIcon size={28} className="mx-auto mb-2 opacity-30" />
                                                         <p className="text-xs font-medium">Tidak ada data pengguna yang cocok.</p>
@@ -1284,6 +1407,7 @@ export default function WorkflowEditor({
                                                             if (simActorType === 'initiator') setSimInitiatorId('');
                                                             else if (simActorType === 'assigned_pic') setSimPicId('');
                                                             else if (simActorType === 'creator') setSimCreatorId('');
+                                                            else if (simActorType === 'vendor') setSimVendorId('');
                                                             else setSimAdhocIds([]);
                                                         }}
                                                         className="h-8 rounded-lg px-3 text-xs font-semibold"
@@ -1295,9 +1419,11 @@ export default function WorkflowEditor({
                                                               ? 'PIC'
                                                               : simActorType === 'creator'
                                                                 ? 'Pembuat'
-                                                                : 'Approver Tambahan'}
+                                                                : simActorType === 'vendor'
+                                                                  ? 'Vendor'
+                                                                  : 'Approver Tambahan'}
                                                     </Button>
-                                                    {(simInitiatorId || simPicId || simCreatorId || simAdhocIds.length > 0) && (
+                                                    {(simInitiatorId || simPicId || simCreatorId || simVendorId || simAdhocIds.length > 0) && (
                                                         <Button
                                                             type="button"
                                                             variant="ghost"
@@ -1305,6 +1431,7 @@ export default function WorkflowEditor({
                                                                 setSimInitiatorId('');
                                                                 setSimPicId('');
                                                                 setSimCreatorId('');
+                                                                setSimVendorId('');
                                                                 setSimAdhocIds([]);
                                                             }}
                                                             className="h-8 rounded-lg px-3 text-xs font-semibold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40"

@@ -504,7 +504,9 @@ class ContractFormController extends Controller
             if (empty($formData['meta_p2_npwp_status'])) {
                 $formData['meta_p2_npwp_status'] = $tax['typeNpwp'] ?? '';
             }
-            if (empty($formData['meta_p2_pkp_status'])) {
+            if ($v->is_pkp || ! empty($tax['typePkp'])) {
+                $formData['meta_p2_pkp_status'] = $tax['typePkp'] ?? ($v->is_pkp ? 'PKP' : 'NON PKP');
+            } elseif (empty($formData['meta_p2_pkp_status'])) {
                 $formData['meta_p2_pkp_status'] = $tax['typePkp'] ?? ($v->is_pkp ? 'PKP' : 'NON PKP');
             }
             if (empty($formData['meta_p2_pkp_no'])) {

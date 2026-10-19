@@ -28,16 +28,34 @@ class TeamReportExport implements FromCollection, ShouldAutoSize, WithEvents, Wi
 
     protected int $totalSubmissions;
 
+    protected array $periods;
+
+    protected ?string $dateFrom;
+
+    protected ?string $dateTo;
+
     private int $rowNumber = 1;
 
-    public function __construct(int $year, string $roleType, string $orgGroupName, array $matrix, array $monthlyTotals, int $totalSubmissions)
-    {
+    public function __construct(
+        int $year,
+        string $roleType,
+        string $orgGroupName,
+        array $matrix,
+        array $monthlyTotals,
+        int $totalSubmissions,
+        array $periods = [],
+        ?string $dateFrom = null,
+        ?string $dateTo = null
+    ) {
         $this->year = $year;
         $this->roleType = $roleType;
         $this->orgGroupName = $orgGroupName;
         $this->matrix = $matrix;
         $this->monthlyTotals = $monthlyTotals;
         $this->totalSubmissions = $totalSubmissions;
+        $this->periods = $periods;
+        $this->dateFrom = $dateFrom;
+        $this->dateTo = $dateTo;
     }
 
     public function collection(): Collection
@@ -48,32 +66,37 @@ class TeamReportExport implements FromCollection, ShouldAutoSize, WithEvents, Wi
     public function title(): string
     {
         $roleLabel = $this->roleType === 'pic' ? 'PIC' : 'Pengaju';
+        if ($this->dateFrom && $this->dateTo) {
+            return "Tim ({$roleLabel}) {$this->dateFrom} - {$this->dateTo}";
+        }
 
         return "Tim ({$roleLabel}) {$this->year}";
     }
 
     public function headings(): array
     {
-        return [
+        $headers = [
             'No',
             'Nama Anggota Tim',
             'Departemen',
             'Organization Group',
             'NIK / Email',
-            'Jan',
-            'Feb',
-            'Mar',
-            'Apr',
-            'Mei',
-            'Jun',
-            'Jul',
-            'Ags',
-            'Sep',
-            'Okt',
-            'Nov',
-            'Des',
-            'Total',
         ];
+
+        if (! empty($this->periods)) {
+            foreach ($this->periods as $p) {
+                $headers[] = $p['short'];
+            }
+        } else {
+            $monthShorts = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
+            foreach ($monthShorts as $m) {
+                $headers[] = $m;
+            }
+        }
+
+        $headers[] = 'Total';
+
+        return $headers;
     }
 
     public function map($item): array
@@ -92,8 +115,14 @@ class TeamReportExport implements FromCollection, ShouldAutoSize, WithEvents, Wi
             $identifier,
         ];
 
-        for ($m = 1; $m <= 12; $m++) {
-            $row[] = (int) ($item['months'][$m] ?? 0);
+        if (! empty($this->periods)) {
+            foreach ($this->periods as $p) {
+                $row[] = (int) ($item['months'][$p['key']] ?? 0);
+            }
+        } else {
+            for ($m = 1; $m <= 12; $m++) {
+                $row[] = (int) ($item['months'][$m] ?? 0);
+            }
         }
 
         $row[] = (int) $total;
@@ -111,15 +140,22 @@ class TeamReportExport implements FromCollection, ShouldAutoSize, WithEvents, Wi
 
                 // Append Total Row
                 $totalRowData = ['', 'TOTAL KESELURUHAN', '', '', ''];
-                for ($m = 1; $m <= 12; $m++) {
-                    $totalRowData[] = (int) ($this->monthlyTotals[$m] ?? 0);
+                if (! empty($this->periods)) {
+                    foreach ($this->periods as $p) {
+                        $totalRowData[] = (int) ($this->monthlyTotals[$p['key']] ?? 0);
+                    }
+                } else {
+                    for ($m = 1; $m <= 12; $m++) {
+                        $totalRowData[] = (int) ($this->monthlyTotals[$m] ?? 0);
+                    }
                 }
                 $totalRowData[] = (int) $this->totalSubmissions;
 
                 $sheet->fromArray([$totalRowData], null, "A{$totalRowIndex}");
 
                 $highestRow = $totalRowIndex;
-                $highestColumn = 'R';
+                $colCount = count($this->headings());
+                $highestColumn = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colCount);
 
                 // Global Font
                 $sheet->getParent()->getDefaultStyle()->getFont()->setName('Segoe UI');
@@ -176,10 +212,10 @@ class TeamReportExport implements FromCollection, ShouldAutoSize, WithEvents, Wi
                     // Column Alignments
                     $sheet->getStyle('A2:A'.($dataRowCount + 1))->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                     $sheet->getStyle('E2:E'.($dataRowCount + 1))->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                    $sheet->getStyle('F2:R'.($dataRowCount + 1))->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                    $sheet->getStyle("F2:{$highestColumn}".($dataRowCount + 1))->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
                     // Bold Totals
-                    $sheet->getStyle('R2:R'.($dataRowCount + 1))->getFont()->setBold(true);
+                    $sheet->getStyle("{$highestColumn}2:{$highestColumn}".($dataRowCount + 1))->getFont()->setBold(true);
                 }
 
                 // Total Row Styling - Primary Muted Tint

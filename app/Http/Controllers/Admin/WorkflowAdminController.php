@@ -316,6 +316,18 @@ class WorkflowAdminController extends Controller
             'masterWorkflows' => Workflow::where('workflow_type', 'main')->where('id', '!=', $workflow->id)->select('id', 'name')->orderBy('name')->get(),
             'formTemplates' => FormTemplate::select('id', 'name')->orderBy('name')->get(),
             'stepPresets' => WorkflowStepPreset::select('id', 'name', 'step_data', 'created_at')->latest()->get(),
+            'vendors' => \App\Models\Master\Vendor::select('id', 'vendor_name', 'vendor_code', 'vendor_detail', 'is_active')
+                ->where('is_active', true)
+                ->get()
+                ->map(fn ($v) => [
+                    'id' => $v->id,
+                    'name' => $v->name,
+                    'code' => $v->vendor_code,
+                    'is_pkp' => (bool) $v->is_pkp,
+                    'pkp_status' => $v->pkp_status,
+                    'pic_name' => $v->pic_name,
+                    'npwp' => $v->detail['tax']['npwp'] ?? null,
+                ]),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
                 ['title' => 'Alur Kerja (Workflows)', 'href' => route('admin.workflows'), 'icon' => 'GitBranch'],

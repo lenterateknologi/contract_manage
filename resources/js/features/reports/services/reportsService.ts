@@ -14,6 +14,8 @@ export const reportsService = {
      */
     getDivisionMonthly: (
         params: {
+            date_from?: string;
+            date_to?: string;
             year?: number;
             group_by?: 'division' | 'org_group';
             division_ids?: string[];
@@ -30,6 +32,8 @@ export const reportsService = {
      */
     getExportDivisionsUrl: (
         params: {
+            date_from?: string;
+            date_to?: string;
             year?: number;
             group_by?: 'division' | 'org_group';
             division_ids?: string[];
@@ -41,6 +45,8 @@ export const reportsService = {
         } = {},
     ): string => {
         const queryParams = new URLSearchParams();
+        if (params.date_from) queryParams.append('date_from', params.date_from);
+        if (params.date_to) queryParams.append('date_to', params.date_to);
         if (params.year) queryParams.append('year', String(params.year));
         if (params.group_by) queryParams.append('group_by', params.group_by);
         if (params.division_ids && Array.isArray(params.division_ids)) {
@@ -69,6 +75,8 @@ export const reportsService = {
      */
     getTeamMonthly: (
         params: {
+            date_from?: string;
+            date_to?: string;
             year?: number;
             role_type?: 'creator' | 'pic';
             org_group_id?: string;
@@ -81,6 +89,8 @@ export const reportsService = {
      */
     getExportTeamUrl: (
         params: {
+            date_from?: string;
+            date_to?: string;
             year?: number;
             role_type?: 'creator' | 'pic';
             org_group_id?: string;
@@ -88,6 +98,8 @@ export const reportsService = {
         } = {},
     ): string => {
         const queryParams = new URLSearchParams();
+        if (params.date_from) queryParams.append('date_from', params.date_from);
+        if (params.date_to) queryParams.append('date_to', params.date_to);
         if (params.year) queryParams.append('year', String(params.year));
         if (params.role_type) queryParams.append('role_type', params.role_type);
         if (params.org_group_id) queryParams.append('org_group_id', params.org_group_id);

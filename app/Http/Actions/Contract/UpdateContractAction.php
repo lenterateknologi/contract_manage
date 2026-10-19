@@ -59,24 +59,24 @@ class UpdateContractAction
         $oldContract->id = $contract->id;
         $oldAttributes = $contract->getAttributes();
         // Sync tax_required and metadata
+        $existingMeta = $contract->metadata ?? [];
+        $incomingMeta = (isset($validated['metadata']) && is_array($validated['metadata'])) ? $validated['metadata'] : [];
+        $mergedMeta = array_merge($existingMeta, $incomingMeta);
+
         if (array_key_exists('tax_required', $validated)) {
-            $metadata = $contract->metadata ?? [];
             $isTax = filter_var($validated['tax_required'], FILTER_VALIDATE_BOOLEAN);
-            $metadata['tax_required'] = $isTax;
-            $metadata['meta_tax_required'] = $isTax ? 'Ya' : 'Tidak';
-            $contract->metadata = $metadata;
-            $contract->save();
-        } elseif (isset($validated['metadata']) && is_array($validated['metadata'])) {
-            $metadata = array_merge($contract->metadata ?? [], $validated['metadata']);
-            if (isset($metadata['tax_required']) || isset($metadata['meta_tax_required'])) {
-                $taxVal = $metadata['tax_required'] ?? $metadata['meta_tax_required'];
-                $isTax = ($taxVal === true || $taxVal === '1' || $taxVal === 1 || $taxVal === 'Ya' || $taxVal === 'ya' || $taxVal === 'true');
-                $metadata['tax_required'] = $isTax;
-                $metadata['meta_tax_required'] = $isTax ? 'Ya' : 'Tidak';
-            }
-            $contract->metadata = $metadata;
-            $contract->save();
+            $mergedMeta['tax_required'] = $isTax;
+            $mergedMeta['meta_tax_required'] = $isTax ? 'Ya' : 'Tidak';
+            $validated['tax_required'] = $isTax;
+        } elseif (isset($mergedMeta['tax_required']) || isset($mergedMeta['meta_tax_required'])) {
+            $taxVal = $mergedMeta['tax_required'] ?? $mergedMeta['meta_tax_required'];
+            $isTax = ($taxVal === true || $taxVal === '1' || $taxVal === 1 || $taxVal === 'Ya' || $taxVal === 'ya' || $taxVal === 'true');
+            $mergedMeta['tax_required'] = $isTax;
+            $mergedMeta['meta_tax_required'] = $isTax ? 'Ya' : 'Tidak';
+            $validated['tax_required'] = $isTax;
         }
+
+        $validated['metadata'] = $mergedMeta;
 
         $contract->update($validated);
 

@@ -282,6 +282,9 @@ export function DraftEditableInfoCard({
                 p2_address: p2Data.address,
                 metadata: {
                     ...(selected.metadata || {}),
+                    tax_required: taxRequired,
+                    meta_tax_required: taxRequired ? 'Ya' : 'Tidak',
+                    meta_harga: price || null,
                     first_party_id: firstPartyId,
                     p1_vendor_id: firstPartyId,
                     second_party_id: vendorId || null,

@@ -330,3 +330,138 @@ export function matchUserAgainstWorkflowPool(user: any, config: any, contract: a
 
     return false;
 }
+
+// ponytail: evaluate step execution / skip status based on simulation vendor
+export function evaluateStepExecutionStatus(step: any, vendor: any): { isSkipped: boolean; reason?: string } {
+    if (!step || !vendor) {
+        return { isSkipped: false };
+    }
+
+    // Step tidak aktif atau opsional di-skip
+    if (step.is_active === false) {
+        return { isSkipped: true, reason: 'Tahap non-aktif' };
+    }
+
+    const conditions: Array<{ key: string; operator: string; value: string; logic?: 'AND' | 'OR' }> = [];
+
+    if (Array.isArray(step.meta?.conditions) && step.meta.conditions.length > 0) {
+        step.meta.conditions.forEach((c: any) => {
+            if (c.key) {
+                conditions.push({
+                    key: c.key.trim(),
+                    operator: c.operator || 'truthy',
+                    value: (c.value ?? '').toString().trim(),
+                    logic: c.logic === 'OR' || c.connector === 'OR' ? 'OR' : 'AND',
+                });
+            }
+        });
+    } else if (step.meta?.condition_key) {
+        conditions.push({
+            key: step.meta.condition_key.trim(),
+            operator: step.meta.condition_operator || 'truthy',
+            value: (step.meta.condition_value ?? '').toString().trim(),
+            logic: 'AND',
+        });
+    } else if (step.condition_expression && step.condition_expression !== 'METADATA_KEY') {
+        const expr = String(step.condition_expression).trim();
+        const tokens = expr.split(/(\s*\|\|\s*|\s*&&\s*)/);
+        let curLogic: 'AND' | 'OR' = 'AND';
+        for (const token of tokens) {
+            const t = token.trim();
+            if (t === '||') curLogic = 'OR';
+            else if (t === '&&') curLogic = 'AND';
+            else if (t) {
+                let matched = false;
+                for (const op of ['==', '!=', '>', '<', 'contains']) {
+                    if (t.includes(` ${op} `)) {
+                        const [k, ...vParts] = t.split(` ${op} `);
+                        conditions.push({ key: k.trim(), operator: op, value: vParts.join(` ${op} `).trim(), logic: curLogic });
+                        matched = true;
+                        break;
+                    }
+                }
+                if (!matched) {
+                    conditions.push({ key: t, operator: 'truthy', value: '', logic: curLogic });
+                }
+            }
+        }
+    }
+
+    if (conditions.length === 0) {
+        return { isSkipped: false };
+    }
+
+    const resolveVal = (key: string): any => {
+        const k = key.toLowerCase();
+        if (k === 'contract.has_tax' || k === 'has_tax' || k === 'vendor.is_pkp' || k === 'is_pkp') {
+            return Boolean(vendor.is_pkp);
+        }
+        if (k === 'meta_p2_pkp_status' || k === 'pkp_status') {
+            return vendor.pkp_status || (vendor.is_pkp ? 'PKP' : 'NON PKP');
+        }
+        if (k === 'vendor.code' || k === 'vendor_code') {
+            return vendor.code || '';
+        }
+        if (k === 'vendor.name' || k === 'vendor_name' || k === 'meta_p2_entity') {
+            return vendor.name || '';
+        }
+        if (k === 'vendor.npwp' || k === 'npwp') {
+            return vendor.npwp || '';
+        }
+        return undefined;
+    };
+
+    let hasRelevantVendorCondition = false;
+    let accumulated: boolean | null = null;
+    let prevLogic: 'AND' | 'OR' = 'AND';
+
+    for (const cond of conditions) {
+        const val = resolveVal(cond.key);
+        if (val !== undefined) {
+            hasRelevantVendorCondition = true;
+        }
+
+        // Jika kondisi tidak terkait vendor, jangan skip karena data lain belum tentu falsy di runtime
+        if (val === undefined) {
+            continue;
+        }
+
+        let passed = false;
+        const op = cond.operator || 'truthy';
+        const expected = cond.value;
+
+        if (op === 'truthy') {
+            const falsy = [false, 'false', 0, '0', '', null, undefined, 'tidak', 'no', 'off', 'non pkp', 'non-pkp', '-'];
+            passed = typeof val === 'string' ? !falsy.includes(val.toLowerCase().trim()) : !falsy.includes(val);
+        } else if (op === '==') {
+            const valStr = typeof val === 'boolean' ? (val ? 'true' : 'false') : String(val);
+            passed =
+                valStr.toLowerCase() === expected.toLowerCase() ||
+                (['true', '1', 'yes', 'pkp'].includes(expected.toLowerCase()) && ['true', '1', 'on', 'yes', 'pkp'].includes(valStr.toLowerCase())) ||
+                (['false', '0', 'no', 'non pkp'].includes(expected.toLowerCase()) && ['false', '0', 'off', 'no', 'non pkp', 'non-pkp', ''].includes(valStr.toLowerCase()));
+        } else if (op === '!=') {
+            const valStr = typeof val === 'boolean' ? (val ? 'true' : 'false') : String(val);
+            const isMatch =
+                valStr.toLowerCase() === expected.toLowerCase() ||
+                (['true', '1', 'yes', 'pkp'].includes(expected.toLowerCase()) && ['true', '1', 'on', 'yes', 'pkp'].includes(valStr.toLowerCase())) ||
+                (['false', '0', 'no', 'non pkp'].includes(expected.toLowerCase()) && ['false', '0', 'off', 'no', 'non pkp', 'non-pkp', ''].includes(valStr.toLowerCase()));
+            passed = !isMatch;
+        } else if (op === 'contains') {
+            passed = String(val).toLowerCase().includes(String(expected).toLowerCase());
+        }
+
+        if (accumulated === null) {
+            accumulated = passed;
+        } else {
+            accumulated = prevLogic === 'OR' ? accumulated || passed : accumulated && passed;
+        }
+        prevLogic = cond.logic || 'AND';
+    }
+
+    if (hasRelevantVendorCondition && accumulated === false) {
+        return { isSkipped: true, reason: `Dilewati (Skipped): Vendor "${vendor.name}" (${vendor.pkp_status || (vendor.is_pkp ? 'PKP' : 'NON PKP')}) tidak memenuhi syarat tahap ini.` };
+    }
+
+    return { isSkipped: false };
+}
+

@@ -606,12 +606,68 @@ class ReportController extends Controller
             return $this->errorResponse('Akses ditolak. Laporan ini hanya dapat diakses oleh bagian Legal atau role yang memiliki izin global.', 403);
         }
 
-        $year = (int) $request->input('year', date('Y'));
-        if ($year < 2000 || $year > 2100) {
-            $year = (int) date('Y');
+        // Determine date range: check date_from/date_to or fallback to year
+        $dateFromInput = $request->input('date_from');
+        $dateToInput = $request->input('date_to');
+
+        if ($dateFromInput && $dateToInput) {
+            $startDate = Carbon::parse($dateFromInput)->startOfDay();
+            $endDate = Carbon::parse($dateToInput)->endOfDay();
+            if ($startDate->gt($endDate)) {
+                [$startDate, $endDate] = [$endDate->copy()->startOfDay(), $startDate->copy()->endOfDay()];
+            }
+        } elseif ($dateFromInput) {
+            $startDate = Carbon::parse($dateFromInput)->startOfDay();
+            $endDate = $startDate->copy()->endOfYear();
+        } elseif ($dateToInput) {
+            $endDate = Carbon::parse($dateToInput)->endOfDay();
+            $startDate = $endDate->copy()->startOfYear();
+        } else {
+            $year = (int) $request->input('year', date('Y'));
+            if ($year < 2000 || $year > 2100) {
+                $year = (int) date('Y');
+            }
+            $startDate = Carbon::createFromDate($year, 1, 1)->startOfDay();
+            $endDate = Carbon::createFromDate($year, 12, 31)->endOfDay();
         }
 
-        // Get all unique years from contracts for year selector (excluding draft)
+        $dateFrom = $startDate->toDateString();
+        $dateTo = $endDate->toDateString();
+        $year = (int) $startDate->year;
+
+        // Generate dynamic month periods covered in the range
+        // ponytail: lightweight month period generator across year boundaries
+        $monthNamesId = [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember',
+        ];
+        $shortMonthNamesId = [
+            1 => 'Jan', 2 => 'Feb', 3 => 'Mar', 4 => 'Apr',
+            5 => 'Mei', 6 => 'Jun', 7 => 'Jul', 8 => 'Ags',
+            9 => 'Sep', 10 => 'Okt', 11 => 'Nov', 12 => 'Des',
+        ];
+
+        $periods = [];
+        $cursor = $startDate->copy()->startOfMonth();
+        $endCursor = $endDate->copy()->startOfMonth();
+        $isCrossYear = $startDate->year !== $endDate->year;
+
+        while ($cursor->lte($endCursor)) {
+            $key = $cursor->format('Y-m');
+            $mNum = (int) $cursor->month;
+            $yNum = (int) $cursor->year;
+            $periods[] = [
+                'key' => $key,
+                'month' => $mNum,
+                'year' => $yNum,
+                'short' => $isCrossYear ? "{$shortMonthNamesId[$mNum]} '{$cursor->format('y')}" : $shortMonthNamesId[$mNum],
+                'full' => "{$monthNamesId[$mNum]} {$yNum}",
+            ];
+            $cursor->addMonth();
+        }
+
+        // Get all unique years from contracts for year selector fallback (excluding draft)
         $availableYears = DB::table('t_contracts')
             ->selectRaw('DISTINCT EXTRACT(YEAR FROM created_at)::int as year')
             ->whereNull('deleted_at')
@@ -664,7 +720,7 @@ class ReportController extends Controller
             ->orderBy('label')
             ->get();
 
-        // Base query contracts (excluding draft)
+        // Base query contracts (excluding draft, strictly within date range)
         $query = DB::table('t_contracts as c')
             ->leftJoin('m_users as u', 'c.created_by', '=', 'u.id')
             ->leftJoin('m_departments as dept', 'u.department_id', '=', 'dept.id')
@@ -675,7 +731,8 @@ class ReportController extends Controller
             ->leftJoin('m_contract_types as ct', 'c.contract_type_id', '=', 'ct.id')
             ->whereNull('c.deleted_at')
             ->where('c.status', '!=', 'draft')
-            ->whereYear('c.created_at', $year);
+            ->where('c.created_at', '>=', $startDate->toDateTimeString())
+            ->where('c.created_at', '<=', $endDate->toDateTimeString());
 
         // Filter organization groups
         $orgGroupIds = $this->filterUuids($request->input('organization_group_ids', $request->input('org_group_ids', $request->input('division_ids'))));
@@ -711,25 +768,24 @@ class ReportController extends Controller
             });
         }
 
-        $monthNames = [
-            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
-            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
-            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember',
-        ];
-
         $allOrgMap = $allOrgGroups->keyBy(fn ($item) => (string) $item->id);
 
-        // Monthly Aggregations per Organization Group
+        // Group by period key (YYYY-MM) per Organization Group
         $monthlyOrgData = (clone $query)
             ->selectRaw("
                 COALESCE(og.id::text, 'unassigned') as org_group_id,
                 COALESCE(og.name, dept.org_group_name, 'Tanpa Organization Group') as org_group_name,
                 COALESCE(og.code, dept.code, '-') as org_group_code,
-                EXTRACT(MONTH FROM c.created_at)::int as month,
+                TO_CHAR(c.created_at, 'YYYY-MM') as period_key,
                 COUNT(c.id) as total_count
             ")
-            ->groupBy('og.id', 'og.name', 'dept.org_group_name', 'og.code', 'dept.code', DB::raw('EXTRACT(MONTH FROM c.created_at)'))
+            ->groupBy('og.id', 'og.name', 'dept.org_group_name', 'og.code', 'dept.code', DB::raw("TO_CHAR(c.created_at, 'YYYY-MM')"))
             ->get();
+
+        $emptyPeriodsMap = [];
+        foreach ($periods as $p) {
+            $emptyPeriodsMap[$p['key']] = 0;
+        }
 
         $matrixOrgMap = [];
         foreach ($monthlyOrgData as $row) {
@@ -744,12 +800,14 @@ class ReportController extends Controller
                     'division_name' => $row->org_group_name,
                     'division_code' => $row->org_group_code,
                     'user_count' => $userCount,
-                    'months' => array_fill(1, 12, 0),
+                    'months' => $emptyPeriodsMap,
                     'total' => 0,
                     'average' => 0,
                 ];
             }
-            $matrixOrgMap[$groupId]['months'][(int) $row->month] = (int) $row->total_count;
+            if (isset($matrixOrgMap[$groupId]['months'][$row->period_key])) {
+                $matrixOrgMap[$groupId]['months'][$row->period_key] = (int) $row->total_count;
+            }
             $matrixOrgMap[$groupId]['total'] += (int) $row->total_count;
         }
 
@@ -765,7 +823,7 @@ class ReportController extends Controller
                         'division_name' => $og->name,
                         'division_code' => $og->code ?? '-',
                         'user_count' => (int) $og->user_count,
-                        'months' => array_fill(1, 12, 0),
+                        'months' => $emptyPeriodsMap,
                         'total' => 0,
                         'average' => 0,
                     ];
@@ -775,18 +833,19 @@ class ReportController extends Controller
             }
         }
 
-        $monthlyTotalsOrg = array_fill(1, 12, 0);
+        $periodCount = max(1, count($periods));
+        $monthlyTotalsOrg = $emptyPeriodsMap;
         $grandTotalOrg = 0;
         $activeOrgCount = 0;
 
         foreach ($matrixOrgMap as &$item) {
             $itemTotal = $item['total'];
-            $item['average'] = round($itemTotal / 12, 1);
+            $item['average'] = round($itemTotal / $periodCount, 1);
             if ($itemTotal > 0) {
                 $activeOrgCount++;
             }
-            for ($m = 1; $m <= 12; $m++) {
-                $monthlyTotalsOrg[$m] += $item['months'][$m];
+            foreach ($periods as $p) {
+                $monthlyTotalsOrg[$p['key']] += ($item['months'][$p['key']] ?? 0);
             }
             $grandTotalOrg += $itemTotal;
         }
@@ -807,23 +866,24 @@ class ReportController extends Controller
             'code' => $matrixOrgList[0]['org_group_code'],
         ] : null;
 
-        $peakMonthOrgNum = 1;
+        $peakPeriodKey = ! empty($periods) ? $periods[0]['key'] : '';
         $peakMonthOrgCount = 0;
-        foreach ($monthlyTotalsOrg as $m => $count) {
+        foreach ($monthlyTotalsOrg as $pKey => $count) {
             if ($count > $peakMonthOrgCount) {
                 $peakMonthOrgCount = $count;
-                $peakMonthOrgNum = $m;
+                $peakPeriodKey = $pKey;
             }
         }
-        $peakMonthOrg = $peakMonthOrgCount > 0 ? [
-            'month' => $peakMonthOrgNum,
-            'name' => $monthNames[$peakMonthOrgNum],
+        $foundPeriod = collect($periods)->firstWhere('key', $peakPeriodKey);
+        $peakMonthOrg = $peakMonthOrgCount > 0 && $foundPeriod ? [
+            'month' => $foundPeriod['month'],
+            'name' => $foundPeriod['full'],
             'total' => $peakMonthOrgCount,
         ] : null;
 
         $summaryOrg = [
             'totalSubmissions' => $grandTotalOrg,
-            'avgPerMonth' => round($grandTotalOrg / 12, 1),
+            'avgPerMonth' => round($grandTotalOrg / $periodCount, 1),
             'activeDivisionsCount' => $activeOrgCount,
             'totalDivisions' => count($allOrgGroups),
             'topDivision' => $topOrg,
@@ -850,7 +910,10 @@ class ReportController extends Controller
 
         return response()->json([
             'status' => 'success',
+            'date_from' => $dateFrom,
+            'date_to' => $dateTo,
             'year' => $year,
+            'periods' => $periods,
             'availableYears' => $availableYears,
             'organizationGroups' => $allOrgGroups,
             'divisions' => $allOrgGroups,
@@ -872,16 +935,19 @@ class ReportController extends Controller
         if ($response->getStatusCode() !== 200) {
             return $response;
         }
-        $data = $response->getData(true);
-
         $year = (int) ($data['year'] ?? date('Y'));
+        $dateFrom = $data['date_from'] ?? null;
+        $dateTo = $data['date_to'] ?? null;
+        $periods = $data['periods'] ?? [];
         $matrix = $data['matrix'] ?? [];
         $monthlyTotals = $data['monthlyTotals'] ?? [];
         $totalSubmissions = (int) ($data['summary']['totalSubmissions'] ?? 0);
 
+        $fileSuffix = ($dateFrom && $dateTo) ? "{$dateFrom}_{$dateTo}" : (string) $year;
+
         return Excel::download(
-            new DivisionReportExport($year, $matrix, $monthlyTotals, $totalSubmissions),
-            "laporan_pengajuan_org_group_{$year}.xlsx"
+            new DivisionReportExport($year, $matrix, $monthlyTotals, $totalSubmissions, $periods, $dateFrom, $dateTo),
+            "laporan_pengajuan_org_group_{$fileSuffix}.xlsx"
         );
     }
 
@@ -890,12 +956,73 @@ class ReportController extends Controller
      */
     public function team(Request $request): JsonResponse
     {
-        $year = (int) $request->input('year', date('Y'));
-        if ($year < 2000 || $year > 2100) {
-            $year = (int) date('Y');
+        // Determine date range: check date_from/date_to or fallback to year
+        $dateFromInput = $request->input('date_from');
+        $dateToInput = $request->input('date_to');
+
+        if ($dateFromInput && $dateToInput) {
+            $startDate = Carbon::parse($dateFromInput)->startOfDay();
+            $endDate = Carbon::parse($dateToInput)->endOfDay();
+            if ($startDate->gt($endDate)) {
+                [$startDate, $endDate] = [$endDate->copy()->startOfDay(), $startDate->copy()->endOfDay()];
+            }
+        } elseif ($dateFromInput) {
+            $startDate = Carbon::parse($dateFromInput)->startOfDay();
+            $endDate = $startDate->copy()->endOfYear();
+        } elseif ($dateToInput) {
+            $endDate = Carbon::parse($dateToInput)->endOfDay();
+            $startDate = $endDate->copy()->startOfYear();
+        } else {
+            $year = (int) $request->input('year', date('Y'));
+            if ($year < 2000 || $year > 2100) {
+                $year = (int) date('Y');
+            }
+            $startDate = Carbon::createFromDate($year, 1, 1)->startOfDay();
+            $endDate = Carbon::createFromDate($year, 12, 31)->endOfDay();
         }
 
+        $dateFrom = $startDate->toDateString();
+        $dateTo = $endDate->toDateString();
+        $year = (int) $startDate->year;
+
         $roleType = $request->input('role_type', 'creator') === 'pic' ? 'pic' : 'creator';
+
+        // Generate dynamic month periods covered in the range
+        // ponytail: lightweight month period generator across year boundaries
+        $monthNamesId = [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember',
+        ];
+        $shortMonthNamesId = [
+            1 => 'Jan', 2 => 'Feb', 3 => 'Mar', 4 => 'Apr',
+            5 => 'Mei', 6 => 'Jun', 7 => 'Jul', 8 => 'Ags',
+            9 => 'Sep', 10 => 'Okt', 11 => 'Nov', 12 => 'Des',
+        ];
+
+        $periods = [];
+        $cursor = $startDate->copy()->startOfMonth();
+        $endCursor = $endDate->copy()->startOfMonth();
+        $isCrossYear = $startDate->year !== $endDate->year;
+
+        while ($cursor->lte($endCursor)) {
+            $key = $cursor->format('Y-m');
+            $mNum = (int) $cursor->month;
+            $yNum = (int) $cursor->year;
+            $periods[] = [
+                'key' => $key,
+                'month' => $mNum,
+                'year' => $yNum,
+                'short' => $isCrossYear ? "{$shortMonthNamesId[$mNum]} '{$cursor->format('y')}" : $shortMonthNamesId[$mNum],
+                'full' => "{$monthNamesId[$mNum]} {$yNum}",
+            ];
+            $cursor->addMonth();
+        }
+
+        $emptyPeriodsMap = [];
+        foreach ($periods as $p) {
+            $emptyPeriodsMap[$p['key']] = 0;
+        }
 
         // Get all unique years from contracts for year selector (excluding draft)
         $availableYears = DB::table('t_contracts')
@@ -963,22 +1090,19 @@ class ReportController extends Controller
                 ?: ($allOrgGroups->firstWhere('name', 'HO - LEGAL') ?: $allOrgGroups->first());
         }
 
-        $monthNames = [
-            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
-            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
-            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember',
-        ];
-
         if (! $currentOrgGroup) {
             return response()->json([
                 'status' => 'success',
+                'date_from' => $dateFrom,
+                'date_to' => $dateTo,
                 'year' => $year,
+                'periods' => $periods,
                 'availableYears' => $availableYears,
                 'roleType' => $roleType,
                 'currentOrgGroup' => null,
                 'organizationGroups' => $allOrgGroups,
                 'matrix' => [],
-                'monthlyTotals' => array_fill(1, 12, 0),
+                'monthlyTotals' => $emptyPeriodsMap,
                 'summary' => [
                     'totalSubmissions' => 0,
                     'activeUsersCount' => 0,
@@ -1013,11 +1137,12 @@ class ReportController extends Controller
             ->orderBy('u.name')
             ->get();
 
-        // Query non-draft contracts for this year
+        // Query non-draft contracts within the date range
         $contractQuery = DB::table('t_contracts as c')
             ->whereNull('c.deleted_at')
             ->where('c.status', '!=', 'draft')
-            ->whereYear('c.created_at', $year);
+            ->where('c.created_at', '>=', $startDate->toDateTimeString())
+            ->where('c.created_at', '<=', $endDate->toDateTimeString());
 
         if ($roleType === 'pic') {
             $contractQuery->join('m_users as u', 'c.assigned_pic_id', '=', 'u.id');
@@ -1042,15 +1167,15 @@ class ReportController extends Controller
         }
 
         $monthlyUserData = $contractQuery
-            ->selectRaw('
+            ->selectRaw("
                 u.id as user_id,
-                EXTRACT(MONTH FROM c.created_at)::int as month,
+                TO_CHAR(c.created_at, 'YYYY-MM') as period_key,
                 COUNT(c.id) as total_count
-            ')
-            ->groupBy('u.id', DB::raw('EXTRACT(MONTH FROM c.created_at)'))
+            ")
+            ->groupBy('u.id', DB::raw("TO_CHAR(c.created_at, 'YYYY-MM')"))
             ->get();
 
-        // Initialize all users in this Org Group with 0s
+        // Initialize all users in this Org Group with empty periods
         $matrixUserMap = [];
         foreach ($teamUsers as $u) {
             $uid = (string) $u->user_id;
@@ -1063,7 +1188,7 @@ class ReportController extends Controller
                 'department_code' => $u->department_code,
                 'division_name' => $u->division_name,
                 'org_group_name' => $currentOrgGroup->name,
-                'months' => array_fill(1, 12, 0),
+                'months' => $emptyPeriodsMap,
                 'total' => 0,
             ];
         }
@@ -1071,12 +1196,14 @@ class ReportController extends Controller
         foreach ($monthlyUserData as $row) {
             $uid = (string) $row->user_id;
             if (isset($matrixUserMap[$uid])) {
-                $matrixUserMap[$uid]['months'][(int) $row->month] = (int) $row->total_count;
+                if (isset($matrixUserMap[$uid]['months'][$row->period_key])) {
+                    $matrixUserMap[$uid]['months'][$row->period_key] = (int) $row->total_count;
+                }
                 $matrixUserMap[$uid]['total'] += (int) $row->total_count;
             }
         }
 
-        $monthlyTotals = array_fill(1, 12, 0);
+        $monthlyTotals = $emptyPeriodsMap;
         $grandTotal = 0;
         $activeUsersCount = 0;
 
@@ -1085,8 +1212,8 @@ class ReportController extends Controller
             if ($itemTotal > 0) {
                 $activeUsersCount++;
             }
-            for ($m = 1; $m <= 12; $m++) {
-                $monthlyTotals[$m] += $item['months'][$m];
+            foreach ($periods as $p) {
+                $monthlyTotals[$p['key']] += ($item['months'][$p['key']] ?? 0);
             }
             $grandTotal += $itemTotal;
         }
@@ -1109,23 +1236,27 @@ class ReportController extends Controller
             'division' => $matrixList[0]['division_name'],
         ] : null;
 
-        $peakMonthNum = 1;
+        $peakPeriodKey = ! empty($periods) ? $periods[0]['key'] : '';
         $peakMonthCount = 0;
-        foreach ($monthlyTotals as $m => $count) {
+        foreach ($monthlyTotals as $pKey => $count) {
             if ($count > $peakMonthCount) {
                 $peakMonthCount = $count;
-                $peakMonthNum = $m;
+                $peakPeriodKey = $pKey;
             }
         }
-        $peakMonth = $peakMonthCount > 0 ? [
-            'month' => $peakMonthNum,
-            'name' => $monthNames[$peakMonthNum],
+        $foundPeriod = collect($periods)->firstWhere('key', $peakPeriodKey);
+        $peakMonth = $peakMonthCount > 0 && $foundPeriod ? [
+            'month' => $foundPeriod['month'],
+            'name' => $foundPeriod['full'],
             'total' => $peakMonthCount,
         ] : null;
 
         return response()->json([
             'status' => 'success',
+            'date_from' => $dateFrom,
+            'date_to' => $dateTo,
             'year' => $year,
+            'periods' => $periods,
             'availableYears' => $availableYears,
             'roleType' => $roleType,
             'currentOrgGroup' => $currentOrgGroup,
@@ -1151,6 +1282,9 @@ class ReportController extends Controller
         $data = $response->getData(true);
 
         $year = (int) ($data['year'] ?? date('Y'));
+        $dateFrom = $data['date_from'] ?? null;
+        $dateTo = $data['date_to'] ?? null;
+        $periods = $data['periods'] ?? [];
         $roleType = $data['roleType'] ?? 'creator';
         $currentOrgGroup = $data['currentOrgGroup'] ?? null;
         $orgGroupName = $currentOrgGroup['name'] ?? 'Semua';
@@ -1159,10 +1293,11 @@ class ReportController extends Controller
         $totalSubmissions = (int) ($data['summary']['totalSubmissions'] ?? 0);
 
         $sanitizedOrg = preg_replace('/[^A-Za-z0-9_\-]/', '_', strtolower($orgGroupName));
+        $fileSuffix = ($dateFrom && $dateTo) ? "{$dateFrom}_{$dateTo}" : (string) $year;
 
         return Excel::download(
-            new TeamReportExport($year, $roleType, $orgGroupName, $matrix, $monthlyTotals, $totalSubmissions),
-            "laporan_tim_{$roleType}_{$sanitizedOrg}_{$year}.xlsx"
+            new TeamReportExport($year, $roleType, $orgGroupName, $matrix, $monthlyTotals, $totalSubmissions, $periods, $dateFrom, $dateTo),
+            "laporan_tim_{$roleType}_{$sanitizedOrg}_{$fileSuffix}.xlsx"
         );
     }
 }

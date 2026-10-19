@@ -23,6 +23,8 @@ interface StepEligibleUsersPopoverProps {
         creatorId?: string;
         adhocId?: string;
         adhocIds?: string[];
+        vendorId?: string;
+        vendor?: any;
     };
     onOpenSimulationModal?: () => void;
 }

@@ -15,6 +15,8 @@ import { usePermissions } from '@/hooks/use-permissions';
 import { Timeline, TimelineContent, TimelineIcon, TimelineItem } from '../ui/timeline';
 import { ApprovalStepsLite } from './ApprovalStepsLite';
 
+import { evaluateStepExecutionStatus } from '@/features/workflows/utils/workflow-filter';
+
 interface Props {
     contract: Contract;
     approvals: ContractApproval[];
@@ -30,7 +32,53 @@ type SortBy = 'time' | 'step';
 
 export function ApprovalSteps({ contract, approvals = [], creator, submittedAt, meId, onApprove, onOpenAdminWorkflowModal }: Props) {
     const { isAdmin } = usePermissions();
-    const safeApprovals = useMemo(() => (Array.isArray(approvals) ? approvals : []), [approvals]);
+    const rawApprovals = useMemo(() => (Array.isArray(approvals) ? approvals : []), [approvals]);
+
+    // Dynamically evaluate step execution status (SELANJUTNYA vs SKIPPED) in realtime based on live contract context
+    const safeApprovals = useMemo(() => {
+        // Resolve vendor context for evaluation
+        const isTaxP1 = contract.tax_required !== undefined 
+            ? Boolean(contract.tax_required) 
+            : Boolean(contract.metadata?.tax_required);
+        const secondPartyVendor = contract.vendor;
+
+        // If P1 is selected (internal), tax PKP is false (internal is non-pkp)
+        // If P2 is selected, use vendor's is_pkp
+        const effectiveVendor = isTaxP1
+            ? { is_pkp: false, pkp_status: 'NON PKP', name: contract.p1_entity || 'Internal' }
+            : secondPartyVendor
+              ? {
+                    ...secondPartyVendor,
+                    is_pkp: Boolean(secondPartyVendor.is_pkp || (secondPartyVendor as any).detail?.tax?.typePkp === 'PKP'),
+                    pkp_status: (secondPartyVendor.is_pkp || (secondPartyVendor as any).detail?.tax?.typePkp === 'PKP') ? 'PKP' : 'NON PKP',
+                }
+              : { is_pkp: false, pkp_status: 'NON PKP', name: contract.p2_entity || '' };
+
+        return rawApprovals.map((a) => {
+            // Only re-evaluate future unexecuted steps
+            if (a.status !== 'SELANJUTNYA' && a.status !== 'SKIPPED') {
+                return a;
+            }
+
+            const matchedStep = a.workflow_step || contract.workflow?.steps?.find((s: any) => s.id === a.workflow_step_id || s.step === a.sequence);
+            if (!matchedStep) {
+                return a;
+            }
+
+            const { isSkipped } = evaluateStepExecutionStatus(matchedStep, effectiveVendor);
+            const newStatus = isSkipped ? 'SKIPPED' : 'SELANJUTNYA';
+            if (a.status === newStatus) {
+                return a;
+            }
+
+            return {
+                ...a,
+                status: newStatus as any,
+                approver_name: isSkipped ? 'Langkah Dilewati' : (a.approver_name === 'Langkah Dilewati' ? (matchedStep.label || matchedStep.name || a.role) : a.approver_name),
+                target_approvers: isSkipped ? 'Syarat tidak terpenuhi' : (a.target_approvers === 'Syarat tidak terpenuhi' ? (a.role || 'Sesuai alur') : a.target_approvers),
+            };
+        });
+    }, [rawApprovals, contract.tax_required, contract.vendor, contract.p1_entity, contract.p2_entity, contract.workflow]);
     const [viewTab, setViewTab] = useState<ViewTab>('lite');
     const [sortBy] = useState<SortBy>('time');
     const [search, setSearch] = useState('');
@@ -357,13 +405,15 @@ export function ApprovalSteps({ contract, approvals = [], creator, submittedAt, 
             const stepApprovals = safeApprovals.filter((a) => (a.workflow_step_id && a.workflow_step_id === s.id) || a.sequence === stepNum);
             const isApproved = stepApprovals.length > 0 && stepApprovals.every((a) => a.status === 'approved');
             const isRejected = stepApprovals.some((a) => a.status === 'rejected');
+            const isSkipped = stepApprovals.some((a) => (a.status as string) === 'SKIPPED');
             const isCurrent =
                 (contract.workflow_step_id && contract.workflow_step_id === s.id) ||
-                (!isApproved && !isRejected && activePendingApproval?.sequence === stepNum);
+                (!isApproved && !isRejected && !isSkipped && activePendingApproval?.sequence === stepNum);
 
-            let status: 'completed' | 'active' | 'rejected' | 'waiting' = 'waiting';
+            let status: 'completed' | 'active' | 'rejected' | 'skipped' | 'waiting' = 'waiting';
             if (isApproved) status = 'completed';
             else if (isRejected) status = 'rejected';
+            else if (isSkipped) status = 'skipped';
             else if (isCurrent) status = 'active';
 
             return {
@@ -452,21 +502,23 @@ export function ApprovalSteps({ contract, approvals = [], creator, submittedAt, 
                                                         const isStepActive = stepItem.status === 'active';
                                                         const isStepDone = stepItem.status === 'completed';
                                                         const isStepRejected = stepItem.status === 'rejected';
+                                                        const isStepSkipped = stepItem.status === 'skipped';
 
                                                         return (
-                                                            <TimelineItem key={stepItem.id || sIdx} status={stepItem.status} className="pb-3">
+                                                            <TimelineItem key={stepItem.id || sIdx} status={stepItem.status as any} className="pb-3">
                                                                 <TimelineIcon
-                                                                    status={stepItem.status}
+                                                                    status={stepItem.status as any}
                                                                     className={cn(
                                                                         'h-5 w-5 text-[10px] font-bold',
                                                                         isStepActive &&
                                                                             'ring-primary/30 bg-primary text-primary-foreground ring-2 ring-offset-1',
                                                                         isStepDone && 'bg-emerald-500 text-white',
                                                                         isStepRejected && 'bg-rose-500 text-white',
+                                                                        isStepSkipped && 'bg-slate-400/80 text-white dark:bg-zinc-600',
                                                                         stepItem.status === 'waiting' && 'bg-muted text-muted-foreground',
                                                                     )}
                                                                 >
-                                                                    {isStepDone ? '✓' : isStepRejected ? '✗' : stepItem.step}
+                                                                    {isStepDone ? '✓' : isStepRejected ? '✗' : isStepSkipped ? '—' : stepItem.step}
                                                                 </TimelineIcon>
                                                                 <TimelineContent className="min-w-0 flex-1">
                                                                     <div
@@ -478,7 +530,9 @@ export function ApprovalSteps({ contract, approvals = [], creator, submittedAt, 
                                                                                   ? 'border-emerald-500/25 bg-emerald-500/5'
                                                                                   : isStepRejected
                                                                                     ? 'border-rose-500/25 bg-rose-500/5'
-                                                                                    : 'border-border/60 bg-surface-muted/30 opacity-75',
+                                                                                    : isStepSkipped
+                                                                                      ? 'border-slate-300/60 bg-slate-100/50 opacity-60 dark:border-zinc-700/60 dark:bg-zinc-800/40'
+                                                                                      : 'border-border/60 bg-surface-muted/30 opacity-75',
                                                                         )}
                                                                     >
                                                                         <div className="flex flex-wrap items-center justify-between gap-1.5">
@@ -504,7 +558,9 @@ export function ApprovalSteps({ contract, approvals = [], creator, submittedAt, 
                                                                                           ? 'border border-rose-500/30 bg-rose-500/15 text-rose-700 dark:text-rose-300'
                                                                                           : isStepActive
                                                                                             ? 'border border-amber-500/30 bg-amber-500/15 text-amber-800 dark:text-amber-200'
-                                                                                            : 'bg-muted text-muted-foreground border-border border',
+                                                                                            : isStepSkipped
+                                                                                              ? 'border border-slate-400/30 bg-slate-400/15 text-slate-600 dark:text-zinc-400'
+                                                                                              : 'bg-muted text-muted-foreground border-border border',
                                                                                 )}
                                                                             >
                                                                                 {isStepDone
@@ -513,7 +569,9 @@ export function ApprovalSteps({ contract, approvals = [], creator, submittedAt, 
                                                                                       ? 'Ditolak'
                                                                                       : isStepActive
                                                                                         ? 'Sedang Berjalan'
-                                                                                        : 'Menunggu'}
+                                                                                        : isStepSkipped
+                                                                                          ? 'Dilewati'
+                                                                                          : 'Menunggu'}
                                                                             </span>
                                                                         </div>
 

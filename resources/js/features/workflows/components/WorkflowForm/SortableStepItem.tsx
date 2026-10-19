@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/buttons/Button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from '@/components/ui/dialogs/Dialog';
 import { Badge } from '@/components/ui/feedback/Badge';
 import { useToast } from '@/components/ui/feedback/Toast';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/feedback/Tooltip';
 import { Checkbox } from '@/components/ui/selection/Checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/selection/Select';
 import LucideIcons from '@/lib/lucide-dynamic';
@@ -52,6 +53,9 @@ const {
 const UsersIcon = Users;
 
 import { FormInput } from '@/components/ui/inputs/FormInput';
+import { FastForward, SkipForward } from 'lucide-react';
+import { PRESET_METADATA_KEYS } from '../../utils/constants';
+import { evaluateStepExecutionStatus } from '../../utils/workflow-filter';
 import { useWorkflowStepState } from '../../hooks/useWorkflowStepState';
 import { StepActionConfigCard } from './StepActionConfigCard';
 import { StepEligibleUsersPopover } from './StepEligibleUsersPopover';
@@ -116,6 +120,8 @@ export default function SortableStepItem({
         creatorId?: string;
         adhocId?: string;
         adhocIds?: string[];
+        vendorId?: string;
+        vendor?: any;
     };
     onOpenSimulationModal?: () => void;
 }) {
@@ -133,6 +139,13 @@ export default function SortableStepItem({
         activeModal,
         setActiveModal,
         activeActionForModal,
+        conditions,
+        conditionMatch,
+        updateConditions,
+        addCondition,
+        removeCondition,
+        updateConditionAt,
+        setConditionMatch,
         parsedCondition,
         handleConditionChange,
         actions,
@@ -150,6 +163,8 @@ export default function SortableStepItem({
                 condition_expression: null,
                 meta: {
                     ...(step.meta || {}),
+                    conditions: [],
+                    condition_match: 'all',
                     condition_key: null,
                     condition_operator: null,
                     condition_value: null,
@@ -160,6 +175,8 @@ export default function SortableStepItem({
                 condition_expression: 'METADATA_KEY',
                 meta: {
                     ...(step.meta || {}),
+                    conditions: [{ key: 'METADATA_KEY', operator: 'truthy', value: '' }],
+                    condition_match: 'all',
                     condition_key: 'METADATA_KEY',
                     condition_operator: 'truthy',
                     condition_value: '',
@@ -211,6 +228,11 @@ export default function SortableStepItem({
         if (ids.length === 0) return [];
         return (users || []).filter((u: any) => ids.includes(String(u.id)));
     }, [simulationContext?.adhocIds, simulationContext?.adhocId, users]);
+
+    // Evaluasi status eksekusi / skip berdasarkan simulasi vendor terpilih
+    const stepExecutionStatus = useMemo(() => {
+        return evaluateStepExecutionStatus(step, simulationContext?.vendor);
+    }, [step, simulationContext?.vendor]);
 
     const currentAssignAction = useMemo(() => {
         if (
@@ -643,6 +665,34 @@ export default function SortableStepItem({
                             </Badge>
                         )}
 
+                        {/* Skipped Badge based on Simulation Selected Vendor */}
+                        {stepExecutionStatus.isSkipped && (
+                            <div onClick={(e) => e.stopPropagation()}>
+                                <TooltipProvider delayDuration={0}>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <div
+                                                className="inline-flex shrink-0 cursor-help items-center justify-center rounded-md border border-rose-300 bg-rose-50 p-1 text-rose-600 shadow-2xs transition-all hover:bg-rose-100 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-400 dark:hover:bg-rose-900/80"
+                                            >
+                                                <SkipForward size={13} className="shrink-0" />
+                                            </div>
+                                        </TooltipTrigger>
+                                        <TooltipContent
+                                            side="top"
+                                            className="z-50 max-w-xs rounded-lg border border-slate-800 bg-slate-900 px-2.5 py-1.5 text-xs text-white shadow-xl dark:border-zinc-700 dark:bg-zinc-900"
+                                        >
+                                            <div className="font-bold text-rose-400">Skipped</div>
+                                            {stepExecutionStatus.reason && (
+                                                <div className="mt-0.5 text-[11px] text-slate-300 dark:text-zinc-300">
+                                                    {stepExecutionStatus.reason}
+                                                </div>
+                                            )}
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+                            </div>
+                        )}
+
                         {/* Data Filters Indicator */}
                         {(step.filter_department || step.filter_company_group || step.filter_region || step.filter_company) && (
                             <Badge
@@ -998,71 +1048,166 @@ export default function SortableStepItem({
                                         </div>
 
                                         {isConditionEnabled ? (
-                                            <div className="animate-in fade-in-50 grid grid-cols-1 gap-3 pt-1 duration-200 md:grid-cols-3">
-                                                {/* Key Input */}
-                                                <div className="space-y-1.5">
-                                                    <label className="flex items-center gap-1 text-xs font-bold text-slate-700 dark:text-zinc-300">
-                                                        <Key className="h-3 w-3 text-slate-400" />
-                                                        <span>Metadata Key</span>
-                                                    </label>
-                                                    <FormInput
-                                                        value={parsedCondition.key}
-                                                        onChange={(e) => handleConditionChange({ key: e.target.value })}
-                                                        placeholder="Contoh: contract.has_tax"
-                                                        variant="outline"
-                                                        className="focus:border-primary h-9.5 rounded-lg border-slate-200 bg-white text-xs font-medium transition-all outline-none dark:border-zinc-700 dark:bg-zinc-900"
-                                                    />
-                                                </div>
+                                            <div className="animate-in fade-in-50 space-y-3 pt-1 duration-200">
+                                                {/* Condition Rows */}
+                                                <div className="space-y-2.5">
+                                                    {conditions.map((cond, condIdx) => (
+                                                        <div
+                                                            key={condIdx}
+                                                            className="relative rounded-xl border border-slate-200/80 bg-white p-3 shadow-2xs dark:border-zinc-800 dark:bg-zinc-900"
+                                                        >
+                                                            <div className="mb-2 flex items-center justify-between border-b border-slate-100 pb-1.5 dark:border-zinc-800">
+                                                                <div className="flex items-center gap-1.5">
+                                                                    <span className="bg-primary/10 text-primary flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold">
+                                                                        {condIdx + 1}
+                                                                    </span>
+                                                                    <span className="text-[11px] font-bold text-slate-700 dark:text-zinc-200">
+                                                                        Syarat #{condIdx + 1}
+                                                                    </span>
+                                                                    {condIdx > 0 && (
+                                                                        <div className="flex items-center rounded-md border border-slate-200 bg-slate-100/90 p-0.5 dark:border-zinc-700 dark:bg-zinc-800">
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => updateConditionAt(condIdx, { logic: 'AND' })}
+                                                                                className={cn(
+                                                                                    'rounded px-1.5 py-0.5 text-[9px] font-extrabold uppercase transition-all',
+                                                                                    (cond.logic || 'AND') === 'AND'
+                                                                                        ? 'bg-primary text-white shadow-2xs'
+                                                                                        : 'text-slate-500 hover:text-slate-800 dark:text-zinc-400',
+                                                                                )}
+                                                                                title="Hubungkan dengan logika DAN (kedua syarat harus terpenuhi)"
+                                                                            >
+                                                                                DAN (&&)
+                                                                            </button>
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => updateConditionAt(condIdx, { logic: 'OR' })}
+                                                                                className={cn(
+                                                                                    'rounded px-1.5 py-0.5 text-[9px] font-extrabold uppercase transition-all',
+                                                                                    cond.logic === 'OR'
+                                                                                        ? 'bg-primary text-white shadow-2xs'
+                                                                                        : 'text-slate-500 hover:text-slate-800 dark:text-zinc-400',
+                                                                                )}
+                                                                                title="Hubungkan dengan logika ATAU (salah satu syarat terpenuhi)"
+                                                                            >
+                                                                                ATAU (||)
+                                                                            </button>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                {conditions.length > 1 && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => removeCondition(condIdx)}
+                                                                        className="rounded p-1 text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-colors dark:hover:bg-rose-950/30"
+                                                                        title="Hapus Syarat Ini"
+                                                                    >
+                                                                        <Trash2 size={13} />
+                                                                    </button>
+                                                                )}
+                                                            </div>
 
-                                                {/* Operator Input */}
-                                                <div className="space-y-1.5">
-                                                    <label className="text-xs font-bold text-slate-700 dark:text-zinc-300">Operator</label>
-                                                    <Select
-                                                        value={parsedCondition.operator}
-                                                        onValueChange={(v) => handleConditionChange({ operator: v })}
-                                                    >
-                                                        <SelectTrigger className="focus:border-primary h-9.5 rounded-lg border-slate-200 bg-white text-xs font-medium transition-all dark:border-zinc-700 dark:bg-zinc-900">
-                                                            <SelectValue />
-                                                        </SelectTrigger>
-                                                        <SelectContent className="rounded-xl bg-white dark:bg-zinc-950">
-                                                            <SelectItem value="truthy" className="py-1.5 text-xs font-medium uppercase">
-                                                                TRUTHY (Ada / Bernilai Benar)
-                                                            </SelectItem>
-                                                            <SelectItem value="==" className="py-1.5 text-xs font-medium uppercase">
-                                                                == (Sama Dengan)
-                                                            </SelectItem>
-                                                            <SelectItem value="!=" className="py-1.5 text-xs font-medium uppercase">
-                                                                != (Tidak Sama)
-                                                            </SelectItem>
-                                                            <SelectItem value=">" className="py-1.5 text-xs font-medium uppercase">
-                                                                &gt; (Lebih Dari)
-                                                            </SelectItem>
-                                                            <SelectItem value="<" className="py-1.5 text-xs font-medium uppercase">
-                                                                &lt; (Kurang Dari)
-                                                            </SelectItem>
-                                                            <SelectItem value="contains" className="py-1.5 text-xs font-medium uppercase">
-                                                                CONTAINS (Mengandung Teks)
-                                                            </SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
+                                                            <div className="grid grid-cols-1 gap-2.5 md:grid-cols-3">
+                                                                {/* Key Input */}
+                                                                <div className="space-y-1">
+                                                                    <div className="flex items-center justify-between">
+                                                                        <label className="flex items-center gap-1 text-[11px] font-bold text-slate-700 dark:text-zinc-300">
+                                                                            <Key className="h-3 w-3 text-slate-400" />
+                                                                            <span>Metadata Key</span>
+                                                                        </label>
+                                                                        <span className="text-[9.5px] text-slate-400 dark:text-zinc-500">Pilih / Ketik</span>
+                                                                    </div>
+                                                                    <div className="relative">
+                                                                        <FormInput
+                                                                            list={`metadata-keys-${idx}-${condIdx}`}
+                                                                            value={cond.key}
+                                                                            onChange={(e) => updateConditionAt(condIdx, { key: e.target.value })}
+                                                                            placeholder="cth: contract.has_tax"
+                                                                            variant="outline"
+                                                                            className="focus:border-primary h-8.5 rounded-lg border-slate-200 bg-white text-xs font-medium transition-all outline-none dark:border-zinc-700 dark:bg-zinc-900"
+                                                                        />
+                                                                        <datalist id={`metadata-keys-${idx}-${condIdx}`}>
+                                                                            {PRESET_METADATA_KEYS.map((preset) => (
+                                                                                <option key={preset.value} value={preset.value}>
+                                                                                    {preset.label}
+                                                                                </option>
+                                                                            ))}
+                                                                        </datalist>
+                                                                    </div>
+                                                                </div>
 
-                                                {/* Expected Value Input */}
-                                                <div className="space-y-1.5">
-                                                    <label className="text-xs font-bold text-slate-700 dark:text-zinc-300">Expected Value</label>
-                                                    {parsedCondition.operator !== 'truthy' ? (
-                                                        <FormInput
-                                                            value={parsedCondition.value}
-                                                            onChange={(e) => handleConditionChange({ value: e.target.value })}
-                                                            placeholder="Nilai yang diharapkan"
-                                                            variant="outline"
-                                                            className="focus:border-primary h-9.5 rounded-lg border-slate-200 bg-white text-xs font-medium transition-all outline-none dark:border-zinc-700 dark:bg-zinc-900"
-                                                        />
-                                                    ) : (
-                                                        <div className="flex h-9.5 items-center rounded-lg border border-slate-200/60 bg-slate-100/60 px-3 text-xs font-medium text-slate-400 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-500">
-                                                            Otomatis dicek bernilai Truthy
+                                                                {/* Operator Input */}
+                                                                <div className="space-y-1">
+                                                                    <label className="text-[11px] font-bold text-slate-700 dark:text-zinc-300">Operator</label>
+                                                                    <Select
+                                                                        value={cond.operator || 'truthy'}
+                                                                        onValueChange={(v) => updateConditionAt(condIdx, { operator: v })}
+                                                                    >
+                                                                        <SelectTrigger className="focus:border-primary h-8.5 rounded-lg border-slate-200 bg-white text-xs font-medium transition-all dark:border-zinc-700 dark:bg-zinc-900">
+                                                                            <SelectValue />
+                                                                        </SelectTrigger>
+                                                                        <SelectContent className="rounded-xl bg-white dark:bg-zinc-950">
+                                                                            <SelectItem value="truthy" className="py-1 text-xs font-medium uppercase">
+                                                                                TRUTHY (Ada / Benar)
+                                                                            </SelectItem>
+                                                                            <SelectItem value="==" className="py-1 text-xs font-medium uppercase">
+                                                                                == (Sama Dengan)
+                                                                            </SelectItem>
+                                                                            <SelectItem value="!=" className="py-1 text-xs font-medium uppercase">
+                                                                                != (Tidak Sama)
+                                                                            </SelectItem>
+                                                                            <SelectItem value=">" className="py-1 text-xs font-medium uppercase">
+                                                                                &gt; (Lebih Dari)
+                                                                            </SelectItem>
+                                                                            <SelectItem value="<" className="py-1 text-xs font-medium uppercase">
+                                                                                &lt; (Kurang Dari)
+                                                                            </SelectItem>
+                                                                            <SelectItem value="contains" className="py-1 text-xs font-medium uppercase">
+                                                                                CONTAINS (Mengandung Teks)
+                                                                            </SelectItem>
+                                                                        </SelectContent>
+                                                                    </Select>
+                                                                </div>
+
+                                                                {/* Expected Value Input */}
+                                                                <div className="space-y-1">
+                                                                    <label className="text-[11px] font-bold text-slate-700 dark:text-zinc-300">Expected Value</label>
+                                                                    {cond.operator !== 'truthy' ? (
+                                                                        <FormInput
+                                                                            value={cond.value}
+                                                                            onChange={(e) => updateConditionAt(condIdx, { value: e.target.value })}
+                                                                            placeholder="Nilai yang diharapkan"
+                                                                            variant="outline"
+                                                                            className="focus:border-primary h-8.5 rounded-lg border-slate-200 bg-white text-xs font-medium transition-all outline-none dark:border-zinc-700 dark:bg-zinc-900"
+                                                                        />
+                                                                    ) : (
+                                                                        <div className="flex h-8.5 items-center rounded-lg border border-slate-200/60 bg-slate-100/60 px-3 text-xs font-medium text-slate-400 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-500">
+                                                                            Otomatis dicek bernilai Truthy
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
                                                         </div>
-                                                    )}
+                                                    ))}
+                                                </div>
+
+                                                {/* Add button & Expression Preview */}
+                                                <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                                                    <button
+                                                        type="button"
+                                                        onClick={addCondition}
+                                                        className="inline-flex h-7.5 cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-50 transition-all dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                                                    >
+                                                        <PlusCircle size={13} className="text-primary" />
+                                                        <span>Tambah Syarat Baru</span>
+                                                    </button>
+
+                                                    <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-zinc-400">
+                                                        <span>Ekspresi:</span>
+                                                        <code className="rounded bg-slate-100 px-2 py-0.5 font-mono text-[10.5px] font-semibold text-slate-700 dark:bg-zinc-800 dark:text-zinc-300">
+                                                            {step.condition_expression || '-'}
+                                                        </code>
+                                                    </div>
                                                 </div>
                                             </div>
                                         ) : (
@@ -2339,6 +2484,12 @@ export default function SortableStepItem({
                     step={step}
                     idx={idx}
                     updateLocalStep={updateLocalStep}
+                    conditions={conditions}
+                    conditionMatch={conditionMatch}
+                    addCondition={addCondition}
+                    removeCondition={removeCondition}
+                    updateConditionAt={updateConditionAt}
+                    setConditionMatch={setConditionMatch}
                     parsedCondition={parsedCondition}
                     handleConditionChange={handleConditionChange}
                 />

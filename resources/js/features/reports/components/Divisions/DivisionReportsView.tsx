@@ -1,8 +1,8 @@
 import { Button } from '@/components/ui/buttons/Button';
+import { DateRangePicker } from '@/components/ui/inputs/DateRangePicker';
 import { SearchInput } from '@/components/ui/inputs/SearchInput';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/selection/Select';
 import { cn } from '@/lib/utils';
-import { ArrowDown, ArrowUp, ArrowUpDown, Calendar, FileSpreadsheet, Loader2, Network } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, FileSpreadsheet, Loader2, Network } from 'lucide-react';
 import React from 'react';
 import { useDivisionReport } from '../../hooks/useDivisionReport';
 import { MONTH_NAMES } from '../../utils/reportsUtils';
@@ -12,8 +12,9 @@ export function DivisionReportsView() {
         data,
         loading,
         exportLoading,
-        selectedYear,
-        setSelectedYear,
+        dateFrom,
+        dateTo,
+        setDateRange,
         searchQuery,
         setSearchQuery,
         sortField,
@@ -35,6 +36,17 @@ export function DivisionReportsView() {
         );
     };
 
+    // ponytail: fallback to 12 months if backend periods not yet returned
+    const displayPeriods = data?.periods && data.periods.length > 0
+        ? data.periods
+        : MONTH_NAMES.map((m) => ({
+              key: String(m.num),
+              short: m.short,
+              full: m.full,
+              month: m.num,
+              year: new Date().getFullYear(),
+          }));
+
     return (
         <div className="bg-surface-base flex h-full min-h-0 flex-1 flex-col overflow-hidden select-none">
             {/* Header Bar */}
@@ -48,30 +60,20 @@ export function DivisionReportsView() {
                             Laporan Rekapitulasi Pengajuan Org Group
                         </h1>
                         <p className="mt-0.5 truncate text-[11px] leading-tight text-zinc-500 dark:text-zinc-400">
-                            Rekapitulasi bulanan jumlah pengajuan kontrak per Organization Group aktif.
+                            Rekapitulasi jumlah pengajuan kontrak per Organization Group aktif berdasarkan rentang waktu.
                         </p>
                     </div>
                 </div>
 
                 {/* Header Controls */}
                 <div className="flex flex-wrap items-center gap-2">
-                    <div className="w-28">
-                        <Select value={String(selectedYear)} onValueChange={(val) => setSelectedYear(Number(val))}>
-                            <SelectTrigger className="border-surface-border bg-surface-muted/20 h-8 rounded-[4px] text-xs font-semibold shadow-none dark:bg-zinc-900">
-                                <div className="flex items-center gap-1.5 truncate">
-                                    <Calendar size={13} className="shrink-0 text-zinc-500" />
-                                    <SelectValue placeholder="Tahun" />
-                                </div>
-                            </SelectTrigger>
-                            <SelectContent className="border-surface-border rounded-[4px] bg-white text-xs shadow-none dark:bg-zinc-900">
-                                {(data?.availableYears || [new Date().getFullYear()]).map((y) => (
-                                    <SelectItem key={y} value={String(y)} className="rounded-[2px] text-xs">
-                                        {y}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
+                    <DateRangePicker
+                        from={dateFrom}
+                        to={dateTo}
+                        variant="action-button"
+                        align="end"
+                        onChange={setDateRange}
+                    />
 
                     <div className="w-48 sm:w-56">
                         <SearchInput
@@ -113,7 +115,7 @@ export function DivisionReportsView() {
                             <div className="flex items-center gap-2">
                                 <Network size={16} className="text-primary" />
                                 <h3 className="text-xs font-bold tracking-wider text-black uppercase dark:text-white">
-                                    Tabel Rekapitulasi Pengajuan per Bulan ({selectedYear})
+                                    Tabel Rekapitulasi Pengajuan ({dateFrom} s/d {dateTo})
                                 </h3>
                             </div>
                             <span className="text-[11px] font-semibold text-zinc-500">
@@ -140,19 +142,19 @@ export function DivisionReportsView() {
                                                 {renderSortIcon('name')}
                                             </div>
                                         </th>
-                                        {MONTH_NAMES.map((m) => (
+                                        {displayPeriods.map((p) => (
                                             <th
-                                                key={m.num}
-                                                onClick={() => handleSort(m.num)}
+                                                key={p.key}
+                                                onClick={() => handleSort(p.key)}
                                                 className={cn(
                                                     'border-surface-border group min-w-[56px] cursor-pointer border-r px-2 py-2.5 text-center transition-colors select-none hover:bg-zinc-100 dark:hover:bg-zinc-700/60',
-                                                    sortField === m.num && 'text-primary dark:text-primary bg-zinc-100/80 dark:bg-zinc-700/40',
+                                                    sortField === p.key && 'text-primary dark:text-primary bg-zinc-100/80 dark:bg-zinc-700/40',
                                                 )}
-                                                title={`Urutkan berdasarkan bulan ${m.full}`}
+                                                title={`Urutkan berdasarkan ${p.full}`}
                                             >
                                                 <div className="flex items-center justify-center gap-1">
-                                                    <span>{m.short}</span>
-                                                    {renderSortIcon(m.num)}
+                                                    <span>{p.short}</span>
+                                                    {renderSortIcon(p.key)}
                                                 </div>
                                             </th>
                                         ))}
@@ -174,7 +176,7 @@ export function DivisionReportsView() {
                                 <tbody className="divide-surface-border divide-y">
                                     {sortedMatrix.length === 0 ? (
                                         <tr>
-                                            <td colSpan={15} className="py-12 text-center text-xs text-zinc-500">
+                                            <td colSpan={displayPeriods.length + 3} className="py-12 text-center text-xs text-zinc-500">
                                                 Tidak ada data pengajuan ditemukan.
                                             </td>
                                         </tr>
@@ -202,11 +204,11 @@ export function DivisionReportsView() {
                                                         </div>
                                                     </td>
 
-                                                    {MONTH_NAMES.map((m) => {
-                                                        const count = row.months[m.num] ?? 0;
+                                                    {displayPeriods.map((p) => {
+                                                        const count = row.months[p.key] ?? (row.months[p.month] ?? 0);
                                                         return (
                                                             <td
-                                                                key={m.num}
+                                                                key={p.key}
                                                                 className={cn(
                                                                     'border-surface-border border-r px-2 py-2 text-center font-medium',
                                                                     count > 0 ? 'text-black dark:text-white' : 'text-zinc-300 dark:text-zinc-600',
@@ -244,11 +246,11 @@ export function DivisionReportsView() {
                                             >
                                                 Total Keseluruhan
                                             </td>
-                                            {MONTH_NAMES.map((m) => {
-                                                const colTotal = data.monthlyTotals[m.num] ?? 0;
+                                            {displayPeriods.map((p) => {
+                                                const colTotal = data.monthlyTotals[p.key] ?? (data.monthlyTotals[p.month] ?? 0);
                                                 return (
                                                     <td
-                                                        key={m.num}
+                                                        key={p.key}
                                                         className="border-surface-border border-r px-2 py-2.5 text-center text-xs font-black"
                                                     >
                                                         {colTotal > 0 ? <span className="text-primary font-black">{colTotal}</span> : '0'}

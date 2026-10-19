@@ -295,3 +295,18 @@ export const BUILTIN_STEP_TEMPLATES = [
         },
     },
 ];
+
+export const PRESET_METADATA_KEYS = [
+    { value: 'contract.has_tax', label: 'contract.has_tax (Ketentuan Kena Pajak / Penentuan Pajak)', group: 'Pajak & Finansial' },
+    { value: 'meta_harga', label: 'meta_harga (Nilai / Harga Transaksi)', group: 'Nilai & Pembayaran' },
+    { value: 'meta_mekanisme_pembayaran', label: 'meta_mekanisme_pembayaran (Termin / Cara Bayar)', group: 'Nilai & Pembayaran' },
+    { value: 'category', label: 'category (Kategori Kontrak)', group: 'Informasi Kontrak' },
+    { value: 'topic', label: 'topic (Topik Kontrak / Perjanjian)', group: 'Informasi Kontrak' },
+    { value: 'project_name', label: 'project_name (Nama Project)', group: 'Informasi Kontrak' },
+    { value: 'meta_sub_topik', label: 'meta_sub_topik (Sub Topik KOP)', group: 'Informasi Kontrak' },
+    { value: 'meta_p1_entity', label: 'meta_p1_entity (Nama Entitas Pihak I)', group: 'Para Pihak' },
+    { value: 'meta_p2_entity', label: 'meta_p2_entity (Nama Entitas Pihak II / Vendor)', group: 'Para Pihak' },
+    { value: 'meta_p2_pkp_status', label: 'meta_p2_pkp_status (Status PKP Pihak II: PKP / NON PKP)', group: 'Pajak & Finansial' },
+    { value: 'meta_lokasi', label: 'meta_lokasi (Lokasi Pelaksanaan)', group: 'Informasi Kontrak' },
+    { value: 'meta_masa_berlaku', label: 'meta_masa_berlaku (Masa Berlaku Perjanjian)', group: 'Informasi Kontrak' },
+];

@@ -9,7 +9,10 @@ export function useDivisionReport() {
     const [loading, setLoading] = useState(true);
     const [exportLoading, setExportLoading] = useState(false);
 
-    const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+    const currentYear = new Date().getFullYear();
+    const [dateFrom, setDateFrom] = useState<string>(`${currentYear}-01-01`);
+    const [dateTo, setDateTo] = useState<string>(`${currentYear}-12-31`);
+    const [selectedYear, setSelectedYear] = useState<number>(currentYear);
     const [searchQuery, setSearchQuery] = useState<string>('');
 
     const [sortField, setSortField] = useState<string | number>('total');
@@ -20,7 +23,7 @@ export function useDivisionReport() {
             setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
         } else {
             setSortField(field);
-            if (typeof field === 'number' || field === 'total') {
+            if (field === 'total' || field === 'average' || typeof field === 'number' || String(field).match(/^\d{4}-\d{2}$/)) {
                 setSortDirection('desc');
             } else {
                 setSortDirection('asc');
@@ -28,10 +31,17 @@ export function useDivisionReport() {
         }
     };
 
+    const handleDateRangeChange = (from: string, to: string) => {
+        setDateFrom(from);
+        setDateTo(to);
+    };
+
     const fetchData = useCallback(() => {
         setLoading(true);
         reportsService
             .getDivisionMonthly({
+                date_from: dateFrom,
+                date_to: dateTo,
                 year: selectedYear,
                 group_by: 'org_group',
                 search: searchQuery,
@@ -44,7 +54,7 @@ export function useDivisionReport() {
                 setLoading(false);
                 showToast('Gagal memuat data laporan divisi', 'error');
             });
-    }, [selectedYear, searchQuery, showToast]);
+    }, [dateFrom, dateTo, selectedYear, searchQuery, showToast]);
 
     useEffect(() => {
         fetchData();
@@ -54,6 +64,8 @@ export function useDivisionReport() {
         setExportLoading(true);
         try {
             const url = reportsService.getExportDivisionsUrl({
+                date_from: dateFrom,
+                date_to: dateTo,
                 year: selectedYear,
                 group_by: 'org_group',
                 search: searchQuery,
@@ -61,7 +73,7 @@ export function useDivisionReport() {
             window.location.href = url;
             showToast('Laporan berhasil diexport', 'success');
         } catch {
-            showToast('Gagal mengunduh laporan CSV', 'error');
+            showToast('Gagal mengunduh laporan Excel', 'error');
         } finally {
             setExportLoading(false);
         }
@@ -75,12 +87,15 @@ export function useDivisionReport() {
             let valA: any;
             let valB: any;
 
-            if (typeof sortField === 'number') {
+            if (typeof sortField === 'number' || (typeof sortField === 'string' && sortField in (a.months || {}))) {
                 valA = a.months?.[sortField] || 0;
                 valB = b.months?.[sortField] || 0;
             } else if (sortField === 'total') {
                 valA = a.total || 0;
                 valB = b.total || 0;
+            } else if (sortField === 'average') {
+                valA = a.average || 0;
+                valB = b.average || 0;
             } else if (sortField === 'name') {
                 valA = (a.org_group_name || a.division_name || '').toLowerCase();
                 valB = (b.org_group_name || b.division_name || '').toLowerCase();
@@ -96,6 +111,9 @@ export function useDivisionReport() {
         data,
         loading,
         exportLoading,
+        dateFrom,
+        dateTo,
+        setDateRange: handleDateRangeChange,
         selectedYear,
         setSelectedYear,
         searchQuery,

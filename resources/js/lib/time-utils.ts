@@ -242,7 +242,7 @@ export function formatRelativeTime(date: string | Date | null | undefined): stri
     return formatDate(d);
 }
 
-export type DatePresetType = 'today' | '7days' | '30days' | 'thisMonth' | 'lastMonth';
+export type DatePresetType = 'today' | '7days' | '30days' | 'thisMonth' | 'lastMonth' | 'thisYear';
 
 export const DATE_RANGE_PRESETS: { label: string; type: DatePresetType }[] = [
     { label: 'Hari Ini', type: 'today' },
@@ -250,6 +250,7 @@ export const DATE_RANGE_PRESETS: { label: string; type: DatePresetType }[] = [
     { label: '30 Hari Terakhir', type: '30days' },
     { label: 'Bulan Ini', type: 'thisMonth' },
     { label: 'Bulan Lalu', type: 'lastMonth' },
+    { label: 'Tahun Ini', type: 'thisYear' },
 ];
 
 /**
@@ -287,6 +288,11 @@ export function getPresetDateRange(type: DatePresetType): { date_from: string; d
         case 'lastMonth': {
             const firstDay = new Date(today.getFullYear(), today.getMonth() - 1, 1);
             const lastDay = new Date(today.getFullYear(), today.getMonth(), 0);
+            return { date_from: fmt(firstDay), date_to: fmt(lastDay) };
+        }
+        case 'thisYear': {
+            const firstDay = new Date(today.getFullYear(), 0, 1);
+            const lastDay = new Date(today.getFullYear(), 11, 31);
             return { date_from: fmt(firstDay), date_to: fmt(lastDay) };
         }
         default:

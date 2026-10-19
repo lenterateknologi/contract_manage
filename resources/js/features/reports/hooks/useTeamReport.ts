@@ -10,7 +10,10 @@ export function useTeamReport() {
     const [exportLoading, setExportLoading] = useState(false);
 
     const [roleType, setRoleType] = useState<'creator' | 'pic'>('creator');
-    const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+    const currentYear = new Date().getFullYear();
+    const [dateFrom, setDateFrom] = useState<string>(`${currentYear}-01-01`);
+    const [dateTo, setDateTo] = useState<string>(`${currentYear}-12-31`);
+    const [selectedYear, setSelectedYear] = useState<number>(currentYear);
     const [selectedOrgGroupId, setSelectedOrgGroupId] = useState<string>('');
     const [searchQuery, setSearchQuery] = useState<string>('');
 
@@ -22,7 +25,7 @@ export function useTeamReport() {
             setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
         } else {
             setSortField(field);
-            if (typeof field === 'number' || field === 'total') {
+            if (field === 'total' || typeof field === 'number' || String(field).match(/^\d{4}-\d{2}$/)) {
                 setSortDirection('desc');
             } else {
                 setSortDirection('asc');
@@ -30,15 +33,24 @@ export function useTeamReport() {
         }
     };
 
+    const handleDateRangeChange = (from: string, to: string) => {
+        setDateFrom(from);
+        setDateTo(to);
+    };
+
     const fetchData = useCallback(
         (overrideParams: Record<string, any> = {}) => {
             setLoading(true);
             const activeRoleType = overrideParams.role_type !== undefined ? overrideParams.role_type : roleType;
             const activeOrgGroupId = overrideParams.org_group_id !== undefined ? overrideParams.org_group_id : selectedOrgGroupId;
+            const activeDateFrom = overrideParams.date_from !== undefined ? overrideParams.date_from : dateFrom;
+            const activeDateTo = overrideParams.date_to !== undefined ? overrideParams.date_to : dateTo;
             const activeYear = overrideParams.year !== undefined ? overrideParams.year : selectedYear;
 
             reportsService
                 .getTeamMonthly({
+                    date_from: activeDateFrom,
+                    date_to: activeDateTo,
                     year: activeYear,
                     role_type: activeRoleType,
                     org_group_id: activeOrgGroupId,
@@ -56,7 +68,7 @@ export function useTeamReport() {
                     showToast('Gagal memuat data laporan tim', 'error');
                 });
         },
-        [roleType, selectedOrgGroupId, selectedYear, searchQuery, showToast],
+        [roleType, selectedOrgGroupId, dateFrom, dateTo, selectedYear, searchQuery, showToast],
     );
 
     useEffect(() => {
@@ -77,6 +89,8 @@ export function useTeamReport() {
         setExportLoading(true);
         try {
             const url = reportsService.getExportTeamUrl({
+                date_from: dateFrom,
+                date_to: dateTo,
                 year: selectedYear,
                 role_type: roleType,
                 org_group_id: selectedOrgGroupId,
@@ -85,7 +99,7 @@ export function useTeamReport() {
             window.location.href = url;
             showToast('Laporan berhasil diexport', 'success');
         } catch {
-            showToast('Gagal mengunduh laporan CSV', 'error');
+            showToast('Gagal mengunduh laporan Excel', 'error');
         } finally {
             setExportLoading(false);
         }
@@ -99,7 +113,7 @@ export function useTeamReport() {
             let valA: any;
             let valB: any;
 
-            if (typeof sortField === 'number') {
+            if (typeof sortField === 'number' || (typeof sortField === 'string' && sortField in (a.months || {}))) {
                 valA = a.months?.[sortField] || 0;
                 valB = b.months?.[sortField] || 0;
             } else if (sortField === 'total') {
@@ -125,6 +139,9 @@ export function useTeamReport() {
         exportLoading,
         roleType,
         setRoleType: handleRoleTypeChange,
+        dateFrom,
+        dateTo,
+        setDateRange: handleDateRangeChange,
         selectedYear,
         setSelectedYear,
         selectedOrgGroupId,

@@ -24,14 +24,30 @@ class DivisionReportExport implements FromCollection, ShouldAutoSize, WithEvents
 
     protected int $totalSubmissions;
 
+    protected array $periods;
+
+    protected ?string $dateFrom;
+
+    protected ?string $dateTo;
+
     private int $rowNumber = 1;
 
-    public function __construct(int $year, array $matrix, array $monthlyTotals, int $totalSubmissions)
-    {
+    public function __construct(
+        int $year,
+        array $matrix,
+        array $monthlyTotals,
+        int $totalSubmissions,
+        array $periods = [],
+        ?string $dateFrom = null,
+        ?string $dateTo = null
+    ) {
         $this->year = $year;
         $this->matrix = $matrix;
         $this->monthlyTotals = $monthlyTotals;
         $this->totalSubmissions = $totalSubmissions;
+        $this->periods = $periods;
+        $this->dateFrom = $dateFrom;
+        $this->dateTo = $dateTo;
     }
 
     public function collection(): Collection
@@ -41,30 +57,36 @@ class DivisionReportExport implements FromCollection, ShouldAutoSize, WithEvents
 
     public function title(): string
     {
+        if ($this->dateFrom && $this->dateTo) {
+            return "Org Group {$this->dateFrom} - {$this->dateTo}";
+        }
+
         return "Org Group {$this->year}";
     }
 
     public function headings(): array
     {
-        return [
+        $headers = [
             'No',
             'Organization Group',
             'Kode',
-            'Jan',
-            'Feb',
-            'Mar',
-            'Apr',
-            'Mei',
-            'Jun',
-            'Jul',
-            'Ags',
-            'Sep',
-            'Okt',
-            'Nov',
-            'Des',
-            'Total',
-            'Rata-rata',
         ];
+
+        if (! empty($this->periods)) {
+            foreach ($this->periods as $p) {
+                $headers[] = $p['short'];
+            }
+        } else {
+            $monthShorts = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
+            foreach ($monthShorts as $m) {
+                $headers[] = $m;
+            }
+        }
+
+        $headers[] = 'Total';
+        $headers[] = 'Rata-rata';
+
+        return $headers;
     }
 
     public function map($item): array
@@ -72,7 +94,8 @@ class DivisionReportExport implements FromCollection, ShouldAutoSize, WithEvents
         $name = $item['org_group_name'] ?? ($item['division_name'] ?? '-');
         $code = $item['org_group_code'] ?? ($item['division_code'] ?? '-');
         $total = $item['total'] ?? 0;
-        $avg = $item['average'] ?? round($total / 12, 1);
+        $periodCount = max(1, count($this->periods) ?: 12);
+        $avg = $item['average'] ?? round($total / $periodCount, 1);
 
         $row = [
             $this->rowNumber++,
@@ -80,8 +103,14 @@ class DivisionReportExport implements FromCollection, ShouldAutoSize, WithEvents
             $code,
         ];
 
-        for ($m = 1; $m <= 12; $m++) {
-            $row[] = (int) ($item['months'][$m] ?? 0);
+        if (! empty($this->periods)) {
+            foreach ($this->periods as $p) {
+                $row[] = (int) ($item['months'][$p['key']] ?? 0);
+            }
+        } else {
+            for ($m = 1; $m <= 12; $m++) {
+                $row[] = (int) ($item['months'][$m] ?? 0);
+            }
         }
 
         $row[] = (int) $total;
@@ -100,16 +129,26 @@ class DivisionReportExport implements FromCollection, ShouldAutoSize, WithEvents
 
                 // Append Total Row
                 $totalRowData = ['', 'TOTAL KESELURUHAN', ''];
-                for ($m = 1; $m <= 12; $m++) {
-                    $totalRowData[] = (int) ($this->monthlyTotals[$m] ?? 0);
+                $periodCount = max(1, count($this->periods) ?: 12);
+
+                if (! empty($this->periods)) {
+                    foreach ($this->periods as $p) {
+                        $totalRowData[] = (int) ($this->monthlyTotals[$p['key']] ?? 0);
+                    }
+                } else {
+                    for ($m = 1; $m <= 12; $m++) {
+                        $totalRowData[] = (int) ($this->monthlyTotals[$m] ?? 0);
+                    }
                 }
+
                 $totalRowData[] = (int) $this->totalSubmissions;
-                $totalRowData[] = round($this->totalSubmissions / 12, 1);
+                $totalRowData[] = round($this->totalSubmissions / $periodCount, 1);
 
                 $sheet->fromArray([$totalRowData], null, "A{$totalRowIndex}");
 
                 $highestRow = $totalRowIndex;
-                $highestColumn = 'Q';
+                $colCount = count($this->headings());
+                $highestColumn = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colCount);
 
                 // Global Font
                 $sheet->getParent()->getDefaultStyle()->getFont()->setName('Segoe UI');
@@ -166,10 +205,11 @@ class DivisionReportExport implements FromCollection, ShouldAutoSize, WithEvents
                     // Column Alignments
                     $sheet->getStyle('A2:A'.($dataRowCount + 1))->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                     $sheet->getStyle('C2:C'.($dataRowCount + 1))->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                    $sheet->getStyle('D2:Q'.($dataRowCount + 1))->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                    $sheet->getStyle("D2:{$highestColumn}".($dataRowCount + 1))->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
                     // Bold Totals
-                    $sheet->getStyle('P2:P'.($dataRowCount + 1))->getFont()->setBold(true);
+                    $totalColLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colCount - 1);
+                    $sheet->getStyle("{$totalColLetter}2:{$totalColLetter}".($dataRowCount + 1))->getFont()->setBold(true);
                 }
 
                 // Total Row Styling - Primary Muted Tint

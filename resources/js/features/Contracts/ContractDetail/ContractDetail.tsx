@@ -1070,7 +1070,7 @@ export const ContractDetailView = ({
 
                                         {detailTab === 'history' && (
                                             <HistoryTab
-                                                contract={contract}
+                                                contract={liveContract}
                                                 historySubTab={historySubTab}
                                                 meId={meId}
                                                 onApprove={(note, file) => handleApprove(note, file)}

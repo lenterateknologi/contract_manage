@@ -76,6 +76,14 @@ export interface AuditReportResponse {
     actions?: string[];
 }
 
+export interface ReportPeriod {
+    key: string;
+    month: number;
+    year: number;
+    short: string;
+    full: string;
+}
+
 export interface DivisionMatrixItem {
     division_id?: string;
     division_name?: string;
@@ -83,7 +91,7 @@ export interface DivisionMatrixItem {
     org_group_id?: string;
     org_group_name?: string;
     org_group_code?: string;
-    months: Record<number, number>;
+    months: Record<string | number, number>;
     total: number;
     average: number;
 }
@@ -99,7 +107,10 @@ export interface DivisionReportSummary {
 
 export interface DivisionReportResponse {
     status: string;
+    date_from?: string;
+    date_to?: string;
     year: number;
+    periods?: ReportPeriod[];
     availableYears: number[];
     groupBy: 'division' | 'org_group';
     divisions: { id: string; name: string; code?: string }[];
@@ -107,13 +118,13 @@ export interface DivisionReportResponse {
     types: { id: string; name: string }[];
     statuses: { code: string; label: string }[];
     matrix: DivisionMatrixItem[];
-    monthlyTotals: Record<number, number>;
+    monthlyTotals: Record<string | number, number>;
     summary: DivisionReportSummary;
     matrixDivision?: DivisionMatrixItem[];
-    monthlyTotalsDivision?: Record<number, number>;
+    monthlyTotalsDivision?: Record<string | number, number>;
     summaryDivision?: DivisionReportSummary;
     matrixOrgGroup?: DivisionMatrixItem[];
-    monthlyTotalsOrgGroup?: Record<number, number>;
+    monthlyTotalsOrgGroup?: Record<string | number, number>;
     summaryOrgGroup?: DivisionReportSummary;
     submissions?: Array<{
         id: string;
@@ -139,20 +150,23 @@ export interface TeamMatrixItem {
     department_code?: string;
     division_name?: string;
     org_group_name?: string;
-    months: Record<number, number>;
+    months: Record<string | number, number>;
     total: number;
     average: number;
 }
 
 export interface TeamReportResponse {
     status: string;
+    date_from?: string;
+    date_to?: string;
     year: number;
+    periods?: ReportPeriod[];
     availableYears: number[];
     roleType: 'creator' | 'pic';
     currentOrgGroup?: { id: string; name: string; code?: string; user_count?: number } | null;
     organizationGroups: { id: string; name: string; code?: string; user_count?: number }[];
     matrix: TeamMatrixItem[];
-    monthlyTotals: Record<number, number>;
+    monthlyTotals: Record<string | number, number>;
     summary: {
         totalSubmissions: number;
         activeUsersCount: number;
