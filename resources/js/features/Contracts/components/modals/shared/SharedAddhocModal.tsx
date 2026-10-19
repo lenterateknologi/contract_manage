@@ -5,7 +5,7 @@ import { SearchableMultiSelect } from '@/components/ui/selection/SearchableMulti
 import { parseApiErrorMessage } from '@/lib/utils';
 import { contractApi } from '@/features/Contracts/utils';
 import { matchUserAgainstWorkflowPool } from '@/features/workflows';
-import { CheckCircle2, Loader2, UserPlus, Users, X } from 'lucide-react';
+import { CheckCircle2, Loader2, Mail, UserPlus, Users, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface Props {
@@ -27,6 +27,8 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
     const [minApprovals, setMinApprovals] = useState<number>(1);
     const [loading, setLoading] = useState(false);
     const [users, setUsers] = useState<any[]>([]);
+    const [allUsersList, setAllUsersList] = useState<any[]>([]);
+    const [ccUserIds, setCcUserIds] = useState<string[]>([]);
     const [fetchingUsers, setFetchingUsers] = useState(false);
     const [selectedTargetStepId, setSelectedTargetStepId] = useState<string | null>(null);
     const [newBatch, setNewBatch] = useState(false);
@@ -111,6 +113,7 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
 
             setSelectedTargetStepId(initialTargetStepId);
             setNote('');
+            setCcUserIds([]);
 
             // Read saved adhoc settings from contract metadata if available
             const savedAdhocMeta = contract?.metadata?.adhoc_steps?.[initialTargetStepId || ''] || {};
@@ -121,6 +124,7 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
         } else {
             // Reset state when closed
             setSelectedUserIds([]);
+            setCcUserIds([]);
             setNewBatch(false);
         }
     }, [open, contract?.id]);
@@ -136,6 +140,7 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
         setFetchingUsers(true);
         try {
             const allUsers = await contractApi.getUsers({ all: true });
+            setAllUsersList(Array.isArray(allUsers) ? allUsers : []);
 
             const currentStep = contract?.workflow_step;
             const activeAction = (currentStep?.actions || []).find((a: any) => {
@@ -265,6 +270,7 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                 actionId,
                 actionCode,
                 newBatch,
+                ccUserIds,
             );
             onUpdate(updatedContract);
             showToast('Persetujuan tambahan berhasil dikaitkan.', 'success');
@@ -537,6 +543,40 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                         placeholder="Tuliskan catatan atau alasan penambahan approver..."
                         className="w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                     />
+                </div>
+
+                {/* --- CC / TEMBUSAN (OPSIONAL) --- */}
+                <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                        <label className="text-text-desc flex items-center gap-1.5 text-[11px] font-bold uppercase">
+                            <Mail size={12} className="text-primary" />
+                            <span>Tembusan / CC (Opsional)</span>
+                        </label>
+                        {ccUserIds.length > 0 && (
+                            <span className="text-primary text-[10px] font-bold">
+                                {ccUserIds.length} Penerima Terpilih
+                            </span>
+                        )}
+                    </div>
+                    {fetchingUsers ? (
+                        <div className="text-text-soft flex animate-pulse items-center gap-1.5 py-1 text-[11px]">
+                            <Loader2 size={12} className="animate-spin text-primary" /> Memuat daftar user...
+                        </div>
+                    ) : (
+                        <SearchableMultiSelect
+                            values={ccUserIds}
+                            onValuesChange={setCcUserIds}
+                            placeholder="-- Pilih personil untuk dikirimkan tembusan / email --"
+                            searchPlaceholder="Cari nama atau divisi personil..."
+                            options={(allUsersList.length > 0 ? allUsersList : users).map((u: any) => ({
+                                value: String(u.id),
+                                label: `${u.name}${u.role ? ` (${u.role}${u.department_name ? ` - ${u.department_name}` : ''})` : ''}`,
+                            }))}
+                        />
+                    )}
+                    <p className="text-text-soft text-[10px] leading-tight">
+                        Personil yang dipilih akan menerima tembusan email dan tercatat di timeline alur persetujuan.
+                    </p>
                 </div>
             </div>
         </Modal>

@@ -574,26 +574,53 @@ export function ApprovalCard({
             )}
             */}
 
-            {/* Comment card */}
-            {a.comment && (
-                <div className="mt-0.5 w-full pl-0.5">
-                    <div
-                        className={cn(
-                            'rounded-md border',
-                            isLite
-                                ? 'border-slate-200/80 bg-slate-50/90 p-1.5 text-[10px] dark:border-zinc-800 dark:bg-zinc-900/80'
-                                : 'border-slate-200 bg-white p-2 text-[11px] shadow-xs dark:border-zinc-800 dark:bg-zinc-900/90',
+            {/* Comment card & CC recipients display */}
+            {(a.comment || ((a as any).cc_names && (a as any).cc_names.length > 0)) && (() => {
+                const commentText = a.comment || '';
+                const ccMatch = commentText.match(/\[CC:\s*([^\]]+)\]/);
+                const cleanComment = commentText.replace(/\[CC:\s*[^\]]+\]/, '').trim();
+                const ccNames = ((a as any).cc_names && (a as any).cc_names.length > 0)
+                    ? (a as any).cc_names
+                    : (ccMatch ? ccMatch[1].split(',').map((s: string) => s.trim()).filter(Boolean) : []);
+
+                if (!cleanComment && ccNames.length === 0) return null;
+
+                return (
+                    <div className="mt-0.5 w-full pl-0.5 space-y-1">
+                        {cleanComment ? (
+                            <div
+                                className={cn(
+                                    'rounded-md border',
+                                    isLite
+                                        ? 'border-slate-200/80 bg-slate-50/90 p-1.5 text-[10px] dark:border-zinc-800 dark:bg-zinc-900/80'
+                                        : 'border-slate-200 bg-white p-2 text-[11px] shadow-xs dark:border-zinc-800 dark:bg-zinc-900/90',
+                                )}
+                            >
+                                {!isLite && (
+                                    <div className="mb-0.5 text-[8.5px] font-bold tracking-wider text-slate-500 uppercase dark:text-zinc-400">Catatan:</div>
+                                )}
+                                <div className="leading-relaxed font-normal whitespace-pre-wrap text-slate-800 dark:text-zinc-200">
+                                    {isLite ? `“${cleanComment}”` : cleanComment}
+                                </div>
+                            </div>
+                        ) : null}
+
+                        {ccNames.length > 0 && (
+                            <div className="flex flex-wrap items-center gap-1 rounded-md border border-sky-500/20 bg-sky-500/5 px-2 py-1 text-[10px] text-sky-700 dark:text-sky-300">
+                                <span className="font-bold uppercase tracking-wider text-[9px] flex items-center gap-1">
+                                    <span className="h-1.5 w-1.5 rounded-full bg-sky-500 animate-pulse" />
+                                    CC:
+                                </span>
+                                {ccNames.map((name: string, i: number) => (
+                                    <span key={i} className="inline-flex items-center rounded bg-sky-500/10 px-1.5 py-0.2 font-semibold text-sky-800 dark:text-sky-200 border border-sky-500/20">
+                                        {name}
+                                    </span>
+                                ))}
+                            </div>
                         )}
-                    >
-                        {!isLite && (
-                            <div className="mb-0.5 text-[8.5px] font-bold tracking-wider text-slate-500 uppercase dark:text-zinc-400">Catatan:</div>
-                        )}
-                        <div className="leading-relaxed font-normal whitespace-pre-wrap text-slate-800 dark:text-zinc-200">
-                            {isLite ? `“${a.comment}”` : a.comment}
-                        </div>
                     </div>
-                </div>
-            )}
+                );
+            })()}
 
             {/* Action Attachment */}
             {a.attachment_path &&

@@ -40,12 +40,16 @@ export const contractApi = {
         attachments?: File | File[],
         actionCode?: string,
         actionId?: string,
+        ccUserIds?: string[],
     ): Promise<Contract> => {
         const fd = new FormData();
         fd.append('assigned_pic_id', assignedPicId);
         if (note) fd.append('note', note);
         if (actionCode) fd.append('action_code', actionCode);
         if (actionId) fd.append('action_id', actionId);
+        if (ccUserIds && ccUserIds.length > 0) {
+            ccUserIds.forEach((uid) => fd.append('cc_user_ids[]', uid));
+        }
         if (attachments) {
             if (Array.isArray(attachments)) {
                 attachments.forEach((f) => fd.append('attachments[]', f));
@@ -66,6 +70,7 @@ export const contractApi = {
         isFinal?: boolean,
         targetStepId?: string,
         actionId?: string,
+        ccUserIds?: string[],
     ): Promise<Contract> => {
         const fd = new FormData();
         fd.append('note', note);
@@ -82,10 +87,13 @@ export const contractApi = {
         if (actionId) fd.append('action_id', actionId);
         if (isFinal) fd.append('is_final', '1');
         if (targetStepId) fd.append('target_step_id', targetStepId);
+        if (ccUserIds && ccUserIds.length > 0) {
+            ccUserIds.forEach((uid) => fd.append('cc_user_ids[]', uid));
+        }
         return unwrap(api.post(`/api/contracts/${id}/approve`, fd));
     },
 
-    reject: (id: string, reason: string, attachment?: File | File[], actionId?: string): Promise<Contract> => {
+    reject: (id: string, reason: string, attachment?: File | File[], actionId?: string, ccUserIds?: string[]): Promise<Contract> => {
         const fd = new FormData();
         fd.append('reason', reason);
         if (attachment) {
@@ -96,6 +104,9 @@ export const contractApi = {
             }
         }
         if (actionId) fd.append('action_id', actionId);
+        if (ccUserIds && ccUserIds.length > 0) {
+            ccUserIds.forEach((uid) => fd.append('cc_user_ids[]', uid));
+        }
         return unwrap(api.post(`/api/contracts/${id}/reject`, fd));
     },
 
@@ -112,6 +123,7 @@ export const contractApi = {
         actionId?: string,
         actionCode?: string,
         newBatch?: boolean,
+        ccUserIds?: string[],
     ): Promise<Contract> => {
         const uids = Array.isArray(userIds) ? userIds : [userIds];
         const fd = new FormData();
@@ -125,6 +137,9 @@ export const contractApi = {
         if (actionId) fd.append('action_id', actionId);
         if (actionCode) fd.append('action_code', actionCode);
         if (newBatch) fd.append('new_batch', '1');
+        if (ccUserIds && ccUserIds.length > 0) {
+            ccUserIds.forEach((uid) => fd.append('cc_user_ids[]', uid));
+        }
         if (attachments) {
             if (Array.isArray(attachments)) {
                 attachments.forEach((f) => fd.append('attachments[]', f));

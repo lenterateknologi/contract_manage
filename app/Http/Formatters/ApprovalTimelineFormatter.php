@@ -20,6 +20,13 @@ class ApprovalTimelineFormatter
             return [];
         }
 
+        $c->loadMissing([
+            'workflow.steps.actions',
+            'approvals.workflowStep.workflow.steps',
+            'approvals.workflowStep.actions',
+            'approvals.approver',
+        ]);
+
         $workflowService = app(ContractWorkflowService::class);
 
         $attachmentNameByPath = [];
@@ -402,7 +409,7 @@ class ApprovalTimelineFormatter
 
                     $timeline[] = self::formatApprovalNode(
                         $a, $step, $stepLabel, $approverDeptName ?? $deptName, $stepWorkflowPayload,
-                        $globalOrder, $resolveAttachmentName, $adhocPayload
+                        $globalOrder, $resolveAttachmentName, $c, $adhocPayload
                     );
                 }
 
@@ -431,7 +438,7 @@ class ApprovalTimelineFormatter
                             foreach ($regularApprovals->filter(fn ($a) => in_array($a->status, ['approved', 'rejected'])) as $a) {
                                 $timeline[] = self::formatApprovalNode(
                                     $a, $step, $stepLabel, $deptName, $stepWorkflowPayload,
-                                    $globalOrder, $resolveAttachmentName, [
+                                    $globalOrder, $resolveAttachmentName, $c, [
                                         'target_approvers' => $targetApprovers,
                                         'target_emails' => $a->approver?->email ?: $targetEmails,
                                         'batch_no' => $a->batch_no ?? ($chunk['batch_no'] ?? 1),
@@ -460,7 +467,7 @@ class ApprovalTimelineFormatter
                                 foreach ($pendingApprovals as $a) {
                                     $timeline[] = self::formatApprovalNode(
                                         $a, $step, $stepLabel, $deptName, $stepWorkflowPayload,
-                                        $globalOrder, $resolveAttachmentName, [
+                                        $globalOrder, $resolveAttachmentName, $c, [
                                             'target_approvers' => $targetApprovers,
                                             'target_emails' => $a->approver?->email ?: $targetEmails,
                                             'batch_no' => $a->batch_no ?? ($chunk['batch_no'] ?? 1),
@@ -493,7 +500,7 @@ class ApprovalTimelineFormatter
                             foreach ($approvalsToDisplay as $a) {
                                 $timeline[] = self::formatApprovalNode(
                                     $a, $step, $stepLabel, $deptName, $stepWorkflowPayload,
-                                    $globalOrder, $resolveAttachmentName, [
+                                    $globalOrder, $resolveAttachmentName, $c, [
                                         'target_approvers' => $targetApprovers,
                                         'target_emails' => $a->approver?->email ?: $targetEmails,
                                         'batch_no' => $a->batch_no ?? ($chunk['batch_no'] ?? 1),
@@ -591,6 +598,7 @@ class ApprovalTimelineFormatter
         array $stepWorkflowPayload,
         int &$globalOrder,
         $resolveAttachmentName,
+        Contract $c,
         array $overrides = []
     ): array {
         $isSigner = ($overrides['is_signer'] ?? false) || $a->role === 'Penandatangan';
@@ -598,6 +606,25 @@ class ApprovalTimelineFormatter
         $stepName = $overrides['step_name'] ?? ($isAdhoc ? ($isSigner ? $a->role : config('master.roles.adhoc_approver')) : $stepLabel);
         $stepDesc = $overrides['step_description'] ?? ($isAdhoc ? ($isSigner ? 'Proses penandatanganan dokumen' : 'Persetujuan tambahan di luar alur kerja template') : $step->description);
         $stepCat = $overrides['step_category'] ?? ($isAdhoc ? ($isSigner ? 'signing' : null) : $step->step_category);
+
+        $rawComment = $a->comment;
+        $meta = $c->metadata ?? [];
+        $ccNames = $overrides['cc_names'] ?? [];
+        if (empty($ccNames)) {
+            if (! empty($meta['step_cc'][$a->id])) {
+                $ccNames = is_array($meta['step_cc'][$a->id]) ? $meta['step_cc'][$a->id] : array_map('trim', explode(',', $meta['step_cc'][$a->id]));
+            } elseif (! empty($meta['step_cc'][$a->workflow_step_id])) {
+                $ccNames = is_array($meta['step_cc'][$a->workflow_step_id]) ? $meta['step_cc'][$a->workflow_step_id] : array_map('trim', explode(',', $meta['step_cc'][$a->workflow_step_id]));
+            } elseif ($rawComment && preg_match('/\[CC:\s*([^\]]+)\]/', $rawComment, $m)) {
+                $ccNames = array_values(array_filter(array_map('trim', explode(',', $m[1]))));
+            }
+        }
+
+        // Keep comment as clean note only, without any combined CC string
+        $cleanComment = $rawComment;
+        if ($cleanComment && preg_match('/\[CC:\s*[^\]]+\]/i', $cleanComment)) {
+            $cleanComment = trim(preg_replace('/\s*\[CC:\s*[^\]]+\]/i', '', $cleanComment)) ?: null;
+        }
 
         return [
             'id' => $a->id,
@@ -616,7 +643,8 @@ class ApprovalTimelineFormatter
             'action_id' => $overrides['action_id'] ?? $a->action_id,
             'action_code' => $overrides['action_code'] ?? $a->action_code,
             'action_alias' => $overrides['action_alias'] ?? $a->action_alias,
-            'comment' => $a->comment,
+            'comment' => $cleanComment,
+            'cc_names' => $ccNames,
             'attachment_path' => $a->attachment_path,
             'attachment_name' => $resolveAttachmentName($a->attachment_path),
             'file_size' => FileUtil::size($a->attachment_path),

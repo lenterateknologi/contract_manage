@@ -17,6 +17,7 @@ use App\Http\Requests\Contract\RejectContractRequest;
 use App\Models\Master\Role;
 use App\Models\Master\User;
 use App\Models\Master\Workflow;
+use App\Mail\ContractActionRequiredMail;
 use App\Models\Master\WorkflowStep;
 use App\Models\Transaction\Approval;
 use App\Models\Transaction\Contract;
@@ -26,6 +27,7 @@ use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 class ContractApprovalController extends Controller
@@ -168,6 +170,43 @@ class ContractApprovalController extends Controller
             }
         }
 
+        // Process CC recipients if supplied
+        $ccSuffix = '';
+        $ccInput = $request->input('cc_user_ids') ?: $request->input('cc_users');
+        if (! empty($ccInput)) {
+            $ccUserIds = is_string($ccInput) ? json_decode($ccInput, true) : (array) $ccInput;
+            if (! is_array($ccUserIds) && is_string($ccInput)) {
+                $ccUserIds = array_filter(array_map('trim', explode(',', $ccInput)));
+            }
+            $ccUserIds = array_filter((array) $ccUserIds);
+            if (! empty($ccUserIds)) {
+                $ccUsers = User::whereIn('id', $ccUserIds)->get();
+                if ($ccUsers->isNotEmpty()) {
+                    $ccNames = $ccUsers->pluck('name')->implode(', ');
+                    if (! isset($metadata['step_cc'])) {
+                        $metadata['step_cc'] = [];
+                    }
+                    if (! isset($metadata['step_cc_user_ids'])) {
+                        $metadata['step_cc_user_ids'] = [];
+                    }
+                    if ($contract->workflow_step_id) {
+                        $metadata['step_cc'][$contract->workflow_step_id] = $ccNames;
+                        $metadata['step_cc_user_ids'][$contract->workflow_step_id] = array_values($ccUserIds);
+                    }
+                    $metadata['last_cc_names'] = $ccNames;
+                    $metadata['last_cc_user_ids'] = array_values($ccUserIds);
+                    $contract->update(['metadata' => $metadata]);
+
+                    ContractHistory::create([
+                        'contract_id' => $contract->id,
+                        'action' => 'APPROVAL_CC',
+                        'description' => "Tembusan (CC) pada Penugasan PIC dikirim ke: {$ccNames}",
+                        'actor_id' => $actorId,
+                    ]);
+                }
+            }
+        }
+
         $desc = 'PIC ditugaskan ke: '.($pic ? $pic->name : $picId).($note ? " (Catatan: {$note})" : '');
         ContractHistory::create([
             'contract_id' => $contract->id,
@@ -296,10 +335,14 @@ class ContractApprovalController extends Controller
             ]);
         }
 
+        // Process CC users: log to history & queue email notifications
+        $this->notifyAndLogCc($contract, $approval, $request->input('cc_user_ids') ?: $request->input('cc_users'));
+        $effectiveNote = $request->note;
+
         $contract = $this->approveAction->approve(
             $contract,
             $approval,
-            $request->note,
+            $effectiveNote,
             $attachmentPath,
             $request->assigned_pic_id,
             $request->execution_order,
@@ -368,10 +411,14 @@ class ContractApprovalController extends Controller
             ]);
         }
 
+        // Process CC users: log to history & queue email notifications
+        $this->notifyAndLogCc($contract, $approval, $request->input('cc_user_ids') ?: $request->input('cc_users'));
+        $effectiveReason = $request->reason;
+
         $contract = $this->workflowService->approveContract(
             $contract,
             $approval,
-            $request->reason,
+            $effectiveReason,
             $attachmentPath,
             null,
             null,
@@ -381,6 +428,62 @@ class ContractApprovalController extends Controller
         );
 
         return $this->successResponse(ContractFormatter::formatContract($contract->fresh()), 'Penolakan / revisi berhasil diproses');
+    }
+
+    /**
+     * ponytail: Handle CC recipients: queue email and record into contract timeline history
+     */
+    protected function notifyAndLogCc(Contract $contract, Approval $approval, mixed $ccInput): ?string
+    {
+        if (empty($ccInput)) {
+            return null;
+        }
+
+        $userIds = is_string($ccInput) ? json_decode($ccInput, true) : (array) $ccInput;
+        if (! is_array($userIds) && is_string($ccInput)) {
+            $userIds = array_filter(array_map('trim', explode(',', $ccInput)));
+        }
+
+        $userIds = array_filter((array) $userIds);
+        if (empty($userIds)) {
+            return null;
+        }
+
+        $users = User::whereIn('id', $userIds)->get();
+        if ($users->isEmpty()) {
+            return null;
+        }
+
+        $names = $users->pluck('name')->implode(', ');
+        $stepLabel = $approval->workflowStep?->label ?: $approval->workflowStep?->name ?: $approval->role ?: 'Approval';
+
+        // 1. Catat ke timeline / audit history
+        ContractHistory::create([
+            'contract_id' => $contract->id,
+            'action' => 'APPROVAL_CC',
+            'description' => "Tembusan (CC) pada tahap {$stepLabel} dikirim ke: {$names}",
+            'actor_id' => Auth::id() ?: $approval->user_id,
+        ]);
+
+        // 2. Save CC recipients to contract metadata
+        $metadata = $contract->metadata ?? [];
+        if (! isset($metadata['step_cc'])) {
+            $metadata['step_cc'] = [];
+        }
+        if (! isset($metadata['step_cc_user_ids'])) {
+            $metadata['step_cc_user_ids'] = [];
+        }
+        $metadata['step_cc'][$approval->id] = $names;
+        $metadata['step_cc_user_ids'][$approval->id] = array_values($userIds);
+        if ($approval->workflow_step_id) {
+            $metadata['step_cc'][$approval->workflow_step_id] = $names;
+            $metadata['step_cc_user_ids'][$approval->workflow_step_id] = array_values($userIds);
+        }
+        $metadata['last_cc_names'] = $names;
+        $metadata['last_cc_user_ids'] = array_values($userIds);
+        $contract->update(['metadata' => $metadata]);
+
+        return $names;
     }
 
     public function bulkApprove(BulkApproveContractRequest $request): JsonResponse
@@ -588,6 +691,48 @@ class ContractApprovalController extends Controller
                     ]);
             }
 
+            // Process CC recipients if supplied
+            $ccNames = null;
+            $ccSuffix = null;
+            $ccUsers = collect();
+            $ccInput = $request->input('cc_user_ids') ?: $request->input('cc_users');
+            if (! empty($ccInput)) {
+                $ccUserIds = is_string($ccInput) ? json_decode($ccInput, true) : (array) $ccInput;
+                if (! is_array($ccUserIds) && is_string($ccInput)) {
+                    $ccUserIds = array_filter(array_map('trim', explode(',', $ccInput)));
+                }
+                $ccUserIds = array_filter((array) $ccUserIds);
+                if (! empty($ccUserIds)) {
+                    $ccUsers = User::whereIn('id', $ccUserIds)->get();
+                    if ($ccUsers->isNotEmpty()) {
+                        $ccNames = $ccUsers->pluck('name')->implode(', ');
+                        $ccSuffix = "[CC: {$ccNames}]";
+                    }
+                }
+            }
+
+            $userNote = $request->input('note');
+            $effectiveNote = $userNote;
+
+            if ($ccNames) {
+                $metadata = $contract->metadata ?? [];
+                if (! isset($metadata['step_cc'])) {
+                    $metadata['step_cc'] = [];
+                }
+                if (! isset($metadata['step_cc_user_ids'])) {
+                    $metadata['step_cc_user_ids'] = [];
+                }
+                $metadata['step_cc'][$targetStepId] = $ccNames;
+                $metadata['step_cc_user_ids'][$targetStepId] = array_values($ccUserIds);
+                if ($contract->workflow_step_id) {
+                    $metadata['step_cc'][$contract->workflow_step_id] = $ccNames;
+                    $metadata['step_cc_user_ids'][$contract->workflow_step_id] = array_values($ccUserIds);
+                }
+                $metadata['last_cc_names'] = $ccNames;
+                $metadata['last_cc_user_ids'] = array_values($ccUserIds);
+                $contract->update(['metadata' => $metadata]);
+            }
+
             $autoAction = $targetStep->actions()->whereIn('action_code', ['auto', 'automation'])->first();
 
             foreach ($userIds as $index => $userId) {
@@ -641,7 +786,7 @@ class ContractApprovalController extends Controller
                     ->max('sub_step') ?: 0;
 
                 // If step is automatic, no user remark/comment should be attached
-                $approvalComment = $autoAction ? null : $request->input('note');
+                $approvalComment = $autoAction ? null : $effectiveNote;
 
                 Approval::create([
                     'contract_id' => $contract->id,
@@ -701,13 +846,25 @@ class ContractApprovalController extends Controller
                 ]);
             }
 
+            // Record CC History
+            if ($ccUsers->isNotEmpty()) {
+                ContractHistory::create([
+                    'contract_id' => $contract->id,
+                    'action' => 'APPROVAL_CC',
+                    'description' => "Tembusan (CC) pada {$role} dikirim ke: {$ccNames}",
+                    'actor_id' => Auth::id(),
+                ]);
+            }
+
             if (! empty($addedUsers)) {
                 // Log history only if new users were added
                 $actorName = Auth::user()?->name ?: 'Pengguna';
                 $count = count($addedUsers);
+                $noteSuffix = $userNote ? " Catatan: ".$userNote : '';
+                $ccSuffixDesc = $ccNames ? " [CC: {$ccNames}]" : '';
                 $contract->histories()->create([
                     'action' => 'ADHOC_PARTICIPANT_ADDED',
-                    'description' => "{$count} {$role} ditambahkan oleh {$actorName}. Catatan: ".$request->input('note'),
+                    'description' => "{$count} {$role} ditambahkan oleh {$actorName}.{$noteSuffix}{$ccSuffixDesc}",
                     'actor_id' => Auth::id(),
                 ]);
             }
@@ -739,8 +896,8 @@ class ContractApprovalController extends Controller
                 $metadata['last_action_label'] = 'Persetujuan Tambahan';
                 $metadata['last_action_by'] = Auth::user()?->name ?: 'Pengguna';
                 $metadata['last_action_at'] = now()->toIso8601String();
-                if ($request->input('note')) {
-                    $metadata['last_action_note'] = $request->input('note');
+                if ($effectiveNote) {
+                    $metadata['last_action_note'] = $effectiveNote;
                 }
                 if ($firstAttachmentPath) {
                     $metadata['last_attachment_path'] = $firstAttachmentPath;
@@ -826,7 +983,7 @@ class ContractApprovalController extends Controller
                         $contract = $this->approveAction->approve(
                             $contract,
                             $currentApproval,
-                            $request->input('note'),
+                            $effectiveNote,
                             $firstAttachmentPath,
                             null,
                             null,

@@ -27,6 +27,8 @@ class RejectContractRequest extends FormRequest
             'attachment' => 'nullable|file|max:20480', // 20MB limit
             'attachments' => 'nullable|array',
             'attachments.*' => 'nullable|file|max:20480',
+            'cc_user_ids' => 'nullable',
+            'cc_users' => 'nullable',
         ];
     }
 }

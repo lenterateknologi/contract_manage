@@ -339,6 +339,7 @@ export const ContractDetailView = ({
         isFinal?: boolean,
         targetStepId?: string,
         actionId?: string,
+        ccUserIds?: string[],
     ) => {
         const resolvedCode = actionCode || activeActionCode;
         const resolvedAction =
@@ -359,7 +360,7 @@ export const ContractDetailView = ({
         if (resolvedCode === 'reject') {
             try {
                 await autoSaveDirtyDataBeforeAction();
-                const updated = await contractApi.reject(contract.id, note, attachment, actionId || activeStepAction?.id);
+                const updated = await contractApi.reject(contract.id, note, attachment, actionId || activeStepAction?.id, ccUserIds);
                 handleContractUpdate(updated);
 
                 const ActionIcon = actionConfig.icon;
@@ -391,6 +392,7 @@ export const ContractDetailView = ({
                 isFinal,
                 targetStepId,
                 actionId || activeStepAction?.id,
+                ccUserIds,
             );
             handleContractUpdate(c);
 

@@ -2,11 +2,12 @@ import { getFileIcon } from '@/components/ui';
 import { Button } from '@/components/ui/buttons/Button';
 import { Modal } from '@/components/ui/dialogs/Modal';
 import { FormTextarea } from '@/components/ui/inputs/FormTextarea';
+import { SearchableMultiSelect } from '@/components/ui/selection/SearchableMultiSelect';
 import { formatFileSize } from '@/lib/formatters';
 import { cn } from '@/lib/utils';
 import { contractApi, resolveTransitionPreview } from '@/features/Contracts/utils';
 import { resolveContractRequirements } from '@/features/Contracts/utils/requirements';
-import { AlertCircle, CheckCircle2, Gavel, Loader2, Paperclip, Plus, Send, UserPen, X, XCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Gavel, Loader2, Mail, Paperclip, Plus, Send, UserPen, Users, X, XCircle } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 export interface SharedActionModalProps {
@@ -21,6 +22,7 @@ export interface SharedActionModalProps {
         isFinal?: boolean,
         targetStepId?: string,
         actionId?: string,
+        ccUserIds?: string[],
     ) => Promise<void>;
     contract: any;
     onUpdate?: (c: any) => void;
@@ -39,6 +41,7 @@ export function SharedActionModal({
     actionCode = 'approve',
     actionId,
     actionAlias,
+    users: initialUsers,
     isSubStep,
 }: SharedActionModalProps) {
     const [note, setNote] = useState('');
@@ -47,6 +50,9 @@ export function SharedActionModal({
     const [loading, setLoading] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
     const [allWorkflows, setAllWorkflows] = useState<any[]>([]);
+    const [usersList, setUsersList] = useState<any[]>(initialUsers || []);
+    const [ccUserIds, setCcUserIds] = useState<string[]>([]);
+    const [fetchingUsers, setFetchingUsers] = useState(false);
 
     const processFiles = (files: FileList | File[] | null | undefined) => {
         if (!files || files.length === 0) return;
@@ -76,8 +82,20 @@ export function SharedActionModal({
             setNote('');
             setAttachments([]);
             setExecutionOrder('');
+            setCcUserIds([]);
+
+            if (!initialUsers || initialUsers.length === 0) {
+                setFetchingUsers(true);
+                contractApi
+                    .getUsers({ all: true })
+                    .then((data) => setUsersList(Array.isArray(data) ? data : []))
+                    .catch(console.error)
+                    .finally(() => setFetchingUsers(false));
+            } else {
+                setUsersList(initialUsers);
+            }
         }
-    }, [open]);
+    }, [open, initialUsers]);
 
     const customActionsList = [
         ...(contract?.workflow?.meta?.custom_actions || []),
@@ -228,6 +246,7 @@ export function SharedActionModal({
                     undefined,
                     undefined,
                     actionId || activeAction?.id,
+                    ccUserIds,
                 );
                 onClose();
             } finally {
@@ -405,6 +424,7 @@ export function SharedActionModal({
                 undefined, // isFinal
                 undefined, // targetStepId
                 actionId || activeAction?.id,
+                ccUserIds,
             );
             onClose();
         } finally {
@@ -565,6 +585,40 @@ export function SharedActionModal({
                             placeholder={modalConfig.notePlaceholder}
                             required={modalConfig.noteRequired}
                         />
+
+                        {/* ponytail: CC Personil Multi-Select */}
+                        <div className="space-y-1.5">
+                            <div className="flex items-center justify-between">
+                                <label className="text-text-desc flex items-center gap-1.5 text-[11px] font-bold uppercase">
+                                    <Mail size={12} className="text-primary" />
+                                    <span>Tembusan / CC (Opsional)</span>
+                                </label>
+                                {ccUserIds.length > 0 && (
+                                    <span className="text-primary text-[10px] font-bold">
+                                        {ccUserIds.length} Penerima Terpilih
+                                    </span>
+                                )}
+                            </div>
+                            {fetchingUsers ? (
+                                <div className="text-text-soft flex animate-pulse items-center gap-1.5 py-1 text-[11px]">
+                                    <Loader2 size={12} className="animate-spin" /> Memuat daftar user...
+                                </div>
+                            ) : (
+                                <SearchableMultiSelect
+                                    values={ccUserIds}
+                                    onValuesChange={setCcUserIds}
+                                    placeholder="-- Pilih personil untuk dikirimkan tembusan / email --"
+                                    searchPlaceholder="Cari nama atau divisi personil..."
+                                    options={usersList.map((u: any) => ({
+                                        value: String(u.id),
+                                        label: `${u.name}${u.role ? ` (${u.role}${u.department_name ? ` - ${u.department_name}` : ''})` : ''}`,
+                                    }))}
+                                />
+                            )}
+                            <p className="text-text-soft text-[10px] leading-tight">
+                                Personil yang dipilih akan menerima tembusan email dan tercatat di timeline audit alur persetujuan.
+                            </p>
+                        </div>
 
                         <div className="space-y-1.5">
                             <div className="flex items-center justify-between">

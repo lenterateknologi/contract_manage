@@ -7,7 +7,7 @@ import { SearchableMultiSelect } from '@/components/ui/selection/SearchableMulti
 import { parseApiErrorMessage } from '@/lib/utils';
 import { contractApi } from '@/features/Contracts/utils';
 import { matchUserAgainstWorkflowPool } from '@/features/workflows';
-import { CheckCircle2, Loader2, UserCheck, Users, X } from 'lucide-react';
+import { CheckCircle2, Loader2, Mail, UserCheck, Users, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface Props {
@@ -28,6 +28,8 @@ export function SharedAssignModal({ open, onClose, contract, onUpdate, showToast
     const [isSequential, setIsSequential] = useState(false);
     const [loading, setLoading] = useState(false);
     const [users, setUsers] = useState<any[]>(initialUsers || []);
+    const [allUsersList, setAllUsersList] = useState<any[]>([]);
+    const [ccUserIds, setCcUserIds] = useState<string[]>([]);
     const [fetchingUsers, setFetchingUsers] = useState(false);
     const [selectedTargetStepId, setSelectedTargetStepId] = useState<string | null>(null);
 
@@ -53,8 +55,10 @@ export function SharedAssignModal({ open, onClose, contract, onUpdate, showToast
             setSelectedTargetStepId(targetStepId ? String(targetStepId) : null);
             setNote('');
             setIsSequential(false);
+            setCcUserIds([]);
         } else {
             setSelectedUserIds([]);
+            setCcUserIds([]);
         }
     }, [open, contract?.id]);
 
@@ -65,14 +69,17 @@ export function SharedAssignModal({ open, onClose, contract, onUpdate, showToast
     }, [open, selectedTargetStepId]);
 
     const fetchUsers = async () => {
-        if (initialUsers && initialUsers.length > 0) {
-            setUsers(initialUsers);
-            return;
-        }
-
         setFetchingUsers(true);
         try {
             const allUsers = await contractApi.getUsers({ all: true });
+            setAllUsersList(Array.isArray(allUsers) ? allUsers : []);
+
+            if (initialUsers && initialUsers.length > 0) {
+                setUsers(initialUsers);
+                setFetchingUsers(false);
+                return;
+            }
+
             const currentStep = contract?.workflow_step;
             const activeAction = (currentStep?.actions || []).find((a: any) => {
                 if (actionCode) return a.action_code === actionCode || a.master_action_code === actionCode;
@@ -170,7 +177,15 @@ export function SharedAssignModal({ open, onClose, contract, onUpdate, showToast
 
         setLoading(true);
         try {
-            const updatedContract = await contractApi.assignPic(contract.id, selectedUserIds[0], note || undefined, undefined, actionCode, actionId);
+            const updatedContract = await contractApi.assignPic(
+                contract.id,
+                selectedUserIds[0],
+                note || undefined,
+                undefined,
+                actionCode,
+                actionId,
+                ccUserIds,
+            );
 
             onUpdate(updatedContract);
             const actionConfig = getActionConfig(
@@ -353,6 +368,40 @@ export function SharedAssignModal({ open, onClose, contract, onUpdate, showToast
                     rows={3}
                     placeholder={`Tambahkan instruksi khusus untuk ${ROLE_NAME}...`}
                 />
+
+                {/* --- CC / TEMBUSAN (OPSIONAL) --- */}
+                <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                        <label className="text-text-desc flex items-center gap-1.5 text-[11px] font-bold uppercase">
+                            <Mail size={12} className="text-primary" />
+                            <span>Tembusan / CC (Opsional)</span>
+                        </label>
+                        {ccUserIds.length > 0 && (
+                            <span className="text-primary text-[10px] font-bold">
+                                {ccUserIds.length} Penerima Terpilih
+                            </span>
+                        )}
+                    </div>
+                    {fetchingUsers ? (
+                        <div className="text-text-soft flex animate-pulse items-center gap-1.5 py-1 text-[11px]">
+                            <Loader2 size={12} className="animate-spin text-primary" /> Memuat daftar user...
+                        </div>
+                    ) : (
+                        <SearchableMultiSelect
+                            values={ccUserIds}
+                            onValuesChange={setCcUserIds}
+                            placeholder="-- Pilih personil untuk dikirimkan tembusan / email --"
+                            searchPlaceholder="Cari nama atau divisi personil..."
+                            options={(allUsersList.length > 0 ? allUsersList : users).map((u: any) => ({
+                                value: String(u.id),
+                                label: `${u.name}${u.role ? ` (${u.role}${u.department_name ? ` - ${u.department_name}` : ''})` : ''}`,
+                            }))}
+                        />
+                    )}
+                    <p className="text-text-soft text-[10px] leading-tight">
+                        Personil yang dipilih akan menerima tembusan email dan tercatat di timeline alur persetujuan.
+                    </p>
+                </div>
             </div>
         </Modal>
     );

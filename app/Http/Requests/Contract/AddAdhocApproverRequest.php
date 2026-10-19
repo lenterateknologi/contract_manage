@@ -38,6 +38,8 @@ class AddAdhocApproverRequest extends FormRequest
             'attachment' => 'nullable|file|max:20480',
             'attachments' => 'nullable|array',
             'attachments.*' => 'file|max:20480',
+            'cc_user_ids' => 'nullable',
+            'cc_users' => 'nullable',
         ];
     }
 }
