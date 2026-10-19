@@ -339,31 +339,14 @@ function GenericFormTab({
                 setFormData(finalInitial);
                 setOriginalData(finalInitial);
                 setVersions([]);
-
-                // Auto-create V1 if it's a fresh form AND user has edit permission
-                if (canEdit) {
-                    try {
-                        const firstVersion = await contractApi.formSubmissions.save(selected.id, {
-                            form_template_id: activeTemplate.id,
-                            document_type: docType,
-                            form_data: finalInitial,
-                            is_new_version: true,
-                            change_summary: 'Initial version (Auto-created)',
-                        });
-                        if (firstVersion.versions) {
-                            setVersions(firstVersion.versions as any);
-                        }
-                    } catch (saveErr) {
-                        console.error('Failed to auto-create V1', saveErr);
-                    }
-                }
+                // ponytail: do not auto-create V1 on GET loadData to avoid jumping to v2 or race condition
             }
         } catch (e) {
             console.error('Failed to load form data', e);
         } finally {
             setLoading(false);
         }
-    }, [matchingTemplate?.id, templateId, selected.id, docType, formTemplates?.length, canEdit]);
+    }, [matchingTemplate?.id, templateId, selected.id, docType, formTemplates?.length]);
 
     useEffect(() => {
         loadData();
@@ -390,7 +373,7 @@ function GenericFormTab({
     }, [isDirty, canEdit, onFormDirty]);
 
     const handleSaveRef = useRef<() => Promise<void>>(async () => {});
-    const handleSave = async (isNewVersion = true) => {
+    const handleSave = async (isNewVersion = false) => {
         if (!matchingTemplate) return;
         setSaving(true);
         try {
@@ -417,7 +400,8 @@ function GenericFormTab({
         }
     };
 
-    handleSaveRef.current = () => handleSave(true);
+    // ponytail: auto-save on action/submit updates the existing draft version, not incrementing version unless explicit
+    handleSaveRef.current = () => handleSave(false);
 
     useEffect(() => {
         if (canEdit && onFormSave) {

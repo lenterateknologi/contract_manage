@@ -16,7 +16,6 @@ import {
     Lock,
     MoreVertical,
     Plus,
-    RefreshCw,
     Search,
     ShieldAlert,
     Trash2,
@@ -413,15 +412,6 @@ export function ActivityViewContent({
                         </div>
 
                         <div className="flex items-center gap-2 shrink-0">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-7 gap-1 rounded-[4px] text-[11px] cursor-pointer shadow-none"
-                                onClick={() => router.reload()}
-                            >
-                                <RefreshCw size={11} className={processing ? 'animate-spin' : ''} />
-                                <span>Segarkan</span>
-                            </Button>
                             <Button
                                 variant="primary"
                                 size="sm"
