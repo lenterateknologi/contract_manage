@@ -24,8 +24,13 @@ class UpdateContractAction
     public function execute(Contract $contract, array $validated): Contract
     {
         // Enforce granular field edit permissions configured in active workflow step
+        /** @var \App\Models\Master\User|null $user */
         $user = Auth::user();
-        $isAdmin = $user && ($user->isAdmin() || $user->isSuperAdmin());
+        $isAdmin = $user && (
+            (method_exists($user, 'isAdmin') && $user->isAdmin()) ||
+            (method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin()) ||
+            in_array($user->role, ['Admin', 'Super Admin'])
+        );
         $currentStep = $contract->workflowStep;
 
         if ($currentStep && ! $isAdmin && $contract->status !== 'draft') {

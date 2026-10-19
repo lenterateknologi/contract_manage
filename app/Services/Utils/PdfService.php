@@ -8,15 +8,80 @@ use Spatie\Browsershot\Browsershot;
 class PdfService
 {
     /**
+     * Get the detected Node.js binary path.
+     */
+    public static function getNodeBinary(): string
+    {
+        if ($envPath = env('NODE_BINARY_PATH')) {
+            return $envPath;
+        }
+
+        $candidates = [
+            '/opt/homebrew/bin/node',
+            '/usr/local/bin/node',
+            '/usr/bin/node',
+            '/bin/node',
+        ];
+
+        foreach ($candidates as $candidate) {
+            if (file_exists($candidate) && is_executable($candidate)) {
+                return $candidate;
+            }
+        }
+
+        return 'node';
+    }
+
+    /**
+     * Get the detected NPM binary path.
+     */
+    public static function getNpmBinary(): string
+    {
+        if ($envPath = env('NPM_BINARY_PATH')) {
+            return $envPath;
+        }
+
+        $candidates = [
+            '/opt/homebrew/bin/npm',
+            '/usr/local/bin/npm',
+            '/usr/bin/npm',
+            '/bin/npm',
+        ];
+
+        foreach ($candidates as $candidate) {
+            if (file_exists($candidate) && is_executable($candidate)) {
+                return $candidate;
+            }
+        }
+
+        return 'npm';
+    }
+
+    /**
      * Get the detected Chrome or Chromium-based browser path on host.
      */
     public static function getChromePath(): string
     {
-        if (file_exists('/Applications/Brave Browser.app/Contents/MacOS/Brave Browser')) {
-            return '/Applications/Brave Browser.app/Contents/MacOS/Brave Browser';
+        if ($envPath = env('CHROME_PATH')) {
+            return $envPath;
         }
 
-        return '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+        $candidates = [
+            '/usr/bin/chromium-browser',
+            '/usr/bin/chromium',
+            '/usr/bin/google-chrome',
+            '/usr/bin/google-chrome-stable',
+            '/Applications/Brave Browser.app/Contents/MacOS/Brave Browser',
+            '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+        ];
+
+        foreach ($candidates as $candidate) {
+            if (file_exists($candidate)) {
+                return $candidate;
+            }
+        }
+
+        return 'chromium-browser';
     }
 
     /**
@@ -24,10 +89,24 @@ class PdfService
      */
     public static function browsershotHtml(string $html, int $timeout = 180): Browsershot
     {
-        return Browsershot::html($html)
-            ->setNodeBinary('/opt/homebrew/bin/node')
-            ->setNpmBinary('/opt/homebrew/bin/npm')
-            ->setChromePath(self::getChromePath())
+        $shot = Browsershot::html($html);
+
+        $nodeBinary = self::getNodeBinary();
+        if ($nodeBinary !== 'node') {
+            $shot->setNodeBinary($nodeBinary);
+        }
+
+        $npmBinary = self::getNpmBinary();
+        if ($npmBinary !== 'npm') {
+            $shot->setNpmBinary($npmBinary);
+        }
+
+        $chromePath = self::getChromePath();
+        if ($chromePath) {
+            $shot->setChromePath($chromePath);
+        }
+
+        return $shot
             ->noSandbox()
             ->addChromiumArguments([
                 'disable-gpu',
@@ -48,10 +127,24 @@ class PdfService
      */
     public static function browsershotUrl(string $url, int $timeout = 180): Browsershot
     {
-        return Browsershot::url($url)
-            ->setNodeBinary('/opt/homebrew/bin/node')
-            ->setNpmBinary('/opt/homebrew/bin/npm')
-            ->setChromePath(self::getChromePath())
+        $shot = Browsershot::url($url);
+
+        $nodeBinary = self::getNodeBinary();
+        if ($nodeBinary !== 'node') {
+            $shot->setNodeBinary($nodeBinary);
+        }
+
+        $npmBinary = self::getNpmBinary();
+        if ($npmBinary !== 'npm') {
+            $shot->setNpmBinary($npmBinary);
+        }
+
+        $chromePath = self::getChromePath();
+        if ($chromePath) {
+            $shot->setChromePath($chromePath);
+        }
+
+        return $shot
             ->noSandbox()
             ->addChromiumArguments([
                 'disable-gpu',
