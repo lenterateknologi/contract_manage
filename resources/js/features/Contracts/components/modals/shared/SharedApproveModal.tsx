@@ -316,32 +316,38 @@ export function SharedActionModal({
                 return false;
             };
 
+            const isInitialStep = !currentStepNo || Number(currentStepNo) <= 1;
+
             if (requireF1) {
                 const hasF1 =
                     checkDocFulfillment('f1') ||
-                    !!(
-                        contract.f1_file ||
-                        contract.metadata?.f1_file ||
-                        contract.metadata?.f1_form_data ||
-                        (contract.f1_items && contract.f1_items.length > 0)
-                    );
+                    (isInitialStep &&
+                        !!(
+                            contract.f1_file ||
+                            contract.metadata?.f1_file ||
+                            contract.metadata?.f1_form_data ||
+                            (contract.f1_items && contract.f1_items.length > 0)
+                        ));
                 if (!hasF1) missingDocs.push('Sub-dokumen F1 (Permohonan)');
             }
 
             if (requireF2) {
-                const hasF2 = checkDocFulfillment('f2') || !!(contract.f2_file || contract.metadata?.f2_file || contract.metadata?.f2_form_data);
+                const hasF2 =
+                    checkDocFulfillment('f2') ||
+                    (isInitialStep && !!(contract.f2_file || contract.metadata?.f2_file || contract.metadata?.f2_form_data));
                 if (!hasF2) missingDocs.push('Sub-dokumen F2 (Ringkasan)');
             }
 
             if (requireAgreement) {
                 const hasAgreement =
                     checkDocFulfillment('agreement') ||
-                    !!(
-                        contract.agreement_file ||
-                        contract.metadata?.agreement_file ||
-                        contract.metadata?.agreement_content ||
-                        (contract as any).agreement_content
-                    );
+                    (isInitialStep &&
+                        !!(
+                            contract.agreement_file ||
+                            contract.metadata?.agreement_file ||
+                            contract.metadata?.agreement_content ||
+                            (contract as any).agreement_content
+                        ));
                 if (!hasAgreement) missingDocs.push('Sub-dokumen Perjanjian / Draft');
             }
 

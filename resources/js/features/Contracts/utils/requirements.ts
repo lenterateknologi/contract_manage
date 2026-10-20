@@ -18,37 +18,66 @@ export interface ContractRequirementsResult {
 export function checkDocFulfillment(contract: any, type: string): boolean {
     const types = type === 'agreement' ? ['agreement', 'contract'] : [type];
     const iteration = contract?.workflow_iteration || 1;
+    const currentStepId = contract?.workflow_step_id || contract?.workflow_step?.id;
+    const currentStepNo = contract?.workflow_step?.step ?? contract?.current_step_number;
 
-    // 1. Check version in contract (by iteration or general presence)
-    const hasVersionMatch =
-        contract?.versions &&
-        contract.versions.some((v: any) => {
+    // 1. Cek versi spesifik step aktif terlebih dahulu (prioritas utama per-step)
+    if (contract?.versions && Array.isArray(contract.versions)) {
+        const hasStepMatch = contract.versions.some((v: any) => {
             if (!types.includes(v.document_type)) return false;
-            if (v.workflow_iteration && v.workflow_iteration === iteration) return true;
-            return (v.version_no ?? 0) > 0 || !!v.id || !!v.file_path;
+            if (currentStepId && v.workflow_step_id === currentStepId) return true;
+            if (currentStepNo !== undefined && v.step_number === currentStepNo) return true;
+            return false;
         });
-    if (hasVersionMatch) return true;
+        if (hasStepMatch) return true;
+    }
 
-    // 2. Check form submission in contract (by iteration or general presence)
-    const hasFormMatch = (contract?.form_submissions || contract?.formSubmissions || []).some((fs: any) => {
-        if (!types.includes(fs.document_type)) return false;
-        if (fs.workflow_iteration && fs.workflow_iteration === iteration) return true;
-        return (fs.current_version ?? 0) > 0 || !!fs.id || (fs.values && Object.keys(fs.values).length > 0);
-    });
-    if (hasFormMatch) return true;
+    // 2. Cek form submissions spesifik step aktif
+    const formSubmissions = contract?.form_submissions || contract?.formSubmissions || [];
+    if (Array.isArray(formSubmissions)) {
+        const hasStepForm = formSubmissions.some((fs: any) => {
+            if (!types.includes(fs.document_type)) return false;
+            if (currentStepId && fs.workflow_step_id === currentStepId) return true;
+            if (currentStepNo !== undefined && fs.step_number === currentStepNo) return true;
+            return false;
+        });
+        if (hasStepForm) return true;
+    }
 
-    // 3. Fallback direct attributes on contract
-    if (
-        type === 'f1' &&
-        (contract?.f1_file || contract?.metadata?.f1_file || contract?.metadata?.f1_form_data || (contract?.f1_items && contract.f1_items.length > 0))
-    )
-        return true;
-    if (type === 'f2' && (contract?.f2_file || contract?.metadata?.f2_file || contract?.metadata?.f2_form_data)) return true;
-    if (
-        (type === 'agreement' || type === 'contract') &&
-        (contract?.agreement_file || contract?.metadata?.agreement_file || contract?.metadata?.agreement_content || contract?.agreement_content)
-    )
-        return true;
+    // 3. Jika di Step 1 / Draft awal (atau step_number <= 1), izinkan dokumen awal / atribut kontrak
+    if (!currentStepNo || Number(currentStepNo) <= 1) {
+        const hasAnyVersion =
+            contract?.versions &&
+            contract.versions.some((v: any) => {
+                if (!types.includes(v.document_type)) return false;
+                if (v.workflow_iteration && v.workflow_iteration === iteration) return true;
+                return (v.version_no ?? 0) > 0 || !!v.id || !!v.file_path;
+            });
+        if (hasAnyVersion) return true;
+
+        const hasAnyForm = formSubmissions.some((fs: any) => {
+            if (!types.includes(fs.document_type)) return false;
+            if (fs.workflow_iteration && fs.workflow_iteration === iteration) return true;
+            return (fs.current_version ?? 0) > 0 || !!fs.id || (fs.values && Object.keys(fs.values).length > 0);
+        });
+        if (hasAnyForm) return true;
+
+        if (
+            type === 'f1' &&
+            (contract?.f1_file || contract?.metadata?.f1_file || contract?.metadata?.f1_form_data || (contract?.f1_items && contract.f1_items.length > 0))
+        ) {
+            return true;
+        }
+        if (type === 'f2' && (contract?.f2_file || contract?.metadata?.f2_file || contract?.metadata?.f2_form_data)) {
+            return true;
+        }
+        if (
+            (type === 'agreement' || type === 'contract') &&
+            (contract?.agreement_file || contract?.metadata?.agreement_file || contract?.metadata?.agreement_content || contract?.agreement_content)
+        ) {
+            return true;
+        }
+    }
 
     return false;
 }
@@ -68,8 +97,7 @@ const REQUIREMENT_RESOLVERS: Record<string, RequirementResolver> = {
     f1: (c) => ({
         id: 'f1',
         label: 'Sub-dokumen F1 (Permohonan)',
-        isFilled:
-            checkDocFulfillment(c, 'f1') || !!(c.f1_file || c.metadata?.f1_file || c.metadata?.f1_form_data || (c.f1_items && c.f1_items.length > 0)),
+        isFilled: checkDocFulfillment(c, 'f1'),
         type: 'doc',
         targetTab: 'documents',
         targetSubTab: 'f1',
@@ -78,7 +106,7 @@ const REQUIREMENT_RESOLVERS: Record<string, RequirementResolver> = {
     f2: (c) => ({
         id: 'f2',
         label: 'Sub-dokumen F2 (Ringkasan)',
-        isFilled: checkDocFulfillment(c, 'f2') || !!(c.f2_file || c.metadata?.f2_file || c.metadata?.f2_form_data),
+        isFilled: checkDocFulfillment(c, 'f2'),
         type: 'doc',
         targetTab: 'documents',
         targetSubTab: 'f2',
@@ -87,9 +115,7 @@ const REQUIREMENT_RESOLVERS: Record<string, RequirementResolver> = {
     agreement: (c) => ({
         id: 'agreement',
         label: 'Sub-dokumen Draft Perjanjian',
-        isFilled:
-            checkDocFulfillment(c, 'agreement') ||
-            !!(c.agreement_file || c.metadata?.agreement_file || c.metadata?.agreement_content || c.agreement_content),
+        isFilled: checkDocFulfillment(c, 'agreement'),
         type: 'doc',
         targetTab: 'documents',
         targetSubTab: 'agreement',

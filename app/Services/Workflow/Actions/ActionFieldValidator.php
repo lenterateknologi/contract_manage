@@ -116,10 +116,12 @@ class ActionFieldValidator
             || in_array('f1', $actionReqFields);
         if ($requireF1) {
             $hasF1 = $checkDocumentStepFulfillment('f1')
-                || ! empty($contract->f1_file)
-                || ! empty($contract->metadata['f1_file'])
-                || ! empty($contract->metadata['f1_form_data'])
-                || ! empty($contract->f1_items);
+                || ((int) $currentStepNo <= 1 && (
+                    ! empty($contract->f1_file)
+                    || ! empty($contract->metadata['f1_file'])
+                    || ! empty($contract->metadata['f1_form_data'])
+                    || ! empty($contract->f1_items)
+                ));
             if (! $hasF1) {
                 throw new \Exception('Tidak dapat melanjutkan persetujuan. Sub-dokumen F1 (Permohonan) wajib diisi/diunggah pada tahap ini terlebih dahulu.');
             }
@@ -130,9 +132,11 @@ class ActionFieldValidator
             || in_array('f2', $actionReqFields);
         if ($requireF2) {
             $hasF2 = $checkDocumentStepFulfillment('f2')
-                || ! empty($contract->f2_file)
-                || ! empty($contract->metadata['f2_file'])
-                || ! empty($contract->metadata['f2_form_data']);
+                || ((int) $currentStepNo <= 1 && (
+                    ! empty($contract->f2_file)
+                    || ! empty($contract->metadata['f2_file'])
+                    || ! empty($contract->metadata['f2_form_data'])
+                ));
             if (! $hasF2) {
                 throw new \Exception('Tidak dapat melanjutkan persetujuan. Sub-dokumen F2 (Ringkasan) wajib diisi/diunggah pada tahap ini terlebih dahulu.');
             }
@@ -143,17 +147,19 @@ class ActionFieldValidator
             || in_array('agreement', $actionReqFields);
         if ($requireAgreement) {
             $hasAgreement = $checkDocumentStepFulfillment(['agreement', 'contract'])
-                || ! empty($contract->agreement_file)
-                || ! empty($contract->agreement_content)
-                || ! empty($contract->metadata['agreement_file'])
-                || ! empty($contract->metadata['agreement_content'])
-                || $contract->attachments()->where(function ($q) {
-                    $q->whereIn('category', ['Perjanjian', 'agreement', 'draft', 'kontrak', 'Draft Kontrak'])
-                        ->orWhere('file_type', 'like', '%word%')
-                        ->orWhere('file_type', 'like', '%pdf%')
-                        ->orWhere('label', 'like', '%Draft%')
-                        ->orWhere('label', 'like', '%Perjanjian%');
-                })->exists();
+                || ((int) $currentStepNo <= 1 && (
+                    ! empty($contract->agreement_file)
+                    || ! empty($contract->agreement_content)
+                    || ! empty($contract->metadata['agreement_file'])
+                    || ! empty($contract->metadata['agreement_content'])
+                    || $contract->attachments()->where(function ($q) {
+                        $q->whereIn('category', ['Perjanjian', 'agreement', 'draft', 'kontrak', 'Draft Kontrak'])
+                            ->orWhere('file_type', 'like', '%word%')
+                            ->orWhere('file_type', 'like', '%pdf%')
+                            ->orWhere('label', 'like', '%Draft%')
+                            ->orWhere('label', 'like', '%Perjanjian%');
+                    })->exists()
+                ));
             if (! $hasAgreement) {
                 throw new \Exception('Tidak dapat melanjutkan persetujuan. Sub-dokumen Perjanjian / Draft wajib diisi/diunggah pada tahap ini terlebih dahulu.');
             }

@@ -500,7 +500,7 @@ class GetContractRequirementsAction
      */
     protected function checkDocumentFulfillment(Contract $contract, array $types, ?string $stepId, ?int $stepNo, int $iteration): bool
     {
-        // 1. Check in t_contract_versions
+        // 1. Check in t_contract_versions matching current active step
         $hasVersion = $contract->versions()
             ->whereIn('document_type', $types)
             ->where(function ($q) use ($stepId, $stepNo, $iteration) {
@@ -510,15 +510,14 @@ class GetContractRequirementsAction
                         $q2->where('workflow_iteration', $iteration)
                             ->whereNull('workflow_step_id')
                             ->whereNull('step_number');
-                    })
-                    ->orWhere('version_no', '>', 0);
+                    });
             })->exists();
 
         if ($hasVersion) {
             return true;
         }
 
-        // 2. Check in form submissions
+        // 2. Check in form submissions matching current active step
         $hasSubmission = $contract->formSubmissions()
             ->whereIn('document_type', $types)
             ->where(function ($q) use ($stepId, $stepNo, $iteration) {
@@ -528,23 +527,30 @@ class GetContractRequirementsAction
                         $q2->where('workflow_iteration', $iteration)
                             ->whereNull('workflow_step_id')
                             ->whereNull('step_number');
-                    })
-                    ->orWhere('current_version', '>', 0);
+                    });
             })->exists();
 
         if ($hasSubmission) {
             return true;
         }
 
-        // 3. Fallback direct attributes
-        if (in_array('f1', $types) && ($contract->f1_file || ! empty($contract->metadata['f1_file']) || ! empty($contract->metadata['f1_form_data']))) {
-            return true;
-        }
-        if (in_array('f2', $types) && ($contract->f2_file || ! empty($contract->metadata['f2_file']) || ! empty($contract->metadata['f2_form_data']))) {
-            return true;
-        }
-        if ((in_array('agreement', $types) || in_array('contract', $types)) && ($contract->agreement_file || ! empty($contract->metadata['agreement_file']) || ! empty($contract->metadata['agreement_content']))) {
-            return true;
+        // 3. Fallback for Step 1 / Initial Draft only
+        if (! $stepNo || (int) $stepNo <= 1) {
+            if ($contract->versions()->whereIn('document_type', $types)->where('version_no', '>', 0)->exists()) {
+                return true;
+            }
+            if ($contract->formSubmissions()->whereIn('document_type', $types)->where('current_version', '>', 0)->exists()) {
+                return true;
+            }
+            if (in_array('f1', $types) && ($contract->f1_file || ! empty($contract->metadata['f1_file']) || ! empty($contract->metadata['f1_form_data']))) {
+                return true;
+            }
+            if (in_array('f2', $types) && ($contract->f2_file || ! empty($contract->metadata['f2_file']) || ! empty($contract->metadata['f2_form_data']))) {
+                return true;
+            }
+            if ((in_array('agreement', $types) || in_array('contract', $types)) && ($contract->agreement_file || ! empty($contract->metadata['agreement_file']) || ! empty($contract->metadata['agreement_content']))) {
+                return true;
+            }
         }
 
         return false;

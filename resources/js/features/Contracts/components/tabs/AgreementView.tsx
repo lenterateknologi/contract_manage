@@ -1,13 +1,13 @@
-import { approvalsApi, contractsApi, subresourcesApi } from '@/features/Contracts';
 import { Icons } from '@/components/ui';
 import { Button } from '@/components/ui/buttons/Button';
 import LoadingLottie from '@/components/ui/feedback/LoadingLottie';
 import { useToast } from '@/components/ui/feedback/Toast';
 import { SearchInput } from '@/components/ui/inputs/SearchInput';
+import { approvalsApi, contractsApi, subresourcesApi } from '@/features/Contracts';
+import { Contract } from '@/features/Contracts/types';
 import { useContractPermissions } from '@/hooks/use-contract-permissions';
 import { useDebounce } from '@/hooks/use-debounce';
 import { cn } from '@/lib/utils';
-import { Contract } from '@/features/Contracts/types';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 const { ArrowRight, Diff, Download, ExternalLink, FileText, History, Loader2, Maximize2, Minimize2, MoreVertical, PenTool, RefreshCw, Upload } =
@@ -495,7 +495,7 @@ export default function AgreementView({
                             />
                             <button
                                 type="button"
-                                className="text-primary flex h-7 cursor-pointer items-center gap-1.5 rounded-lg bg-white px-3 text-xs font-bold shadow-xs transition-all hover:bg-white/90 disabled:opacity-50"
+                                className="text-primary flex h-7 cursor-pointer items-center gap-1.5 rounded-lg  px-3 text-xs font-bold shadow-xs transition-all hover:bg-white/90 disabled:opacity-50"
                                 disabled={uploading}
                                 onClick={() => {
                                     if (isSigner && !stepDownloaded) {
