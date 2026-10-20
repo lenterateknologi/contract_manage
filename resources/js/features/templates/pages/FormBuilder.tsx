@@ -2455,6 +2455,7 @@ function FormBuilder({ template }: Props) {
                                             fieldTree={fieldTree}
                                             selectedFieldIds={selectedFieldIds}
                                             onSelectField={handleSelectField}
+                                            onSetSelectedFieldIds={setSelectedFieldIds}
                                             fieldsCount={data.fields.length}
                                             onRemoveField={removeField}
                                             onRemoveAll={() => removeField((data.fields || []).map((f) => f.id))}

@@ -22,6 +22,7 @@ export function SecurityTab({
 }: SecurityTabProps) {
     const password = passwordData.password || '';
     const confirmation = passwordData.password_confirmation || '';
+    const currentPassword = passwordData.current_password || '';
 
     // Requirement checklist validation on-type
     const checks = useMemo(() => {
@@ -34,6 +35,17 @@ export function SecurityTab({
 
     const isMatch = confirmation.length > 0 && password === confirmation;
     const isMismatch = confirmation.length > 0 && password !== confirmation;
+
+    // All conditions must be met to enable the button:
+    // 1. Current password is not empty
+    // 2. All password complexity checks pass (>= 8 chars, letter, number)
+    // 3. New password matches confirmation
+    const isValid =
+        currentPassword.trim().length > 0 &&
+        checks.minLength &&
+        checks.hasLetter &&
+        checks.hasNumber &&
+        isMatch;
 
     return (
         <div className="max-w-xl">
@@ -139,7 +151,7 @@ export function SecurityTab({
                     <div className="pt-1">
                         <Button
                             type="submit"
-                            disabled={isProcessing}
+                            disabled={isProcessing || !isValid}
                             variant="primary"
                             className="h-9 rounded-lg px-5 text-sm"
                         >

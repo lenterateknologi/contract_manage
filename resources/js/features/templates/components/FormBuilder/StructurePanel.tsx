@@ -1,22 +1,30 @@
 import { Input } from '@/components/ui/inputs/Input';
+import { Checkbox } from '@/components/ui/selection/Checkbox';
 import { cn } from '@/lib/utils';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { FileText, GripVertical, Search, Trash2, X } from 'lucide-react';
-import React, { useState } from 'react';
+import { CheckSquare, FileText, GripVertical, Search, Square, Trash2, X } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
 import { FIELD_TYPES } from './constants';
 
 interface StructurePanelProps {
     fieldTree: any[];
     selectedFieldIds: string[];
     onSelectField: (id: string, e: React.MouseEvent) => void;
+    onSetSelectedFieldIds?: React.Dispatch<React.SetStateAction<string[]>>;
     fieldsCount: number;
     onRemoveField?: (id: string) => void;
     onRemoveAll?: () => void;
     onRemoveSelected?: () => void;
 }
 
-const SortableStructureNode = ({ item, selectedFieldIds, onSelectField, onRemoveField }: any) => {
+const SortableStructureNode = ({
+    item,
+    selectedFieldIds,
+    onSelectField,
+    onToggleSelectField,
+    onRemoveField,
+}: any) => {
     const isSelected = selectedFieldIds.includes(item.id);
     const Icon = FIELD_TYPES.flatMap((c) => c.items).find((t) => t.value === item.type)?.icon || FileText;
 
@@ -53,6 +61,23 @@ const SortableStructureNode = ({ item, selectedFieldIds, onSelectField, onRemove
                     <GripVertical size={10} />
                 </div>
 
+                {/* Checkbox for easy multi-selection */}
+                {onToggleSelectField && (
+                    <div
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onToggleSelectField(item.id);
+                        }}
+                        className="flex cursor-pointer items-center justify-center py-0.5"
+                    >
+                        <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={() => onToggleSelectField(item.id)}
+                            className="size-3 rounded-[3px] border-slate-300 dark:border-zinc-700"
+                        />
+                    </div>
+                )}
+
                 <div className="flex min-w-0 flex-1 cursor-pointer items-center gap-1.5" onClick={(e) => onSelectField(item.id, e)}>
                     <Icon size={12} className={cn('shrink-0', isSelected ? 'text-primary' : 'text-muted-foreground/60')} />
                     <span className={cn('flex-1 truncate font-sans text-[10px] tracking-tight uppercase', isSelected && 'text-primary')}>
@@ -81,6 +106,7 @@ const SortableStructureNode = ({ item, selectedFieldIds, onSelectField, onRemove
                                 item={child}
                                 selectedFieldIds={selectedFieldIds}
                                 onSelectField={onSelectField}
+                                onToggleSelectField={onToggleSelectField}
                                 onRemoveField={onRemoveField}
                             />
                         ))}
@@ -95,6 +121,7 @@ export const StructurePanel: React.FC<StructurePanelProps> = ({
     fieldTree,
     selectedFieldIds,
     onSelectField,
+    onSetSelectedFieldIds,
     fieldsCount,
     onRemoveField,
     onRemoveAll,
@@ -120,7 +147,52 @@ export const StructurePanel: React.FC<StructurePanelProps> = ({
             .filter(Boolean);
     };
 
-    const filteredTree = searchQuery ? filterTree(fieldTree) : fieldTree;
+    const filteredTree = useMemo(() => {
+        return searchQuery ? filterTree(fieldTree) : fieldTree;
+    }, [searchQuery, fieldTree]);
+
+    // Flatten all visible/filtered node IDs
+    const visibleFieldIds = useMemo(() => {
+        const ids: string[] = [];
+        const traverse = (nodes: any[]) => {
+            nodes.forEach((node) => {
+                if (node.id) ids.push(node.id);
+                if (node.children?.length) traverse(node.children);
+            });
+        };
+        traverse(filteredTree);
+        return ids;
+    }, [filteredTree]);
+
+    // Check if all visible nodes are currently selected
+    const areAllVisibleSelected =
+        visibleFieldIds.length > 0 && visibleFieldIds.every((id) => selectedFieldIds.includes(id));
+    const isSomeVisibleSelected =
+        visibleFieldIds.some((id) => selectedFieldIds.includes(id)) && !areAllVisibleSelected;
+
+    // Toggle select all visible nodes
+    const handleToggleSelectAllVisible = () => {
+        if (!onSetSelectedFieldIds) return;
+        if (areAllVisibleSelected) {
+            // Deselect all visible ones
+            onSetSelectedFieldIds((prev) => prev.filter((id) => !visibleFieldIds.includes(id)));
+        } else {
+            // Select all visible ones without losing already selected outside visible (if any)
+            onSetSelectedFieldIds((prev) => Array.from(new Set([...prev, ...visibleFieldIds])));
+        }
+    };
+
+    // Toggle individual field selection
+    const handleToggleSelectField = (id: string) => {
+        if (onSetSelectedFieldIds) {
+            onSetSelectedFieldIds((prev) =>
+                prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
+            );
+        } else {
+            // Fallback to onSelectField with ctrlKey simulation
+            onSelectField(id, { ctrlKey: true } as any);
+        }
+    };
 
     return (
         <div className="animate-in fade-in slide-in-from-left-4 space-y-2.5 duration-200">
@@ -154,7 +226,7 @@ export const StructurePanel: React.FC<StructurePanelProps> = ({
                 <Search size={12} className="absolute top-1/2 left-2.5 -translate-y-1/2 text-slate-400" />
                 <Input
                     type="text"
-                    placeholder="Cari..."
+                    placeholder="Cari elemen..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="h-7 rounded-lg border-slate-200 pr-7 pl-8 font-sans text-[10px] dark:border-zinc-800"
@@ -169,6 +241,40 @@ export const StructurePanel: React.FC<StructurePanelProps> = ({
                     </button>
                 )}
             </div>
+
+            {/* Select All Visible / Filtered Controller */}
+            {visibleFieldIds.length > 0 && onSetSelectedFieldIds && (
+                <div className="flex items-center justify-between rounded-lg border border-slate-200/70 bg-slate-50/80 px-2 py-1.5 dark:border-zinc-800 dark:bg-zinc-900/60">
+                    <button
+                        type="button"
+                        onClick={handleToggleSelectAllVisible}
+                        className="flex items-center gap-1.5 text-left text-[10px] font-semibold text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200"
+                    >
+                        <Checkbox
+                            checked={areAllVisibleSelected ? true : isSomeVisibleSelected ? 'indeterminate' : false}
+                            onCheckedChange={handleToggleSelectAllVisible}
+                            className="size-3.5 rounded-[3px] border-slate-300 dark:border-zinc-700"
+                        />
+                        <span className="font-sans text-[10px] tracking-tight">
+                            {areAllVisibleSelected
+                                ? 'Batalkan Pilih Semua'
+                                : searchQuery
+                                  ? `Pilih yang Tampil (${visibleFieldIds.length})`
+                                  : `Pilih Semua (${visibleFieldIds.length})`}
+                        </span>
+                    </button>
+
+                    {selectedFieldIds.length > 0 && (
+                        <button
+                            type="button"
+                            onClick={() => onSetSelectedFieldIds([])}
+                            className="text-[9px] font-medium text-slate-400 hover:text-rose-500"
+                        >
+                            Kosongkan ({selectedFieldIds.length})
+                        </button>
+                    )}
+                </div>
+            )}
 
             <div className="space-y-0.5">
                 {filteredTree.length === 0 ? (
@@ -185,6 +291,7 @@ export const StructurePanel: React.FC<StructurePanelProps> = ({
                                 item={f}
                                 selectedFieldIds={selectedFieldIds}
                                 onSelectField={onSelectField}
+                                onToggleSelectField={handleToggleSelectField}
                                 onRemoveField={onRemoveField}
                             />
                         ))}
