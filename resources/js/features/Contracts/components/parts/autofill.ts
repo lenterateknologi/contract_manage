@@ -42,6 +42,8 @@ export const AUTOFILL_KEY_DEFINITIONS: Record<string, { label: string; group: st
 
     meta_nilai_transaksi: { label: 'Harga / Nilai Transaksi', group: 'Detail Kontrak' },
     meta_masa_berlaku: { label: 'Masa Berlaku', group: 'Detail Kontrak' },
+    meta_tgl_mulai: { label: 'Tanggal Mulai Kontrak', group: 'Detail Kontrak' },
+    meta_tgl_selesai: { label: 'Tanggal Selesai Kontrak', group: 'Detail Kontrak' },
     meta_lokasi: { label: 'Lokasi Area', group: 'Detail Kontrak' },
     meta_mekanisme_pembayaran: { label: 'Mekanisme Bayar', group: 'Detail Kontrak' },
     meta_ringkasan_klausul: { label: 'Ringkasan Klausul', group: 'Detail Kontrak' },
@@ -171,6 +173,16 @@ export const getAutofillValue = (field: any, contract: Contract) => {
             const end = contract.end_date ? String(contract.end_date).split('T')[0].split(' ')[0] : '';
             if (start && end) return `${start} s/d ${end}`;
             return start || end;
+        },
+        meta_tgl_mulai: () => {
+            const raw = contract.contract_date || contract.start_date;
+            if (!raw) return '';
+            return formatDateWithOptionalTime(raw, field);
+        },
+        meta_tgl_selesai: () => {
+            const raw = contract.end_date;
+            if (!raw) return '';
+            return formatDateWithOptionalTime(raw, field);
         },
         meta_p1_entity: () => {
             const initUser = (contract as any)?.initiator || (contract as any)?.creator;
