@@ -495,7 +495,7 @@ export default function AgreementView({
                             />
                             <button
                                 type="button"
-                                className="text-primary flex h-7 cursor-pointer items-center gap-1.5 rounded-lg  px-3 text-xs font-bold shadow-xs transition-all hover:bg-white/90 disabled:opacity-50"
+                                className="flex h-7 cursor-pointer items-center gap-1.5 rounded-lg border border-white/20 bg-white/15 px-2.5 text-xs font-medium text-white transition-colors hover:bg-white/25 disabled:opacity-50"
                                 disabled={uploading}
                                 onClick={() => {
                                     if (isSigner && !stepDownloaded) {
