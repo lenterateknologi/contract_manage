@@ -426,9 +426,12 @@ export const ContractDetailView = ({
             if (found) return found;
         }
         return contract.approvals.find(
-            (a: any) => (a.status === 'pending' || a.status === 'waiting') && (a.user_id === meId || (a.user && a.user.id === meId)),
+            (a: any) =>
+                a.status === 'pending' &&
+                (!contract.workflow_step_id || a.workflow_step_id === contract.workflow_step_id) &&
+                (a.user_id === meId || (a.user && a.user.id === meId)),
         );
-    }, [contract.approvals, contract.pending_approval_id, meId]);
+    }, [contract.approvals, contract.pending_approval_id, contract.workflow_step_id, meId]);
 
     const isStepAuthorityMatched = useMemo(() => {
         if (!contract.workflow_step) return false;
@@ -456,8 +459,7 @@ export const ContractDetailView = ({
             !!contract.is_current_actor ||
             !!activePendingApproval ||
             !!contract.pending_approval_id ||
-            isStepAuthorityMatched ||
-            (contract.status === 'in_review' && !!contract.workflow_step_id)
+            isStepAuthorityMatched
         );
     }, [
         contract.can_approve,
@@ -465,8 +467,6 @@ export const ContractDetailView = ({
         activePendingApproval,
         contract.pending_approval_id,
         isStepAuthorityMatched,
-        contract.status,
-        contract.workflow_step_id,
     ]);
 
     const isSubStepReviewer = useMemo(() => {
