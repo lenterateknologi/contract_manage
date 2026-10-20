@@ -204,18 +204,35 @@ export function formatDateRange(dateFrom?: string | Date | null, dateTo?: string
 }
 
 /**
- * Formats date for form builder or optional time input.
+ * Formats date for form builder or optional time input without timezone shifting.
  */
 export function formatDateWithOptionalTime(dateStrInput?: string | null, field?: any): string {
-    let dateObj = new Date();
-    if (dateStrInput) {
-        const parsed = parseDateInput(dateStrInput);
-        if (parsed) dateObj = parsed;
-    }
-    const dateStr = dateObj.toLocaleDateString('en-CA');
+    if (!dateStrInput) return '';
+
+    const str = String(dateStrInput).trim();
+    if (!str || str === '-' || str === 'null' || str === 'undefined' || str === '—') return '';
+
+    // If string already starts with YYYY-MM-DD
+    const ymdMatch = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
     const isDateOnly = field?.type === 'date' || field?.options?.value_type === 'date';
+
+    if (ymdMatch && isDateOnly) {
+        return `${ymdMatch[1]}-${ymdMatch[2]}-${ymdMatch[3]}`;
+    }
+
+    // Check DD/MM/YYYY or DD-MM-YYYY
+    const dmyMatch = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+    if (dmyMatch && isDateOnly) {
+        return `${dmyMatch[3]}-${dmyMatch[2].padStart(2, '0')}-${dmyMatch[1].padStart(2, '0')}`;
+    }
+
+    const parsed = parseDateInput(str);
+    if (!parsed) return str;
+
+    const dateStr = parsed.toLocaleDateString('en-CA');
     if (isDateOnly) return dateStr;
-    const timeStr = dateObj.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+    const timeStr = parsed.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
     return `${dateStr} ${timeStr}`;
 }
 

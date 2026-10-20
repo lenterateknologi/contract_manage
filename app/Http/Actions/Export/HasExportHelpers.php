@@ -178,6 +178,21 @@ trait HasExportHelpers
         if (empty($formData['meta_tgl_dibuat'])) {
             $formData['meta_tgl_dibuat'] = $contract->contract_date ? $contract->contract_date->toDateString() : now()->toDateString();
         }
+        if (empty($formData['meta_tgl_mulai'])) {
+            $formData['meta_tgl_mulai'] = $contract->contract_date ? $contract->contract_date->toDateString() : ($contract->metadata['meta_tgl_mulai'] ?? '');
+        }
+        if (empty($formData['meta_tgl_selesai'])) {
+            $formData['meta_tgl_selesai'] = $contract->end_date ? $contract->end_date->toDateString() : ($contract->metadata['meta_tgl_selesai'] ?? '');
+        }
+        if (empty($formData['meta_masa_berlaku'])) {
+            $start = $formData['meta_tgl_mulai'];
+            $end = $formData['meta_tgl_selesai'];
+            if ($start && $end) {
+                $formData['meta_masa_berlaku'] = "{$start} s/d {$end}";
+            } elseif ($start || $end) {
+                $formData['meta_masa_berlaku'] = $start ?: $end;
+            }
+        }
 
         return $formData;
     }

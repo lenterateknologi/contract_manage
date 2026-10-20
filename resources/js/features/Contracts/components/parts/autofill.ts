@@ -168,19 +168,21 @@ export const getAutofillValue = (field: any, contract: Contract) => {
         },
         meta_tgl_dibuat: () => formatDateWithOptionalTime(contract.created_at, field),
         meta_masa_berlaku: () => {
-            if (!contract.contract_date && !contract.end_date) return '';
-            const start = contract.contract_date ? String(contract.contract_date).split('T')[0].split(' ')[0] : '';
-            const end = contract.end_date ? String(contract.end_date).split('T')[0].split(' ')[0] : '';
+            const rawStart = contract.contract_date || contract.metadata?.meta_tgl_mulai || (contract as any)?.start_date;
+            const rawEnd = contract.end_date || contract.metadata?.meta_tgl_selesai;
+            if (!rawStart && !rawEnd) return '';
+            const start = rawStart ? String(rawStart).split('T')[0].split(' ')[0] : '';
+            const end = rawEnd ? String(rawEnd).split('T')[0].split(' ')[0] : '';
             if (start && end) return `${start} s/d ${end}`;
             return start || end;
         },
         meta_tgl_mulai: () => {
-            const raw = contract.contract_date || contract.start_date;
+            const raw = contract.contract_date || contract.metadata?.meta_tgl_mulai || (contract as any)?.start_date;
             if (!raw) return '';
             return formatDateWithOptionalTime(raw, field);
         },
         meta_tgl_selesai: () => {
-            const raw = contract.end_date;
+            const raw = contract.end_date || contract.metadata?.meta_tgl_selesai;
             if (!raw) return '';
             return formatDateWithOptionalTime(raw, field);
         },

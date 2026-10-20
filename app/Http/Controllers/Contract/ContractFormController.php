@@ -183,12 +183,36 @@ class ContractFormController extends Controller
                 }
             }
 
-            // --- Tanggal Kontrak (contract_date) ---
-            foreach (['meta_tgl_dibuat', 'bv_f1_date'] as $key) {
+            // --- Tanggal Mulai / Kontrak (contract_date) ---
+            foreach (['meta_tgl_mulai', 'meta_tgl_dibuat', 'bv_f1_date'] as $key) {
                 if (! empty($formData[$key])) {
                     $updates['contract_date'] = $formData[$key];
-
+                    $currentContractMeta['meta_tgl_mulai'] = $formData[$key];
                     break;
+                }
+            }
+
+            // --- Tanggal Selesai / Berakhir (end_date) ---
+            foreach (['meta_tgl_selesai', 'end_date'] as $key) {
+                if (! empty($formData[$key])) {
+                    $updates['end_date'] = $formData[$key];
+                    $currentContractMeta['meta_tgl_selesai'] = $formData[$key];
+                    break;
+                }
+            }
+
+            // --- Parse meta_masa_berlaku if individual date fields are not provided ---
+            if (empty($updates['contract_date']) && empty($updates['end_date']) && ! empty($formData['meta_masa_berlaku'])) {
+                $parts = preg_split('/\s+(?:s\/d|sd|-|sampai)\s+/i', trim($formData['meta_masa_berlaku']));
+                if (! empty($parts[0]) && strtotime(trim($parts[0]))) {
+                    $startDate = date('Y-m-d', strtotime(trim($parts[0])));
+                    $updates['contract_date'] = $startDate;
+                    $currentContractMeta['meta_tgl_mulai'] = $startDate;
+                }
+                if (! empty($parts[1]) && strtotime(trim($parts[1]))) {
+                    $endDate = date('Y-m-d', strtotime(trim($parts[1])));
+                    $updates['end_date'] = $endDate;
+                    $currentContractMeta['meta_tgl_selesai'] = $endDate;
                 }
             }
 
@@ -291,8 +315,8 @@ class ContractFormController extends Controller
 
             $contract->update(['metadata' => $currentContractMeta]);
 
-            $baseUpdates = collect($updates)->only(['transaction_type', 'title', 'contract_date', 'tax_required'])->toArray();
-            $metaUpdates = collect($updates)->except(['transaction_type', 'title', 'contract_date', 'tax_required'])->toArray();
+            $baseUpdates = collect($updates)->only(['transaction_type', 'title', 'contract_date', 'end_date', 'tax_required'])->toArray();
+            $metaUpdates = collect($updates)->except(['transaction_type', 'title', 'contract_date', 'end_date', 'tax_required'])->toArray();
 
             if (! empty($baseUpdates)) {
                 $contract->update($baseUpdates);
@@ -413,10 +437,15 @@ class ContractFormController extends Controller
             }
         }
 
-        // Fallback for legacy meta_nilai_transaksi if meta_harga is empty
-        if (empty($formData['meta_f2_price']) && ! empty($f1Data['meta_nilai_transaksi'])) {
-            $formData['meta_f2_price'] = $f1Data['meta_nilai_transaksi'];
-            $formData['f2_price'] = $f1Data['meta_nilai_transaksi'];
+        // Auto-generate meta_masa_berlaku for F2 from F1 dates or contract dates
+        if (empty($formData['meta_masa_berlaku'])) {
+            $startDate = ! empty($f1Data['meta_tgl_mulai']) ? $f1Data['meta_tgl_mulai'] : ($contract->contract_date ? $contract->contract_date->toDateString() : null);
+            $endDate = ! empty($f1Data['meta_tgl_selesai']) ? $f1Data['meta_tgl_selesai'] : ($contract->end_date ? $contract->end_date->toDateString() : null);
+            if ($startDate && $endDate) {
+                $formData['meta_masa_berlaku'] = "{$startDate} s/d {$endDate}";
+            } elseif ($startDate || $endDate) {
+                $formData['meta_masa_berlaku'] = $startDate ?: $endDate;
+            }
         }
 
         $f1PassthroughFields = [
@@ -574,6 +603,21 @@ class ContractFormController extends Controller
         }
         if (empty($formData['meta_tgl_dibuat'])) {
             $formData['meta_tgl_dibuat'] = $contract->contract_date ? $contract->contract_date->toDateString() : now()->toDateString();
+        }
+        if (empty($formData['meta_tgl_mulai'])) {
+            $formData['meta_tgl_mulai'] = $contract->contract_date ? $contract->contract_date->toDateString() : ($contract->metadata['meta_tgl_mulai'] ?? '');
+        }
+        if (empty($formData['meta_tgl_selesai'])) {
+            $formData['meta_tgl_selesai'] = $contract->end_date ? $contract->end_date->toDateString() : ($contract->metadata['meta_tgl_selesai'] ?? '');
+        }
+        if (empty($formData['meta_masa_berlaku'])) {
+            $start = $formData['meta_tgl_mulai'];
+            $end = $formData['meta_tgl_selesai'];
+            if ($start && $end) {
+                $formData['meta_masa_berlaku'] = "{$start} s/d {$end}";
+            } elseif ($start || $end) {
+                $formData['meta_masa_berlaku'] = $start ?: $end;
+            }
         }
         if (empty($formData['meta_tax_required'])) {
             $taxReq = $contract->metadata['tax_required'] ?? false;

@@ -81,6 +81,24 @@ class UpdateContractAction
             $validated['tax_required'] = $isTax;
         }
 
+        if (array_key_exists('contract_date', $validated)) {
+            $startDate = $validated['contract_date'] ? substr((string) $validated['contract_date'], 0, 10) : null;
+            $mergedMeta['meta_tgl_mulai'] = $startDate;
+        }
+        if (array_key_exists('end_date', $validated)) {
+            $endDate = $validated['end_date'] ? substr((string) $validated['end_date'], 0, 10) : null;
+            $mergedMeta['meta_tgl_selesai'] = $endDate;
+        }
+        if (isset($mergedMeta['meta_tgl_mulai']) || isset($mergedMeta['meta_tgl_selesai'])) {
+            $s = $mergedMeta['meta_tgl_mulai'] ?? '';
+            $e = $mergedMeta['meta_tgl_selesai'] ?? '';
+            if ($s && $e) {
+                $mergedMeta['meta_masa_berlaku'] = "{$s} s/d {$e}";
+            } elseif ($s || $e) {
+                $mergedMeta['meta_masa_berlaku'] = $s ?: $e;
+            }
+        }
+
         $validated['metadata'] = $mergedMeta;
 
         $contract->update($validated);

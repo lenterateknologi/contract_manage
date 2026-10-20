@@ -176,14 +176,20 @@ function GenericFormTab({
                 const freshP2Entity = getAutofillValue({ name: 'meta_p2_entity' }, selected) ?? '';
                 const p2Changed = currentP2Entity && freshP2Entity && currentP2Entity !== freshP2Entity;
 
+                const isContractDateField = (fieldName: string) =>
+                    fieldName === 'meta_tgl_mulai' || fieldName === 'meta_tgl_selesai' || fieldName === 'meta_masa_berlaku';
+
                 fields.forEach((f) => {
                     if (f.type !== 'kop_surat' && f.type !== 'form_title') {
+                        const isManualEdit = manualFields.has(f.name);
                         const isP1Field = p1RelatedFields.has(f.name);
                         const isP2Field = p2RelatedFields.has(f.name);
-                        const forceUpdate = (isP1Field && p1Changed) || (isP2Field && p2Changed);
+                        const isDateField = isContractDateField(f.name);
+                        // Do not force overwrite if the user is currently editing this field manually in the form
+                        const forceUpdate = (isP1Field && p1Changed) || (isP2Field && p2Changed) || (isDateField && (isManual || !isManualEdit));
                         const val = getAutofillValue(f, selected);
 
-                        // For force-update (party changed): apply even if val is null/empty (clears stale data)
+                        // For force-update (party changed or contract date changed): apply fresh val
                         if (forceUpdate) {
                             const freshVal = val ?? '';
                             if (synced[f.name] !== freshVal) {
@@ -195,15 +201,14 @@ function GenericFormTab({
 
                         if (val !== null && val !== '') {
                             const currentVal = synced[f.name];
-                            const isManualEdit = manualFields.has(f.name);
-                            const isDateField =
+                            const isGenericDateField =
                                 f.name === 'meta_tgl_dibuat' ||
                                 f.name === 'tanggal' ||
                                 f.type === 'date' ||
                                 (f.options as any)?.value_type === 'date';
 
                             if (isManual || !isManualEdit) {
-                                if (!isManual && isDateField && currentVal) {
+                                if (!isManual && isGenericDateField && currentVal) {
                                     return;
                                 }
                                 // Update if: value differs AND (field is empty or manual sync or forceUpdate)
@@ -318,6 +323,14 @@ function GenericFormTab({
                         }
                     });
                 }
+
+                // --- Contract Date & Masa Berlaku sync: if contract dates exist, ensure form fields stay in sync ---
+                const dateFields = ['meta_tgl_mulai', 'meta_tgl_selesai', 'meta_masa_berlaku'];
+                dateFields.forEach((key) => {
+                    if (autofilled[key] !== undefined && autofilled[key] !== null && autofilled[key] !== '') {
+                        finalData[key] = autofilled[key];
+                    }
+                });
 
                 setFormData(finalData);
                 setOriginalData(finalData);
