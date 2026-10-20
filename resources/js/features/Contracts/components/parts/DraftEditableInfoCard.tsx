@@ -150,16 +150,9 @@ export function DraftEditableInfoCard({
         setPrice(p !== undefined && p !== null ? String(p) : '');
     }, [selected, types, vendors]);
 
-    // When vendor selection changes, auto-set taxRequired based on vendor's PKP status
+    // When vendor selection changes, keep tax determination preference intact
     const handleVendorChange = (newVendorId: string) => {
         setVendorId(newVendorId);
-        if (newVendorId && newVendorId !== 'internal') {
-            const foundVendor = vendors.find((v) => String(v.id) === String(newVendorId));
-            if (foundVendor) {
-                const { isPkp } = resolveVendorTaxPkp(foundVendor);
-                setTaxRequired(isPkp);
-            }
-        }
     };
 
     const resolvePartyDetails = (partyId: string, role: 'p1' | 'p2') => {
